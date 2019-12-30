@@ -137,49 +137,109 @@ type PartitionParam struct {
 // MilvusClient SDK main interface
 type MilvusClient interface {
 
-	/** @return the current Milvus client version */
+	// GetClientVersion method
+	// This method is used to give the client version.
+	// return Client version.
 	GetClientVersion() string
 
-	/**
-	 *
-	 */
+	// Connect method
+	// Create a connection instance and return it's shared pointer
+	// return indicate if connect is successful
 	Connect(connectParam ConnectParam) Status
 
+	// IsConnected method
+	// This method is used to test whether server is connected
+	// return indicate if connection status
 	IsConnected() bool
 
+	// Disconnect method
+	// This method is used to disconnect server
+	// return indicate if disconnect is successful
 	Disconnect() Status
 
+	// CreateTable method
+	// This method is used to create table
+	// param tableSchema is used to provide table information to be created.
+	// return indicate if table is created successfully
 	CreateTable(tableSchema TableSchema) Status
 
+	// HasTable method
+	// This method is used to create table.
+	//return indicate if table is cexist
 	HasTable(tableName string) bool
 
+	// DropTable method
+	// This method is used to drop table(and its partitions).
+	// return indicate if table is drop successfully.
 	DropTable(tableName string) Status
 
+	// CreateIndex method
+	// This method is used to create index for whole table(and its partitions).
+	// return indicate if build index successfully.
 	CreateIndex(indexParam *IndexParam) Status
 
+	// Insert method
+	// This method is used to query vector in table.
+	// return indicate if insert is successful.
 	Insert(insertParam *InsertParam) Status
 
+	// Search method
+	// This method is used to query vector in table.
+	// return indicate if query is successful.
 	Search(searchParam SearchParam) (Status, TopkQueryResult)
 
+	// DescribeTable method
+	// This method is used to show table information.
+	//return indicate if this operation is successful.
 	DescribeTable(tableName string) (Status, TableSchema)
 
+	// CountTable method
+	// This method is used to get table row count.
+	// return indicate if this operation is successful.
 	CountTable(tableName string) (Status, int64)
 
+	// ShowTables method
+	// This method is used to list all tables.
+	// return indicate if this operation is successful.
 	ShowTables() (Status, []string)
 
+	// ServerVersion method
+	// This method is used to give the server version.
+	// return server version.
 	ServerVersion() (Status, string)
 
+	// ServerStatus method
+	// This method is used to give the server status.
+	// return server status.
 	ServerStatus() (Status, string)
 
+	// PreloadTable method
+	// This method is used to preload table
+	// return indicate if this operation is successful.
 	PreloadTable(tableName string) Status
 
+	// DescribeIndex method
+	// This method is used to describe index
+	// return indicate if this operation is successful.
 	DescribeIndex(tableName string) (Status, IndexParam)
 
+	// DropIndex method
+	// This method is used to drop index of table(and its partitions)
+	// return indicate if this operation is successful.
 	DropIndex(tableName string) Status
 
+	// CreatePartition method
+	// This method is used to create table partition
+	// return indicate if partition is created successfully
 	CreatePartition(partitionParam PartitionParam) Status
 
+	// ShowPartition method
+	// This method is used to create table
+	// return indicate if this operation is successful
 	ShowPartitions(tableName string) (Status, []PartitionParam)
 
+	// DropPartition method
+	// This method is used to delete table partition.
+	// return indicate if partition is delete successfully.
 	DropPartition(partitionParam PartitionParam) Status
 }
