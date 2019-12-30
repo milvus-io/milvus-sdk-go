@@ -16,9 +16,9 @@ var topk int64 = 100
 var nlist int32 = 16384
 
 func example(address string, port string) {
-	var grpc_client milvusClient
+	var grpcClient milvusClient
 	var i, j int64
-	client := NewMilvusClient(grpc_client.mClient)
+	client := NewMilvusClient(grpcClient.mClient)
 
 	//Client version
 	println(client.GetClientVersion())
@@ -58,9 +58,8 @@ func example(address string, port string) {
 	if hasTable == false {
 		println("Create table failed: " + status.getMessage())
 		return
-	} else {
-		println("Table: " + tableName + " exist")
 	}
+	println("Table: " + tableName + " exist")
 
 	//test show tables
 	var tables []string

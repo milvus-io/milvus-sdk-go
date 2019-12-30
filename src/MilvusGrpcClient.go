@@ -7,225 +7,227 @@ import (
 	pb "milvus/src/grpc/gen"
 )
 
+// MilvusGrpcClient call grpc generated code interface
 type MilvusGrpcClient interface {
-	CreateTable(table_schema pb.TableSchema) pb.Status
+	CreateTable(tableSchema pb.TableSchema) pb.Status
 
-	HasTable(table_name pb.TableName) pb.BoolReply
+	HasTable(tableName pb.TableName) pb.BoolReply
 
-	DescribeTable(table_name pb.TableName) pb.TableSchema
+	DescribeTable(tableName pb.TableName) pb.TableSchema
 
-	CountTable(table_name pb.TableName) pb.TableRowCount
+	CountTable(tableName pb.TableName) pb.TableRowCount
 
 	ShowTable() pb.TableNameList
 
-	DropTable(table_name pb.TableName) pb.Status
+	DropTable(tableName pb.TableName) pb.Status
 
-	CreateIndex(index_param pb.IndexParam) pb.Status
+	CreateIndex(indexParam pb.IndexParam) pb.Status
 
-	DescribeIndex(table_name pb.TableName) pb.IndexParam
+	DescribeIndex(tableName pb.TableName) pb.IndexParam
 
-	DropIndex(table_name pb.TableName) pb.Status
+	DropIndex(tableName pb.TableName) pb.Status
 
-	CreatePartition(partition_param pb.PartitionParam) pb.Status
+	CreatePartition(partitionParam pb.PartitionParam) pb.Status
 
-	ShowPartitions(table_name pb.TableName) pb.PartitionList
+	ShowPartitions(tableName pb.TableName) pb.PartitionList
 
-	DropPartition(partition_param pb.PartitionParam) pb.Status
+	DropPartition(partitionParam pb.PartitionParam) pb.Status
 
-	Insert(insert_param pb.InsertParam) pb.VectorIds
+	Insert(insertParam pb.InsertParam) pb.VectorIds
 
-	Search(search_param pb.SearchParam) *pb.TopKQueryResult
+	Search(searchParam pb.SearchParam) *pb.TopKQueryResult
 
-	SearchInFiles(search_in_files_param pb.SearchInFilesParam) *pb.TopKQueryResult
+	SearchInFiles(searchInFilesParam pb.SearchInFilesParam) *pb.TopKQueryResult
 
 	Cmd(command pb.Command) pb.StringReply
 
-	DeleteByDate(delete_by_date_param pb.DeleteByDateParam) pb.Status
+	DeleteByDate(deleteByDateParam pb.DeleteByDateParam) pb.Status
 
-	PreloadTable(table_name pb.TableName) pb.Status
+	PreloadTable(tableName pb.TableName) pb.Status
 }
 
 type milvusGrpcClient struct {
 	client pb.MilvusServiceClient
 }
 
+// NewMilvusGrpcClient is the constructor of MilvusGrpcClient
 func NewMilvusGrpcClient(client pb.MilvusServiceClient) MilvusGrpcClient {
 	return &milvusGrpcClient{client}
 }
 
-func (grpc_client *milvusGrpcClient) CreateTable(table_schema pb.TableSchema) pb.Status {
+func (grpcClient *milvusGrpcClient) CreateTable(tableSchema pb.TableSchema) pb.Status {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	reply, err := grpc_client.client.CreateTable(ctx, &table_schema)
+	reply, err := grpcClient.client.CreateTable(ctx, &tableSchema)
 	if err != nil {
 		println("CreateTable rpc failed: " + err.Error())
 	}
 	return *reply
 }
 
-func (grpc_client *milvusGrpcClient) HasTable(table_name pb.TableName) pb.BoolReply {
+func (grpcClient *milvusGrpcClient) HasTable(tableName pb.TableName) pb.BoolReply {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	bool_reply, err := grpc_client.client.HasTable(ctx, &table_name)
+	boolReply, err := grpcClient.client.HasTable(ctx, &tableName)
 	if err != nil {
 
 	}
 
-	return *bool_reply
+	return *boolReply
 }
 
-func (grpc_client *milvusGrpcClient) DescribeTable(table_name pb.TableName) pb.TableSchema {
+func (grpcClient *milvusGrpcClient) DescribeTable(tableName pb.TableName) pb.TableSchema {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	table_schema, err := grpc_client.client.DescribeTable(ctx, &table_name)
+	tableSchema, err := grpcClient.client.DescribeTable(ctx, &tableName)
 	if err != nil {
 		println("DescribeTable rpc failed: " + err.Error())
 	}
-	return *table_schema
+	return *tableSchema
 }
 
-func (grpc_client *milvusGrpcClient) CountTable(table_name pb.TableName) pb.TableRowCount {
+func (grpcClient *milvusGrpcClient) CountTable(tableName pb.TableName) pb.TableRowCount {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	count, err := grpc_client.client.CountTable(ctx, &table_name)
+	count, err := grpcClient.client.CountTable(ctx, &tableName)
 	if err != nil {
 		println("CountTable rpc failed: " + err.Error())
 	}
 	return *count
 }
 
-func (grpc_client *milvusGrpcClient) ShowTable() pb.TableNameList {
+func (grpcClient *milvusGrpcClient) ShowTable() pb.TableNameList {
 	cmd := pb.Command{"", struct{}{}, nil, 0,}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	table_name_list, err := grpc_client.client.ShowTables(ctx, &cmd)
+	tableNameList, err := grpcClient.client.ShowTables(ctx, &cmd)
 	if err != nil {
 		println("ShowTable rpc failed: " + err.Error())
 	}
-	return *table_name_list
+	return *tableNameList
 }
 
-func (grpc_client *milvusGrpcClient) DropTable(table_name pb.TableName) pb.Status {
+func (grpcClient *milvusGrpcClient) DropTable(tableName pb.TableName) pb.Status {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	status, err := grpc_client.client.DropTable(ctx, &table_name)
+	status, err := grpcClient.client.DropTable(ctx, &tableName)
 	if err != nil {
 		println("DropTable rpc failed: " + err.Error())
 	}
 	return *status
 }
 
-func (grpc_client *milvusGrpcClient) CreateIndex(index_param pb.IndexParam) pb.Status {
+func (grpcClient *milvusGrpcClient) CreateIndex(indexParam pb.IndexParam) pb.Status {
 	ctx := context.Background()
-	status, err := grpc_client.client.CreateIndex(ctx, &index_param)
+	status, err := grpcClient.client.CreateIndex(ctx, &indexParam)
 	if err != nil {
 		println("CreateIndex rpc failed: " + err.Error())
 	}
 	return *status
 }
 
-func (grpc_client *milvusGrpcClient) DescribeIndex(table_name pb.TableName) pb.IndexParam {
+func (grpcClient *milvusGrpcClient) DescribeIndex(tableName pb.TableName) pb.IndexParam {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	index_param, err := grpc_client.client.DescribeIndex(ctx, &table_name)
+	indexParam, err := grpcClient.client.DescribeIndex(ctx, &tableName)
 	if err != nil {
 		println("DescribeIndex rpc failed: " + err.Error())
 	}
-	return *index_param
+	return *indexParam
 }
 
-func (grpc_client *milvusGrpcClient) DropIndex(table_name pb.TableName) pb.Status {
+func (grpcClient *milvusGrpcClient) DropIndex(tableName pb.TableName) pb.Status {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	status, err := grpc_client.client.DropIndex(ctx, &table_name)
+	status, err := grpcClient.client.DropIndex(ctx, &tableName)
 	if err != nil {
 		println("DropIndex rpc failed: " + err.Error())
 	}
 	return *status
 }
 
-func (grpc_client *milvusGrpcClient) CreatePartition(partition_param pb.PartitionParam) pb.Status {
+func (grpcClient *milvusGrpcClient) CreatePartition(partitionParam pb.PartitionParam) pb.Status {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	status, err := grpc_client.client.CreatePartition(ctx, &partition_param)
+	status, err := grpcClient.client.CreatePartition(ctx, &partitionParam)
 	if err != nil {
 		println("CreatePartition rpc failed: " + err.Error())
 	}
 	return *status
 }
 
-func (grpc_client *milvusGrpcClient) ShowPartitions(table_name pb.TableName) pb.PartitionList {
+func (grpcClient *milvusGrpcClient) ShowPartitions(tableName pb.TableName) pb.PartitionList {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	status, err := grpc_client.client.ShowPartitions(ctx, &table_name)
+	status, err := grpcClient.client.ShowPartitions(ctx, &tableName)
 	if err != nil {
 		println("ShowPartition rpc failed: " + err.Error())
 	}
 	return *status
 }
 
-func (grpc_client *milvusGrpcClient) DropPartition(partition_param pb.PartitionParam) pb.Status {
+func (grpcClient *milvusGrpcClient) DropPartition(partitionParam pb.PartitionParam) pb.Status {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	status, err := grpc_client.client.DropPartition(ctx, &partition_param)
+	status, err := grpcClient.client.DropPartition(ctx, &partitionParam)
 	if err != nil {
 		println("DropPartition rpc failed: " + err.Error())
 	}
 	return *status
 }
 
-func (grpc_client *milvusGrpcClient) Insert(insert_param pb.InsertParam) pb.VectorIds {
+func (grpcClient *milvusGrpcClient) Insert(insertParam pb.InsertParam) pb.VectorIds {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	vector_ids, err := grpc_client.client.Insert(ctx, &insert_param)
+	vectorIds, err := grpcClient.client.Insert(ctx, &insertParam)
 	if err != nil {
 		println("Insert rpc failed: " + err.Error())
 	}
-	return *vector_ids
+	return *vectorIds
 }
 
-func (grpc_client *milvusGrpcClient) Search(search_param pb.SearchParam) *pb.TopKQueryResult {
+func (grpcClient *milvusGrpcClient) Search(searchParam pb.SearchParam) *pb.TopKQueryResult {
 	ctx := context.Background()
-	topk_query_result, err := grpc_client.client.Search(ctx, &search_param)
+	topkQueryResult, err := grpcClient.client.Search(ctx, &searchParam)
 	if err != nil {
 		println("Search rpc failed: " + err.Error())
 	}
-	return topk_query_result
+	return topkQueryResult
 }
 
-func (grpc_client *milvusGrpcClient) SearchInFiles(search_in_files_param pb.SearchInFilesParam) *pb.TopKQueryResult {
+func (grpcClient *milvusGrpcClient) SearchInFiles(searchInFilesParam pb.SearchInFilesParam) *pb.TopKQueryResult {
 	ctx := context.Background()
-	topk_query_result, err := grpc_client.client.SearchInFiles(ctx, &search_in_files_param)
+	topkQueryResult, err := grpcClient.client.SearchInFiles(ctx, &searchInFilesParam)
 	if err != nil {
 		println("SearchInFiles rpc failed: " + err.Error())
 	}
-	return topk_query_result
+	return topkQueryResult
 }
 
-func (grpc_client *milvusGrpcClient) Cmd(command pb.Command) pb.StringReply {
+func (grpcClient *milvusGrpcClient) Cmd(command pb.Command) pb.StringReply {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	string_reply, err := grpc_client.client.Cmd(ctx, &command)
+	stringReply, err := grpcClient.client.Cmd(ctx, &command)
 	if err != nil {
 		println("Cmd rpc failed: " + err.Error())
 	}
-	return *string_reply
+	return *stringReply
 }
 
-func (grpc_client *milvusGrpcClient) DeleteByDate(delete_by_date_param pb.DeleteByDateParam) pb.Status {
+func (grpcClient *milvusGrpcClient) DeleteByDate(deleteByDateParam pb.DeleteByDateParam) pb.Status {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	status, err := grpc_client.client.DeleteByDate(ctx, &delete_by_date_param)
+	status, err := grpcClient.client.DeleteByDate(ctx, &deleteByDateParam)
 	if err != nil {
 		println("DeleteByDate rpc failed: " + err.Error())
 	}
 	return *status
 }
 
-func (grpc_client *milvusGrpcClient) PreloadTable(table_name pb.TableName) pb.Status {
+func (grpcClient *milvusGrpcClient) PreloadTable(tableName pb.TableName) pb.Status {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	status, err := grpc_client.client.PreloadTable(ctx, &table_name)
+	status, err := grpcClient.client.PreloadTable(ctx, &tableName)
 	if err != nil {
 		println("PreloadTable rpc failed: " + err.Error())
 	}

@@ -1,21 +1,26 @@
 package main
 
+// ErrorCode error code
 type ErrorCode int32
 
 const (
+	// OK status
 	OK			 ErrorCode = 0
 
-	//system error section
+	// UnKnownError unknow error
 	UnKnownError ErrorCode = 1
+	// NotSupported not supported operation
 	NotSupported ErrorCode = 2
+	// NotConnected not connected
 	NotConnected ErrorCode = 3
 
-	//function error section
+	// RPCFailed rpc failed
 	RPCFailed	 ErrorCode = 4
+	// ServerFailed server failed
 	ServerFailed ErrorCode = 5
 )
 
-
+// Status for SDK interface return
 type Status interface {
 	ok() bool
 	getStatus() status
@@ -27,12 +32,14 @@ type status struct {
 	state		 string
 }
 
+// NewStatus constructor of Status
 func NewStatus(_status status) Status {
 	return &status{_status.ErrorCode, _status.state,}
 }
 
-func NewStatus1(error_code ErrorCode, state string) Status {
-	return &status{int32(error_code), state,}
+// NewStatus1 constructor of Status
+func NewStatus1(errorCode ErrorCode, state string) Status {
+	return &status{int32(errorCode), state,}
 }
 
 func (_status status)ok() bool {
