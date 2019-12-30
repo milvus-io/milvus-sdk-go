@@ -73,7 +73,7 @@ func example(address string, port string) {
 	}
 	println("ShowTables: ")
 	for i = 0; i < int64(len(tables)); i++ {
-		println(tables[i])
+		println(" - " + tables[i])
 	}
 
 	//test insert vectors
@@ -115,7 +115,7 @@ func example(address string, port string) {
 	var topkQueryResult milvus.TopkQueryResult
 	searchParam := milvus.SearchParam{tableName, queryVectors, nil, topk, nprobe, nil}
 	status, topkQueryResult = client.Search(searchParam)
-	for i = 0; i < int64(len(topkQueryResult.QueryResultList)); i++ {
+	for i = 0; i < 10; i++ {
 		print(topkQueryResult.QueryResultList[i].Ids[0])
 		print("        ")
 		println(topkQueryResult.QueryResultList[i].Distances[0])
@@ -158,7 +158,7 @@ func example(address string, port string) {
 	if !status.Ok() {
 		println("Search vectors failed: " + status.GetMessage())
 	}
-	for i = 0; i < int64(len(topkQueryResult.QueryResultList)); i++ {
+	for i = 0; i < 10; i++ {
 		print(topkQueryResult.QueryResultList[i].Ids[0])
 		print("        ")
 		println(topkQueryResult.QueryResultList[i].Distances[0])

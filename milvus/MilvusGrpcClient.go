@@ -2,6 +2,7 @@ package milvus
 
 import (
 	"context"
+	"log"
 	"time"
 
 	pb "github.com/milvus-io/milvus-sdk-go/milvus/grpc/gen"
@@ -60,7 +61,7 @@ func (grpcClient *milvusGrpcClient) CreateTable(tableSchema pb.TableSchema) pb.S
 	defer cancel()
 	reply, err := grpcClient.client.CreateTable(ctx, &tableSchema)
 	if err != nil {
-		println("CreateTable rpc failed: " + err.Error())
+		log.Println("CreateTable rpc failed: " + err.Error())
 	}
 	return *reply
 }
@@ -70,7 +71,7 @@ func (grpcClient *milvusGrpcClient) HasTable(tableName pb.TableName) pb.BoolRepl
 	defer cancel()
 	boolReply, err := grpcClient.client.HasTable(ctx, &tableName)
 	if err != nil {
-
+		log.Println("HasTable rpc failed: " + err.Error())
 	}
 
 	return *boolReply
@@ -81,7 +82,7 @@ func (grpcClient *milvusGrpcClient) DescribeTable(tableName pb.TableName) pb.Tab
 	defer cancel()
 	tableSchema, err := grpcClient.client.DescribeTable(ctx, &tableName)
 	if err != nil {
-		println("DescribeTable rpc failed: " + err.Error())
+		log.Println("DescribeTable rpc failed: " + err.Error())
 	}
 	return *tableSchema
 }
@@ -91,7 +92,7 @@ func (grpcClient *milvusGrpcClient) CountTable(tableName pb.TableName) pb.TableR
 	defer cancel()
 	count, err := grpcClient.client.CountTable(ctx, &tableName)
 	if err != nil {
-		println("CountTable rpc failed: " + err.Error())
+		log.Println("CountTable rpc failed: " + err.Error())
 	}
 	return *count
 }
@@ -102,7 +103,7 @@ func (grpcClient *milvusGrpcClient) ShowTable() pb.TableNameList {
 	defer cancel()
 	tableNameList, err := grpcClient.client.ShowTables(ctx, &cmd)
 	if err != nil {
-		println("ShowTable rpc failed: " + err.Error())
+		log.Println("ShowTable rpc failed: " + err.Error())
 	}
 	return *tableNameList
 }
@@ -112,7 +113,7 @@ func (grpcClient *milvusGrpcClient) DropTable(tableName pb.TableName) pb.Status 
 	defer cancel()
 	status, err := grpcClient.client.DropTable(ctx, &tableName)
 	if err != nil {
-		println("DropTable rpc failed: " + err.Error())
+		log.Println("DropTable rpc failed: " + err.Error())
 	}
 	return *status
 }
@@ -121,7 +122,7 @@ func (grpcClient *milvusGrpcClient) CreateIndex(indexParam pb.IndexParam) pb.Sta
 	ctx := context.Background()
 	status, err := grpcClient.client.CreateIndex(ctx, &indexParam)
 	if err != nil {
-		println("CreateIndex rpc failed: " + err.Error())
+		log.Println("CreateIndex rpc failed: " + err.Error())
 	}
 	return *status
 }
@@ -131,7 +132,7 @@ func (grpcClient *milvusGrpcClient) DescribeIndex(tableName pb.TableName) pb.Ind
 	defer cancel()
 	indexParam, err := grpcClient.client.DescribeIndex(ctx, &tableName)
 	if err != nil {
-		println("DescribeIndex rpc failed: " + err.Error())
+		log.Println("DescribeIndex rpc failed: " + err.Error())
 	}
 	return *indexParam
 }
@@ -141,7 +142,7 @@ func (grpcClient *milvusGrpcClient) DropIndex(tableName pb.TableName) pb.Status 
 	defer cancel()
 	status, err := grpcClient.client.DropIndex(ctx, &tableName)
 	if err != nil {
-		println("DropIndex rpc failed: " + err.Error())
+		log.Println("DropIndex rpc failed: " + err.Error())
 	}
 	return *status
 }
@@ -151,7 +152,7 @@ func (grpcClient *milvusGrpcClient) CreatePartition(partitionParam pb.PartitionP
 	defer cancel()
 	status, err := grpcClient.client.CreatePartition(ctx, &partitionParam)
 	if err != nil {
-		println("CreatePartition rpc failed: " + err.Error())
+		log.Println("CreatePartition rpc failed: " + err.Error())
 	}
 	return *status
 }
@@ -161,7 +162,7 @@ func (grpcClient *milvusGrpcClient) ShowPartitions(tableName pb.TableName) pb.Pa
 	defer cancel()
 	status, err := grpcClient.client.ShowPartitions(ctx, &tableName)
 	if err != nil {
-		println("ShowPartition rpc failed: " + err.Error())
+		log.Println("ShowPartition rpc failed: " + err.Error())
 	}
 	return *status
 }
@@ -171,7 +172,7 @@ func (grpcClient *milvusGrpcClient) DropPartition(partitionParam pb.PartitionPar
 	defer cancel()
 	status, err := grpcClient.client.DropPartition(ctx, &partitionParam)
 	if err != nil {
-		println("DropPartition rpc failed: " + err.Error())
+		log.Println("DropPartition rpc failed: " + err.Error())
 	}
 	return *status
 }
@@ -181,7 +182,7 @@ func (grpcClient *milvusGrpcClient) Insert(insertParam pb.InsertParam) pb.Vector
 	defer cancel()
 	vectorIds, err := grpcClient.client.Insert(ctx, &insertParam)
 	if err != nil {
-		println("Insert rpc failed: " + err.Error())
+		log.Println("Insert rpc failed: " + err.Error())
 	}
 	return *vectorIds
 }
@@ -190,7 +191,7 @@ func (grpcClient *milvusGrpcClient) Search(searchParam pb.SearchParam) *pb.TopKQ
 	ctx := context.Background()
 	topkQueryResult, err := grpcClient.client.Search(ctx, &searchParam)
 	if err != nil {
-		println("Search rpc failed: " + err.Error())
+		log.Println("Search rpc failed: " + err.Error())
 	}
 	return topkQueryResult
 }
@@ -199,7 +200,7 @@ func (grpcClient *milvusGrpcClient) SearchInFiles(searchInFilesParam pb.SearchIn
 	ctx := context.Background()
 	topkQueryResult, err := grpcClient.client.SearchInFiles(ctx, &searchInFilesParam)
 	if err != nil {
-		println("SearchInFiles rpc failed: " + err.Error())
+		log.Println("SearchInFiles rpc failed: " + err.Error())
 	}
 	return topkQueryResult
 }
@@ -209,7 +210,7 @@ func (grpcClient *milvusGrpcClient) Cmd(command pb.Command) pb.StringReply {
 	defer cancel()
 	stringReply, err := grpcClient.client.Cmd(ctx, &command)
 	if err != nil {
-		println("Cmd rpc failed: " + err.Error())
+		log.Println("Cmd rpc failed: " + err.Error())
 	}
 	return *stringReply
 }
@@ -219,7 +220,7 @@ func (grpcClient *milvusGrpcClient) DeleteByDate(deleteByDateParam pb.DeleteByDa
 	defer cancel()
 	status, err := grpcClient.client.DeleteByDate(ctx, &deleteByDateParam)
 	if err != nil {
-		println("DeleteByDate rpc failed: " + err.Error())
+		log.Println("DeleteByDate rpc failed: " + err.Error())
 	}
 	return *status
 }
@@ -229,7 +230,7 @@ func (grpcClient *milvusGrpcClient) PreloadTable(tableName pb.TableName) pb.Stat
 	defer cancel()
 	status, err := grpcClient.client.PreloadTable(ctx, &tableName)
 	if err != nil {
-		println("PreloadTable rpc failed: " + err.Error())
+		log.Println("PreloadTable rpc failed: " + err.Error())
 	}
 	return *status
 }
