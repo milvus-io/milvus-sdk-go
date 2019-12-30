@@ -1,6 +1,6 @@
 # Changelog     
 
-## milvus-sdk-go 0.4.1 (2019-12-30)
+## milvus-sdk-go 0.1.0 (2019-12-30)
 
 ### Bug
 ---

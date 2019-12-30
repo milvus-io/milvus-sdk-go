@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/milvus-io/milvus-sdk-go/milvus"
 	"strconv"
 	"time"
 )
@@ -8,7 +9,7 @@ import (
 var tableName string = "test_go"
 var dimension int64 = 128
 var indexFileSize int64 = 1024
-var metricType int32 = int32(L2)
+var metricType int32 = int32(milvus.L2)
 var nq int64 = 100
 var nprobe int64 = 64
 var nb int64 = 100000
@@ -16,22 +17,22 @@ var topk int64 = 100
 var nlist int32 = 16384
 
 func example(address string, port string) {
-	var grpcClient milvusClient
+	var grpcClient milvus.Milvusclient
 	var i, j int64
-	client := NewMilvusClient(grpcClient.mClient)
+	client := milvus.NewMilvusClient(grpcClient.MClient)
 
 	//Client version
 	println(client.GetClientVersion())
 
 	//test connect
-	connectParam := ConnectParam{address, port,}
+	connectParam := milvus.ConnectParam{address, port}
 	status := client.Connect(connectParam)
-	if !status.ok() {
-		println("client: connect failed: " + status.getMessage())
+	if !status.Ok() {
+		println("client: connect failed: " + status.GetMessage())
 	}
 
 	if client.IsConnected() == false {
-		println("client: not connected: " + status.getMessage())
+		println("client: not connected: " + status.GetMessage())
 		return
 	}
 	println("Server status: connected")
@@ -39,24 +40,26 @@ func example(address string, port string) {
 	//Get server version
 	var version string
 	status, version = client.ServerVersion()
-	if !status.ok() {
-		println("Get server version failed: " + status.getMessage())
+	if !status.Ok() {
+		println("Get server version failed: " + status.GetMessage())
 		return
 	}
 	println("Server version: " + version)
 
 	//test create table
-	tableSchema := TableSchema{tableName, dimension, indexFileSize, metricType,}
-	status = client.CreateTable(tableSchema)
-	if !status.ok() {
-		println("Create table failed: " + status.getMessage())
-		return
+	tableSchema := milvus.TableSchema{tableName, dimension, indexFileSize, metricType}
+	if client.HasTable(tableName) == false {
+		status = client.CreateTable(tableSchema)
+		if !status.Ok() {
+			println("Create table failed: " + status.GetMessage())
+			return
+		}
+		println("Create table " + tableName + " success")
 	}
-	println("Create table " + tableName + " success")
 
 	hasTable := client.HasTable(tableName)
 	if hasTable == false {
-		println("Create table failed: " + status.getMessage())
+		println("Create table failed: " + status.GetMessage())
 		return
 	}
 	println("Table: " + tableName + " exist")
@@ -64,11 +67,11 @@ func example(address string, port string) {
 	//test show tables
 	var tables []string
 	status, tables = client.ShowTables()
-	if !status.ok() {
-		println("Show tables failed: " + status.getMessage())
+	if !status.Ok() {
+		println("Show tables failed: " + status.GetMessage())
 		return
 	}
-	print("ShowTables: ")
+	println("ShowTables: ")
 	for i = 0; i < int64(len(tables)); i++ {
 		println(tables[i])
 	}
@@ -81,10 +84,10 @@ func example(address string, port string) {
 			recordArray[i][j] = float32(i % (j + 1))
 		}
 	}
-	insertParam := InsertParam{tableName, "", recordArray, nil,}
+	insertParam := milvus.InsertParam{tableName, "", recordArray, nil}
 	status = client.Insert(&insertParam)
-	if !status.ok() {
-		println("Insert vector failed: " + status.getMessage())
+	if !status.Ok() {
+		println("Insert vector failed: " + status.GetMessage())
 		return
 	}
 
@@ -92,8 +95,8 @@ func example(address string, port string) {
 
 	//test describe table
 	status, tableSchema = client.DescribeTable(tableName)
-	if !status.ok() {
-		println("Create index failed: " + status.getMessage())
+	if !status.Ok() {
+		println("Create index failed: " + status.GetMessage())
 		return
 	}
 	println("TableName:" + tableSchema.TableName + "----Dimension:" + strconv.Itoa(int(tableSchema.Dimension)) +
@@ -109,8 +112,8 @@ func example(address string, port string) {
 	}
 
 	//Search without create index
-	var topkQueryResult TopkQueryResult
-	searchParam := SearchParam{tableName, queryVectors, nil, topk, nprobe, nil,}
+	var topkQueryResult milvus.TopkQueryResult
+	searchParam := milvus.SearchParam{tableName, queryVectors, nil, topk, nprobe, nil}
 	status, topkQueryResult = client.Search(searchParam)
 	for i = 0; i < int64(len(topkQueryResult.QueryResultList)); i++ {
 		print(topkQueryResult.QueryResultList[i].Ids[0])
@@ -121,39 +124,39 @@ func example(address string, port string) {
 	//test CountTable
 	var tableCount int64
 	status, tableCount = client.CountTable(tableName)
-	if !status.ok() {
-		println("Get table count failed: " + status.getMessage())
+	if !status.Ok() {
+		println("Get table count failed: " + status.GetMessage())
 		return
 	}
 	println("Table count:" + strconv.Itoa(int(tableCount)))
 
 	//Create index
-	indexParam := IndexParam{tableName, IVFSQ8, nlist,}
+	indexParam := milvus.IndexParam{tableName, milvus.IVFSQ8, nlist}
 	status = client.CreateIndex(&indexParam)
-	if !status.ok() {
-		println("Create index failed: " + status.getMessage())
+	if !status.Ok() {
+		println("Create index failed: " + status.GetMessage())
 		return
 	}
 	println("Create index success!")
 
 	//Describe index
 	status, indexParam = client.DescribeIndex(tableName)
-	if !status.ok() {
-		println("Describe index failed: " + status.getMessage())
+	if !status.Ok() {
+		println("Describe index failed: " + status.GetMessage())
 	}
 	println(indexParam.TableName + "----index type:" + strconv.Itoa(int(indexParam.IndexType)))
 
 	//Preload table
 	status = client.PreloadTable(tableName)
-	if !status.ok() {
-		println(status.getMessage())
+	if !status.Ok() {
+		println(status.GetMessage())
 	}
 	println("Preload table success")
 
 	//Search with IVFSQ8 index
 	status, topkQueryResult = client.Search(searchParam)
-	if !status.ok() {
-		println("Search vectors failed: " + status.getMessage())
+	if !status.Ok() {
+		println("Search vectors failed: " + status.GetMessage())
 	}
 	for i = 0; i < int64(len(topkQueryResult.QueryResultList)); i++ {
 		print(topkQueryResult.QueryResultList[i].Ids[0])
@@ -163,29 +166,29 @@ func example(address string, port string) {
 
 	//Drop index
 	status = client.DropIndex(tableName)
-	if !status.ok() {
-		println("Drop index failed: " + status.getMessage())
+	if !status.Ok() {
+		println("Drop index failed: " + status.GetMessage())
 	}
 
 	//Drop table
 	status = client.DropTable(tableName)
 	hasTable = client.HasTable(tableName)
-	if !status.ok() || hasTable == true {
-		println("Drop table failed: " + status.getMessage())
+	if !status.Ok() || hasTable == true {
+		println("Drop table failed: " + status.GetMessage())
 		return
 	}
 
 	//Disconnect
 	status = client.Disconnect()
-	if !status.ok() {
-		println("Disconnect failed: " + status.getMessage())
+	if !status.Ok() {
+		println("Disconnect failed: " + status.GetMessage())
 	}
 
 	//Server status
 	var serverStatus string
 	status, serverStatus = client.ServerStatus()
-	if !status.ok() {
-		println("Get server status failed: " + status.getMessage())
+	if !status.Ok() {
+		println("Get server status failed: " + status.GetMessage())
 	}
 	println("Server status: " + serverStatus)
 

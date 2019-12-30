@@ -1,43 +1,43 @@
-package main
+package milvus
 
-import (
-)
+import ()
 
 var clientVersion string = "0.1.0"
 
 // MetricType metric type
 type MetricType int32
+
 // IndexType index type
-type IndexType 	int32
+type IndexType int32
 
 const (
 	// L2 euclidean distance
-	L2 		 MetricType = 1
+	L2 MetricType = 1
 	// IP inner product
-	IP 		 MetricType = 2
+	IP MetricType = 2
 	// HAMMING hamming distance
-	HAMMING  MetricType = 3
+	HAMMING MetricType = 3
 	// JACCARD jaccard distance
-	JACCARD  MetricType = 4
+	JACCARD MetricType = 4
 	// TANIMOTO tanimoto distance
 	TANIMOTO MetricType = 5
 )
 
 const (
 	// INVALID invald index type
-	INVALID  IndexType = 0
+	INVALID IndexType = 0
 	// FLAT flat
-	FLAT	 IndexType = 1
+	FLAT IndexType = 1
 	// IVFFLAT ivfflat
-	IVFFLAT  IndexType = 2
+	IVFFLAT IndexType = 2
 	// IVFSQ8 ivfsq8
-	IVFSQ8   IndexType = 3
+	IVFSQ8 IndexType = 3
 	//RNSG rnsg
-	RNSG	 IndexType = 4
+	RNSG IndexType = 4
 	// IVFSQ8H ivfsq8h
-	IVFSQ8H	 IndexType = 5
+	IVFSQ8H IndexType = 5
 	// IVFPQ ivfpq
-	IVFPQ	 IndexType = 6
+	IVFPQ IndexType = 6
 	// SPTAGKDT sptagkdt
 	SPTAGKDT IndexType = 7
 	// SPTAGBKT sptagbkt
@@ -49,19 +49,19 @@ type ConnectParam struct {
 	// IPAddress Server IP address
 	IPAddress string
 	// Port Server port
-	Port 	  string
+	Port string
 }
 
 //TableSchema informations of a table
 type TableSchema struct {
 	// TableName table name
-	TableName 	  string
+	TableName string
 	// Dimension Vector dimension, must be a positive value
-	Dimension 	  int64
+	Dimension int64
 	// IndexFileSize Index file size, must be a positive value
 	IndexFileSize int64
 	// MetricType Index metric type
-	MetricType 	  int32
+	MetricType int32
 }
 
 // IndexParam index parameters
@@ -71,19 +71,19 @@ type IndexParam struct {
 	// IndexType create index type
 	IndexType IndexType
 	// Nlist index nlist
-	Nlist	  int32
+	Nlist int32
 }
 
 // InsertParam insert parameters
 type InsertParam struct {
 	// TableName table name
-	TableName 	 string
+	TableName string
 	// PartitionTag partition tag
 	PartitionTag string
 	// RecordArray raw vectors array
-	RecordArray  [][]float32
+	RecordArray [][]float32
 	// IDArray id array
-	IDArray		 []int64
+	IDArray []int64
 }
 
 // Range range information, for DATE range, the format is like: 'year-month-day'
@@ -91,21 +91,21 @@ type Range struct {
 	// StartValue Range start
 	StartValue string
 	// EndValue Range stop
-	EndValue   string
+	EndValue string
 }
 
 // SearchParam search parameters
 type SearchParam struct {
 	// TableName table name for search
-	TableName 	 string
+	TableName string
 	// QueryVectors query vectors raw array
 	QueryVectors [][]float32
 	// DateRange date range array
-	DateRanges   [][]Range
+	DateRanges [][]Range
 	// Topk topk
-	Topk		 int64
+	Topk int64
 	// Nprobe nprobe
-	Nprobe		 int64
+	Nprobe int64
 	// PartitionTag partition tag array
 	PartitionTag []string
 }
@@ -113,7 +113,7 @@ type SearchParam struct {
 //QueryResult Query result
 type QueryResult struct {
 	// Ids id array
-	Ids 	  []int64
+	Ids []int64
 	// Distances distance array
 	Distances []float32
 }
@@ -127,11 +127,11 @@ type TopkQueryResult struct {
 // PartitionParam partition parameters
 type PartitionParam struct {
 	// TableName partition table name
-	TableName 	  string
+	TableName string
 	// PartitionName partition name
 	PartitionName string
 	// PartitionTag partition tag
-	PartitionTag  string
+	PartitionTag string
 }
 
 // MilvusClient SDK main interface

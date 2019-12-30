@@ -1,10 +1,10 @@
-package main
+package milvus
 
 import (
 	"context"
 	"time"
 
-	pb "milvus/src/grpc/gen"
+	pb "github.com/milvus-io/milvus-sdk-go/milvus/grpc/gen"
 )
 
 // MilvusGrpcClient call grpc generated code interface
@@ -97,7 +97,7 @@ func (grpcClient *milvusGrpcClient) CountTable(tableName pb.TableName) pb.TableR
 }
 
 func (grpcClient *milvusGrpcClient) ShowTable() pb.TableNameList {
-	cmd := pb.Command{"", struct{}{}, nil, 0,}
+	cmd := pb.Command{"", struct{}{}, nil, 0}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	tableNameList, err := grpcClient.client.ShowTables(ctx, &cmd)
