@@ -12,7 +12,6 @@ import (
 var (
 	tls                = flag.Bool("tls", false, "Connection uses TLS if true, else plain TCP")
 	caFile             = flag.String("ca_file", "", "The file containing the CA root cert file")
-	serverAddr         = flag.String("server_addr", "localhost:19530", "The server address in the format of host:port")
 	serverHostOverride = flag.String("server_host_override", "x.test.youtube.com", "The server name use to verify the hostname returned by TLS handshake")
 )
 
@@ -28,7 +27,7 @@ func (client *milvusClient) GetClientVersion() string {
 	return clientVersion
 }
 
-func (client *milvusClient) Connect(connect_param ConnectParam) Status {
+func (client *milvusClient) Connect(connectParam ConnectParam) Status {
 	var opts []grpc.DialOption
 	if *tls {
 		if *caFile == "" {
@@ -44,17 +43,20 @@ func (client *milvusClient) Connect(connect_param ConnectParam) Status {
 	}
 
 	opts = append(opts, grpc.WithBlock())
-	conn, err := grpc.Dial(*serverAddr, opts...)
+
+	serverAddr := connectParam.IpAddress + ":" + connectParam.Port
+
+	conn, err := grpc.Dial(serverAddr, opts...)
 	if err != nil {
 		log.Fatalf("fail to dial: %v", err)
 	}
-	defer conn.Close()
+	//defer conn.Close()
 
-	milvus_client := pb.NewMilvusServiceClient(conn)
+	milvusclient := pb.NewMilvusServiceClient(conn)
 
-	milvus_grpc_client := NewMilvusGrpcClient(milvus_client)
+	milvusGrpcClient := NewMilvusGrpcClient(milvusclient)
 
-	client.mClient = milvus_grpc_client
+	client.mClient = milvusGrpcClient
 
 	return status{0, "",}
 }
@@ -80,8 +82,8 @@ func (client *milvusClient) HasTable(tableName string) bool {
 	return client.mClient.HasTable(grpcTableName).BoolReply
 }
 
-func (client *milvusClient) DropTable(table_name string) Status {
-	grpcTableName := pb.TableName{table_name, struct{}{}, nil, 0,}
+func (client *milvusClient) DropTable(tableName string) Status {
+	grpcTableName := pb.TableName{tableName, struct{}{}, nil, 0,}
 	grpcStatus := client.mClient.DropTable(grpcTableName)
 	errorCode := int32(grpcStatus.ErrorCode)
 	return status{errorCode, grpcStatus.Reason,}
@@ -99,7 +101,7 @@ func (client *milvusClient) CreateIndex(indexParam *IndexParam) Status {
 func (client *milvusClient) Insert(insertParam *InsertParam) Status {
 	var i int
 	var rowRecordArray = make([]*pb.RowRecord, len(insertParam.RecordArray))
-	for i = 0; i< len(insertParam.RecordArray); i++  {
+	for i = 0; i < len(insertParam.RecordArray); i++ {
 		rowRecord := pb.RowRecord{insertParam.RecordArray[i], struct{}{}, nil, 0,}
 		rowRecordArray[i] = &rowRecord
 	}
@@ -127,8 +129,8 @@ func (client *milvusClient) Search(searchParam SearchParam) (Status, TopkQueryRe
 		result[i].Ids = make([]int64, topk)
 		result[i].Distances = make([]float32, topk)
 		for j = 0; j < topk; j++ {
-			result[i].Ids[j] = topkQueryResult.GetIds()[i * nq + j]
-			result[i].Distances[j] = topkQueryResult.GetDistances()[i * nq + j]
+			result[i].Ids[j] = topkQueryResult.GetIds()[i*nq+j]
+			result[i].Distances[j] = topkQueryResult.GetDistances()[i*nq+j]
 		}
 	}
 	return status{int32(topkQueryResult.Status.ErrorCode), topkQueryResult.Status.Reason}, TopkQueryResult{result,}
@@ -159,6 +161,9 @@ func (client *milvusClient) ServerVersion() (Status, string) {
 }
 
 func (client *milvusClient) ServerStatus() (Status, string) {
+	if client.mClient == nil {
+		return status{int32(0), ""}, "not connect to server"
+	}
 	command := pb.Command{"", struct{}{}, nil, 0,}
 	serverStatus := client.mClient.Cmd(command)
 	return status{int32(serverStatus.GetStatus().GetErrorCode()), serverStatus.GetStatus().GetReason()}, serverStatus.GetStringReply()
@@ -174,7 +179,7 @@ func (client *milvusClient) DescribeIndex(tableName string) (Status, IndexParam)
 	grpcTableName := pb.TableName{tableName, struct{}{}, nil, 0,}
 	indexParam := client.mClient.DescribeIndex(grpcTableName)
 	return status{int32(indexParam.GetStatus().GetErrorCode()), indexParam.GetStatus().GetReason()},
-	IndexParam{indexParam.GetTableName(), IndexType(indexParam.GetIndex().GetIndexType()), indexParam.GetIndex().GetNlist()}
+		IndexParam{indexParam.GetTableName(), IndexType(indexParam.GetIndex().GetIndexType()), indexParam.GetIndex().GetNlist()}
 }
 
 func (client *milvusClient) DropIndex(tableName string) Status {
