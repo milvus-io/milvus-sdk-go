@@ -132,6 +132,7 @@ func example(address string, port string) {
 	println("Table count:" + strconv.Itoa(int(tableCount)))
 
 	//Create index
+	println("Start create index...")
 	indexParam := milvus.IndexParam{tableName, milvus.IVFSQ8, nlist}
 	status = client.CreateIndex(&indexParam)
 	if !status.Ok() {
@@ -179,6 +180,16 @@ func example(address string, port string) {
 		println("Drop table failed: " + status.GetMessage())
 		return
 	}
+	println("Drop table " + tableName + "success!")
+
+	//GetConfig
+	var configInfo string
+	status, configInfo = client.GetConfig("*")
+	if !status.Ok() {
+		println("Get config failed: " + status.GetMessage())
+	}
+	println("config: ")
+	println(configInfo)
 
 	//Disconnect
 	status = client.Disconnect()

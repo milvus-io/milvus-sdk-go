@@ -200,3 +200,15 @@ func (client *Milvusclient) DropPartition(partitionParam PartitionParam) Status 
 	grpcStatus := client.MClient.DropPartition(grpcPartitionParam)
 	return status{int64(grpcStatus.GetErrorCode()), grpcStatus.Reason}
 }
+
+func (client *Milvusclient) GetConfig(nodeName string) (Status, string) {
+	command := pb.Command{"get_config " + nodeName, struct{}{}, nil, 0}
+	configInfo := client.MClient.Cmd(command)
+	return status{int64(configInfo.GetStatus().GetErrorCode()), configInfo.GetStatus().GetReason()}, configInfo.GetStringReply()
+}
+
+func (client *Milvusclient) SetConfig(nodeName string, value string) Status {
+	command := pb.Command{"set_config " + nodeName + " " + value, struct{}{}, nil, 0}
+	reply := client.MClient.Cmd(command)
+	return status{int64(reply.GetStatus().GetErrorCode()), reply.GetStatus().GetReason()}
+}

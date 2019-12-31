@@ -242,4 +242,14 @@ type MilvusClient interface {
 	// This method is used to delete table partition.
 	// return indicate if partition is delete successfully.
 	DropPartition(partitionParam PartitionParam) Status
+
+	// GetConfig
+	// This method is used to get config
+	// return indicate if this operation is successful.
+	GetConfig(nodeName string) (Status, string)
+
+	// SetConfig
+	// This method is used to set config
+	// return indicate if this operation is successful.
+	SetConfig(nodeName string, value string) Status
 }

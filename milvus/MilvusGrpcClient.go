@@ -8,6 +8,8 @@ import (
 	pb "github.com/milvus-io/milvus-sdk-go/milvus/grpc/gen"
 )
 
+var timeout time.Duration = 10 * time.Second
+
 // MilvusGrpcClient call grpc generated code interface
 type MilvusGrpcClient interface {
 	CreateTable(tableSchema pb.TableSchema) pb.Status
@@ -57,7 +59,7 @@ func NewMilvusGrpcClient(client pb.MilvusServiceClient) MilvusGrpcClient {
 }
 
 func (grpcClient *milvusGrpcClient) CreateTable(tableSchema pb.TableSchema) pb.Status {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	reply, err := grpcClient.client.CreateTable(ctx, &tableSchema)
 	if err != nil {
@@ -67,7 +69,7 @@ func (grpcClient *milvusGrpcClient) CreateTable(tableSchema pb.TableSchema) pb.S
 }
 
 func (grpcClient *milvusGrpcClient) HasTable(tableName pb.TableName) pb.BoolReply {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	boolReply, err := grpcClient.client.HasTable(ctx, &tableName)
 	if err != nil {
@@ -78,7 +80,7 @@ func (grpcClient *milvusGrpcClient) HasTable(tableName pb.TableName) pb.BoolRepl
 }
 
 func (grpcClient *milvusGrpcClient) DescribeTable(tableName pb.TableName) pb.TableSchema {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	tableSchema, err := grpcClient.client.DescribeTable(ctx, &tableName)
 	if err != nil {
@@ -88,7 +90,7 @@ func (grpcClient *milvusGrpcClient) DescribeTable(tableName pb.TableName) pb.Tab
 }
 
 func (grpcClient *milvusGrpcClient) CountTable(tableName pb.TableName) pb.TableRowCount {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	count, err := grpcClient.client.CountTable(ctx, &tableName)
 	if err != nil {
@@ -99,7 +101,7 @@ func (grpcClient *milvusGrpcClient) CountTable(tableName pb.TableName) pb.TableR
 
 func (grpcClient *milvusGrpcClient) ShowTable() pb.TableNameList {
 	cmd := pb.Command{"", struct{}{}, nil, 0}
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	tableNameList, err := grpcClient.client.ShowTables(ctx, &cmd)
 	if err != nil {
@@ -109,7 +111,7 @@ func (grpcClient *milvusGrpcClient) ShowTable() pb.TableNameList {
 }
 
 func (grpcClient *milvusGrpcClient) DropTable(tableName pb.TableName) pb.Status {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	status, err := grpcClient.client.DropTable(ctx, &tableName)
 	if err != nil {
@@ -128,7 +130,7 @@ func (grpcClient *milvusGrpcClient) CreateIndex(indexParam pb.IndexParam) pb.Sta
 }
 
 func (grpcClient *milvusGrpcClient) DescribeIndex(tableName pb.TableName) pb.IndexParam {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	indexParam, err := grpcClient.client.DescribeIndex(ctx, &tableName)
 	if err != nil {
@@ -138,7 +140,7 @@ func (grpcClient *milvusGrpcClient) DescribeIndex(tableName pb.TableName) pb.Ind
 }
 
 func (grpcClient *milvusGrpcClient) DropIndex(tableName pb.TableName) pb.Status {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	status, err := grpcClient.client.DropIndex(ctx, &tableName)
 	if err != nil {
@@ -148,7 +150,7 @@ func (grpcClient *milvusGrpcClient) DropIndex(tableName pb.TableName) pb.Status 
 }
 
 func (grpcClient *milvusGrpcClient) CreatePartition(partitionParam pb.PartitionParam) pb.Status {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	status, err := grpcClient.client.CreatePartition(ctx, &partitionParam)
 	if err != nil {
@@ -158,7 +160,7 @@ func (grpcClient *milvusGrpcClient) CreatePartition(partitionParam pb.PartitionP
 }
 
 func (grpcClient *milvusGrpcClient) ShowPartitions(tableName pb.TableName) pb.PartitionList {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	status, err := grpcClient.client.ShowPartitions(ctx, &tableName)
 	if err != nil {
@@ -168,7 +170,7 @@ func (grpcClient *milvusGrpcClient) ShowPartitions(tableName pb.TableName) pb.Pa
 }
 
 func (grpcClient *milvusGrpcClient) DropPartition(partitionParam pb.PartitionParam) pb.Status {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	status, err := grpcClient.client.DropPartition(ctx, &partitionParam)
 	if err != nil {
@@ -178,8 +180,7 @@ func (grpcClient *milvusGrpcClient) DropPartition(partitionParam pb.PartitionPar
 }
 
 func (grpcClient *milvusGrpcClient) Insert(insertParam pb.InsertParam) pb.VectorIds {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx := context.Background()
 	vectorIds, err := grpcClient.client.Insert(ctx, &insertParam)
 	if err != nil {
 		log.Println("Insert rpc failed: " + err.Error())
@@ -206,7 +207,7 @@ func (grpcClient *milvusGrpcClient) SearchInFiles(searchInFilesParam pb.SearchIn
 }
 
 func (grpcClient *milvusGrpcClient) Cmd(command pb.Command) pb.StringReply {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	stringReply, err := grpcClient.client.Cmd(ctx, &command)
 	if err != nil {
@@ -216,7 +217,7 @@ func (grpcClient *milvusGrpcClient) Cmd(command pb.Command) pb.StringReply {
 }
 
 func (grpcClient *milvusGrpcClient) DeleteByDate(deleteByDateParam pb.DeleteByDateParam) pb.Status {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	status, err := grpcClient.client.DeleteByDate(ctx, &deleteByDateParam)
 	if err != nil {
@@ -226,7 +227,7 @@ func (grpcClient *milvusGrpcClient) DeleteByDate(deleteByDateParam pb.DeleteByDa
 }
 
 func (grpcClient *milvusGrpcClient) PreloadTable(tableName pb.TableName) pb.Status {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	status, err := grpcClient.client.PreloadTable(ctx, &tableName)
 	if err != nil {

@@ -1,5 +1,6 @@
 ## milvus-sdk-go
-Go SDK for Milvus distributed high-performance vector search engine We welcome all kinds of contributions for milvus-sdk-go.
+Go SDK for Milvus distributed high-performance vector search engine
+ We welcome all kinds of contributions for milvus-sdk-go.
 
 ### Getting started
 You will need go 1.12
@@ -19,4 +20,4 @@ cd [milvus-sdk-go root path]/examples
 go run MilvusClientExample.go
 ```
 ### Additional information
-- The go source code is formatted using go fmt and go fmt
+- The go source code is formatted using go fmt and golint
