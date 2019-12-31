@@ -1,7 +1,7 @@
 package milvus
 
 // ErrorCode error code
-type ErrorCode int32
+type ErrorCode int64
 
 const (
 	// OK status
@@ -28,7 +28,7 @@ type Status interface {
 }
 
 type status struct {
-	ErrorCode int32
+	ErrorCode int64
 	state     string
 }
 
@@ -39,11 +39,11 @@ func NewStatus(_status status) Status {
 
 // NewStatus1 constructor of Status
 func NewStatus1(errorCode ErrorCode, state string) Status {
-	return &status{int32(errorCode), state}
+	return &status{int64(errorCode), state}
 }
 
 func (_status status) Ok() bool {
-	return _status.ErrorCode == int32(OK)
+	return _status.ErrorCode == int64(OK)
 }
 
 func (_status status) GetStatus() status {

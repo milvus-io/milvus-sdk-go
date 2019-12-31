@@ -9,12 +9,12 @@ import (
 var tableName string = "test_go"
 var dimension int64 = 128
 var indexFileSize int64 = 1024
-var metricType int32 = int32(milvus.L2)
+var metricType int64 = int64(milvus.L2)
 var nq int64 = 100
 var nprobe int64 = 64
 var nb int64 = 100000
 var topk int64 = 100
-var nlist int32 = 16384
+var nlist int64 = 16384
 
 func example(address string, port string) {
 	var grpcClient milvus.Milvusclient
@@ -22,7 +22,7 @@ func example(address string, port string) {
 	client := milvus.NewMilvusClient(grpcClient.MClient)
 
 	//Client version
-	println(client.GetClientVersion())
+	println("Client version: " + client.GetClientVersion())
 
 	//test connect
 	connectParam := milvus.ConnectParam{address, port}
@@ -115,6 +115,7 @@ func example(address string, port string) {
 	var topkQueryResult milvus.TopkQueryResult
 	searchParam := milvus.SearchParam{tableName, queryVectors, nil, topk, nprobe, nil}
 	status, topkQueryResult = client.Search(searchParam)
+	println("Search without index results: ")
 	for i = 0; i < 10; i++ {
 		print(topkQueryResult.QueryResultList[i].Ids[0])
 		print("        ")
@@ -158,6 +159,7 @@ func example(address string, port string) {
 	if !status.Ok() {
 		println("Search vectors failed: " + status.GetMessage())
 	}
+	println("Search with index results: ")
 	for i = 0; i < 10; i++ {
 		print(topkQueryResult.QueryResultList[i].Ids[0])
 		print("        ")
@@ -183,6 +185,7 @@ func example(address string, port string) {
 	if !status.Ok() {
 		println("Disconnect failed: " + status.GetMessage())
 	}
+	println("Client disconnect server success!")
 
 	//Server status
 	var serverStatus string

@@ -5,10 +5,10 @@ import ()
 var clientVersion string = "0.1.0"
 
 // MetricType metric type
-type MetricType int32
+type MetricType int64
 
 // IndexType index type
-type IndexType int32
+type IndexType int64
 
 const (
 	// L2 euclidean distance
@@ -61,7 +61,7 @@ type TableSchema struct {
 	// IndexFileSize Index file size, must be a positive value
 	IndexFileSize int64
 	// MetricType Index metric type
-	MetricType int32
+	MetricType int64
 }
 
 // IndexParam index parameters
@@ -71,7 +71,7 @@ type IndexParam struct {
 	// IndexType create index type
 	IndexType IndexType
 	// Nlist index nlist
-	Nlist int32
+	Nlist int64
 }
 
 // InsertParam insert parameters
