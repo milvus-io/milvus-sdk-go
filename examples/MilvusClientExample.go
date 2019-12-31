@@ -19,7 +19,7 @@ var nlist int64 = 16384
 func example(address string, port string) {
 	var grpcClient milvus.Milvusclient
 	var i, j int64
-	client := milvus.NewMilvusClient(grpcClient.MClient)
+	client := milvus.NewMilvusClient(grpcClient.Instance)
 
 	//Client version
 	println("Client version: " + client.GetClientVersion())
@@ -48,7 +48,9 @@ func example(address string, port string) {
 
 	//test create table
 	tableSchema := milvus.TableSchema{tableName, dimension, indexFileSize, metricType}
-	if client.HasTable(tableName) == false {
+	var hasTable bool
+	status, hasTable = client.HasTable(tableName)
+	if hasTable == false {
 		status = client.CreateTable(tableSchema)
 		if !status.Ok() {
 			println("Create table failed: " + status.GetMessage())
@@ -57,7 +59,7 @@ func example(address string, port string) {
 		println("Create table " + tableName + " success")
 	}
 
-	hasTable := client.HasTable(tableName)
+	status, hasTable = client.HasTable(tableName)
 	if hasTable == false {
 		println("Create table failed: " + status.GetMessage())
 		return
@@ -175,8 +177,8 @@ func example(address string, port string) {
 
 	//Drop table
 	status = client.DropTable(tableName)
-	hasTable = client.HasTable(tableName)
-	if !status.Ok() || hasTable == true {
+	status1, hasTable := client.HasTable(tableName)
+	if !status.Ok() || !status1.Ok() || hasTable == true {
 		println("Drop table failed: " + status.GetMessage())
 		return
 	}

@@ -166,7 +166,7 @@ type MilvusClient interface {
 	// HasTable method
 	// This method is used to create table.
 	//return indicate if table is cexist
-	HasTable(tableName string) bool
+	HasTable(tableName string) (Status, bool)
 
 	// DropTable method
 	// This method is used to drop table(and its partitions).
