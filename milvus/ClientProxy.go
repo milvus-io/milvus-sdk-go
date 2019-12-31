@@ -1,9 +1,11 @@
 package milvus
 
 import (
+	"context"
 	pb "github.com/milvus-io/milvus-sdk-go/milvus/grpc/gen"
 	"google.golang.org/grpc"
 	"log"
+	"time"
 )
 
 type Milvusclient struct {
@@ -26,7 +28,9 @@ func (client *Milvusclient) Connect(connectParam ConnectParam) Status {
 
 	serverAddr := connectParam.IPAddress + ":" + connectParam.Port
 
-	conn, err := grpc.Dial(serverAddr, opts...)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	conn, err := grpc.DialContext(ctx, serverAddr, opts...)
 	if err != nil {
 		log.Fatalf("fail to dial: %v", err)
 	}
