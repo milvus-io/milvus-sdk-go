@@ -9,7 +9,7 @@ You will need go 1.12
 #### Install
 Use go get to install the latest version of the library. This command will install the milvus-go-sdk library and its dependencies:
 ```shell
-go get -u github.com/milvus-io/milvus-sdk-go
+go get -u github.com/milvus-io/milvus-sdk-go/milvus
 ```
 Next, include milvus-sdk-go in your application:
 ```shell
