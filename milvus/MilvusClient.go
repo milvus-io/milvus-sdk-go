@@ -61,6 +61,8 @@ const (
 	SPTAGKDT IndexType = 7
 	// SPTAGBKT sptagbkt
 	SPTAGBKT IndexType = 8
+	// HNSW hnsw
+	HNSW IndexType = 9
 )
 
 // ConnectParam Parameters for connect
