@@ -22,7 +22,7 @@ Go 1.12 or higher
    import "github.com/milvus-io/milvus-sdk-go/milvus"
    ```
 
-### Try an example
+#### Try an example
 
 ```shell
 cd [milvus-sdk-go root path]/examples
