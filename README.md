@@ -6,7 +6,7 @@
 
 Go 1.12 or higher
 
-#### Install Go SDK
+#### Install Milvus Go SDK
 
 1. Use `go get` to install the latest version of the Milvus Go SDK and dependencies:
 
