@@ -1,5 +1,7 @@
 ## Milvus Go SDK
 
+Go SDK for [Milvus](https://github.com/milvus-io/milvus). To contribute code to this project, please read our [contribution guidelines](https://github.com/milvus-io/milvus/blob/master/CONTRIBUTING.md) first.
+
 ### Getting started
 
 #### Prerequisites
