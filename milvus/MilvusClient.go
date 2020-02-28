@@ -95,6 +95,12 @@ type IndexParam struct {
 	Nlist int64
 }
 
+// RowRecord record typy
+type RowRecord struct {
+	FloatData  []float32
+	BinaryData []byte
+}
+
 // InsertParam insert parameters
 type InsertParam struct {
 	// TableName table name
@@ -102,7 +108,7 @@ type InsertParam struct {
 	// PartitionTag partition tag
 	PartitionTag string
 	// RecordArray raw vectors array
-	RecordArray [][]float32
+	RecordArray []RowRecord
 	// IDArray id array
 	IDArray []int64
 }
@@ -120,9 +126,21 @@ type SearchParam struct {
 	// TableName table name for search
 	TableName string
 	// QueryVectors query vectors raw array
-	QueryVectors [][]float32
-	// DateRange date range array
-	DateRanges [][]Range
+	QueryVectors []RowRecord
+	// Topk topk
+	Topk int64
+	// Nprobe nprobe
+	Nprobe int64
+	// PartitionTag partition tag array
+	PartitionTag []string
+}
+
+// SearchByIDParamParam search parameters
+type SearchByIDParam struct {
+	// TableName table name for search
+	TableName string
+	// Id vector id
+	Id int64
 	// Topk topk
 	Topk int64
 	// Nprobe nprobe
@@ -149,10 +167,13 @@ type TopkQueryResult struct {
 type PartitionParam struct {
 	// TableName partition table name
 	TableName string
-	// PartitionName partition name
-	PartitionName string
 	// PartitionTag partition tag
 	PartitionTag string
+}
+
+type GetVectorIDsParam struct {
+	TableName   string
+	SegmentName string
 }
 
 // MilvusClient SDK main interface
@@ -204,10 +225,30 @@ type MilvusClient interface {
 	// return indicate if insert is successful.
 	Insert(insertParam *InsertParam) Status
 
+	// GetVectorByID method
+	// This method is used to get vector by vector id
+	// return vector data
+	GetVectorByID(tableName string, vector_id int64) (RowRecord, Status)
+
+	// GetVectorIDs method
+	// This method is used to get vector ids
+	// return vector ids
+	GetVectorIDs(getVectorIDsParam GetVectorIDsParam) (Status, []int64)
+
 	// Search method
 	// This method is used to query vector in table.
 	// return indicate if query is successful.
 	Search(searchParam SearchParam) (Status, TopkQueryResult)
+
+	// SearchByID method
+	// This method is used to search by id
+	// return vector data
+	SearchByID(searchByIDParam SearchByIDParam) (Status, TopkQueryResult)
+
+	// DeleteByID method
+	// This method is used to delete vectors by ids
+	// return indicate if delete is successful
+	DeleteByID(tableName string, id_array []int64) Status
 
 	// DescribeTable method
 	// This method is used to show table information.
@@ -273,4 +314,14 @@ type MilvusClient interface {
 	// This method is used to set config
 	// return indicate if this operation is successful.
 	SetConfig(nodeName string, value string) Status
+
+	// Flush method
+	// This method is used to flush tables
+	// return indicate if flush is successful
+	Flush(tableNaeArray []string) Status
+
+	// Compact method
+	// This method is used to compact table
+	// return indicate if compact is successful
+	Compact(tableName string) Status
 }

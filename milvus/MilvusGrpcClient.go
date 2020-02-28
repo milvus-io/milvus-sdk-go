@@ -57,15 +57,25 @@ type MilvusGrpcClient interface {
 
 	Insert(insertParam pb.InsertParam) (pb.VectorIds, error)
 
+	GetVectorByID(identity pb.VectorIdentity) (pb.VectorData, error)
+
+	GetVectorIDs(param pb.GetVectorIDsParam) (pb.VectorIds, error)
+
 	Search(searchParam pb.SearchParam) (*pb.TopKQueryResult, error)
+
+	SearchByID(param pb.SearchByIDParam) (*pb.TopKQueryResult, error)
 
 	SearchInFiles(searchInFilesParam pb.SearchInFilesParam) (*pb.TopKQueryResult, error)
 
 	Cmd(command pb.Command) (pb.StringReply, error)
 
-	DeleteByDate(deleteByDateParam pb.DeleteByDateParam) (pb.Status, error)
+	DeleteByID(param pb.DeleteByIDParam) (pb.Status, error)
 
 	PreloadTable(tableName pb.TableName) (pb.Status, error)
+
+	Flush(param pb.FlushParam) (pb.Status, error)
+
+	Compact(name pb.TableName) (pb.Status, error)
 }
 
 type milvusGrpcClient struct {
@@ -207,11 +217,38 @@ func (grpcClient *milvusGrpcClient) Insert(insertParam pb.InsertParam) (pb.Vecto
 	return *vectorIds, err
 }
 
+func (grpcClient *milvusGrpcClient) GetVectorByID(identity pb.VectorIdentity) (pb.VectorData, error) {
+	ctx := context.Background()
+	status, err := grpcClient.serviceInstance.GetVectorByID(ctx, &identity)
+	if err != nil {
+		log.Println("GetVectorByID rpc failed: " + err.Error())
+	}
+	return *status, err
+}
+
+func (grpcClient *milvusGrpcClient) GetVectorIDs(param pb.GetVectorIDsParam) (pb.VectorIds, error) {
+	ctx := context.Background()
+	status, err := grpcClient.serviceInstance.GetVectorIDs(ctx, &param)
+	if err != nil {
+		log.Println("GetVectorIDs rpc failed: " + err.Error())
+	}
+	return *status, err
+}
+
 func (grpcClient *milvusGrpcClient) Search(searchParam pb.SearchParam) (*pb.TopKQueryResult, error) {
 	ctx := context.Background()
 	topkQueryResult, err := grpcClient.serviceInstance.Search(ctx, &searchParam)
 	if err != nil {
 		log.Println("Search rpc failed: " + err.Error())
+	}
+	return topkQueryResult, err
+}
+
+func (grpcClient *milvusGrpcClient) SearchByID(param pb.SearchByIDParam) (*pb.TopKQueryResult, error) {
+	ctx := context.Background()
+	topkQueryResult, err := grpcClient.serviceInstance.SearchByID(ctx, &param)
+	if err != nil {
+		log.Println("SearchByID rpc failed: " + err.Error())
 	}
 	return topkQueryResult, err
 }
@@ -235,12 +272,12 @@ func (grpcClient *milvusGrpcClient) Cmd(command pb.Command) (pb.StringReply, err
 	return *stringReply, err
 }
 
-func (grpcClient *milvusGrpcClient) DeleteByDate(deleteByDateParam pb.DeleteByDateParam) (pb.Status, error) {
+func (grpcClient *milvusGrpcClient) DeleteByID(param pb.DeleteByIDParam) (pb.Status, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	status, err := grpcClient.serviceInstance.DeleteByDate(ctx, &deleteByDateParam)
+	status, err := grpcClient.serviceInstance.DeleteByID(ctx, &param)
 	if err != nil {
-		log.Println("DeleteByDate rpc failed: " + err.Error())
+		log.Println("DeleteByID rpc failed: " + err.Error())
 	}
 	return *status, err
 }
@@ -251,6 +288,26 @@ func (grpcClient *milvusGrpcClient) PreloadTable(tableName pb.TableName) (pb.Sta
 	status, err := grpcClient.serviceInstance.PreloadTable(ctx, &tableName)
 	if err != nil {
 		log.Println("PreloadTable rpc failed: " + err.Error())
+	}
+	return *status, err
+}
+
+func (grpcClient *milvusGrpcClient) Flush(param pb.FlushParam) (pb.Status, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	status, err := grpcClient.serviceInstance.Flush(ctx, &param)
+	if err != nil {
+		log.Println("Flush rpc failed: " + err.Error())
+	}
+	return *status, err
+}
+
+func (grpcClient *milvusGrpcClient) Compact(tableName pb.TableName) (pb.Status, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	status, err := grpcClient.serviceInstance.Compact(ctx, &tableName)
+	if err != nil {
+		log.Println("Compact rpc failed: " + err.Error())
 	}
 	return *status, err
 }
