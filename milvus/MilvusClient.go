@@ -74,6 +74,12 @@ type ConnectParam struct {
 	Port string
 }
 
+// KeyValuePair
+type KeyValuePair struct {
+	Key   string
+	Value string
+}
+
 //TableSchema informations of a table
 type TableSchema struct {
 	// TableName table name
@@ -84,6 +90,8 @@ type TableSchema struct {
 	IndexFileSize int64
 	// MetricType Index metric type
 	MetricType int64
+	// ExtraParams extra parameter
+	ExtraParams []KeyValuePair
 }
 
 // IndexParam index parameters
@@ -92,8 +100,8 @@ type IndexParam struct {
 	TableName string
 	// IndexType create index type
 	IndexType IndexType
-	// Nlist index nlist
-	Nlist int64
+	// ExtraParams extra parameters
+	ExtraParams []KeyValuePair
 }
 
 // RowRecord record typy
@@ -112,6 +120,8 @@ type InsertParam struct {
 	RecordArray []RowRecord
 	// IDArray id array
 	IDArray []int64
+	// ExtraParams extra parameters
+	ExtraParams []KeyValuePair
 }
 
 // Range range information, for DATE range, the format is like: 'year-month-day'
@@ -130,10 +140,10 @@ type SearchParam struct {
 	QueryVectors []RowRecord
 	// Topk topk
 	Topk int64
-	// Nprobe nprobe
-	Nprobe int64
 	// PartitionTag partition tag array
 	PartitionTag []string
+	// ExtraParams extra parameters
+	ExtraParams []KeyValuePair
 }
 
 // SearchByIDParamParam search parameters
@@ -144,10 +154,10 @@ type SearchByIDParam struct {
 	Id int64
 	// Topk topk
 	Topk int64
-	// Nprobe nprobe
-	Nprobe int64
 	// PartitionTag partition tag array
 	PartitionTag []string
+	// ExtraParams extra parameters
+	ExtraParams []KeyValuePair
 }
 
 //QueryResult Query result
