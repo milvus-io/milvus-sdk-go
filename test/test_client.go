@@ -9,7 +9,7 @@ func TestTrueConnection(t *testing.T) {
 	var grpcClient milvus.Milvusclient
 	client := milvus.NewMilvusClient(grpcClient.Instance)
 	connectParam := milvus.ConnectParam{"127.0.0.1", "19530"}
-	status := client.Connect(connectParam)
+	status, err := client.Connect(connectParam)
 }
 
 func TestTable(t *testing.T) {

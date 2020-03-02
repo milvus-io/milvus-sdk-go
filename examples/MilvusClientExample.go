@@ -45,20 +45,24 @@ func example(address string, port string) {
 
 	//test connect
 	connectParam := milvus.ConnectParam{address, port}
-	status := client.Connect(connectParam)
-	if !status.Ok() {
-		println("client: connect failed: " + status.GetMessage())
+	err := client.Connect(connectParam)
+	if err != nil {
+		println("client: connect failed: " + err.Error())
 	}
 
 	if client.IsConnected() == false {
-		println("client: not connected: " + status.GetMessage())
+		println("client: not connected: ")
 		return
 	}
 	println("Server status: connected")
 
 	//Get server version
 	var version string
-	status, version = client.ServerVersion()
+	var status milvus.Status
+	version, status, err = client.ServerVersion()
+	if err != nil {
+		println("Cmd rpc failed: " + err.Error())
+	}
 	if !status.Ok() {
 		println("Get server version failed: " + status.GetMessage())
 		return
@@ -68,9 +72,16 @@ func example(address string, port string) {
 	//test create table
 	tableSchema := milvus.TableSchema{tableName, dimension, indexFileSize, metricType}
 	var hasTable bool
-	status, hasTable = client.HasTable(tableName)
+	hasTable, status, err = client.HasTable(tableName)
+	if err != nil {
+		println("HasTable rpc failed: " + err.Error())
+	}
 	if hasTable == false {
-		status = client.CreateTable(tableSchema)
+		status, err = client.CreateTable(tableSchema)
+		if err != nil {
+			println("CreateTable rpc failed: " + err.Error())
+			return
+		}
 		if !status.Ok() {
 			println("Create table failed: " + status.GetMessage())
 			return
@@ -78,7 +89,11 @@ func example(address string, port string) {
 		println("Create table " + tableName + " success")
 	}
 
-	status, hasTable = client.HasTable(tableName)
+	hasTable, status, err = client.HasTable(tableName)
+	if err != nil {
+		println("HasTable rpc failed: " + err.Error())
+		return
+	}
 	if hasTable == false {
 		println("Create table failed: " + status.GetMessage())
 		return
@@ -89,7 +104,11 @@ func example(address string, port string) {
 
 	//test show tables
 	var tables []string
-	status, tables = client.ShowTables()
+	tables, status, err = client.ShowTables()
+	if err != nil {
+		println("ShowTables rpc failed: " + err.Error())
+		return
+	}
 	if !status.Ok() {
 		println("Show tables failed: " + status.GetMessage())
 		return
@@ -110,7 +129,11 @@ func example(address string, port string) {
 		records[i].FloatData = recordArray[i]
 	}
 	insertParam := milvus.InsertParam{tableName, "", records, nil}
-	status = client.Insert(&insertParam)
+	status, err = client.Insert(&insertParam)
+	if err != nil {
+		println("Insert rpc failed: " + err.Error())
+		return
+	}
 	if !status.Ok() {
 		println("Insert vector failed: " + status.GetMessage())
 		return
@@ -120,7 +143,11 @@ func example(address string, port string) {
 	time.Sleep(3 * time.Second)
 
 	//test describe table
-	status, tableSchema = client.DescribeTable(tableName)
+	tableSchema, status, err = client.DescribeTable(tableName)
+	if err != nil {
+		println("DescribeTable rpc failed: " + err.Error())
+		return
+	}
 	if !status.Ok() {
 		println("Create index failed: " + status.GetMessage())
 		return
@@ -144,7 +171,10 @@ func example(address string, port string) {
 	//Search without create index
 	var topkQueryResult milvus.TopkQueryResult
 	searchParam := milvus.SearchParam{tableName, queryRecords, topk, nprobe, nil}
-	status, topkQueryResult = client.Search(searchParam)
+	topkQueryResult, status, err = client.Search(searchParam)
+	if err != nil {
+		println("Search rpc failed: " + err.Error())
+	}
 	println("Search without index results: ")
 	for i = 0; i < 10; i++ {
 		print(topkQueryResult.QueryResultList[i].Ids[0])
@@ -156,7 +186,11 @@ func example(address string, port string) {
 
 	//test CountTable
 	var tableCount int64
-	status, tableCount = client.CountTable(tableName)
+	tableCount, status, err = client.CountTable(tableName)
+	if err != nil {
+		println("CountTable rpc failed: " + err.Error())
+		return
+	}
 	if !status.Ok() {
 		println("Get table count failed: " + status.GetMessage())
 		return
@@ -166,7 +200,11 @@ func example(address string, port string) {
 	//Create index
 	println("Start create index...")
 	indexParam := milvus.IndexParam{tableName, milvus.IVFSQ8, nlist}
-	status = client.CreateIndex(&indexParam)
+	status, err = client.CreateIndex(&indexParam)
+	if err != nil {
+		println("CreateIndex rpc failed: " + err.Error())
+		return
+	}
 	if !status.Ok() {
 		println("Create index failed: " + status.GetMessage())
 		return
@@ -174,14 +212,22 @@ func example(address string, port string) {
 	println("Create index success!")
 
 	//Describe index
-	status, indexParam = client.DescribeIndex(tableName)
+	indexParam, status, err = client.DescribeIndex(tableName)
+	if err != nil {
+		println("DescribeIndex rpc failed: " + err.Error())
+		return
+	}
 	if !status.Ok() {
 		println("Describe index failed: " + status.GetMessage())
 	}
 	println(indexParam.TableName + "----index type:" + strconv.Itoa(int(indexParam.IndexType)))
 
 	//Preload table
-	status = client.PreloadTable(tableName)
+	status, err = client.PreloadTable(tableName)
+	if err != nil {
+		println("PreloadTable rpc failed: " + err.Error())
+		return
+	}
 	if !status.Ok() {
 		println(status.GetMessage())
 	}
@@ -190,7 +236,11 @@ func example(address string, port string) {
 	println("**************************************************")
 
 	//Search with IVFSQ8 index
-	status, topkQueryResult = client.Search(searchParam)
+	topkQueryResult, status, err = client.Search(searchParam)
+	if err != nil {
+		println("Search rpc failed: " + err.Error())
+		return
+	}
 	if !status.Ok() {
 		println("Search vectors failed: " + status.GetMessage())
 	}
@@ -204,14 +254,18 @@ func example(address string, port string) {
 	println("**************************************************")
 
 	//Drop index
-	status = client.DropIndex(tableName)
+	status, err = client.DropIndex(tableName)
+	if err != nil {
+		println("DropIndex rpc failed: " + err.Error())
+		return
+	}
 	if !status.Ok() {
 		println("Drop index failed: " + status.GetMessage())
 	}
 
 	//Drop table
-	status = client.DropTable(tableName)
-	status1, hasTable := client.HasTable(tableName)
+	status, err = client.DropTable(tableName)
+	hasTable, status1, err := client.HasTable(tableName)
 	if !status.Ok() || !status1.Ok() || hasTable == true {
 		println("Drop table failed: " + status.GetMessage())
 		return
@@ -220,7 +274,7 @@ func example(address string, port string) {
 
 	//GetConfig
 	var configInfo string
-	status, configInfo = client.GetConfig("*")
+	configInfo, status, err = client.GetConfig("*")
 	if !status.Ok() {
 		println("Get config failed: " + status.GetMessage())
 	}
@@ -228,15 +282,16 @@ func example(address string, port string) {
 	println(configInfo)
 
 	//Disconnect
-	status = client.Disconnect()
-	if !status.Ok() {
-		println("Disconnect failed: " + status.GetMessage())
+	err = client.Disconnect()
+	if err != nil {
+		println("Disconnect failed!")
+		return
 	}
 	println("Client disconnect server success!")
 
 	//Server status
 	var serverStatus string
-	status, serverStatus = client.ServerStatus()
+	serverStatus, status, err = client.ServerStatus()
 	if !status.Ok() {
 		println("Get server status failed: " + status.GetMessage())
 	}

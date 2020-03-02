@@ -183,22 +183,22 @@ type MilvusClient interface {
 	// GetClientVersion method
 	// This method is used to give the client version.
 	// return Client version.
-	GetClientVersion() (string, error)
+	GetClientVersion() string
 
 	// Connect method
 	// Create a connection instance and return it's shared pointer
 	// return indicate if connect is successful
-	Connect(connectParam ConnectParam) (Status, error)
+	Connect(connectParam ConnectParam) error
 
 	// IsConnected method
 	// This method is used to test whether server is connected
 	// return indicate if connection status
-	IsConnected() (bool, error)
+	IsConnected() bool
 
 	// Disconnect method
 	// This method is used to disconnect server
 	// return indicate if disconnect is successful
-	Disconnect() (Status, error)
+	Disconnect() error
 
 	// CreateTable method
 	// This method is used to create table
@@ -209,7 +209,7 @@ type MilvusClient interface {
 	// HasTable method
 	// This method is used to create table.
 	//return indicate if table is exist
-	HasTable(tableName string) (Status, bool, error)
+	HasTable(tableName string) (bool, Status, error)
 
 	// DropTable method
 	// This method is used to drop table(and its partitions).
@@ -294,35 +294,35 @@ type MilvusClient interface {
 	// CreatePartition method
 	// This method is used to create table partition
 	// return indicate if partition is created successfully
-	CreatePartition(partitionParam PartitionParam) error
+	CreatePartition(partitionParam PartitionParam) (Status, error)
 
 	// ShowPartition method
 	// This method is used to create table
 	// return indicate if this operation is successful
-	ShowPartitions(tableName string) ([]PartitionParam, error)
+	ShowPartitions(tableName string) ([]PartitionParam, Status, error)
 
 	// DropPartition method
 	// This method is used to delete table partition.
 	// return indicate if partition is delete successfully.
-	DropPartition(partitionParam PartitionParam) error
+	DropPartition(partitionParam PartitionParam) (Status, error)
 
 	// GetConfig
 	// This method is used to get config
 	// return indicate if this operation is successful.
-	GetConfig(nodeName string) (string, error)
+	GetConfig(nodeName string) (string, Status, error)
 
 	// SetConfig
 	// This method is used to set config
 	// return indicate if this operation is successful.
-	SetConfig(nodeName string, value string) error
+	SetConfig(nodeName string, value string) (Status, error)
 
 	// Flush method
 	// This method is used to flush tables
 	// return indicate if flush is successful
-	Flush(tableNaeArray []string) error
+	Flush(tableNaeArray []string) (Status, error)
 
 	// Compact method
 	// This method is used to compact table
 	// return indicate if compact is successful
-	Compact(tableName string) error
+	Compact(tableName string) (Status, error)
 }
