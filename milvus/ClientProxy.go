@@ -17,6 +17,7 @@
  * under the License.
  */
 
+// package milvus
 package milvus
 
 import (
@@ -36,11 +37,11 @@ func NewMilvusClient(client MilvusGrpcClient) MilvusClient {
 	return &Milvusclient{client}
 }
 
-func (client *Milvusclient) GetClientVersion() string {
-	return clientVersion
+func (client *Milvusclient) GetClientVersion() (string, error) {
+	return clientVersion, nil
 }
 
-func (client *Milvusclient) Connect(connectParam ConnectParam) Status {
+func (client *Milvusclient) Connect(connectParam ConnectParam) error {
 	var opts []grpc.DialOption
 	opts = append(opts, grpc.WithInsecure())
 	opts = append(opts, grpc.WithBlock())
@@ -51,7 +52,7 @@ func (client *Milvusclient) Connect(connectParam ConnectParam) Status {
 	defer cancel()
 	conn, err := grpc.DialContext(ctx, serverAddr, opts...)
 	if err != nil {
-		log.Fatalf("fail to dial: %v", err)
+		return err
 	}
 
 	milvusclient := pb.NewMilvusServiceClient(conn)
@@ -60,30 +61,31 @@ func (client *Milvusclient) Connect(connectParam ConnectParam) Status {
 
 	client.Instance = milvusGrpcClient
 
-	return status{0, ""}
+	return nil
 }
 
-func (client *Milvusclient) IsConnected() bool {
-	return client.Instance != nil
+func (client *Milvusclient) IsConnected() (bool, error) {
+	return client.Instance != nil, nil
 }
 
-func (client *Milvusclient) Disconnect() Status {
+func (client *Milvusclient) Disconnect() error {
 	client.Instance = nil
-	return status{0, ""}
+	return nil
 }
 
-func (client *Milvusclient) CreateTable(tableSchema TableSchema) Status {
+func (client *Milvusclient) CreateTable(tableSchema TableSchema) error {
 	grpcTableSchema := pb.TableSchema{nil, tableSchema.TableName, tableSchema.Dimension,
 		tableSchema.IndexFileSize, int32(tableSchema.MetricType), struct{}{}, nil, 0}
 	grpcStatus, err := client.Instance.CreateTable(grpcTableSchema)
 	if err != nil {
-		return status{int64(RPCFailed), err.Error()}
+		return err
 	}
 	errorCode := int64(grpcStatus.ErrorCode)
+	err =
 	return status{errorCode, grpcStatus.Reason}
 }
 
-func (client *Milvusclient) HasTable(tableName string) (Status, bool) {
+func (client *Milvusclient) HasTable(tableName string) (bool, error) {
 	grpcTableName := pb.TableName{tableName, struct{}{}, nil, 0}
 	boolReply, err := client.Instance.HasTable(grpcTableName)
 	if err != nil {
@@ -92,7 +94,7 @@ func (client *Milvusclient) HasTable(tableName string) (Status, bool) {
 	return status{int64(boolReply.GetStatus().GetErrorCode()), boolReply.GetStatus().GetReason()}, boolReply.GetBoolReply()
 }
 
-func (client *Milvusclient) DropTable(tableName string) Status {
+func (client *Milvusclient) DropTable(tableName string) error {
 	grpcTableName := pb.TableName{tableName, struct{}{}, nil, 0}
 	grpcStatus, err := client.Instance.DropTable(grpcTableName)
 	if err != nil {
@@ -102,7 +104,7 @@ func (client *Milvusclient) DropTable(tableName string) Status {
 	return status{errorCode, grpcStatus.Reason}
 }
 
-func (client *Milvusclient) CreateIndex(indexParam *IndexParam) Status {
+func (client *Milvusclient) CreateIndex(indexParam *IndexParam) error {
 	index := pb.Index{int32(indexParam.IndexType), int32(indexParam.Nlist),
 		struct{}{}, nil, 0}
 	grpcIndexParam := pb.IndexParam{nil, indexParam.TableName, &index,
@@ -116,7 +118,7 @@ func (client *Milvusclient) CreateIndex(indexParam *IndexParam) Status {
 
 ////////////////////////////////////////////////////////////////////////////
 
-func (client *Milvusclient) Insert(insertParam *InsertParam) Status {
+func (client *Milvusclient) Insert(insertParam *InsertParam) error {
 	var i int
 	var rowRecordArray = make([]*pb.RowRecord, len(insertParam.RecordArray))
 	for i = 0; i < len(insertParam.RecordArray); i++ {
@@ -135,7 +137,7 @@ func (client *Milvusclient) Insert(insertParam *InsertParam) Status {
 
 ////////////////////////////////////////////////////////////////////////////
 
-func (client *Milvusclient) GetVectorByID(tableName string, vector_id int64) (RowRecord, Status) {
+func (client *Milvusclient) GetVectorByID(tableName string, vector_id int64) (RowRecord, error) {
 	grpcIdentity := pb.VectorIdentity{tableName, vector_id, struct{}{}, nil, 0}
 	grpcVectorData, err := client.Instance.GetVectorByID(grpcIdentity)
 	if err != nil {
@@ -146,7 +148,7 @@ func (client *Milvusclient) GetVectorByID(tableName string, vector_id int64) (Ro
 
 ////////////////////////////////////////////////////////////////////////////
 
-func (client *Milvusclient) GetVectorIDs(getVectorIDsParam GetVectorIDsParam) (Status, []int64) {
+func (client *Milvusclient) GetVectorIDs(getVectorIDsParam GetVectorIDsParam) ([]int64, error) {
 	grpcParam := pb.GetVectorIDsParam{getVectorIDsParam.TableName, getVectorIDsParam.SegmentName, struct{}{}, nil, 0}
 	vectorIDs, err := client.Instance.GetVectorIDs(grpcParam)
 	if err != nil {
@@ -157,7 +159,7 @@ func (client *Milvusclient) GetVectorIDs(getVectorIDsParam GetVectorIDsParam) (S
 
 ////////////////////////////////////////////////////////////////////////////
 
-func (client *Milvusclient) Search(searchParam SearchParam) (Status, TopkQueryResult) {
+func (client *Milvusclient) Search(searchParam SearchParam) (TopkQueryResult, error) {
 	var queryRecordArray = make([]*pb.RowRecord, len(searchParam.QueryVectors))
 	var i, j int64
 	for i = 0; i < int64(len(searchParam.QueryVectors)); i++ {
@@ -187,7 +189,7 @@ func (client *Milvusclient) Search(searchParam SearchParam) (Status, TopkQueryRe
 
 ////////////////////////////////////////////////////////////////////////////
 
-func (client *Milvusclient) SearchByID(searchByIDParam SearchByIDParam) (Status, TopkQueryResult) {
+func (client *Milvusclient) SearchByID(searchByIDParam SearchByIDParam) (TopkQueryResult, error) {
 	grpcParam := pb.SearchByIDParam{searchByIDParam.TableName, searchByIDParam.Id, searchByIDParam.Topk, searchByIDParam.Nprobe,
 		searchByIDParam.PartitionTag, struct{}{}, nil, 0}
 	topkQueryResult, err := client.Instance.SearchByID(grpcParam)
@@ -212,7 +214,7 @@ func (client *Milvusclient) SearchByID(searchByIDParam SearchByIDParam) (Status,
 
 ////////////////////////////////////////////////////////////////////////////
 
-func (client *Milvusclient) DeleteByID(tableName string, id_array []int64) Status {
+func (client *Milvusclient) DeleteByID(tableName string, id_array []int64) error {
 	grpcParam := pb.DeleteByIDParam{tableName, id_array, struct{}{}, nil, 0}
 	grpcStatus, err := client.Instance.DeleteByID(grpcParam)
 	if err != nil {
@@ -223,7 +225,7 @@ func (client *Milvusclient) DeleteByID(tableName string, id_array []int64) Statu
 
 ////////////////////////////////////////////////////////////////////////////
 
-func (client *Milvusclient) DescribeTable(tableName string) (Status, TableSchema) {
+func (client *Milvusclient) DescribeTable(tableName string) (TableSchema, error) {
 	grpcTableName := pb.TableName{tableName, struct{}{}, nil, 0}
 	tableSchema, err := client.Instance.DescribeTable(grpcTableName)
 	if err != nil {
@@ -235,7 +237,7 @@ func (client *Milvusclient) DescribeTable(tableName string) (Status, TableSchema
 
 ////////////////////////////////////////////////////////////////////////////
 
-func (client *Milvusclient) CountTable(tableName string) (Status, int64) {
+func (client *Milvusclient) CountTable(tableName string) (int64, error) {
 	grpcTableName := pb.TableName{tableName, struct{}{}, nil, 0}
 	rowCount, err := client.Instance.CountTable(grpcTableName)
 	if err != nil {
@@ -247,7 +249,7 @@ func (client *Milvusclient) CountTable(tableName string) (Status, int64) {
 
 ////////////////////////////////////////////////////////////////////////////
 
-func (client *Milvusclient) ShowTables() (Status, []string) {
+func (client *Milvusclient) ShowTables() ([]string, error) {
 	tableNameList, err := client.Instance.ShowTable()
 	if err != nil {
 		return status{int64(RPCFailed), err.Error()}, nil
@@ -257,7 +259,7 @@ func (client *Milvusclient) ShowTables() (Status, []string) {
 
 ////////////////////////////////////////////////////////////////////////////
 
-func (client *Milvusclient) ServerVersion() (Status, string) {
+func (client *Milvusclient) ServerVersion() (string, error) {
 	command := pb.Command{"version", struct{}{}, nil, 0}
 	serverVersion, err := client.Instance.Cmd(command)
 	if err != nil {
@@ -268,7 +270,7 @@ func (client *Milvusclient) ServerVersion() (Status, string) {
 
 ////////////////////////////////////////////////////////////////////////////
 
-func (client *Milvusclient) ServerStatus() (Status, string) {
+func (client *Milvusclient) ServerStatus() (string, error) {
 	if client.Instance == nil {
 		return status{int64(0), ""}, "not connect to server"
 	}
@@ -282,7 +284,7 @@ func (client *Milvusclient) ServerStatus() (Status, string) {
 
 ////////////////////////////////////////////////////////////////////////////
 
-func (client *Milvusclient) PreloadTable(tableName string) Status {
+func (client *Milvusclient) PreloadTable(tableName string) error {
 	grpcTableName := pb.TableName{tableName, struct{}{}, nil, 0}
 	grpcStatus, err := client.Instance.PreloadTable(grpcTableName)
 	if err != nil {
@@ -293,7 +295,7 @@ func (client *Milvusclient) PreloadTable(tableName string) Status {
 
 ////////////////////////////////////////////////////////////////////////////
 
-func (client *Milvusclient) DescribeIndex(tableName string) (Status, IndexParam) {
+func (client *Milvusclient) DescribeIndex(tableName string) (IndexParam, error) {
 	grpcTableName := pb.TableName{tableName, struct{}{}, nil, 0}
 	indexParam, err := client.Instance.DescribeIndex(grpcTableName)
 	if err != nil {
@@ -305,7 +307,7 @@ func (client *Milvusclient) DescribeIndex(tableName string) (Status, IndexParam)
 
 ////////////////////////////////////////////////////////////////////////////
 
-func (client *Milvusclient) DropIndex(tableName string) Status {
+func (client *Milvusclient) DropIndex(tableName string) error {
 	grpcTableName := pb.TableName{tableName, struct{}{}, nil, 0}
 	grpcStatus, err := client.Instance.DropIndex(grpcTableName)
 	if err != nil {
@@ -316,7 +318,7 @@ func (client *Milvusclient) DropIndex(tableName string) Status {
 
 ////////////////////////////////////////////////////////////////////////////
 
-func (client *Milvusclient) CreatePartition(partitionParam PartitionParam) Status {
+func (client *Milvusclient) CreatePartition(partitionParam PartitionParam) error {
 	grpcPartitionParam := pb.PartitionParam{partitionParam.TableName,
 		partitionParam.PartitionTag, struct{}{}, nil, 0}
 	grpcStatus, err := client.Instance.CreatePartition(grpcPartitionParam)
@@ -328,7 +330,9 @@ func (client *Milvusclient) CreatePartition(partitionParam PartitionParam) Statu
 
 ////////////////////////////////////////////////////////////////////////////
 
-func (client *Milvusclient) ShowPartitions(tableName string) (Status, []PartitionParam) {
+func (client *Milvusclient) ShowPartitions(tableName string) ([]PartitionParam,
+
+	error) {
 	grpcTableName := pb.TableName{tableName, struct{}{}, nil, 0}
 	grpcPartitionList, err := client.Instance.ShowPartitions(grpcTableName)
 	if err != nil {
@@ -344,7 +348,7 @@ func (client *Milvusclient) ShowPartitions(tableName string) (Status, []Partitio
 
 ////////////////////////////////////////////////////////////////////////////
 
-func (client *Milvusclient) DropPartition(partitionParam PartitionParam) Status {
+func (client *Milvusclient) DropPartition(partitionParam PartitionParam) error {
 	grpcPartitionParam := pb.PartitionParam{partitionParam.TableName,
 		partitionParam.PartitionTag, struct{}{}, nil, 0}
 	grpcStatus, err := client.Instance.DropPartition(grpcPartitionParam)
@@ -356,7 +360,7 @@ func (client *Milvusclient) DropPartition(partitionParam PartitionParam) Status 
 
 ////////////////////////////////////////////////////////////////////////////
 
-func (client *Milvusclient) GetConfig(nodeName string) (Status, string) {
+func (client *Milvusclient) GetConfig(nodeName string) (string, error) {
 	command := pb.Command{"get_config " + nodeName, struct{}{}, nil, 0}
 	configInfo, err := client.Instance.Cmd(command)
 	if err != nil {
@@ -367,7 +371,7 @@ func (client *Milvusclient) GetConfig(nodeName string) (Status, string) {
 
 ////////////////////////////////////////////////////////////////////////////
 
-func (client *Milvusclient) SetConfig(nodeName string, value string) Status {
+func (client *Milvusclient) SetConfig(nodeName string, value string) error {
 	command := pb.Command{"set_config " + nodeName + " " + value, struct{}{}, nil, 0}
 	reply, err := client.Instance.Cmd(command)
 	if err != nil {
@@ -378,7 +382,7 @@ func (client *Milvusclient) SetConfig(nodeName string, value string) Status {
 
 ////////////////////////////////////////////////////////////////////////////
 
-func (client *Milvusclient) Flush(tableNameArray []string) Status {
+func (client *Milvusclient) Flush(tableNameArray []string) error {
 	grpcParam := pb.FlushParam{tableNameArray, struct{}{}, nil, 0}
 	grpcStatus, err := client.Instance.Flush(grpcParam)
 	if err != nil {
@@ -389,7 +393,7 @@ func (client *Milvusclient) Flush(tableNameArray []string) Status {
 
 ////////////////////////////////////////////////////////////////////////////
 
-func (client *Milvusclient) Compact(tableName string) Status {
+func (client *Milvusclient) Compact(tableName string) error {
 	grpcParam := pb.TableName{tableName, struct{}{}, nil, 0}
 	grpcStatus, err := client.Instance.Compact(grpcParam)
 	if err != nil {

@@ -100,14 +100,16 @@ func example(address string, port string) {
 	}
 
 	//test insert vectors
+	records := make([]milvus.RowRecord, nb)
 	recordArray := make([][]float32, nb)
 	for i = 0; i < nb; i++ {
 		recordArray[i] = make([]float32, dimension)
 		for j = 0; j < dimension; j++ {
 			recordArray[i][j] = float32(i % (j + 1))
 		}
+		records[i].FloatData = recordArray[i]
 	}
-	insertParam := milvus.InsertParam{tableName, "", recordArray, nil}
+	insertParam := milvus.InsertParam{tableName, "", records, nil}
 	status = client.Insert(&insertParam)
 	if !status.Ok() {
 		println("Insert vector failed: " + status.GetMessage())
@@ -127,19 +129,21 @@ func example(address string, port string) {
 		"----IndexFileSize:" + strconv.Itoa(int(tableSchema.IndexFileSize)))
 
 	//Construct query vectors
+	queryRecords := make([]milvus.RowRecord, nq)
 	queryVectors := make([][]float32, nq)
 	for i = 0; i < nq; i++ {
 		queryVectors[i] = make([]float32, dimension)
 		for j = 0; j < dimension; j++ {
 			queryVectors[i][j] = float32(i % (j + 1))
 		}
+		queryRecords[i].FloatData = queryVectors[i]
 	}
 
 	println("**************************************************")
 
 	//Search without create index
 	var topkQueryResult milvus.TopkQueryResult
-	searchParam := milvus.SearchParam{tableName, queryVectors, nil, topk, nprobe, nil}
+	searchParam := milvus.SearchParam{tableName, queryRecords, topk, nprobe, nil}
 	status, topkQueryResult = client.Search(searchParam)
 	println("Search without index results: ")
 	for i = 0; i < 10; i++ {

@@ -17,6 +17,7 @@
  * under the License.
  */
 
+// package milvus
 package milvus
 
 import ()
@@ -182,146 +183,146 @@ type MilvusClient interface {
 	// GetClientVersion method
 	// This method is used to give the client version.
 	// return Client version.
-	GetClientVersion() string
+	GetClientVersion() (string, error)
 
 	// Connect method
 	// Create a connection instance and return it's shared pointer
 	// return indicate if connect is successful
-	Connect(connectParam ConnectParam) Status
+	Connect(connectParam ConnectParam) (Status, error)
 
 	// IsConnected method
 	// This method is used to test whether server is connected
 	// return indicate if connection status
-	IsConnected() bool
+	IsConnected() (bool, error)
 
 	// Disconnect method
 	// This method is used to disconnect server
 	// return indicate if disconnect is successful
-	Disconnect() Status
+	Disconnect() (Status, error)
 
 	// CreateTable method
 	// This method is used to create table
 	// param tableSchema is used to provide table information to be created.
 	// return indicate if table is created successfully
-	CreateTable(tableSchema TableSchema) Status
+	CreateTable(tableSchema TableSchema) (Status, error)
 
 	// HasTable method
 	// This method is used to create table.
-	//return indicate if table is cexist
-	HasTable(tableName string) (Status, bool)
+	//return indicate if table is exist
+	HasTable(tableName string) (Status, bool, error)
 
 	// DropTable method
 	// This method is used to drop table(and its partitions).
 	// return indicate if table is drop successfully.
-	DropTable(tableName string) Status
+	DropTable(tableName string) (Status, error)
 
 	// CreateIndex method
 	// This method is used to create index for whole table(and its partitions).
 	// return indicate if build index successfully.
-	CreateIndex(indexParam *IndexParam) Status
+	CreateIndex(indexParam *IndexParam) (Status, error)
 
 	// Insert method
 	// This method is used to query vector in table.
 	// return indicate if insert is successful.
-	Insert(insertParam *InsertParam) Status
+	Insert(insertParam *InsertParam) (Status, error)
 
 	// GetVectorByID method
 	// This method is used to get vector by vector id
 	// return vector data
-	GetVectorByID(tableName string, vector_id int64) (RowRecord, Status)
+	GetVectorByID(tableName string, vector_id int64) (RowRecord, Status, error)
 
 	// GetVectorIDs method
 	// This method is used to get vector ids
 	// return vector ids
-	GetVectorIDs(getVectorIDsParam GetVectorIDsParam) (Status, []int64)
+	GetVectorIDs(getVectorIDsParam GetVectorIDsParam) ([]int64, Status, error)
 
 	// Search method
 	// This method is used to query vector in table.
 	// return indicate if query is successful.
-	Search(searchParam SearchParam) (Status, TopkQueryResult)
+	Search(searchParam SearchParam) (TopkQueryResult, Status, error)
 
 	// SearchByID method
 	// This method is used to search by id
 	// return vector data
-	SearchByID(searchByIDParam SearchByIDParam) (Status, TopkQueryResult)
+	SearchByID(searchByIDParam SearchByIDParam) (TopkQueryResult, Status, error)
 
 	// DeleteByID method
 	// This method is used to delete vectors by ids
 	// return indicate if delete is successful
-	DeleteByID(tableName string, id_array []int64) Status
+	DeleteByID(tableName string, id_array []int64) (Status, error)
 
 	// DescribeTable method
 	// This method is used to show table information.
 	//return indicate if this operation is successful.
-	DescribeTable(tableName string) (Status, TableSchema)
+	DescribeTable(tableName string) (TableSchema, Status, error)
 
 	// CountTable method
 	// This method is used to get table row count.
 	// return indicate if this operation is successful.
-	CountTable(tableName string) (Status, int64)
+	CountTable(tableName string) (int64, Status, error)
 
 	// ShowTables method
 	// This method is used to list all tables.
 	// return indicate if this operation is successful.
-	ShowTables() (Status, []string)
+	ShowTables() ([]string, Status, error)
 
 	// ServerVersion method
 	// This method is used to give the server version.
 	// return server version.
-	ServerVersion() (Status, string)
+	ServerVersion() (string, Status, error)
 
 	// ServerStatus method
 	// This method is used to give the server status.
 	// return server status.
-	ServerStatus() (Status, string)
+	ServerStatus() (string, Status, error)
 
 	// PreloadTable method
 	// This method is used to preload table
 	// return indicate if this operation is successful.
-	PreloadTable(tableName string) Status
+	PreloadTable(tableName string) (Status, error)
 
 	// DescribeIndex method
 	// This method is used to describe index
 	// return indicate if this operation is successful.
-	DescribeIndex(tableName string) (Status, IndexParam)
+	DescribeIndex(tableName string) (IndexParam, Status, error)
 
 	// DropIndex method
 	// This method is used to drop index of table(and its partitions)
 	// return indicate if this operation is successful.
-	DropIndex(tableName string) Status
+	DropIndex(tableName string) (Status, error)
 
 	// CreatePartition method
 	// This method is used to create table partition
 	// return indicate if partition is created successfully
-	CreatePartition(partitionParam PartitionParam) Status
+	CreatePartition(partitionParam PartitionParam) error
 
 	// ShowPartition method
 	// This method is used to create table
 	// return indicate if this operation is successful
-	ShowPartitions(tableName string) (Status, []PartitionParam)
+	ShowPartitions(tableName string) ([]PartitionParam, error)
 
 	// DropPartition method
 	// This method is used to delete table partition.
 	// return indicate if partition is delete successfully.
-	DropPartition(partitionParam PartitionParam) Status
+	DropPartition(partitionParam PartitionParam) error
 
 	// GetConfig
 	// This method is used to get config
 	// return indicate if this operation is successful.
-	GetConfig(nodeName string) (Status, string)
+	GetConfig(nodeName string) (string, error)
 
 	// SetConfig
 	// This method is used to set config
 	// return indicate if this operation is successful.
-	SetConfig(nodeName string, value string) Status
+	SetConfig(nodeName string, value string) error
 
 	// Flush method
 	// This method is used to flush tables
 	// return indicate if flush is successful
-	Flush(tableNaeArray []string) Status
+	Flush(tableNaeArray []string) error
 
 	// Compact method
 	// This method is used to compact table
 	// return indicate if compact is successful
-	Compact(tableName string) Status
+	Compact(tableName string) error
 }
