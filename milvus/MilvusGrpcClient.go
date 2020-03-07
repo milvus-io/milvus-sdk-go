@@ -39,7 +39,9 @@ type MilvusGrpcClient interface {
 
 	CountTable(tableName pb.TableName) (pb.TableRowCount, error)
 
-	ShowTable() (pb.TableNameList, error)
+	ShowTables() (pb.TableNameList, error)
+
+	ShowTableInfos(tableName pb.TableName) (pb.TableInfo, error)
 
 	DropTable(tableName pb.TableName) (pb.Status, error)
 
@@ -115,12 +117,19 @@ func (grpcClient *milvusGrpcClient) CountTable(tableName pb.TableName) (pb.Table
 	return *count, err
 }
 
-func (grpcClient *milvusGrpcClient) ShowTable() (pb.TableNameList, error) {
+func (grpcClient *milvusGrpcClient) ShowTables() (pb.TableNameList, error) {
 	cmd := pb.Command{"", struct{}{}, nil, 0}
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	tableNameList, err := grpcClient.serviceInstance.ShowTables(ctx, &cmd)
 	return *tableNameList, err
+}
+
+func (grpcClient *milvusGrpcClient) ShowTableInfos(tableName pb.TableName) (pb.TableInfo, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	tableInfo, err := grpcClient.serviceInstance.ShowTableInfo(ctx, &tableName)
+	return *tableInfo, err
 }
 
 func (grpcClient *milvusGrpcClient) DropTable(tableName pb.TableName) (pb.Status, error) {

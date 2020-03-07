@@ -170,7 +170,10 @@ func example(address string, port string) {
 
 	//Search without create index
 	var topkQueryResult milvus.TopkQueryResult
-	searchParam := milvus.SearchParam{tableName, queryRecords, topk, nil, nil}
+	kvPair := make([]milvus.KeyValuePair, 1)
+	kvPair[0].Key = "params"
+	kvPair[0].Value = "{\"nprobe\" : 32}"
+	searchParam := milvus.SearchParam{tableName, queryRecords, topk, nil, kvPair}
 	topkQueryResult, status, err = client.Search(searchParam)
 	if err != nil {
 		println("Search rpc failed: " + err.Error())
@@ -199,10 +202,8 @@ func example(address string, port string) {
 
 	//Create index
 	println("Start create index...")
-	kvPair := make([]milvus.KeyValuePair, 1)
-	kvPair[0].Key = "parameter"
-	kvPair[0].Value = ""
-	indexParam := milvus.IndexParam{tableName, milvus.IVFSQ8, kvPair}
+	kvPair[0].Value = "{\"nlist\" : 16384}"
+	indexParam := milvus.IndexParam{tableName, milvus.IVFFLAT, kvPair}
 	status, err = client.CreateIndex(&indexParam)
 	if err != nil {
 		println("CreateIndex rpc failed: " + err.Error())
@@ -239,6 +240,10 @@ func example(address string, port string) {
 	println("**************************************************")
 
 	//Search with IVFSQ8 index
+	kvPair = make([]milvus.KeyValuePair, 1)
+	kvPair[0].Key = "params"
+	kvPair[0].Value = "{\"nprobe\" : 32}"
+	searchParam = milvus.SearchParam{tableName, queryRecords, topk, nil, kvPair}
 	topkQueryResult, status, err = client.Search(searchParam)
 	if err != nil {
 		println("Search rpc failed: " + err.Error())

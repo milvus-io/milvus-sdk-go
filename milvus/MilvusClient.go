@@ -80,6 +80,36 @@ type KeyValuePair struct {
 	Value string
 }
 
+// SegmentStat segment statistics
+type SegmentStat struct {
+	// SegmentName segment name
+	SegmentName string
+	// RowCount segment row count
+	RowCount int64
+	// IndexName index name
+	IndexName string
+	//DataSize data size
+	DataSize int64
+}
+
+// PartitionStat
+type PartitionStat struct {
+	// Tag partition tag
+	Tag string
+	// RowCount row count of partition
+	RowCount int64
+	// SegmentsStat array of partition's SegmentStat
+	SegmentsStat []SegmentStat
+}
+
+//TableInfo
+type TableInfo struct {
+	// TotalRowCount table total row count
+	TotalRowCount int64
+	// PartitionsStat table's parititons statistics
+	PartitionsStat []PartitionStat
+}
+
 //TableSchema informations of a table
 type TableSchema struct {
 	// TableName table name
@@ -275,6 +305,11 @@ type MilvusClient interface {
 	// This method is used to list all tables.
 	// return indicate if this operation is successful.
 	ShowTables() ([]string, Status, error)
+
+	// ShowTableInfo method
+	// This method is used to get table informations
+	// return table informations
+	ShowTableInfo(tableName string) (TableInfo, Status, error)
 
 	// ServerVersion method
 	// This method is used to give the server version.
