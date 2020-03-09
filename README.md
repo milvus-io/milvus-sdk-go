@@ -29,6 +29,10 @@ cd [milvus-sdk-go root path]/examples
 go run MilvusClientExample.go
 ```
 
+### API Documentation
+
+Refer to [https://godoc.org/github.com/milvus-io/milvus-sdk-go/milvus](https://godoc.org/github.com/milvus-io/milvus-sdk-go/milvus) for the GO SDK API documentation.
+
 ### Code format
 
 The Go source code is formatted using gofmt and golint.
