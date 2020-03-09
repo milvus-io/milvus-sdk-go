@@ -281,11 +281,6 @@ type MilvusClient interface {
 	// return indicate if query is successful.
 	Search(searchParam SearchParam) (TopkQueryResult, Status, error)
 
-	// SearchByID method
-	// This method is used to search by id
-	// return vector data
-	SearchByID(searchByIDParam SearchByIDParam) (TopkQueryResult, Status, error)
-
 	// DeleteByID method
 	// This method is used to delete vectors by ids
 	// return indicate if delete is successful

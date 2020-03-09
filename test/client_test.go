@@ -99,10 +99,6 @@ func TestTable(t *testing.T) {
 		t.Error("HasTable error")
 	}
 
-	//if !status.Ok() {
-	//	t.Error("HasTable status check error: " + status.GetMessage())
-	//}
-
 	if hasTable == true {
 		t.Error("HasTable result check error")
 	}
@@ -163,6 +159,18 @@ func TestVector(t *testing.T) {
 		t.Error("Insert status check error")
 	}
 
+	// Flush
+	table_array := make([]string, 1)
+	table_array[0] = TABLENAME
+	status, err = client.Flush(table_array)
+	if err != nil {
+		t.Error("Flush error")
+		return
+	}
+	if !status.Ok() {
+		t.Error("Flush status check error")
+	}
+
 	// test ShowTableInfos
 	tableInfo, status, err := client.ShowTableInfo(TABLENAME)
 	if err != nil {
@@ -175,11 +183,11 @@ func TestVector(t *testing.T) {
 	}
 
 	if tableInfo.TotalRowCount == 0 {
-		//t.Error("ShowTableInfo result check error")
+		t.Error("ShowTableInfo result check error")
 	}
 
 	// test GetVectorIds
-	getVectorIDsParam := milvus.GetVectorIDsParam{TABLENAME, ""}
+	getVectorIDsParam := milvus.GetVectorIDsParam{TABLENAME, tableInfo.PartitionsStat[0].SegmentsStat[0].SegmentName}
 	vectorIDs, status, err := client.GetVectorIDs(getVectorIDsParam)
 	if err != nil {
 		t.Error("GetVectorIDs error")
@@ -187,24 +195,33 @@ func TestVector(t *testing.T) {
 	}
 
 	if len(vectorIDs) == 0 {
-		//t.Error("GetVectorIDs result check error")
-		//return
+		t.Error("GetVectorIDs result check error")
 	}
 
 	// test GetVectorById
-	rowRecord, status, err := client.GetVectorByID(TABLENAME, 0)
+	rowRecord, status, err := client.GetVectorByID(TABLENAME, vectorIDs[0])
 	if err != nil {
 		t.Error("GetVectorByID error")
 		return
 	}
-	//if !status.Ok() {
-	//	t.Error("GetVectorByID status check error")
-	//}
+	if !status.Ok() {
+		t.Error("GetVectorByID status check error")
+	}
 	if len(rowRecord.FloatData) != 128 {
-		//t.Error("GetVectorByID result check error")
+		t.Error("GetVectorByID result check error")
 	}
 
 	// test DeleteByID
+	id_array := make([]int64, 1)
+	id_array[0] = vectorIDs[0]
+	status, err = client.DeleteByID(TABLENAME, id_array)
+	if err != nil {
+		t.Error("DeleteByID error")
+		return
+	}
+	if !status.Ok() {
+		t.Error("DeleteByID status check error")
+	}
 }
 
 func TestIndex(t *testing.T) {
@@ -354,8 +371,8 @@ func TestPartition(t *testing.T) {
 	if !status.Ok() {
 		t.Error("ShowPartitions status check error")
 	}
-	if len(partitionParam) != 1 && partitionParam[0].PartitionTag != partitionTag {
-		//t.Error("ShowPartitions result check error")
+	if len(partitionParam) == 0 {
+		t.Error("ShowPartitions result check error")
 	}
 
 	// test DropPartition

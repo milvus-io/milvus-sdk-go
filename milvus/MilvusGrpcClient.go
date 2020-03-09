@@ -65,8 +65,6 @@ type MilvusGrpcClient interface {
 
 	Search(searchParam pb.SearchParam) (*pb.TopKQueryResult, error)
 
-	SearchByID(param pb.SearchByIDParam) (*pb.TopKQueryResult, error)
-
 	SearchInFiles(searchInFilesParam pb.SearchInFilesParam) (*pb.TopKQueryResult, error)
 
 	Cmd(command pb.Command) (pb.StringReply, error)
@@ -201,12 +199,6 @@ func (grpcClient *milvusGrpcClient) GetVectorIDs(param pb.GetVectorIDsParam) (pb
 func (grpcClient *milvusGrpcClient) Search(searchParam pb.SearchParam) (*pb.TopKQueryResult, error) {
 	ctx := context.Background()
 	topkQueryResult, err := grpcClient.serviceInstance.Search(ctx, &searchParam)
-	return topkQueryResult, err
-}
-
-func (grpcClient *milvusGrpcClient) SearchByID(param pb.SearchByIDParam) (*pb.TopKQueryResult, error) {
-	ctx := context.Background()
-	topkQueryResult, err := grpcClient.serviceInstance.SearchByID(ctx, &param)
 	return topkQueryResult, err
 }
 
