@@ -20,19 +20,19 @@ func GetClient() milvus.MilvusClient {
 	return client
 }
 
-func CreateTable() error {
-	boolReply, status, err := client.HasTable(TABLENAME)
+func CreateCollection() error {
+	boolReply, status, err := client.HasCollection(TABLENAME)
 	if boolReply == true {
 		return err
 	}
 
-	tableSchema := milvus.TableSchema{TABLENAME, 128, 1024, int64(milvus.L2), nil}
-	status, err = client.CreateTable(tableSchema)
+	collectionParam := milvus.CollectionParam{TABLENAME, 128, 1024, int64(milvus.L2), nil}
+	status, err = client.CreateCollection(collectionParam)
 	if err != nil {
 		return err
 	}
 	if !status.Ok() {
-		println("CreateTable failed")
+		println("CreateCollection failed")
 	}
 	return err
 }
@@ -54,92 +54,92 @@ func TestConnection(t *testing.T) {
 	}
 }
 
-func TestTable(t *testing.T) {
-	param := milvus.TableSchema{"test_1", 128, 1024, int64(milvus.L2), nil}
-	status, err := client.CreateTable(param)
+func TestCollection(t *testing.T) {
+	param := milvus.CollectionParam{"test_1", 128, 1024, int64(milvus.L2), nil}
+	status, err := client.CreateCollection(param)
 	if err != nil {
-		t.Error("CreateTable error")
+		t.Error("CreateCollection error")
 	}
 
 	if !status.Ok() {
-		t.Error("CreateTable return status wrong!")
+		t.Error("CreateCollection return status wrong!")
 	}
 
-	// test ShowTables
-	tables, status, err := client.ShowTables()
+	// test ShowCollections
+	collections, status, err := client.ShowCollections()
 	if err != nil {
-		t.Error("ShowTables error")
+		t.Error("ShowCollections error")
 		return
 	}
 	if !status.Ok() {
-		t.Error("ShowTables status check error")
+		t.Error("ShowCollections status check error")
 	}
-	if len(tables) != 1 && tables[0] != TABLENAME {
-		t.Error("ShowTables result check error")
+	if len(collections) != 1 && collections[0] != TABLENAME {
+		t.Error("ShowCollections result check error")
 	}
 
-	// test normal hastable
-	hasTable, status, err := client.HasTable("test_1")
+	// test normal hascollection
+	hasCollection, status, err := client.HasCollection("test_1")
 	if err != nil {
-		t.Error("HasTable error")
+		t.Error("HasCollection error")
 		return
 	}
 
 	if !status.Ok() {
-		t.Error("HasTable status check error")
+		t.Error("HasCollection status check error")
 	}
 
-	if !hasTable {
-		t.Error("HasTable result check error")
+	if !hasCollection {
+		t.Error("HasCollection result check error")
 	}
 
-	// test HasTable with table not exist
-	hasTable, status, err = client.HasTable("aaa")
+	// test HasCollection with collection not exist
+	hasCollection, status, err = client.HasCollection("aaa")
 	if err != nil {
-		t.Error("HasTable error")
+		t.Error("HasCollection error")
 	}
 
-	if hasTable == true {
-		t.Error("HasTable result check error")
+	if hasCollection == true {
+		t.Error("HasCollection result check error")
 	}
 
-	// test DropTable
-	status, err = client.DropTable("test_1")
+	// test DropCollection
+	status, err = client.DropCollection("test_1")
 	if err != nil {
-		t.Error("DropTable error")
+		t.Error("DropCollection error")
 	}
 
 	if !status.Ok() {
-		t.Error("DropTable status check error")
+		t.Error("DropCollection status check error")
 	}
 
-	hasTable, status, err = client.HasTable("test_1")
-	if hasTable == true {
-		t.Error("DropTable result check error")
+	hasCollection, status, err = client.HasCollection("test_1")
+	if hasCollection == true {
+		t.Error("DropCollection result check error")
 	}
 
-	// test DropTable with table not exist
-	status, err = client.DropTable("aaa")
+	// test DropCollection with collection not exist
+	status, err = client.DropCollection("aaa")
 	if err != nil {
-		t.Error("DropTable error")
+		t.Error("DropCollection error")
 	}
 
 	if status.Ok() {
-		t.Error("DropTable status check error")
+		t.Error("DropCollection status check error")
 	}
 }
 
-func TestVector(t *testing.T) {
-	err := CreateTable()
+func TestEntity(t *testing.T) {
+	err := CreateCollection()
 	if err != nil {
-		t.Error("Create table error")
+		t.Error("Create collection error")
 	}
 	// test insert
 	var i, j int
 
 	nb := 10000
 	dimension := 128
-	records := make([]milvus.RowRecord, nb)
+	records := make([]milvus.Entity, nb)
 	recordArray := make([][]float32, 10000)
 	for i = 0; i < nb; i++ {
 		recordArray[i] = make([]float32, dimension)
@@ -160,9 +160,9 @@ func TestVector(t *testing.T) {
 	}
 
 	// Flush
-	table_array := make([]string, 1)
-	table_array[0] = TABLENAME
-	status, err = client.Flush(table_array)
+	collection_array := make([]string, 1)
+	collection_array[0] = TABLENAME
+	status, err = client.Flush(collection_array)
 	if err != nil {
 		t.Error("Flush error")
 		return
@@ -171,49 +171,49 @@ func TestVector(t *testing.T) {
 		t.Error("Flush status check error")
 	}
 
-	// test ShowTableInfos
-	tableInfo, status, err := client.ShowTableInfo(TABLENAME)
+	// test ShowCollectionInfos
+	collectionInfo, status, err := client.ShowCollectionInfo(TABLENAME)
 	if err != nil {
-		t.Error("ShowTableInfo error")
+		t.Error("ShowCollectionInfo error")
 		return
 	}
 
 	if !status.Ok() {
-		t.Error("ShowTableInfo status check error")
+		t.Error("ShowCollectionInfo status check error")
 	}
 
-	if tableInfo.TotalRowCount == 0 {
-		t.Error("ShowTableInfo result check error")
+	if collectionInfo.TotalRowCount == 0 {
+		t.Error("ShowCollectionInfo result check error")
 	}
 
-	// test GetVectorIds
-	getVectorIDsParam := milvus.GetVectorIDsParam{TABLENAME, tableInfo.PartitionsStat[0].SegmentsStat[0].SegmentName}
-	vectorIDs, status, err := client.GetVectorIDs(getVectorIDsParam)
+	// test GetEntityIds
+	getEntityIDsParam := milvus.GetEntityIDsParam{TABLENAME, collectionInfo.PartitionsStat[0].SegmentsStat[0].SegmentName}
+	entityIDs, status, err := client.GetEntityIDs(getEntityIDsParam)
 	if err != nil {
-		t.Error("GetVectorIDs error")
+		t.Error("GetEntityIDs error")
 		return
 	}
 
-	if len(vectorIDs) == 0 {
-		t.Error("GetVectorIDs result check error")
+	if len(entityIDs) == 0 {
+		t.Error("GetEntityIDs result check error")
 	}
 
-	// test GetVectorById
-	rowRecord, status, err := client.GetVectorByID(TABLENAME, vectorIDs[0])
+	// test GetEntityById
+	rowRecord, status, err := client.GetEntityByID(TABLENAME, entityIDs[0])
 	if err != nil {
-		t.Error("GetVectorByID error")
+		t.Error("GetEntityByID error")
 		return
 	}
 	if !status.Ok() {
-		t.Error("GetVectorByID status check error")
+		t.Error("GetEntityByID status check error")
 	}
 	if len(rowRecord.FloatData) != 128 {
-		t.Error("GetVectorByID result check error")
+		t.Error("GetEntityByID result check error")
 	}
 
 	// test DeleteByID
 	id_array := make([]int64, 1)
-	id_array[0] = vectorIDs[0]
+	id_array[0] = entityIDs[0]
 	status, err = client.DeleteByID(TABLENAME, id_array)
 	if err != nil {
 		t.Error("DeleteByID error")
@@ -246,7 +246,7 @@ func TestIndex(t *testing.T) {
 	if !status.Ok() {
 		t.Error("DescribeIndex status check error")
 	}
-	if indexInfo.TableName != TABLENAME || indexInfo.IndexType != milvus.IVFFLAT {
+	if indexInfo.CollectionName != TABLENAME || indexInfo.IndexType != milvus.IVFFLAT {
 		t.Error("DescribeIndex result chck error")
 	}
 
@@ -272,18 +272,18 @@ func TestIndex(t *testing.T) {
 
 func TestSearch(t *testing.T) {
 	var i, j int
-	//Construct query vectors
+	//Construct query entities
 	nq := 10
 	dimension := 128
 	topk := 10
-	queryRecords := make([]milvus.RowRecord, nq)
-	queryVectors := make([][]float32, nq)
+	queryRecords := make([]milvus.Entity, nq)
+	queryEntitys := make([][]float32, nq)
 	for i = 0; i < nq; i++ {
-		queryVectors[i] = make([]float32, dimension)
+		queryEntitys[i] = make([]float32, dimension)
 		for j = 0; j < dimension; j++ {
-			queryVectors[i][j] = float32(i % (j + 1))
+			queryEntitys[i][j] = float32(i % (j + 1))
 		}
-		queryRecords[i].FloatData = queryVectors[i]
+		queryRecords[i].FloatData = queryEntitys[i]
 	}
 
 	var topkQueryResult milvus.TopkQueryResult
@@ -383,9 +383,9 @@ func TestPartition(t *testing.T) {
 }
 
 func TestFlush(t *testing.T) {
-	tableNameArray := make([]string, 1)
-	tableNameArray[0] = TABLENAME
-	status, err := client.Flush(tableNameArray)
+	collectionNameArray := make([]string, 1)
+	collectionNameArray[0] = TABLENAME
+	status, err := client.Flush(collectionNameArray)
 	if err != nil {
 		t.Error("Flush error")
 	}

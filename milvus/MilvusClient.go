@@ -102,19 +102,19 @@ type PartitionStat struct {
 	SegmentsStat []SegmentStat
 }
 
-//TableInfo
-type TableInfo struct {
-	// TotalRowCount table total row count
+//CollectionInfo
+type CollectionInfo struct {
+	// TotalRowCount collection total row count
 	TotalRowCount int64
-	// PartitionsStat table's parititons statistics
+	// PartitionsStat collection's parititons statistics
 	PartitionsStat []PartitionStat
 }
 
-//TableSchema informations of a table
-type TableSchema struct {
-	// TableName table name
-	TableName string
-	// Dimension Vector dimension, must be a positive value
+//CollectionParam informations of a collection
+type CollectionParam struct {
+	// CollectionName collection name
+	CollectionName string
+	// Dimension Entity dimension, must be a positive value
 	Dimension int64
 	// IndexFileSize Index file size, must be a positive value
 	IndexFileSize int64
@@ -126,28 +126,28 @@ type TableSchema struct {
 
 // IndexParam index parameters
 type IndexParam struct {
-	// TableName table name for create index
-	TableName string
+	// CollectionName collection name for create index
+	CollectionName string
 	// IndexType create index type
 	IndexType IndexType
 	// ExtraParams extra parameters
 	ExtraParams []KeyValuePair
 }
 
-// RowRecord record typy
-type RowRecord struct {
+// Entity record typy
+type Entity struct {
 	FloatData  []float32
 	BinaryData []byte
 }
 
 // InsertParam insert parameters
 type InsertParam struct {
-	// TableName table name
-	TableName string
+	// CollectionName collection name
+	CollectionName string
 	// PartitionTag partition tag
 	PartitionTag string
-	// RecordArray raw vectors array
-	RecordArray []RowRecord
+	// RecordArray raw entities array
+	RecordArray []Entity
 	// IDArray id array
 	IDArray []int64
 	// ExtraParams extra parameters
@@ -164,24 +164,10 @@ type Range struct {
 
 // SearchParam search parameters
 type SearchParam struct {
-	// TableName table name for search
-	TableName string
-	// QueryVectors query vectors raw array
-	QueryVectors []RowRecord
-	// Topk topk
-	Topk int64
-	// PartitionTag partition tag array
-	PartitionTag []string
-	// ExtraParams extra parameters
-	ExtraParams []KeyValuePair
-}
-
-// SearchByIDParamParam search parameters
-type SearchByIDParam struct {
-	// TableName table name for search
-	TableName string
-	// Id vector id
-	Id int64
+	// CollectionName collection name for search
+	CollectionName string
+	// QueryEntities query entities raw array
+	QueryEntities []Entity
 	// Topk topk
 	Topk int64
 	// PartitionTag partition tag array
@@ -206,15 +192,15 @@ type TopkQueryResult struct {
 
 // PartitionParam partition parameters
 type PartitionParam struct {
-	// TableName partition table name
-	TableName string
+	// CollectionName partition collection name
+	CollectionName string
 	// PartitionTag partition tag
 	PartitionTag string
 }
 
-type GetVectorIDsParam struct {
-	TableName   string
-	SegmentName string
+type GetEntityIDsParam struct {
+	CollectionName string
+	SegmentName    string
 }
 
 // MilvusClient SDK main interface
@@ -240,71 +226,71 @@ type MilvusClient interface {
 	// return indicate if disconnect is successful
 	Disconnect() error
 
-	// CreateTable method
-	// This method is used to create table
-	// param tableSchema is used to provide table information to be created.
-	// return indicate if table is created successfully
-	CreateTable(tableSchema TableSchema) (Status, error)
+	// CreateCollection method
+	// This method is used to create collection
+	// param collectionParam is used to provide collection information to be created.
+	// return indicate if collection is created successfully
+	CreateCollection(collectionParam CollectionParam) (Status, error)
 
-	// HasTable method
-	// This method is used to create table.
-	//return indicate if table is exist
-	HasTable(tableName string) (bool, Status, error)
+	// HasCollection method
+	// This method is used to create collection.
+	//return indicate if collection is exist
+	HasCollection(collectionName string) (bool, Status, error)
 
-	// DropTable method
-	// This method is used to drop table(and its partitions).
-	// return indicate if table is drop successfully.
-	DropTable(tableName string) (Status, error)
+	// DropCollection method
+	// This method is used to drop collection(and its partitions).
+	// return indicate if collection is drop successfully.
+	DropCollection(collectionName string) (Status, error)
 
 	// CreateIndex method
-	// This method is used to create index for whole table(and its partitions).
+	// This method is used to create index for whole collection(and its partitions).
 	// return indicate if build index successfully.
 	CreateIndex(indexParam *IndexParam) (Status, error)
 
 	// Insert method
-	// This method is used to query vector in table.
+	// This method is used to query entity in collection.
 	// return indicate if insert is successful.
 	Insert(insertParam *InsertParam) (Status, error)
 
-	// GetVectorByID method
-	// This method is used to get vector by vector id
-	// return vector data
-	GetVectorByID(tableName string, vector_id int64) (RowRecord, Status, error)
+	// GetEntityByID method
+	// This method is used to get entity by entity id
+	// return entity data
+	GetEntityByID(collectionName string, entity_id int64) (Entity, Status, error)
 
-	// GetVectorIDs method
-	// This method is used to get vector ids
-	// return vector ids
-	GetVectorIDs(getVectorIDsParam GetVectorIDsParam) ([]int64, Status, error)
+	// GetEntityIDs method
+	// This method is used to get entity ids
+	// return entity ids
+	GetEntityIDs(getEntityIDsParam GetEntityIDsParam) ([]int64, Status, error)
 
 	// Search method
-	// This method is used to query vector in table.
+	// This method is used to query entity in collection.
 	// return indicate if query is successful.
 	Search(searchParam SearchParam) (TopkQueryResult, Status, error)
 
 	// DeleteByID method
-	// This method is used to delete vectors by ids
+	// This method is used to delete entities by ids
 	// return indicate if delete is successful
-	DeleteByID(tableName string, id_array []int64) (Status, error)
+	DeleteByID(collectionName string, id_array []int64) (Status, error)
 
-	// DescribeTable method
-	// This method is used to show table information.
+	// DescribeCollection method
+	// This method is used to show collection information.
 	//return indicate if this operation is successful.
-	DescribeTable(tableName string) (TableSchema, Status, error)
+	DescribeCollection(collectionName string) (CollectionParam, Status, error)
 
-	// CountTable method
-	// This method is used to get table row count.
+	// CountCollection method
+	// This method is used to get collection row count.
 	// return indicate if this operation is successful.
-	CountTable(tableName string) (int64, Status, error)
+	CountCollection(collectionName string) (int64, Status, error)
 
-	// ShowTables method
-	// This method is used to list all tables.
+	// ShowCollections method
+	// This method is used to list all collections.
 	// return indicate if this operation is successful.
-	ShowTables() ([]string, Status, error)
+	ShowCollections() ([]string, Status, error)
 
-	// ShowTableInfo method
-	// This method is used to get table informations
-	// return table informations
-	ShowTableInfo(tableName string) (TableInfo, Status, error)
+	// ShowCollectionInfo method
+	// This method is used to get collection informations
+	// return collection informations
+	ShowCollectionInfo(collectionName string) (CollectionInfo, Status, error)
 
 	// ServerVersion method
 	// This method is used to give the server version.
@@ -316,33 +302,33 @@ type MilvusClient interface {
 	// return server status.
 	ServerStatus() (string, Status, error)
 
-	// PreloadTable method
-	// This method is used to preload table
+	// PreloadCollection method
+	// This method is used to preload collection
 	// return indicate if this operation is successful.
-	PreloadTable(tableName string) (Status, error)
+	PreloadCollection(collectionName string) (Status, error)
 
 	// DescribeIndex method
 	// This method is used to describe index
 	// return indicate if this operation is successful.
-	DescribeIndex(tableName string) (IndexParam, Status, error)
+	DescribeIndex(collectionName string) (IndexParam, Status, error)
 
 	// DropIndex method
-	// This method is used to drop index of table(and its partitions)
+	// This method is used to drop index of collection(and its partitions)
 	// return indicate if this operation is successful.
-	DropIndex(tableName string) (Status, error)
+	DropIndex(collectionName string) (Status, error)
 
 	// CreatePartition method
-	// This method is used to create table partition
+	// This method is used to create collection partition
 	// return indicate if partition is created successfully
 	CreatePartition(partitionParam PartitionParam) (Status, error)
 
 	// ShowPartition method
-	// This method is used to create table
+	// This method is used to create collection
 	// return indicate if this operation is successful
-	ShowPartitions(tableName string) ([]PartitionParam, Status, error)
+	ShowPartitions(collectionName string) ([]PartitionParam, Status, error)
 
 	// DropPartition method
-	// This method is used to delete table partition.
+	// This method is used to delete collection partition.
 	// return indicate if partition is delete successfully.
 	DropPartition(partitionParam PartitionParam) (Status, error)
 
@@ -357,12 +343,12 @@ type MilvusClient interface {
 	SetConfig(nodeName string, value string) (Status, error)
 
 	// Flush method
-	// This method is used to flush tables
+	// This method is used to flush collections
 	// return indicate if flush is successful
-	Flush(tableNaeArray []string) (Status, error)
+	Flush(collectionNameArray []string) (Status, error)
 
 	// Compact method
-	// This method is used to compact table
+	// This method is used to compact collection
 	// return indicate if compact is successful
-	Compact(tableName string) (Status, error)
+	Compact(collectionName string) (Status, error)
 }

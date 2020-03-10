@@ -25,7 +25,7 @@ import (
 	"time"
 )
 
-var tableName string = "test_go"
+var collectionName string = "test_go"
 var dimension int64 = 128
 var indexFileSize int64 = 1024
 var metricType int64 = int64(milvus.L2)
@@ -69,57 +69,57 @@ func example(address string, port string) {
 	}
 	println("Server version: " + version)
 
-	//test create table
-	tableSchema := milvus.TableSchema{tableName, dimension, indexFileSize, metricType, nil}
-	var hasTable bool
-	hasTable, status, err = client.HasTable(tableName)
+	//test create collection
+	collectionParam := milvus.CollectionParam{collectionName, dimension, indexFileSize, metricType, nil}
+	var hasCollection bool
+	hasCollection, status, err = client.HasCollection(collectionName)
 	if err != nil {
-		println("HasTable rpc failed: " + err.Error())
+		println("HasCollection rpc failed: " + err.Error())
 	}
-	if hasTable == false {
-		status, err = client.CreateTable(tableSchema)
+	if hasCollection == false {
+		status, err = client.CreateCollection(collectionParam)
 		if err != nil {
-			println("CreateTable rpc failed: " + err.Error())
+			println("CreateCollection rpc failed: " + err.Error())
 			return
 		}
 		if !status.Ok() {
-			println("Create table failed: " + status.GetMessage())
+			println("Create collection failed: " + status.GetMessage())
 			return
 		}
-		println("Create table " + tableName + " success")
+		println("Create collection " + collectionName + " success")
 	}
 
-	hasTable, status, err = client.HasTable(tableName)
+	hasCollection, status, err = client.HasCollection(collectionName)
 	if err != nil {
-		println("HasTable rpc failed: " + err.Error())
+		println("HasCollection rpc failed: " + err.Error())
 		return
 	}
-	if hasTable == false {
-		println("Create table failed: " + status.GetMessage())
+	if hasCollection == false {
+		println("Create collection failed: " + status.GetMessage())
 		return
 	}
-	println("Table: " + tableName + " exist")
+	println("Collection: " + collectionName + " exist")
 
 	println("**************************************************")
 
-	//test show tables
-	var tables []string
-	tables, status, err = client.ShowTables()
+	//test show collections
+	var collections []string
+	collections, status, err = client.ShowCollections()
 	if err != nil {
-		println("ShowTables rpc failed: " + err.Error())
+		println("ShowCollections rpc failed: " + err.Error())
 		return
 	}
 	if !status.Ok() {
-		println("Show tables failed: " + status.GetMessage())
+		println("Show collections failed: " + status.GetMessage())
 		return
 	}
-	println("ShowTables: ")
-	for i = 0; i < int64(len(tables)); i++ {
-		println(" - " + tables[i])
+	println("ShowCollections: ")
+	for i = 0; i < int64(len(collections)); i++ {
+		println(" - " + collections[i])
 	}
 
 	//test insert vectors
-	records := make([]milvus.RowRecord, nb)
+	records := make([]milvus.Entity, nb)
 	recordArray := make([][]float32, nb)
 	for i = 0; i < nb; i++ {
 		recordArray[i] = make([]float32, dimension)
@@ -128,7 +128,7 @@ func example(address string, port string) {
 		}
 		records[i].FloatData = recordArray[i]
 	}
-	insertParam := milvus.InsertParam{tableName, "", records, nil, nil}
+	insertParam := milvus.InsertParam{collectionName, "", records, nil, nil}
 	status, err = client.Insert(&insertParam)
 	if err != nil {
 		println("Insert rpc failed: " + err.Error())
@@ -142,21 +142,21 @@ func example(address string, port string) {
 
 	time.Sleep(3 * time.Second)
 
-	//test describe table
-	tableSchema, status, err = client.DescribeTable(tableName)
+	//test describe collection
+	collectionParam, status, err = client.DescribeCollection(collectionName)
 	if err != nil {
-		println("DescribeTable rpc failed: " + err.Error())
+		println("DescribeCollection rpc failed: " + err.Error())
 		return
 	}
 	if !status.Ok() {
 		println("Create index failed: " + status.GetMessage())
 		return
 	}
-	println("TableName:" + tableSchema.TableName + "----Dimension:" + strconv.Itoa(int(tableSchema.Dimension)) +
-		"----IndexFileSize:" + strconv.Itoa(int(tableSchema.IndexFileSize)))
+	println("CollectionName:" + collectionParam.CollectionName + "----Dimension:" + strconv.Itoa(int(collectionParam.Dimension)) +
+		"----IndexFileSize:" + strconv.Itoa(int(collectionParam.IndexFileSize)))
 
 	//Construct query vectors
-	queryRecords := make([]milvus.RowRecord, nq)
+	queryRecords := make([]milvus.Entity, nq)
 	queryVectors := make([][]float32, nq)
 	for i = 0; i < nq; i++ {
 		queryVectors[i] = make([]float32, dimension)
@@ -173,7 +173,7 @@ func example(address string, port string) {
 	kvPair := make([]milvus.KeyValuePair, 1)
 	kvPair[0].Key = "params"
 	kvPair[0].Value = "{\"nprobe\" : 32}"
-	searchParam := milvus.SearchParam{tableName, queryRecords, topk, nil, kvPair}
+	searchParam := milvus.SearchParam{collectionName, queryRecords, topk, nil, kvPair}
 	topkQueryResult, status, err = client.Search(searchParam)
 	if err != nil {
 		println("Search rpc failed: " + err.Error())
@@ -187,23 +187,23 @@ func example(address string, port string) {
 
 	println("**************************************************")
 
-	//test CountTable
-	var tableCount int64
-	tableCount, status, err = client.CountTable(tableName)
+	//test CountCollection
+	var collectionCount int64
+	collectionCount, status, err = client.CountCollection(collectionName)
 	if err != nil {
-		println("CountTable rpc failed: " + err.Error())
+		println("CountCollection rpc failed: " + err.Error())
 		return
 	}
 	if !status.Ok() {
-		println("Get table count failed: " + status.GetMessage())
+		println("Get collection count failed: " + status.GetMessage())
 		return
 	}
-	println("Table count:" + strconv.Itoa(int(tableCount)))
+	println("Collection count:" + strconv.Itoa(int(collectionCount)))
 
 	//Create index
 	println("Start create index...")
 	kvPair[0].Value = "{\"nlist\" : 16384}"
-	indexParam := milvus.IndexParam{tableName, milvus.IVFFLAT, kvPair}
+	indexParam := milvus.IndexParam{collectionName, milvus.IVFFLAT, kvPair}
 	status, err = client.CreateIndex(&indexParam)
 	if err != nil {
 		println("CreateIndex rpc failed: " + err.Error())
@@ -216,7 +216,7 @@ func example(address string, port string) {
 	println("Create index success!")
 
 	//Describe index
-	indexParam, status, err = client.DescribeIndex(tableName)
+	indexParam, status, err = client.DescribeIndex(collectionName)
 	if err != nil {
 		println("DescribeIndex rpc failed: " + err.Error())
 		return
@@ -224,18 +224,18 @@ func example(address string, port string) {
 	if !status.Ok() {
 		println("Describe index failed: " + status.GetMessage())
 	}
-	println(indexParam.TableName + "----index type:" + strconv.Itoa(int(indexParam.IndexType)))
+	println(indexParam.CollectionName + "----index type:" + strconv.Itoa(int(indexParam.IndexType)))
 
-	//Preload table
-	status, err = client.PreloadTable(tableName)
+	//Preload collection
+	status, err = client.PreloadCollection(collectionName)
 	if err != nil {
-		println("PreloadTable rpc failed: " + err.Error())
+		println("PreloadCollection rpc failed: " + err.Error())
 		return
 	}
 	if !status.Ok() {
 		println(status.GetMessage())
 	}
-	println("Preload table success")
+	println("Preload collection success")
 
 	println("**************************************************")
 
@@ -243,7 +243,7 @@ func example(address string, port string) {
 	kvPair = make([]milvus.KeyValuePair, 1)
 	kvPair[0].Key = "params"
 	kvPair[0].Value = "{\"nprobe\" : 32}"
-	searchParam = milvus.SearchParam{tableName, queryRecords, topk, nil, kvPair}
+	searchParam = milvus.SearchParam{collectionName, queryRecords, topk, nil, kvPair}
 	topkQueryResult, status, err = client.Search(searchParam)
 	if err != nil {
 		println("Search rpc failed: " + err.Error())
@@ -262,7 +262,7 @@ func example(address string, port string) {
 	println("**************************************************")
 
 	//Drop index
-	status, err = client.DropIndex(tableName)
+	status, err = client.DropIndex(collectionName)
 	if err != nil {
 		println("DropIndex rpc failed: " + err.Error())
 		return
@@ -271,14 +271,14 @@ func example(address string, port string) {
 		println("Drop index failed: " + status.GetMessage())
 	}
 
-	//Drop table
-	status, err = client.DropTable(tableName)
-	hasTable, status1, err := client.HasTable(tableName)
-	if !status.Ok() || !status1.Ok() || hasTable == true {
-		println("Drop table failed: " + status.GetMessage())
+	//Drop collection
+	status, err = client.DropCollection(collectionName)
+	hasCollection, status1, err := client.HasCollection(collectionName)
+	if !status.Ok() || !status1.Ok() || hasCollection == true {
+		println("Drop collection failed: " + status.GetMessage())
 		return
 	}
-	println("Drop table " + tableName + "success!")
+	println("Drop collection " + collectionName + "success!")
 
 	//GetConfig
 	var configInfo string
