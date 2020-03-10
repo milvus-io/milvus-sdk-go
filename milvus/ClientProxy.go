@@ -73,14 +73,8 @@ func (client *Milvusclient) Disconnect() error {
 }
 
 func (client *Milvusclient) CreateCollection(collectionParam CollectionParam) (Status, error) {
-	keyValuePair := make([]*pb.KeyValuePair, len(collectionParam.ExtraParams))
-	var i int
-	for i = 0; i < len(collectionParam.ExtraParams); i++ {
-		pair := pb.KeyValuePair{collectionParam.ExtraParams[i].Key, collectionParam.ExtraParams[i].Value, struct{}{}, nil, 0}
-		keyValuePair[i] = &pair
-	}
 	grpcTableSchema := pb.TableSchema{nil, collectionParam.CollectionName, collectionParam.Dimension,
-		collectionParam.IndexFileSize, int32(collectionParam.MetricType), keyValuePair, struct{}{}, nil, 0}
+		collectionParam.IndexFileSize, int32(collectionParam.MetricType), nil, struct{}{}, nil, 0}
 	grpcStatus, err := client.Instance.CreateTable(grpcTableSchema)
 	if err != nil {
 		return nil, err
@@ -109,12 +103,9 @@ func (client *Milvusclient) DropCollection(collectionName string) (Status, error
 }
 
 func (client *Milvusclient) CreateIndex(indexParam *IndexParam) (Status, error) {
-	keyValuePair := make([]*pb.KeyValuePair, len(indexParam.ExtraParams))
-	var i int
-	for i = 0; i < len(indexParam.ExtraParams); i++ {
-		pair := pb.KeyValuePair{indexParam.ExtraParams[i].Key, indexParam.ExtraParams[i].Value, struct{}{}, nil, 0}
-		keyValuePair[i] = &pair
-	}
+	keyValuePair := make([]*pb.KeyValuePair, 1)
+	pair := pb.KeyValuePair{"params", indexParam.ExtraParams, struct{}{}, nil, 0}
+	keyValuePair[0] = &pair
 	grpcIndexParam := pb.IndexParam{nil, indexParam.CollectionName, int32(indexParam.IndexType), keyValuePair,
 		struct{}{}, nil, 0}
 	grpcStatus, err := client.Instance.CreateIndex(grpcIndexParam)
@@ -134,14 +125,8 @@ func (client *Milvusclient) Insert(insertParam *InsertParam) (Status, error) {
 		rowRecordArray[i] = &rowRecord
 	}
 
-	keyValuePair := make([]*pb.KeyValuePair, len(insertParam.ExtraParams))
-	for i = 0; i < len(insertParam.ExtraParams); i++ {
-		pair := pb.KeyValuePair{insertParam.ExtraParams[i].Key, insertParam.ExtraParams[i].Value, struct{}{}, nil, 0}
-		keyValuePair[i] = &pair
-	}
-
 	grpcInsertParam := pb.InsertParam{insertParam.CollectionName, rowRecordArray, insertParam.IDArray,
-		insertParam.PartitionTag, keyValuePair, struct{}{}, nil, 0}
+		insertParam.PartitionTag, nil, struct{}{}, nil, 0}
 	vectorIds, err := client.Instance.Insert(grpcInsertParam)
 	if err != nil {
 		return nil, err
@@ -186,11 +171,9 @@ func (client *Milvusclient) Search(searchParam SearchParam) (TopkQueryResult, St
 		queryRecordArray[i] = &rowRecord
 	}
 
-	keyValuePair := make([]*pb.KeyValuePair, len(searchParam.ExtraParams))
-	for i = 0; i < int64(len(searchParam.ExtraParams)); i++ {
-		pair := pb.KeyValuePair{searchParam.ExtraParams[i].Key, searchParam.ExtraParams[i].Value, struct{}{}, nil, 0}
-		keyValuePair[i] = &pair
-	}
+	keyValuePair := make([]*pb.KeyValuePair, 1)
+	pair := pb.KeyValuePair{"params", searchParam.ExtraParams, struct{}{}, nil, 0}
+	keyValuePair[0] = &pair
 
 	grpcSearchParam := pb.SearchParam{searchParam.CollectionName, searchParam.PartitionTag, queryRecordArray,
 		searchParam.Topk, keyValuePair, struct{}{}, nil, 0}
@@ -229,9 +212,9 @@ func (client *Milvusclient) DescribeCollection(collectionName string) (Collectio
 	grpcCollectionName := pb.TableName{collectionName, struct{}{}, nil, 0}
 	tableSchema, err := client.Instance.DescribeTable(grpcCollectionName)
 	if err != nil {
-		return CollectionParam{"", 0, 0, 0, nil}, nil, err
+		return CollectionParam{"", 0, 0, 0}, nil, err
 	}
-	return CollectionParam{tableSchema.GetTableName(), tableSchema.GetDimension(), tableSchema.GetIndexFileSize(), int64(tableSchema.GetMetricType()), nil},
+	return CollectionParam{tableSchema.GetTableName(), tableSchema.GetDimension(), tableSchema.GetIndexFileSize(), int64(tableSchema.GetMetricType())},
 		status{int64(tableSchema.GetStatus().GetErrorCode()), tableSchema.Status.Reason}, err
 }
 
@@ -325,9 +308,16 @@ func (client *Milvusclient) DescribeIndex(collectionName string) (IndexParam, St
 	grpcTableName := pb.TableName{collectionName, struct{}{}, nil, 0}
 	indexParam, err := client.Instance.DescribeIndex(grpcTableName)
 	if err != nil {
-		return IndexParam{"", 0, nil}, nil, err
+		return IndexParam{"", 0, ""}, nil, err
 	}
-	return IndexParam{indexParam.GetTableName(), IndexType(indexParam.IndexType), nil},
+	var i int
+	var extraParam string
+	for i = 0; i < len(indexParam.ExtraParams); i++ {
+		if indexParam.ExtraParams[i].Key == "params" {
+			extraParam = indexParam.ExtraParams[i].Value
+		}
+	}
+	return IndexParam{indexParam.GetTableName(), IndexType(indexParam.IndexType), extraParam},
 		status{int64(indexParam.GetStatus().GetErrorCode()), indexParam.GetStatus().GetReason()}, err
 }
 

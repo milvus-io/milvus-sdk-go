@@ -70,7 +70,7 @@ func example(address string, port string) {
 	println("Server version: " + version)
 
 	//test create collection
-	collectionParam := milvus.CollectionParam{collectionName, dimension, indexFileSize, metricType, nil}
+	collectionParam := milvus.CollectionParam{collectionName, dimension, indexFileSize, metricType}
 	var hasCollection bool
 	hasCollection, status, err = client.HasCollection(collectionName)
 	if err != nil {
@@ -128,7 +128,7 @@ func example(address string, port string) {
 		}
 		records[i].FloatData = recordArray[i]
 	}
-	insertParam := milvus.InsertParam{collectionName, "", records, nil, nil}
+	insertParam := milvus.InsertParam{collectionName, "", records, nil}
 	status, err = client.Insert(&insertParam)
 	if err != nil {
 		println("Insert rpc failed: " + err.Error())
@@ -170,10 +170,8 @@ func example(address string, port string) {
 
 	//Search without create index
 	var topkQueryResult milvus.TopkQueryResult
-	kvPair := make([]milvus.KeyValuePair, 1)
-	kvPair[0].Key = "params"
-	kvPair[0].Value = "{\"nprobe\" : 32}"
-	searchParam := milvus.SearchParam{collectionName, queryRecords, topk, nil, kvPair}
+	extraParams := "{\"nprobe\" : 32}"
+	searchParam := milvus.SearchParam{collectionName, queryRecords, topk, nil, extraParams}
 	topkQueryResult, status, err = client.Search(searchParam)
 	if err != nil {
 		println("Search rpc failed: " + err.Error())
@@ -202,8 +200,8 @@ func example(address string, port string) {
 
 	//Create index
 	println("Start create index...")
-	kvPair[0].Value = "{\"nlist\" : 16384}"
-	indexParam := milvus.IndexParam{collectionName, milvus.IVFFLAT, kvPair}
+	extraParams = "{\"nlist\" : 16384}"
+	indexParam := milvus.IndexParam{collectionName, milvus.IVFFLAT, extraParams}
 	status, err = client.CreateIndex(&indexParam)
 	if err != nil {
 		println("CreateIndex rpc failed: " + err.Error())
@@ -240,10 +238,8 @@ func example(address string, port string) {
 	println("**************************************************")
 
 	//Search with IVFSQ8 index
-	kvPair = make([]milvus.KeyValuePair, 1)
-	kvPair[0].Key = "params"
-	kvPair[0].Value = "{\"nprobe\" : 32}"
-	searchParam = milvus.SearchParam{collectionName, queryRecords, topk, nil, kvPair}
+	extraParams = "{\"nprobe\" : 32}"
+	searchParam = milvus.SearchParam{collectionName, queryRecords, topk, nil, extraParams}
 	topkQueryResult, status, err = client.Search(searchParam)
 	if err != nil {
 		println("Search rpc failed: " + err.Error())

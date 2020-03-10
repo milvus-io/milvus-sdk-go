@@ -74,12 +74,6 @@ type ConnectParam struct {
 	Port string
 }
 
-// KeyValuePair
-type KeyValuePair struct {
-	Key   string
-	Value string
-}
-
 // SegmentStat segment statistics
 type SegmentStat struct {
 	// SegmentName segment name
@@ -120,8 +114,6 @@ type CollectionParam struct {
 	IndexFileSize int64
 	// MetricType Index metric type
 	MetricType int64
-	// ExtraParams extra parameter
-	ExtraParams []KeyValuePair
 }
 
 // IndexParam index parameters
@@ -131,7 +123,22 @@ type IndexParam struct {
 	// IndexType create index type
 	IndexType IndexType
 	// ExtraParams extra parameters
-	ExtraParams []KeyValuePair
+	// 	Note: extra_params is extra parameters list, it must be json format
+	//        For different index type, parameter list is different accordingly, for example:
+	//        FLAT/IVFLAT/SQ8:  "{nlist: '16384'}"
+	//            ///< nlist range:[1, 999999]
+	//        IVFPQ:  "{nlist: '16384', m: "12"}"
+	//            ///< nlist range:[1, 999999]
+	//            ///< m is decided by dim and have a couple of results.
+	//        NSG:  "{search_length: '45', out_degree:'50', candidate_pool_size:'300', "knng":'100'}"
+	//            ///< search_length range:[10, 300]
+	//            ///< out_degree range:[5, 300]
+	//            ///< candidate_pool_size range:[50, 1000]
+	//            ///< knng range:[5, 300]
+	//        HNSW  "{M: '16', efConstruction:'500'}"
+	//            ///< M range:[5, 48]
+	//            ///< efConstruction range:[topk, 4096]
+	ExtraParams string
 }
 
 // Entity record typy
@@ -150,8 +157,6 @@ type InsertParam struct {
 	RecordArray []Entity
 	// IDArray id array
 	IDArray []int64
-	// ExtraParams extra parameters
-	ExtraParams []KeyValuePair
 }
 
 // Range range information, for DATE range, the format is like: 'year-month-day'
@@ -173,7 +178,15 @@ type SearchParam struct {
 	// PartitionTag partition tag array
 	PartitionTag []string
 	// ExtraParams extra parameters
-	ExtraParams []KeyValuePair
+	//  Note: extra_params is extra parameters list, it must be json format, for example:
+	//	 	  For different index type, parameter list is different accordingly
+	//		  FLAT/IVFLAT/SQ8/IVFPQ:  "{nprobe: '32'}"
+	//			  ///< nprobe range:[1,999999]
+	// 		  NSG:  "{search_length:'100'}
+	//	 	 	  ///< search_length range:[10, 300]
+	//		  HNSW  "{ef: '64'}
+	//		 	  ///< ef range:[k, 4096]
+	ExtraParams string
 }
 
 //QueryResult Query result

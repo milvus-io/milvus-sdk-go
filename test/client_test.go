@@ -26,7 +26,7 @@ func CreateCollection() error {
 		return err
 	}
 
-	collectionParam := milvus.CollectionParam{TABLENAME, 128, 1024, int64(milvus.L2), nil}
+	collectionParam := milvus.CollectionParam{TABLENAME, 128, 1024, int64(milvus.L2)}
 	status, err = client.CreateCollection(collectionParam)
 	if err != nil {
 		return err
@@ -55,7 +55,7 @@ func TestConnection(t *testing.T) {
 }
 
 func TestCollection(t *testing.T) {
-	param := milvus.CollectionParam{"test_1", 128, 1024, int64(milvus.L2), nil}
+	param := milvus.CollectionParam{"test_1", 128, 1024, int64(milvus.L2)}
 	status, err := client.CreateCollection(param)
 	if err != nil {
 		t.Error("CreateCollection error")
@@ -148,7 +148,7 @@ func TestEntity(t *testing.T) {
 		}
 		records[i].FloatData = recordArray[i]
 	}
-	insertParam := milvus.InsertParam{TABLENAME, "", records, nil, nil}
+	insertParam := milvus.InsertParam{TABLENAME, "", records, nil}
 	status, err := client.Insert(&insertParam)
 	if err != nil {
 		t.Error("Insert error")
@@ -225,10 +225,8 @@ func TestEntity(t *testing.T) {
 }
 
 func TestIndex(t *testing.T) {
-	extraParams := make([]milvus.KeyValuePair, 1)
-	extraParams[0].Key = "params"
-	extraParams[0].Value = "{\"nlist\" : 16384}"
-	indexParam := milvus.IndexParam{TABLENAME, milvus.IVFFLAT, extraParams}
+	extraParam := "{\"nlist\" : 16384}"
+	indexParam := milvus.IndexParam{TABLENAME, milvus.IVFFLAT, extraParam}
 	status, err := client.CreateIndex(&indexParam)
 	if err != nil {
 		t.Error("CreateIndex error")
@@ -287,10 +285,8 @@ func TestSearch(t *testing.T) {
 	}
 
 	var topkQueryResult milvus.TopkQueryResult
-	kvPair := make([]milvus.KeyValuePair, 1)
-	kvPair[0].Key = "params"
-	kvPair[0].Value = "{\"nprobe\" : 32}"
-	searchParam := milvus.SearchParam{TABLENAME, queryRecords, int64(topk), nil, kvPair}
+	extraParam := "{\"nprobe\" : 32}"
+	searchParam := milvus.SearchParam{TABLENAME, queryRecords, int64(topk), nil, extraParam}
 	topkQueryResult, status, err := client.Search(searchParam)
 	if err != nil {
 		t.Error(err.Error())
