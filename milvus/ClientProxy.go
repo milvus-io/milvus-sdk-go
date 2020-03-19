@@ -183,13 +183,13 @@ func (client *Milvusclient) Search(searchParam SearchParam) (TopkQueryResult, St
 	}
 	nq := topkQueryResult.GetRowNum()
 	var result = make([]QueryResult, nq)
+	topk := int64(len(topkQueryResult.GetIds())) / nq
 	for i = 0; i < nq; i++ {
-		topk := int64(len(topkQueryResult.GetIds())) / nq
 		result[i].Ids = make([]int64, topk)
 		result[i].Distances = make([]float32, topk)
 		for j = 0; j < topk; j++ {
-			result[i].Ids[j] = topkQueryResult.GetIds()[i*nq+j]
-			result[i].Distances[j] = topkQueryResult.GetDistances()[i*nq+j]
+			result[i].Ids[j] = topkQueryResult.GetIds()[i*topk+j]
+			result[i].Distances[j] = topkQueryResult.GetDistances()[i*topk+j]
 		}
 	}
 	return TopkQueryResult{result}, status{int64(topkQueryResult.Status.ErrorCode), topkQueryResult.Status.Reason}, nil
