@@ -41,6 +41,10 @@ const (
 	JACCARD MetricType = 4
 	// TANIMOTO tanimoto distance
 	TANIMOTO MetricType = 5
+	// SUBSTRUCTURE substructure distance
+	SUBSTRUCTURE MetricType = 6
+	// SUPERSTRUCTURE superstructure
+	SUPERSTRUCTURE MetricType = 7
 )
 
 const (
