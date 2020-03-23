@@ -267,7 +267,7 @@ type MilvusClient interface {
 	// Insert method
 	// This method is used to query entity in collection.
 	// return indicate if insert is successful.
-	Insert(insertParam *InsertParam) (Status, error)
+	Insert(insertParam *InsertParam) ([]int64, Status, error)
 
 	// GetEntityByID method
 	// This method is used to get entity by entity id
