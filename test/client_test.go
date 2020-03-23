@@ -149,10 +149,14 @@ func TestEntity(t *testing.T) {
 		records[i].FloatData = recordArray[i]
 	}
 	insertParam := milvus.InsertParam{TABLENAME, "", records, nil}
-	status, err := client.Insert(&insertParam)
+	ret_id_array, status, err := client.Insert(&insertParam)
 	if err != nil {
 		t.Error("Insert error")
 		return
+	}
+
+	if ret_id_array == nil {
+		t.Error("Insert vecto result check error")
 	}
 
 	if !status.Ok() {

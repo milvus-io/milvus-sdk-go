@@ -5,9 +5,11 @@
 ### Bug
 ---
 - \#5 - Search interface bug
+- \#10 - When the collection is empty, the search client throws exceptions
 
 ### Improvement
 ---
+- \#9 - The INSERT method should return IDs
 
 ### Feature
 ---

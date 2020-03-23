@@ -129,7 +129,7 @@ func example(address string, port string) {
 		records[i].FloatData = recordArray[i]
 	}
 	insertParam := milvus.InsertParam{collectionName, "", records, nil}
-	status, err = client.Insert(&insertParam)
+	id_array, status, err := client.Insert(&insertParam)
 	if err != nil {
 		println("Insert rpc failed: " + err.Error())
 		return
@@ -137,6 +137,9 @@ func example(address string, port string) {
 	if !status.Ok() {
 		println("Insert vector failed: " + status.GetMessage())
 		return
+	}
+	if len(id_array) != int(nb) {
+		println("ERROR: return id array is null")
 	}
 	println("Insert vectors success!")
 

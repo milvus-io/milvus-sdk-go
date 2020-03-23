@@ -117,7 +117,7 @@ func (client *Milvusclient) CreateIndex(indexParam *IndexParam) (Status, error) 
 
 ////////////////////////////////////////////////////////////////////////////
 
-func (client *Milvusclient) Insert(insertParam *InsertParam) (Status, error) {
+func (client *Milvusclient) Insert(insertParam *InsertParam) ([]int64, Status, error) {
 	var i int
 	var rowRecordArray = make([]*pb.RowRecord, len(insertParam.RecordArray))
 	for i = 0; i < len(insertParam.RecordArray); i++ {
@@ -129,10 +129,13 @@ func (client *Milvusclient) Insert(insertParam *InsertParam) (Status, error) {
 		insertParam.PartitionTag, nil, struct{}{}, nil, 0}
 	vectorIds, err := client.Instance.Insert(grpcInsertParam)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	insertParam.IDArray = vectorIds.VectorIdArray
-	return status{int64(vectorIds.Status.ErrorCode), vectorIds.Status.Reason}, err
+	if insertParam.IDArray != nil {
+		return nil, status{int64(vectorIds.Status.ErrorCode), vectorIds.Status.Reason}, err
+	}
+	id_array := vectorIds.VectorIdArray
+	return id_array, status{int64(vectorIds.Status.ErrorCode), vectorIds.Status.Reason}, err
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -182,6 +185,9 @@ func (client *Milvusclient) Search(searchParam SearchParam) (TopkQueryResult, St
 		return TopkQueryResult{nil}, nil, err
 	}
 	nq := topkQueryResult.GetRowNum()
+	if nq == 0 {
+		return TopkQueryResult{nil}, nil, err
+	}
 	var result = make([]QueryResult, nq)
 	topk := int64(len(topkQueryResult.GetIds())) / nq
 	for i = 0; i < nq; i++ {
