@@ -68,6 +68,8 @@ const (
 	SPTAGBKT IndexType = 8
 	// HNSW hnsw
 	HNSW IndexType = 11
+	// ANNOY annoy
+	ANNOY IndexType = 12
 )
 
 // ConnectParam Parameters for connect

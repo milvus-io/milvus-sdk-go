@@ -14,6 +14,7 @@
 ### Feature
 ---
 - \#6 - Add substructure and superstructure metric types
+- \#12 - Add annoy index type
 
 ### Task
 ---
