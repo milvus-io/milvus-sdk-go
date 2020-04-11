@@ -1,6 +1,6 @@
 # Changelog     
 
-## milvus-sdk-go 0.1.0 (2020-03-11)
+## milvus-sdk-go 0.2.0 (2020-03-31)
 
 ### Bug
 ---
@@ -11,6 +11,7 @@
 ### Improvement
 ---
 - \#9 - The INSERT method should return IDs
+- \#18 - Change table to collection in proto
 
 ### Feature
 ---
@@ -19,3 +20,5 @@
 
 ### Task
 ---
+
+## milvus-sdk-go 0.1.0 (2020-03-11)

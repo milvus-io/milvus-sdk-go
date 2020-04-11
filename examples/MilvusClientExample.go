@@ -72,7 +72,7 @@ func example(address string, port string) {
 	//test create collection
 	collectionParam := milvus.CollectionParam{collectionName, dimension, indexFileSize, metricType}
 	var hasCollection bool
-	hasCollection, status, err = client.HasCollection(collectionName)
+	//hasCollection, status, err = client.HasCollection(collectionName)
 	if err != nil {
 		println("HasCollection rpc failed: " + err.Error())
 	}
