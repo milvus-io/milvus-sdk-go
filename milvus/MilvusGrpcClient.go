@@ -31,29 +31,29 @@ var timeout time.Duration = 10 * time.Second
 
 // MilvusGrpcClient call grpc generated code interface
 type MilvusGrpcClient interface {
-	CreateTable(tableSchema pb.TableSchema) (pb.Status, error)
+	CreateCollection(collectionSchema pb.CollectionSchema) (pb.Status, error)
 
-	HasTable(tableName pb.TableName) (pb.BoolReply, error)
+	HasCollection(collectionName pb.CollectionName) (pb.BoolReply, error)
 
-	DescribeTable(tableName pb.TableName) (pb.TableSchema, error)
+	DescribeCollection(collectionName pb.CollectionName) (pb.CollectionSchema, error)
 
-	CountTable(tableName pb.TableName) (pb.TableRowCount, error)
+	CountCollection(collectionName pb.CollectionName) (pb.CollectionRowCount, error)
 
-	ShowTables() (pb.TableNameList, error)
+	ShowCollections() (pb.CollectionNameList, error)
 
-	ShowTableInfos(tableName pb.TableName) (pb.TableInfo, error)
+	ShowCollectionInfos(collectionName pb.CollectionName) (pb.CollectionInfo, error)
 
-	DropTable(tableName pb.TableName) (pb.Status, error)
+	DropCollection(collectionName pb.CollectionName) (pb.Status, error)
 
 	CreateIndex(indexParam pb.IndexParam) (pb.Status, error)
 
-	DescribeIndex(tableName pb.TableName) (pb.IndexParam, error)
+	DescribeIndex(collectionName pb.CollectionName) (pb.IndexParam, error)
 
-	DropIndex(tableName pb.TableName) (pb.Status, error)
+	DropIndex(collectionName pb.CollectionName) (pb.Status, error)
 
 	CreatePartition(partitionParam pb.PartitionParam) (pb.Status, error)
 
-	ShowPartitions(tableName pb.TableName) (pb.PartitionList, error)
+	ShowPartitions(collectionName pb.CollectionName) (pb.PartitionList, error)
 
 	DropPartition(partitionParam pb.PartitionParam) (pb.Status, error)
 
@@ -71,11 +71,11 @@ type MilvusGrpcClient interface {
 
 	DeleteByID(param pb.DeleteByIDParam) (pb.Status, error)
 
-	PreloadTable(tableName pb.TableName) (pb.Status, error)
+	PreloadCollection(collectionName pb.CollectionName) (pb.Status, error)
 
 	Flush(param pb.FlushParam) (pb.Status, error)
 
-	Compact(name pb.TableName) (pb.Status, error)
+	Compact(name pb.CollectionName) (pb.Status, error)
 }
 
 type milvusGrpcClient struct {
@@ -87,53 +87,56 @@ func NewMilvusGrpcClient(client pb.MilvusServiceClient) MilvusGrpcClient {
 	return &milvusGrpcClient{client}
 }
 
-func (grpcClient *milvusGrpcClient) CreateTable(tableSchema pb.TableSchema) (pb.Status, error) {
+func (grpcClient *milvusGrpcClient) CreateCollection(collectionSchema pb.CollectionSchema) (pb.Status, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	reply, err := grpcClient.serviceInstance.CreateTable(ctx, &tableSchema)
+	reply, err := grpcClient.serviceInstance.CreateCollection(ctx, &collectionSchema)
+	if err != nil {
+		return pb.Status{0, "", struct{}{}, nil, 0,}, err
+	}
 	return *reply, err
 }
 
-func (grpcClient *milvusGrpcClient) HasTable(tableName pb.TableName) (pb.BoolReply, error) {
+func (grpcClient *milvusGrpcClient) HasCollection(collectionName pb.CollectionName) (pb.BoolReply, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	boolReply, err := grpcClient.serviceInstance.HasTable(ctx, &tableName)
+	boolReply, err := grpcClient.serviceInstance.HasCollection(ctx, &collectionName)
 	return *boolReply, err
 }
 
-func (grpcClient *milvusGrpcClient) DescribeTable(tableName pb.TableName) (pb.TableSchema, error) {
+func (grpcClient *milvusGrpcClient) DescribeCollection(collectionName pb.CollectionName) (pb.CollectionSchema, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	tableSchema, err := grpcClient.serviceInstance.DescribeTable(ctx, &tableName)
-	return *tableSchema, err
+	collectionSchema, err := grpcClient.serviceInstance.DescribeCollection(ctx, &collectionName)
+	return *collectionSchema, err
 }
 
-func (grpcClient *milvusGrpcClient) CountTable(tableName pb.TableName) (pb.TableRowCount, error) {
+func (grpcClient *milvusGrpcClient) CountCollection(collectionName pb.CollectionName) (pb.CollectionRowCount, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	count, err := grpcClient.serviceInstance.CountTable(ctx, &tableName)
+	count, err := grpcClient.serviceInstance.CountCollection(ctx, &collectionName)
 	return *count, err
 }
 
-func (grpcClient *milvusGrpcClient) ShowTables() (pb.TableNameList, error) {
+func (grpcClient *milvusGrpcClient) ShowCollections() (pb.CollectionNameList, error) {
 	cmd := pb.Command{"", struct{}{}, nil, 0}
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	tableNameList, err := grpcClient.serviceInstance.ShowTables(ctx, &cmd)
-	return *tableNameList, err
+	collectionNameList, err := grpcClient.serviceInstance.ShowCollections(ctx, &cmd)
+	return *collectionNameList, err
 }
 
-func (grpcClient *milvusGrpcClient) ShowTableInfos(tableName pb.TableName) (pb.TableInfo, error) {
+func (grpcClient *milvusGrpcClient) ShowCollectionInfos(collectionName pb.CollectionName) (pb.CollectionInfo, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	tableInfo, err := grpcClient.serviceInstance.ShowTableInfo(ctx, &tableName)
-	return *tableInfo, err
+	collectionInfo, err := grpcClient.serviceInstance.ShowCollectionInfo(ctx, &collectionName)
+	return *collectionInfo, err
 }
 
-func (grpcClient *milvusGrpcClient) DropTable(tableName pb.TableName) (pb.Status, error) {
+func (grpcClient *milvusGrpcClient) DropCollection(collectionName pb.CollectionName) (pb.Status, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	status, err := grpcClient.serviceInstance.DropTable(ctx, &tableName)
+	status, err := grpcClient.serviceInstance.DropCollection(ctx, &collectionName)
 	return *status, err
 }
 
@@ -143,17 +146,17 @@ func (grpcClient *milvusGrpcClient) CreateIndex(indexParam pb.IndexParam) (pb.St
 	return *status, err
 }
 
-func (grpcClient *milvusGrpcClient) DescribeIndex(tableName pb.TableName) (pb.IndexParam, error) {
+func (grpcClient *milvusGrpcClient) DescribeIndex(collectionName pb.CollectionName) (pb.IndexParam, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	indexParam, err := grpcClient.serviceInstance.DescribeIndex(ctx, &tableName)
+	indexParam, err := grpcClient.serviceInstance.DescribeIndex(ctx, &collectionName)
 	return *indexParam, err
 }
 
-func (grpcClient *milvusGrpcClient) DropIndex(tableName pb.TableName) (pb.Status, error) {
+func (grpcClient *milvusGrpcClient) DropIndex(collectionName pb.CollectionName) (pb.Status, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	status, err := grpcClient.serviceInstance.DropIndex(ctx, &tableName)
+	status, err := grpcClient.serviceInstance.DropIndex(ctx, &collectionName)
 	return *status, err
 }
 
@@ -164,10 +167,10 @@ func (grpcClient *milvusGrpcClient) CreatePartition(partitionParam pb.PartitionP
 	return *status, err
 }
 
-func (grpcClient *milvusGrpcClient) ShowPartitions(tableName pb.TableName) (pb.PartitionList, error) {
+func (grpcClient *milvusGrpcClient) ShowPartitions(collectionName pb.CollectionName) (pb.PartitionList, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	status, err := grpcClient.serviceInstance.ShowPartitions(ctx, &tableName)
+	status, err := grpcClient.serviceInstance.ShowPartitions(ctx, &collectionName)
 	return *status, err
 }
 
@@ -222,10 +225,10 @@ func (grpcClient *milvusGrpcClient) DeleteByID(param pb.DeleteByIDParam) (pb.Sta
 	return *status, err
 }
 
-func (grpcClient *milvusGrpcClient) PreloadTable(tableName pb.TableName) (pb.Status, error) {
+func (grpcClient *milvusGrpcClient) PreloadCollection(collectionName pb.CollectionName) (pb.Status, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	status, err := grpcClient.serviceInstance.PreloadTable(ctx, &tableName)
+	status, err := grpcClient.serviceInstance.PreloadCollection(ctx, &collectionName)
 	return *status, err
 }
 
@@ -236,9 +239,9 @@ func (grpcClient *milvusGrpcClient) Flush(param pb.FlushParam) (pb.Status, error
 	return *status, err
 }
 
-func (grpcClient *milvusGrpcClient) Compact(tableName pb.TableName) (pb.Status, error) {
+func (grpcClient *milvusGrpcClient) Compact(collectionName pb.CollectionName) (pb.Status, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	status, err := grpcClient.serviceInstance.Compact(ctx, &tableName)
+	status, err := grpcClient.serviceInstance.Compact(ctx, &collectionName)
 	return *status, err
 }

@@ -73,9 +73,9 @@ func (client *Milvusclient) Disconnect() error {
 }
 
 func (client *Milvusclient) CreateCollection(collectionParam CollectionParam) (Status, error) {
-	grpcTableSchema := pb.TableSchema{nil, collectionParam.CollectionName, collectionParam.Dimension,
+	grpcCollectionSchema := pb.CollectionSchema{nil, collectionParam.CollectionName, collectionParam.Dimension,
 		collectionParam.IndexFileSize, int32(collectionParam.MetricType), nil, struct{}{}, nil, 0}
-	grpcStatus, err := client.Instance.CreateTable(grpcTableSchema)
+	grpcStatus, err := client.Instance.CreateCollection(grpcCollectionSchema)
 	if err != nil {
 		return nil, err
 	}
@@ -84,8 +84,8 @@ func (client *Milvusclient) CreateCollection(collectionParam CollectionParam) (S
 }
 
 func (client *Milvusclient) HasCollection(collectionName string) (bool, Status, error) {
-	grpcTableName := pb.TableName{collectionName, struct{}{}, nil, 0}
-	boolReply, err := client.Instance.HasTable(grpcTableName)
+	grpcCollectionName := pb.CollectionName{collectionName, struct{}{}, nil, 0}
+	boolReply, err := client.Instance.HasCollection(grpcCollectionName)
 	if err != nil {
 		return false, nil, err
 	}
@@ -93,8 +93,8 @@ func (client *Milvusclient) HasCollection(collectionName string) (bool, Status, 
 }
 
 func (client *Milvusclient) DropCollection(collectionName string) (Status, error) {
-	grpcTableName := pb.TableName{collectionName, struct{}{}, nil, 0}
-	grpcStatus, err := client.Instance.DropTable(grpcTableName)
+	grpcCollectionName := pb.CollectionName{collectionName, struct{}{}, nil, 0}
+	grpcStatus, err := client.Instance.DropCollection(grpcCollectionName)
 	if err != nil {
 		return nil, err
 	}
@@ -215,61 +215,61 @@ func (client *Milvusclient) DeleteByID(collectionName string, id_array []int64) 
 ////////////////////////////////////////////////////////////////////////////
 
 func (client *Milvusclient) DescribeCollection(collectionName string) (CollectionParam, Status, error) {
-	grpcCollectionName := pb.TableName{collectionName, struct{}{}, nil, 0}
-	tableSchema, err := client.Instance.DescribeTable(grpcCollectionName)
+	grpcCollectionName := pb.CollectionName{collectionName, struct{}{}, nil, 0}
+	collectionSchema, err := client.Instance.DescribeCollection(grpcCollectionName)
 	if err != nil {
 		return CollectionParam{"", 0, 0, 0}, nil, err
 	}
-	return CollectionParam{tableSchema.GetTableName(), tableSchema.GetDimension(), tableSchema.GetIndexFileSize(), int64(tableSchema.GetMetricType())},
-		status{int64(tableSchema.GetStatus().GetErrorCode()), tableSchema.Status.Reason}, err
+	return CollectionParam{collectionSchema.GetCollectionName(), collectionSchema.GetDimension(), collectionSchema.GetIndexFileSize(), int64(collectionSchema.GetMetricType())},
+		status{int64(collectionSchema.GetStatus().GetErrorCode()), collectionSchema.Status.Reason}, err
 }
 
 ////////////////////////////////////////////////////////////////////////////
 
 func (client *Milvusclient) CountCollection(collectionName string) (int64, Status, error) {
-	grpcTableName := pb.TableName{collectionName, struct{}{}, nil, 0}
-	rowCount, err := client.Instance.CountTable(grpcTableName)
+	grpcCollectionName := pb.CollectionName{collectionName, struct{}{}, nil, 0}
+	rowCount, err := client.Instance.CountCollection(grpcCollectionName)
 	if err != nil {
 		return 0, nil, err
 	}
-	return rowCount.GetTableRowCount(), status{int64(rowCount.GetStatus().GetErrorCode()),
+	return rowCount.GetCollectionRowCount(), status{int64(rowCount.GetStatus().GetErrorCode()),
 		rowCount.GetStatus().GetReason()}, err
 }
 
 ////////////////////////////////////////////////////////////////////////////
 
 func (client *Milvusclient) ShowCollections() ([]string, Status, error) {
-	tableNameList, err := client.Instance.ShowTables()
+	collectionNameList, err := client.Instance.ShowCollections()
 	if err != nil {
 		return nil, nil, err
 	}
-	return tableNameList.GetTableNames(), status{int64(tableNameList.GetStatus().GetErrorCode()), tableNameList.GetStatus().GetReason()}, err
+	return collectionNameList.GetCollectionNames(), status{int64(collectionNameList.GetStatus().GetErrorCode()), collectionNameList.GetStatus().GetReason()}, err
 }
 
 ////////////////////////////////////////////////////////////////////////////
 
 func (client *Milvusclient) ShowCollectionInfo(collectionName string) (CollectionInfo, Status, error) {
-	grpcTableName := pb.TableName{collectionName, struct{}{}, nil, 0}
-	grpcTableInfo, err := client.Instance.ShowTableInfos(grpcTableName)
+	grpcCollectionName := pb.CollectionName{collectionName, struct{}{}, nil, 0}
+	grpcCollectionInfo, err := client.Instance.ShowCollectionInfos(grpcCollectionName)
 	if err != nil {
 		return CollectionInfo{0, nil}, nil, err
 	}
-	partitionStats := make([]PartitionStat, len(grpcTableInfo.PartitionsStat))
+	partitionStats := make([]PartitionStat, len(grpcCollectionInfo.PartitionsStat))
 	var i, j int
-	for i = 0; i < len(grpcTableInfo.PartitionsStat); i++ {
-		partitionStats[i].Tag = grpcTableInfo.PartitionsStat[i].Tag
-		partitionStats[i].RowCount = grpcTableInfo.PartitionsStat[i].TotalRowCount
-		segmentStat := make([]SegmentStat, len(grpcTableInfo.PartitionsStat[i].SegmentsStat))
-		for j = 0; j < len(grpcTableInfo.GetPartitionsStat()[i].GetSegmentsStat()); j++ {
-			segmentStat[j] = SegmentStat{grpcTableInfo.PartitionsStat[i].SegmentsStat[j].SegmentName,
-				grpcTableInfo.PartitionsStat[i].SegmentsStat[j].RowCount,
-				grpcTableInfo.PartitionsStat[i].SegmentsStat[j].IndexName,
-				grpcTableInfo.PartitionsStat[i].SegmentsStat[j].DataSize}
+	for i = 0; i < len(grpcCollectionInfo.PartitionsStat); i++ {
+		partitionStats[i].Tag = grpcCollectionInfo.PartitionsStat[i].Tag
+		partitionStats[i].RowCount = grpcCollectionInfo.PartitionsStat[i].TotalRowCount
+		segmentStat := make([]SegmentStat, len(grpcCollectionInfo.PartitionsStat[i].SegmentsStat))
+		for j = 0; j < len(grpcCollectionInfo.GetPartitionsStat()[i].GetSegmentsStat()); j++ {
+			segmentStat[j] = SegmentStat{grpcCollectionInfo.PartitionsStat[i].SegmentsStat[j].SegmentName,
+				grpcCollectionInfo.PartitionsStat[i].SegmentsStat[j].RowCount,
+				grpcCollectionInfo.PartitionsStat[i].SegmentsStat[j].IndexName,
+				grpcCollectionInfo.PartitionsStat[i].SegmentsStat[j].DataSize}
 		}
 		partitionStats[i].SegmentsStat = segmentStat
 	}
-	collectionInfo := CollectionInfo{grpcTableInfo.TotalRowCount, partitionStats}
-	return collectionInfo, status{int64(grpcTableInfo.Status.ErrorCode), grpcTableInfo.Status.Reason}, err
+	collectionInfo := CollectionInfo{grpcCollectionInfo.TotalRowCount, partitionStats}
+	return collectionInfo, status{int64(grpcCollectionInfo.Status.ErrorCode), grpcCollectionInfo.Status.Reason}, err
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -300,8 +300,8 @@ func (client *Milvusclient) ServerStatus() (string, Status, error) {
 ////////////////////////////////////////////////////////////////////////////
 
 func (client *Milvusclient) PreloadCollection(collectionName string) (Status, error) {
-	grpcTableName := pb.TableName{collectionName, struct{}{}, nil, 0}
-	grpcStatus, err := client.Instance.PreloadTable(grpcTableName)
+	grpcCollectionName := pb.CollectionName{collectionName, struct{}{}, nil, 0}
+	grpcStatus, err := client.Instance.PreloadCollection(grpcCollectionName)
 	if err != nil {
 		return nil, err
 	}
@@ -311,8 +311,8 @@ func (client *Milvusclient) PreloadCollection(collectionName string) (Status, er
 ////////////////////////////////////////////////////////////////////////////
 
 func (client *Milvusclient) DescribeIndex(collectionName string) (IndexParam, Status, error) {
-	grpcTableName := pb.TableName{collectionName, struct{}{}, nil, 0}
-	indexParam, err := client.Instance.DescribeIndex(grpcTableName)
+	grpcCollectionName := pb.CollectionName{collectionName, struct{}{}, nil, 0}
+	indexParam, err := client.Instance.DescribeIndex(grpcCollectionName)
 	if err != nil {
 		return IndexParam{"", 0, ""}, nil, err
 	}
@@ -323,15 +323,15 @@ func (client *Milvusclient) DescribeIndex(collectionName string) (IndexParam, St
 			extraParam = indexParam.ExtraParams[i].Value
 		}
 	}
-	return IndexParam{indexParam.GetTableName(), IndexType(indexParam.IndexType), extraParam},
+	return IndexParam{indexParam.GetCollectionName(), IndexType(indexParam.IndexType), extraParam},
 		status{int64(indexParam.GetStatus().GetErrorCode()), indexParam.GetStatus().GetReason()}, err
 }
 
 ////////////////////////////////////////////////////////////////////////////
 
 func (client *Milvusclient) DropIndex(collectionName string) (Status, error) {
-	grpcTableName := pb.TableName{collectionName, struct{}{}, nil, 0}
-	grpcStatus, err := client.Instance.DropIndex(grpcTableName)
+	grpcCollectionName := pb.CollectionName{collectionName, struct{}{}, nil, 0}
+	grpcStatus, err := client.Instance.DropIndex(grpcCollectionName)
 	if err != nil {
 		return nil, err
 	}
@@ -353,8 +353,8 @@ func (client *Milvusclient) CreatePartition(partitionParam PartitionParam) (Stat
 ////////////////////////////////////////////////////////////////////////////
 
 func (client *Milvusclient) ShowPartitions(collectionName string) ([]PartitionParam, Status, error) {
-	grpcTableName := pb.TableName{collectionName, struct{}{}, nil, 0}
-	grpcPartitionList, err := client.Instance.ShowPartitions(grpcTableName)
+	grpcCollectionName := pb.CollectionName{collectionName, struct{}{}, nil, 0}
+	grpcPartitionList, err := client.Instance.ShowPartitions(grpcCollectionName)
 	if err != nil {
 		return nil, status{int64(RPCFailed), err.Error()}, err
 	}
@@ -414,7 +414,7 @@ func (client *Milvusclient) Flush(collectionNameArray []string) (Status, error) 
 ////////////////////////////////////////////////////////////////////////////
 
 func (client *Milvusclient) Compact(collectionName string) (Status, error) {
-	grpcParam := pb.TableName{collectionName, struct{}{}, nil, 0}
+	grpcParam := pb.CollectionName{collectionName, struct{}{}, nil, 0}
 	grpcStatus, err := client.Instance.Compact(grpcParam)
 	if err != nil {
 		return nil, err

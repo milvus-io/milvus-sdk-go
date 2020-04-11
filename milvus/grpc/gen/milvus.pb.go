@@ -74,101 +74,101 @@ func (m *KeyValuePair) GetValue() string {
 }
 
 //*
-// @brief Table name
-type TableName struct {
-	TableName            string   `protobuf:"bytes,1,opt,name=table_name,json=tableName,proto3" json:"table_name,omitempty"`
+// @brief Collection name
+type CollectionName struct {
+	CollectionName       string   `protobuf:"bytes,1,opt,name=collection_name,json=collectionName,proto3" json:"collection_name,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *TableName) Reset()         { *m = TableName{} }
-func (m *TableName) String() string { return proto.CompactTextString(m) }
-func (*TableName) ProtoMessage()    {}
-func (*TableName) Descriptor() ([]byte, []int) {
+func (m *CollectionName) Reset()         { *m = CollectionName{} }
+func (m *CollectionName) String() string { return proto.CompactTextString(m) }
+func (*CollectionName) ProtoMessage()    {}
+func (*CollectionName) Descriptor() ([]byte, []int) {
 	return fileDescriptor_02345ba45cc0e303, []int{1}
 }
 
-func (m *TableName) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_TableName.Unmarshal(m, b)
+func (m *CollectionName) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CollectionName.Unmarshal(m, b)
 }
-func (m *TableName) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_TableName.Marshal(b, m, deterministic)
+func (m *CollectionName) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CollectionName.Marshal(b, m, deterministic)
 }
-func (m *TableName) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_TableName.Merge(m, src)
+func (m *CollectionName) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CollectionName.Merge(m, src)
 }
-func (m *TableName) XXX_Size() int {
-	return xxx_messageInfo_TableName.Size(m)
+func (m *CollectionName) XXX_Size() int {
+	return xxx_messageInfo_CollectionName.Size(m)
 }
-func (m *TableName) XXX_DiscardUnknown() {
-	xxx_messageInfo_TableName.DiscardUnknown(m)
+func (m *CollectionName) XXX_DiscardUnknown() {
+	xxx_messageInfo_CollectionName.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_TableName proto.InternalMessageInfo
+var xxx_messageInfo_CollectionName proto.InternalMessageInfo
 
-func (m *TableName) GetTableName() string {
+func (m *CollectionName) GetCollectionName() string {
 	if m != nil {
-		return m.TableName
+		return m.CollectionName
 	}
 	return ""
 }
 
 //*
-// @brief Table name list
-type TableNameList struct {
+// @brief Collection name list
+type CollectionNameList struct {
 	Status               *Status  `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
-	TableNames           []string `protobuf:"bytes,2,rep,name=table_names,json=tableNames,proto3" json:"table_names,omitempty"`
+	CollectionNames      []string `protobuf:"bytes,2,rep,name=collection_names,json=collectionNames,proto3" json:"collection_names,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *TableNameList) Reset()         { *m = TableNameList{} }
-func (m *TableNameList) String() string { return proto.CompactTextString(m) }
-func (*TableNameList) ProtoMessage()    {}
-func (*TableNameList) Descriptor() ([]byte, []int) {
+func (m *CollectionNameList) Reset()         { *m = CollectionNameList{} }
+func (m *CollectionNameList) String() string { return proto.CompactTextString(m) }
+func (*CollectionNameList) ProtoMessage()    {}
+func (*CollectionNameList) Descriptor() ([]byte, []int) {
 	return fileDescriptor_02345ba45cc0e303, []int{2}
 }
 
-func (m *TableNameList) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_TableNameList.Unmarshal(m, b)
+func (m *CollectionNameList) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CollectionNameList.Unmarshal(m, b)
 }
-func (m *TableNameList) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_TableNameList.Marshal(b, m, deterministic)
+func (m *CollectionNameList) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CollectionNameList.Marshal(b, m, deterministic)
 }
-func (m *TableNameList) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_TableNameList.Merge(m, src)
+func (m *CollectionNameList) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CollectionNameList.Merge(m, src)
 }
-func (m *TableNameList) XXX_Size() int {
-	return xxx_messageInfo_TableNameList.Size(m)
+func (m *CollectionNameList) XXX_Size() int {
+	return xxx_messageInfo_CollectionNameList.Size(m)
 }
-func (m *TableNameList) XXX_DiscardUnknown() {
-	xxx_messageInfo_TableNameList.DiscardUnknown(m)
+func (m *CollectionNameList) XXX_DiscardUnknown() {
+	xxx_messageInfo_CollectionNameList.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_TableNameList proto.InternalMessageInfo
+var xxx_messageInfo_CollectionNameList proto.InternalMessageInfo
 
-func (m *TableNameList) GetStatus() *Status {
+func (m *CollectionNameList) GetStatus() *Status {
 	if m != nil {
 		return m.Status
 	}
 	return nil
 }
 
-func (m *TableNameList) GetTableNames() []string {
+func (m *CollectionNameList) GetCollectionNames() []string {
 	if m != nil {
-		return m.TableNames
+		return m.CollectionNames
 	}
 	return nil
 }
 
 //*
-// @brief Table schema
+// @brief Collection schema
 // metric_type: 1-L2, 2-IP
-type TableSchema struct {
+type CollectionSchema struct {
 	Status               *Status         `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
-	TableName            string          `protobuf:"bytes,2,opt,name=table_name,json=tableName,proto3" json:"table_name,omitempty"`
+	CollectionName       string          `protobuf:"bytes,2,opt,name=collection_name,json=collectionName,proto3" json:"collection_name,omitempty"`
 	Dimension            int64           `protobuf:"varint,3,opt,name=dimension,proto3" json:"dimension,omitempty"`
 	IndexFileSize        int64           `protobuf:"varint,4,opt,name=index_file_size,json=indexFileSize,proto3" json:"index_file_size,omitempty"`
 	MetricType           int32           `protobuf:"varint,5,opt,name=metric_type,json=metricType,proto3" json:"metric_type,omitempty"`
@@ -178,67 +178,67 @@ type TableSchema struct {
 	XXX_sizecache        int32           `json:"-"`
 }
 
-func (m *TableSchema) Reset()         { *m = TableSchema{} }
-func (m *TableSchema) String() string { return proto.CompactTextString(m) }
-func (*TableSchema) ProtoMessage()    {}
-func (*TableSchema) Descriptor() ([]byte, []int) {
+func (m *CollectionSchema) Reset()         { *m = CollectionSchema{} }
+func (m *CollectionSchema) String() string { return proto.CompactTextString(m) }
+func (*CollectionSchema) ProtoMessage()    {}
+func (*CollectionSchema) Descriptor() ([]byte, []int) {
 	return fileDescriptor_02345ba45cc0e303, []int{3}
 }
 
-func (m *TableSchema) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_TableSchema.Unmarshal(m, b)
+func (m *CollectionSchema) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CollectionSchema.Unmarshal(m, b)
 }
-func (m *TableSchema) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_TableSchema.Marshal(b, m, deterministic)
+func (m *CollectionSchema) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CollectionSchema.Marshal(b, m, deterministic)
 }
-func (m *TableSchema) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_TableSchema.Merge(m, src)
+func (m *CollectionSchema) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CollectionSchema.Merge(m, src)
 }
-func (m *TableSchema) XXX_Size() int {
-	return xxx_messageInfo_TableSchema.Size(m)
+func (m *CollectionSchema) XXX_Size() int {
+	return xxx_messageInfo_CollectionSchema.Size(m)
 }
-func (m *TableSchema) XXX_DiscardUnknown() {
-	xxx_messageInfo_TableSchema.DiscardUnknown(m)
+func (m *CollectionSchema) XXX_DiscardUnknown() {
+	xxx_messageInfo_CollectionSchema.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_TableSchema proto.InternalMessageInfo
+var xxx_messageInfo_CollectionSchema proto.InternalMessageInfo
 
-func (m *TableSchema) GetStatus() *Status {
+func (m *CollectionSchema) GetStatus() *Status {
 	if m != nil {
 		return m.Status
 	}
 	return nil
 }
 
-func (m *TableSchema) GetTableName() string {
+func (m *CollectionSchema) GetCollectionName() string {
 	if m != nil {
-		return m.TableName
+		return m.CollectionName
 	}
 	return ""
 }
 
-func (m *TableSchema) GetDimension() int64 {
+func (m *CollectionSchema) GetDimension() int64 {
 	if m != nil {
 		return m.Dimension
 	}
 	return 0
 }
 
-func (m *TableSchema) GetIndexFileSize() int64 {
+func (m *CollectionSchema) GetIndexFileSize() int64 {
 	if m != nil {
 		return m.IndexFileSize
 	}
 	return 0
 }
 
-func (m *TableSchema) GetMetricType() int32 {
+func (m *CollectionSchema) GetMetricType() int32 {
 	if m != nil {
 		return m.MetricType
 	}
 	return 0
 }
 
-func (m *TableSchema) GetExtraParams() []*KeyValuePair {
+func (m *CollectionSchema) GetExtraParams() []*KeyValuePair {
 	if m != nil {
 		return m.ExtraParams
 	}
@@ -248,7 +248,7 @@ func (m *TableSchema) GetExtraParams() []*KeyValuePair {
 //*
 // @brief Params of partition
 type PartitionParam struct {
-	TableName            string   `protobuf:"bytes,1,opt,name=table_name,json=tableName,proto3" json:"table_name,omitempty"`
+	CollectionName       string   `protobuf:"bytes,1,opt,name=collection_name,json=collectionName,proto3" json:"collection_name,omitempty"`
 	Tag                  string   `protobuf:"bytes,2,opt,name=tag,proto3" json:"tag,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -280,9 +280,9 @@ func (m *PartitionParam) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_PartitionParam proto.InternalMessageInfo
 
-func (m *PartitionParam) GetTableName() string {
+func (m *PartitionParam) GetCollectionName() string {
 	if m != nil {
-		return m.TableName
+		return m.CollectionName
 	}
 	return ""
 }
@@ -395,7 +395,7 @@ func (m *RowRecord) GetBinaryData() []byte {
 //*
 // @brief Params to be inserted
 type InsertParam struct {
-	TableName            string          `protobuf:"bytes,1,opt,name=table_name,json=tableName,proto3" json:"table_name,omitempty"`
+	CollectionName       string          `protobuf:"bytes,1,opt,name=collection_name,json=collectionName,proto3" json:"collection_name,omitempty"`
 	RowRecordArray       []*RowRecord    `protobuf:"bytes,2,rep,name=row_record_array,json=rowRecordArray,proto3" json:"row_record_array,omitempty"`
 	RowIdArray           []int64         `protobuf:"varint,3,rep,packed,name=row_id_array,json=rowIdArray,proto3" json:"row_id_array,omitempty"`
 	PartitionTag         string          `protobuf:"bytes,4,opt,name=partition_tag,json=partitionTag,proto3" json:"partition_tag,omitempty"`
@@ -430,9 +430,9 @@ func (m *InsertParam) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_InsertParam proto.InternalMessageInfo
 
-func (m *InsertParam) GetTableName() string {
+func (m *InsertParam) GetCollectionName() string {
 	if m != nil {
-		return m.TableName
+		return m.CollectionName
 	}
 	return ""
 }
@@ -517,7 +517,7 @@ func (m *VectorIds) GetVectorIdArray() []int64 {
 //*
 // @brief Params for searching vector
 type SearchParam struct {
-	TableName            string          `protobuf:"bytes,1,opt,name=table_name,json=tableName,proto3" json:"table_name,omitempty"`
+	CollectionName       string          `protobuf:"bytes,1,opt,name=collection_name,json=collectionName,proto3" json:"collection_name,omitempty"`
 	PartitionTagArray    []string        `protobuf:"bytes,2,rep,name=partition_tag_array,json=partitionTagArray,proto3" json:"partition_tag_array,omitempty"`
 	QueryRecordArray     []*RowRecord    `protobuf:"bytes,3,rep,name=query_record_array,json=queryRecordArray,proto3" json:"query_record_array,omitempty"`
 	Topk                 int64           `protobuf:"varint,4,opt,name=topk,proto3" json:"topk,omitempty"`
@@ -552,9 +552,9 @@ func (m *SearchParam) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_SearchParam proto.InternalMessageInfo
 
-func (m *SearchParam) GetTableName() string {
+func (m *SearchParam) GetCollectionName() string {
 	if m != nil {
-		return m.TableName
+		return m.CollectionName
 	}
 	return ""
 }
@@ -639,7 +639,7 @@ func (m *SearchInFilesParam) GetSearchParam() *SearchParam {
 //*
 // @brief Params for searching vector by ID
 type SearchByIDParam struct {
-	TableName            string          `protobuf:"bytes,1,opt,name=table_name,json=tableName,proto3" json:"table_name,omitempty"`
+	CollectionName       string          `protobuf:"bytes,1,opt,name=collection_name,json=collectionName,proto3" json:"collection_name,omitempty"`
 	PartitionTagArray    []string        `protobuf:"bytes,2,rep,name=partition_tag_array,json=partitionTagArray,proto3" json:"partition_tag_array,omitempty"`
 	Id                   int64           `protobuf:"varint,3,opt,name=id,proto3" json:"id,omitempty"`
 	Topk                 int64           `protobuf:"varint,4,opt,name=topk,proto3" json:"topk,omitempty"`
@@ -674,9 +674,9 @@ func (m *SearchByIDParam) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_SearchByIDParam proto.InternalMessageInfo
 
-func (m *SearchByIDParam) GetTableName() string {
+func (m *SearchByIDParam) GetCollectionName() string {
 	if m != nil {
-		return m.TableName
+		return m.CollectionName
 	}
 	return ""
 }
@@ -873,50 +873,50 @@ func (m *BoolReply) GetBoolReply() bool {
 }
 
 //*
-// @brief Return table row count
-type TableRowCount struct {
+// @brief Return collection row count
+type CollectionRowCount struct {
 	Status               *Status  `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
-	TableRowCount        int64    `protobuf:"varint,2,opt,name=table_row_count,json=tableRowCount,proto3" json:"table_row_count,omitempty"`
+	CollectionRowCount   int64    `protobuf:"varint,2,opt,name=collection_row_count,json=collectionRowCount,proto3" json:"collection_row_count,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *TableRowCount) Reset()         { *m = TableRowCount{} }
-func (m *TableRowCount) String() string { return proto.CompactTextString(m) }
-func (*TableRowCount) ProtoMessage()    {}
-func (*TableRowCount) Descriptor() ([]byte, []int) {
+func (m *CollectionRowCount) Reset()         { *m = CollectionRowCount{} }
+func (m *CollectionRowCount) String() string { return proto.CompactTextString(m) }
+func (*CollectionRowCount) ProtoMessage()    {}
+func (*CollectionRowCount) Descriptor() ([]byte, []int) {
 	return fileDescriptor_02345ba45cc0e303, []int{15}
 }
 
-func (m *TableRowCount) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_TableRowCount.Unmarshal(m, b)
+func (m *CollectionRowCount) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CollectionRowCount.Unmarshal(m, b)
 }
-func (m *TableRowCount) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_TableRowCount.Marshal(b, m, deterministic)
+func (m *CollectionRowCount) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CollectionRowCount.Marshal(b, m, deterministic)
 }
-func (m *TableRowCount) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_TableRowCount.Merge(m, src)
+func (m *CollectionRowCount) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CollectionRowCount.Merge(m, src)
 }
-func (m *TableRowCount) XXX_Size() int {
-	return xxx_messageInfo_TableRowCount.Size(m)
+func (m *CollectionRowCount) XXX_Size() int {
+	return xxx_messageInfo_CollectionRowCount.Size(m)
 }
-func (m *TableRowCount) XXX_DiscardUnknown() {
-	xxx_messageInfo_TableRowCount.DiscardUnknown(m)
+func (m *CollectionRowCount) XXX_DiscardUnknown() {
+	xxx_messageInfo_CollectionRowCount.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_TableRowCount proto.InternalMessageInfo
+var xxx_messageInfo_CollectionRowCount proto.InternalMessageInfo
 
-func (m *TableRowCount) GetStatus() *Status {
+func (m *CollectionRowCount) GetStatus() *Status {
 	if m != nil {
 		return m.Status
 	}
 	return nil
 }
 
-func (m *TableRowCount) GetTableRowCount() int64 {
+func (m *CollectionRowCount) GetCollectionRowCount() int64 {
 	if m != nil {
-		return m.TableRowCount
+		return m.CollectionRowCount
 	}
 	return 0
 }
@@ -967,7 +967,7 @@ func (m *Command) GetCmd() string {
 // @index_type: 0-invalid, 1-idmap, 2-ivflat, 3-ivfsq8, 4-nsgmix
 type IndexParam struct {
 	Status               *Status         `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
-	TableName            string          `protobuf:"bytes,2,opt,name=table_name,json=tableName,proto3" json:"table_name,omitempty"`
+	CollectionName       string          `protobuf:"bytes,2,opt,name=collection_name,json=collectionName,proto3" json:"collection_name,omitempty"`
 	IndexType            int32           `protobuf:"varint,3,opt,name=index_type,json=indexType,proto3" json:"index_type,omitempty"`
 	ExtraParams          []*KeyValuePair `protobuf:"bytes,4,rep,name=extra_params,json=extraParams,proto3" json:"extra_params,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
@@ -1007,9 +1007,9 @@ func (m *IndexParam) GetStatus() *Status {
 	return nil
 }
 
-func (m *IndexParam) GetTableName() string {
+func (m *IndexParam) GetCollectionName() string {
 	if m != nil {
-		return m.TableName
+		return m.CollectionName
 	}
 	return ""
 }
@@ -1031,7 +1031,7 @@ func (m *IndexParam) GetExtraParams() []*KeyValuePair {
 //*
 // @brief Flush params
 type FlushParam struct {
-	TableNameArray       []string `protobuf:"bytes,1,rep,name=table_name_array,json=tableNameArray,proto3" json:"table_name_array,omitempty"`
+	CollectionNameArray  []string `protobuf:"bytes,1,rep,name=collection_name_array,json=collectionNameArray,proto3" json:"collection_name_array,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -1062,9 +1062,9 @@ func (m *FlushParam) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_FlushParam proto.InternalMessageInfo
 
-func (m *FlushParam) GetTableNameArray() []string {
+func (m *FlushParam) GetCollectionNameArray() []string {
 	if m != nil {
-		return m.TableNameArray
+		return m.CollectionNameArray
 	}
 	return nil
 }
@@ -1072,7 +1072,7 @@ func (m *FlushParam) GetTableNameArray() []string {
 //*
 // @brief Flush params
 type DeleteByIDParam struct {
-	TableName            string   `protobuf:"bytes,1,opt,name=table_name,json=tableName,proto3" json:"table_name,omitempty"`
+	CollectionName       string   `protobuf:"bytes,1,opt,name=collection_name,json=collectionName,proto3" json:"collection_name,omitempty"`
 	IdArray              []int64  `protobuf:"varint,2,rep,packed,name=id_array,json=idArray,proto3" json:"id_array,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -1104,9 +1104,9 @@ func (m *DeleteByIDParam) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_DeleteByIDParam proto.InternalMessageInfo
 
-func (m *DeleteByIDParam) GetTableName() string {
+func (m *DeleteByIDParam) GetCollectionName() string {
 	if m != nil {
-		return m.TableName
+		return m.CollectionName
 	}
 	return ""
 }
@@ -1184,7 +1184,7 @@ func (m *SegmentStat) GetDataSize() int64 {
 }
 
 //*
-// @brief table statistics
+// @brief collection statistics
 type PartitionStat struct {
 	Tag                  string         `protobuf:"bytes,1,opt,name=tag,proto3" json:"tag,omitempty"`
 	TotalRowCount        int64          `protobuf:"varint,2,opt,name=total_row_count,json=totalRowCount,proto3" json:"total_row_count,omitempty"`
@@ -1241,8 +1241,8 @@ func (m *PartitionStat) GetSegmentsStat() []*SegmentStat {
 }
 
 //*
-// @brief table information
-type TableInfo struct {
+// @brief collection information
+type CollectionInfo struct {
 	Status               *Status          `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
 	TotalRowCount        int64            `protobuf:"varint,2,opt,name=total_row_count,json=totalRowCount,proto3" json:"total_row_count,omitempty"`
 	PartitionsStat       []*PartitionStat `protobuf:"bytes,3,rep,name=partitions_stat,json=partitionsStat,proto3" json:"partitions_stat,omitempty"`
@@ -1251,46 +1251,46 @@ type TableInfo struct {
 	XXX_sizecache        int32            `json:"-"`
 }
 
-func (m *TableInfo) Reset()         { *m = TableInfo{} }
-func (m *TableInfo) String() string { return proto.CompactTextString(m) }
-func (*TableInfo) ProtoMessage()    {}
-func (*TableInfo) Descriptor() ([]byte, []int) {
+func (m *CollectionInfo) Reset()         { *m = CollectionInfo{} }
+func (m *CollectionInfo) String() string { return proto.CompactTextString(m) }
+func (*CollectionInfo) ProtoMessage()    {}
+func (*CollectionInfo) Descriptor() ([]byte, []int) {
 	return fileDescriptor_02345ba45cc0e303, []int{22}
 }
 
-func (m *TableInfo) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_TableInfo.Unmarshal(m, b)
+func (m *CollectionInfo) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CollectionInfo.Unmarshal(m, b)
 }
-func (m *TableInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_TableInfo.Marshal(b, m, deterministic)
+func (m *CollectionInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CollectionInfo.Marshal(b, m, deterministic)
 }
-func (m *TableInfo) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_TableInfo.Merge(m, src)
+func (m *CollectionInfo) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CollectionInfo.Merge(m, src)
 }
-func (m *TableInfo) XXX_Size() int {
-	return xxx_messageInfo_TableInfo.Size(m)
+func (m *CollectionInfo) XXX_Size() int {
+	return xxx_messageInfo_CollectionInfo.Size(m)
 }
-func (m *TableInfo) XXX_DiscardUnknown() {
-	xxx_messageInfo_TableInfo.DiscardUnknown(m)
+func (m *CollectionInfo) XXX_DiscardUnknown() {
+	xxx_messageInfo_CollectionInfo.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_TableInfo proto.InternalMessageInfo
+var xxx_messageInfo_CollectionInfo proto.InternalMessageInfo
 
-func (m *TableInfo) GetStatus() *Status {
+func (m *CollectionInfo) GetStatus() *Status {
 	if m != nil {
 		return m.Status
 	}
 	return nil
 }
 
-func (m *TableInfo) GetTotalRowCount() int64 {
+func (m *CollectionInfo) GetTotalRowCount() int64 {
 	if m != nil {
 		return m.TotalRowCount
 	}
 	return 0
 }
 
-func (m *TableInfo) GetPartitionsStat() []*PartitionStat {
+func (m *CollectionInfo) GetPartitionsStat() []*PartitionStat {
 	if m != nil {
 		return m.PartitionsStat
 	}
@@ -1300,7 +1300,7 @@ func (m *TableInfo) GetPartitionsStat() []*PartitionStat {
 //*
 // @brief vector identity
 type VectorIdentity struct {
-	TableName            string   `protobuf:"bytes,1,opt,name=table_name,json=tableName,proto3" json:"table_name,omitempty"`
+	CollectionName       string   `protobuf:"bytes,1,opt,name=collection_name,json=collectionName,proto3" json:"collection_name,omitempty"`
 	Id                   int64    `protobuf:"varint,2,opt,name=id,proto3" json:"id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -1332,9 +1332,9 @@ func (m *VectorIdentity) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_VectorIdentity proto.InternalMessageInfo
 
-func (m *VectorIdentity) GetTableName() string {
+func (m *VectorIdentity) GetCollectionName() string {
 	if m != nil {
-		return m.TableName
+		return m.CollectionName
 	}
 	return ""
 }
@@ -1398,7 +1398,7 @@ func (m *VectorData) GetVectorData() *RowRecord {
 //*
 // @brief get vector ids from a segment parameters
 type GetVectorIDsParam struct {
-	TableName            string   `protobuf:"bytes,1,opt,name=table_name,json=tableName,proto3" json:"table_name,omitempty"`
+	CollectionName       string   `protobuf:"bytes,1,opt,name=collection_name,json=collectionName,proto3" json:"collection_name,omitempty"`
 	SegmentName          string   `protobuf:"bytes,2,opt,name=segment_name,json=segmentName,proto3" json:"segment_name,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -1430,9 +1430,9 @@ func (m *GetVectorIDsParam) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_GetVectorIDsParam proto.InternalMessageInfo
 
-func (m *GetVectorIDsParam) GetTableName() string {
+func (m *GetVectorIDsParam) GetCollectionName() string {
 	if m != nil {
-		return m.TableName
+		return m.CollectionName
 	}
 	return ""
 }
@@ -1446,9 +1446,9 @@ func (m *GetVectorIDsParam) GetSegmentName() string {
 
 func init() {
 	proto.RegisterType((*KeyValuePair)(nil), "milvus.grpc.KeyValuePair")
-	proto.RegisterType((*TableName)(nil), "milvus.grpc.TableName")
-	proto.RegisterType((*TableNameList)(nil), "milvus.grpc.TableNameList")
-	proto.RegisterType((*TableSchema)(nil), "milvus.grpc.TableSchema")
+	proto.RegisterType((*CollectionName)(nil), "milvus.grpc.CollectionName")
+	proto.RegisterType((*CollectionNameList)(nil), "milvus.grpc.CollectionNameList")
+	proto.RegisterType((*CollectionSchema)(nil), "milvus.grpc.CollectionSchema")
 	proto.RegisterType((*PartitionParam)(nil), "milvus.grpc.PartitionParam")
 	proto.RegisterType((*PartitionList)(nil), "milvus.grpc.PartitionList")
 	proto.RegisterType((*RowRecord)(nil), "milvus.grpc.RowRecord")
@@ -1460,14 +1460,14 @@ func init() {
 	proto.RegisterType((*TopKQueryResult)(nil), "milvus.grpc.TopKQueryResult")
 	proto.RegisterType((*StringReply)(nil), "milvus.grpc.StringReply")
 	proto.RegisterType((*BoolReply)(nil), "milvus.grpc.BoolReply")
-	proto.RegisterType((*TableRowCount)(nil), "milvus.grpc.TableRowCount")
+	proto.RegisterType((*CollectionRowCount)(nil), "milvus.grpc.CollectionRowCount")
 	proto.RegisterType((*Command)(nil), "milvus.grpc.Command")
 	proto.RegisterType((*IndexParam)(nil), "milvus.grpc.IndexParam")
 	proto.RegisterType((*FlushParam)(nil), "milvus.grpc.FlushParam")
 	proto.RegisterType((*DeleteByIDParam)(nil), "milvus.grpc.DeleteByIDParam")
 	proto.RegisterType((*SegmentStat)(nil), "milvus.grpc.SegmentStat")
 	proto.RegisterType((*PartitionStat)(nil), "milvus.grpc.PartitionStat")
-	proto.RegisterType((*TableInfo)(nil), "milvus.grpc.TableInfo")
+	proto.RegisterType((*CollectionInfo)(nil), "milvus.grpc.CollectionInfo")
 	proto.RegisterType((*VectorIdentity)(nil), "milvus.grpc.VectorIdentity")
 	proto.RegisterType((*VectorData)(nil), "milvus.grpc.VectorData")
 	proto.RegisterType((*GetVectorIDsParam)(nil), "milvus.grpc.GetVectorIDsParam")
@@ -1476,94 +1476,95 @@ func init() {
 func init() { proto.RegisterFile("milvus.proto", fileDescriptor_02345ba45cc0e303) }
 
 var fileDescriptor_02345ba45cc0e303 = []byte{
-	// 1382 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x58, 0xdd, 0x72, 0x13, 0xc7,
-	0x12, 0xd6, 0x6a, 0x6d, 0xe3, 0xed, 0xd5, 0x8f, 0x19, 0x28, 0x10, 0x06, 0x0e, 0x3a, 0x73, 0xaa,
-	0x28, 0xd5, 0x49, 0x95, 0x2f, 0x9c, 0x2a, 0x48, 0x25, 0x90, 0x80, 0xad, 0x00, 0x0a, 0x09, 0xe5,
-	0xac, 0x1c, 0x72, 0x45, 0x29, 0x63, 0xed, 0x60, 0xb6, 0xd8, 0xdd, 0x51, 0x66, 0x46, 0x36, 0xe2,
-	0x05, 0x92, 0x3c, 0x48, 0x1e, 0x21, 0x2f, 0x90, 0xdb, 0x3c, 0x4e, 0x72, 0x9d, 0x4a, 0xcd, 0xcc,
-	0xfe, 0xca, 0x92, 0x2c, 0x41, 0xb8, 0xdb, 0xe9, 0xe9, 0xee, 0xe9, 0xdf, 0xaf, 0x5b, 0x82, 0x5a,
-	0x14, 0x84, 0x27, 0x63, 0xb1, 0x33, 0xe2, 0x4c, 0x32, 0xe4, 0x26, 0xa7, 0x63, 0x3e, 0x1a, 0x6e,
-	0xd7, 0x84, 0x24, 0x32, 0xbd, 0xc2, 0x77, 0xa0, 0xf6, 0x94, 0x4e, 0x9e, 0x93, 0x70, 0x4c, 0x0f,
-	0x48, 0xc0, 0xd1, 0x16, 0xd8, 0xaf, 0xe9, 0xa4, 0x65, 0xb5, 0xad, 0x8e, 0xe3, 0xa9, 0x4f, 0x74,
-	0x19, 0xd6, 0x4f, 0xd4, 0x75, 0xab, 0xaa, 0x69, 0xe6, 0x80, 0xff, 0x0f, 0xce, 0x21, 0x39, 0x0a,
-	0xe9, 0x33, 0x12, 0x51, 0x74, 0x13, 0x40, 0xaa, 0xc3, 0x20, 0x26, 0x11, 0x4d, 0x64, 0x1d, 0x99,
-	0x5e, 0xe3, 0x17, 0x50, 0xcf, 0x78, 0xbf, 0x0e, 0x84, 0x44, 0x1f, 0xc1, 0x86, 0x31, 0x42, 0xf3,
-	0xba, 0xbb, 0x97, 0x76, 0x0a, 0x06, 0xee, 0xf4, 0xf5, 0x95, 0x97, 0xb0, 0xa0, 0x5b, 0xe0, 0xe6,
-	0xca, 0x45, 0xab, 0xda, 0xb6, 0x3b, 0x8e, 0x07, 0x99, 0x76, 0x81, 0xff, 0xb6, 0xc0, 0xd5, 0xfa,
-	0xfb, 0xc3, 0x57, 0x34, 0x22, 0xab, 0x69, 0x2f, 0x9b, 0x5e, 0x9d, 0x32, 0x1d, 0xdd, 0x00, 0xc7,
-	0x0f, 0x22, 0x1a, 0x8b, 0x80, 0xc5, 0x2d, 0xbb, 0x6d, 0x75, 0x6c, 0x2f, 0x27, 0xa0, 0xdb, 0xd0,
-	0x0c, 0x62, 0x9f, 0xbe, 0x19, 0xbc, 0x0c, 0x42, 0x3a, 0x10, 0xc1, 0x5b, 0xda, 0x5a, 0xd3, 0x3c,
-	0x75, 0x4d, 0x7e, 0x14, 0x84, 0xb4, 0x1f, 0xbc, 0xa5, 0xca, 0x85, 0x88, 0x4a, 0x1e, 0x0c, 0x07,
-	0x72, 0x32, 0xa2, 0xad, 0xf5, 0xb6, 0xd5, 0x59, 0xf7, 0xc0, 0x90, 0x0e, 0x27, 0x23, 0x8a, 0xee,
-	0x41, 0x8d, 0xbe, 0x91, 0x9c, 0x0c, 0x46, 0x84, 0x93, 0x48, 0xb4, 0x36, 0xda, 0x76, 0xc7, 0xdd,
-	0xbd, 0x56, 0x32, 0xbc, 0x98, 0x26, 0xcf, 0xd5, 0xec, 0x07, 0x9a, 0x1b, 0x3f, 0x84, 0xc6, 0x01,
-	0xe1, 0x32, 0x90, 0x01, 0x8b, 0x35, 0xe9, 0x9c, 0x84, 0xa8, 0x24, 0x4b, 0x72, 0x9c, 0x78, 0xab,
-	0x3e, 0x71, 0x08, 0xf5, 0x4c, 0xc5, 0xea, 0x29, 0xda, 0x81, 0x4b, 0xa3, 0x54, 0x7a, 0x20, 0xc9,
-	0xf1, 0x80, 0x70, 0x4e, 0x26, 0x49, 0xaa, 0x2e, 0x66, 0x57, 0x87, 0xe4, 0xf8, 0xa1, 0xba, 0xc0,
-	0x4f, 0xc1, 0xf1, 0xd8, 0xa9, 0x47, 0x87, 0x8c, 0xfb, 0xca, 0xd6, 0x97, 0x21, 0x23, 0x72, 0xe0,
-	0x13, 0x49, 0x5a, 0x56, 0xdb, 0xee, 0x54, 0x3d, 0x47, 0x53, 0xba, 0x44, 0x12, 0x15, 0xbb, 0xa3,
-	0x20, 0x26, 0x7c, 0x62, 0xee, 0x95, 0xcd, 0x35, 0x0f, 0x0c, 0x49, 0x31, 0xe0, 0x3f, 0x2d, 0x70,
-	0x7b, 0xb1, 0xa0, 0x5c, 0x2e, 0xe5, 0xfb, 0x03, 0xd8, 0xe2, 0xec, 0x74, 0xc0, 0xf5, 0xe3, 0x05,
-	0x43, 0xdd, 0xdd, 0x2b, 0x25, 0x17, 0x33, 0x03, 0xbd, 0x06, 0x4f, 0x3f, 0xb5, 0xf5, 0xa8, 0x0d,
-	0x35, 0xa5, 0x21, 0x48, 0xa5, 0xed, 0xb6, 0xdd, 0xb1, 0x3d, 0xe0, 0xec, 0xb4, 0x97, 0x70, 0xfc,
-	0x0f, 0xea, 0xa5, 0x78, 0xe8, 0xaa, 0x70, 0xbc, 0x5a, 0x31, 0x12, 0x67, 0x72, 0xbe, 0xbe, 0x52,
-	0xce, 0x7f, 0x00, 0xe7, 0x39, 0x1d, 0x4a, 0xc6, 0x7b, 0xbe, 0x58, 0x2d, 0x59, 0xb7, 0xa1, 0x79,
-	0xa2, 0x25, 0x73, 0x0f, 0xaa, 0xda, 0x83, 0xfa, 0x49, 0xa2, 0xd0, 0x24, 0xe9, 0x2f, 0x0b, 0xdc,
-	0x3e, 0x25, 0x7c, 0xf8, 0x6a, 0xa9, 0xb8, 0xae, 0x58, 0x03, 0xa8, 0x0b, 0xe8, 0xc7, 0x31, 0xe5,
-	0x93, 0x72, 0x26, 0xec, 0x85, 0x99, 0xd8, 0xd2, 0x12, 0xc5, 0x5c, 0x20, 0x58, 0x93, 0x6c, 0xf4,
-	0x3a, 0x69, 0x3b, 0xfd, 0xfd, 0x9e, 0x81, 0x1d, 0x03, 0x32, 0x5e, 0xf7, 0x62, 0xd5, 0xbf, 0xc2,
-	0x38, 0x8f, 0xa1, 0xae, 0x7b, 0x3c, 0x0b, 0x99, 0xa5, 0xfd, 0x72, 0x15, 0x31, 0xcd, 0xfa, 0x67,
-	0x50, 0x13, 0x5a, 0xd2, 0x3c, 0xac, 0x4b, 0xd5, 0xdd, 0x6d, 0x95, 0x73, 0x91, 0x07, 0xd4, 0x73,
-	0x45, 0x7e, 0xc0, 0xbf, 0x5b, 0xd0, 0x34, 0x97, 0x7b, 0x93, 0x5e, 0xf7, 0x83, 0x44, 0xbc, 0x01,
-	0xd5, 0xc0, 0x4f, 0x40, 0xac, 0x1a, 0xf8, 0x1f, 0x20, 0x76, 0x3f, 0x59, 0xd0, 0x3c, 0x64, 0xa3,
-	0xa7, 0xdf, 0x9a, 0x34, 0x89, 0x71, 0xb8, 0x22, 0x90, 0x5c, 0x85, 0x0b, 0xaa, 0xb5, 0xe2, 0xb1,
-	0x89, 0x9e, 0xed, 0x6d, 0x70, 0x76, 0xfa, 0x6c, 0x1c, 0x29, 0xc4, 0x0a, 0x7c, 0x91, 0xb4, 0x9a,
-	0xfa, 0x34, 0xc8, 0x2c, 0x24, 0x89, 0x87, 0x54, 0xb4, 0xd6, 0x0c, 0x6a, 0x64, 0x04, 0xfc, 0x02,
-	0xdc, 0xbe, 0xe4, 0x41, 0x7c, 0xec, 0xd1, 0x51, 0x38, 0x59, 0xcd, 0x88, 0xff, 0x42, 0x4d, 0x68,
-	0xd9, 0x01, 0x57, 0xc2, 0x09, 0x4c, 0xba, 0x22, 0xd7, 0x87, 0xbf, 0x07, 0x67, 0x8f, 0xb1, 0xf0,
-	0x1d, 0x94, 0xdf, 0x04, 0x38, 0x62, 0x2c, 0x2c, 0xa8, 0xde, 0xf4, 0x9c, 0xa3, 0x54, 0x17, 0xf6,
-	0x93, 0x51, 0xe9, 0xb1, 0xd3, 0x7d, 0x36, 0x8e, 0xe5, 0xca, 0xad, 0x6d, 0x0a, 0x46, 0x05, 0x71,
-	0xa8, 0xe4, 0x93, 0x30, 0xd6, 0x65, 0x51, 0x29, 0xbe, 0x0e, 0x17, 0xf6, 0x59, 0x14, 0x91, 0xd8,
-	0x57, 0x81, 0x1d, 0x46, 0x7e, 0x3a, 0xef, 0x87, 0x91, 0x8f, 0x7f, 0xb3, 0x00, 0x7a, 0x6a, 0x7c,
-	0x99, 0x22, 0xfc, 0x37, 0xa7, 0xe9, 0x4d, 0x00, 0x33, 0x2f, 0xf5, 0x18, 0xb4, 0xf5, 0x18, 0x74,
-	0x34, 0x65, 0xe6, 0x14, 0x5c, 0x5b, 0xa9, 0xf8, 0xee, 0x00, 0x3c, 0x0a, 0xc7, 0x22, 0x41, 0xab,
-	0x0e, 0x6c, 0xe5, 0x96, 0x94, 0x7a, 0xb6, 0x91, 0xd9, 0x93, 0x0e, 0xa3, 0x66, 0x97, 0x86, 0x54,
-	0xd2, 0xa5, 0x1b, 0xef, 0x1a, 0x6c, 0x4e, 0x41, 0xe7, 0x85, 0x20, 0x01, 0xcd, 0x5f, 0x34, 0x68,
-	0x1e, 0x47, 0x34, 0x96, 0x2a, 0x34, 0xba, 0x96, 0xcc, 0xb1, 0xa8, 0xcb, 0x4d, 0x68, 0x5a, 0xdb,
-	0x75, 0x70, 0xa6, 0xd3, 0xb5, 0xc9, 0xd3, 0xf4, 0x67, 0x11, 0xd3, 0xd2, 0xb6, 0xb1, 0x44, 0x53,
-	0x52, 0x59, 0x35, 0x15, 0x8b, 0xab, 0xc7, 0xa6, 0x22, 0xa8, 0xad, 0x03, 0xff, 0x6c, 0x15, 0x86,
-	0xba, 0xb6, 0x26, 0x99, 0xfb, 0x56, 0x36, 0xf7, 0x75, 0xc5, 0x30, 0x49, 0xc2, 0x19, 0x15, 0xa3,
-	0xc8, 0x59, 0x19, 0xde, 0x87, 0x7a, 0x62, 0xb3, 0x18, 0xa8, 0x5c, 0x27, 0x40, 0x3d, 0x0d, 0x6e,
-	0x99, 0xe3, 0x5e, 0xea, 0xb6, 0x50, 0x27, 0xfc, 0xab, 0x95, 0xac, 0x8b, 0xbd, 0xf8, 0x25, 0x5b,
-	0xbd, 0xa6, 0x97, 0xb1, 0x70, 0x1f, 0x9a, 0x19, 0xe4, 0x95, 0x6c, 0xdc, 0x2e, 0x69, 0x2f, 0x05,
-	0xc4, 0x6b, 0xe4, 0x22, 0xda, 0xce, 0x2f, 0xa0, 0x91, 0x4e, 0x55, 0x1a, 0xcb, 0x40, 0x4e, 0xce,
-	0x2b, 0x05, 0x83, 0xa9, 0xd5, 0x14, 0x53, 0x31, 0x07, 0x30, 0x0a, 0xf4, 0xee, 0xb2, 0x92, 0xa3,
-	0x77, 0xc1, 0x4d, 0xe6, 0x72, 0xb6, 0xe8, 0xcc, 0x9f, 0x84, 0x70, 0x92, 0xbd, 0x82, 0xbf, 0x83,
-	0x8b, 0x8f, 0xa9, 0x4c, 0xec, 0xee, 0x8a, 0xa5, 0x4a, 0x78, 0xba, 0x2e, 0xab, 0x67, 0xea, 0x72,
-	0xf7, 0x8f, 0x1a, 0xd4, 0xbf, 0xd1, 0x8f, 0xf7, 0x29, 0x3f, 0x09, 0x86, 0x14, 0x7d, 0x0e, 0xee,
-	0x3e, 0xa7, 0x44, 0x52, 0x9d, 0x4a, 0x54, 0x4e, 0x7e, 0x61, 0x03, 0xdf, 0x9e, 0xe5, 0x27, 0xae,
-	0xa0, 0x7b, 0xb0, 0xf9, 0x84, 0x08, 0x23, 0x7c, 0xe5, 0xac, 0xb0, 0x7a, 0x75, 0xbb, 0x4c, 0xcf,
-	0x40, 0x16, 0x57, 0xd0, 0x3e, 0xd4, 0xbb, 0x54, 0x0c, 0x79, 0x70, 0x44, 0x17, 0xab, 0x98, 0x6b,
-	0x17, 0xae, 0xa0, 0x3d, 0x00, 0x5d, 0x2e, 0x8b, 0x35, 0x6c, 0x9f, 0xa5, 0x67, 0xd8, 0x59, 0x41,
-	0x0f, 0x00, 0xfa, 0xaf, 0xd8, 0xa9, 0x26, 0x0b, 0x74, 0xb9, 0xc4, 0x9b, 0xc0, 0xea, 0x2c, 0x0d,
-	0xe9, 0xaf, 0x1f, 0x5c, 0x41, 0x0f, 0xa1, 0x9e, 0x69, 0xd0, 0x1d, 0xb1, 0x5c, 0x34, 0x32, 0x7e,
-	0x5c, 0x41, 0x9f, 0x82, 0xd3, 0xe5, 0x6c, 0xb4, 0xd8, 0x8f, 0x39, 0x79, 0xb8, 0x9f, 0xe6, 0x51,
-	0xc3, 0x3c, 0xba, 0x5a, 0xe2, 0xca, 0xa1, 0x7f, 0x9e, 0xf8, 0x5e, 0x9e, 0x08, 0xa3, 0x60, 0xde,
-	0xf3, 0xf3, 0x14, 0xe7, 0xe6, 0x2f, 0x96, 0x9f, 0xf3, 0xfe, 0x97, 0xd0, 0x34, 0xe6, 0x67, 0xbd,
-	0x8c, 0xae, 0xcf, 0xee, 0xf1, 0x85, 0x6e, 0x3c, 0x82, 0x86, 0x4a, 0x42, 0xc6, 0x2c, 0x96, 0x2c,
-	0x87, 0xd2, 0xef, 0xa4, 0xa4, 0x2e, 0x39, 0x1b, 0xbd, 0x9f, 0x31, 0xf7, 0x60, 0xc3, 0xfc, 0x86,
-	0x99, 0xea, 0xaa, 0xc2, 0x0f, 0x9b, 0xa9, 0x62, 0xc8, 0xb6, 0x7f, 0x5c, 0x41, 0x8f, 0xa1, 0x9e,
-	0x21, 0x80, 0x9a, 0x62, 0x53, 0x26, 0x94, 0x21, 0x6d, 0x2a, 0x2d, 0x39, 0x5c, 0xe1, 0x0a, 0x7a,
-	0x02, 0xb5, 0x22, 0x94, 0xa0, 0xff, 0x94, 0x58, 0xcf, 0xa0, 0xcc, 0x02, 0x93, 0xf6, 0x60, 0xc3,
-	0xac, 0xb3, 0x68, 0xee, 0x02, 0xbc, 0x7d, 0xa3, 0x1c, 0xef, 0xf2, 0xe2, 0x88, 0x2b, 0xe8, 0x2b,
-	0x80, 0x7c, 0x25, 0x46, 0x37, 0x66, 0xe8, 0xc9, 0x46, 0xf6, 0xb9, 0xba, 0x0e, 0xa0, 0x5e, 0x5a,
-	0xeb, 0xd1, 0xad, 0x19, 0xea, 0x8a, 0x2b, 0xff, 0xb9, 0x1a, 0xef, 0x82, 0xbd, 0x1f, 0xf9, 0x73,
-	0xfa, 0x7f, 0xca, 0xe9, 0xc2, 0xea, 0xa8, 0xba, 0x1f, 0xf2, 0x85, 0x63, 0xca, 0xad, 0xa9, 0x4d,
-	0x64, 0x7e, 0x07, 0xd7, 0x0e, 0x38, 0x0d, 0x19, 0xf1, 0xdf, 0x09, 0x00, 0xee, 0xc2, 0xba, 0x5e,
-	0x95, 0xa6, 0x5a, 0x3f, 0x5f, 0x9f, 0xe6, 0x09, 0x7e, 0xa2, 0x17, 0xc7, 0x11, 0x19, 0xca, 0x15,
-	0x9f, 0x3c, 0xda, 0xd0, 0x7f, 0x37, 0x7d, 0xfc, 0x4f, 0x00, 0x00, 0x00, 0xff, 0xff, 0x31, 0x08,
-	0xcb, 0x0b, 0x99, 0x12, 0x00, 0x00,
+	// 1406 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x58, 0xed, 0x6e, 0x13, 0x47,
+	0x17, 0xf6, 0x7a, 0x93, 0x10, 0x9f, 0xf5, 0x47, 0x18, 0x78, 0x5f, 0x4c, 0x20, 0x2f, 0x7e, 0xa7,
+	0x12, 0x75, 0x55, 0x29, 0xaa, 0x52, 0xa9, 0xa8, 0x2a, 0xa8, 0x80, 0x5d, 0xc0, 0x4d, 0x8b, 0xc2,
+	0x9a, 0xd2, 0x5f, 0x95, 0x3b, 0xd9, 0x1d, 0xc2, 0x8a, 0xfd, 0x70, 0x67, 0xc6, 0x09, 0xe6, 0x06,
+	0xda, 0xfe, 0xe8, 0x8d, 0xf4, 0x22, 0xda, 0x1b, 0xe8, 0x2d, 0xb5, 0xaa, 0x66, 0x66, 0xbf, 0x93,
+	0x0d, 0x5e, 0x10, 0xff, 0xbc, 0x67, 0xe6, 0x3c, 0x73, 0xbe, 0xe6, 0x39, 0x67, 0x0c, 0xed, 0xc0,
+	0xf3, 0x8f, 0x17, 0x7c, 0x77, 0xce, 0x22, 0x11, 0x21, 0x2b, 0xfe, 0x3a, 0x62, 0x73, 0x67, 0xbb,
+	0xcd, 0x05, 0x11, 0xc9, 0x12, 0xfe, 0x0c, 0xda, 0xfb, 0x74, 0xf9, 0x8c, 0xf8, 0x0b, 0x7a, 0x40,
+	0x3c, 0x86, 0xb6, 0xc0, 0x7c, 0x49, 0x97, 0x7d, 0x63, 0x60, 0x0c, 0x5b, 0xb6, 0xfc, 0x89, 0x2e,
+	0xc3, 0xfa, 0xb1, 0x5c, 0xee, 0x37, 0x95, 0x4c, 0x7f, 0xe0, 0xcf, 0xa1, 0x3b, 0x8a, 0x7c, 0x9f,
+	0x3a, 0xc2, 0x8b, 0xc2, 0xc7, 0x24, 0xa0, 0xe8, 0x43, 0xe8, 0x39, 0xa9, 0x64, 0x16, 0x92, 0x80,
+	0xc6, 0x28, 0x5d, 0xa7, 0xb0, 0x11, 0xfb, 0x80, 0x8a, 0xaa, 0xdf, 0x78, 0x5c, 0xa0, 0x8f, 0x61,
+	0x43, 0x1b, 0xa6, 0xb4, 0xac, 0xbd, 0x4b, 0xbb, 0x39, 0xa3, 0x77, 0xa7, 0x6a, 0xc9, 0x8e, 0xb7,
+	0xa0, 0x8f, 0x60, 0xab, 0x74, 0x16, 0xef, 0x37, 0x07, 0xe6, 0xb0, 0x65, 0xf7, 0x8a, 0x87, 0x71,
+	0xfc, 0x5b, 0x13, 0xb6, 0xb2, 0xe3, 0xa6, 0xce, 0x0b, 0x1a, 0x90, 0x7a, 0x87, 0x9d, 0xe1, 0x58,
+	0xf3, 0x2c, 0xc7, 0xd0, 0x75, 0x68, 0xb9, 0x5e, 0x40, 0x43, 0xee, 0x45, 0x61, 0xdf, 0x1c, 0x18,
+	0x43, 0xd3, 0xce, 0x04, 0xe8, 0x26, 0xf4, 0xbc, 0xd0, 0xa5, 0xaf, 0x66, 0xcf, 0x3d, 0x9f, 0xce,
+	0xb8, 0xf7, 0x9a, 0xf6, 0xd7, 0xd4, 0x9e, 0x8e, 0x12, 0x3f, 0xf0, 0x7c, 0x3a, 0xf5, 0x5e, 0x53,
+	0x74, 0x03, 0xac, 0x80, 0x0a, 0xe6, 0x39, 0x33, 0xb1, 0x9c, 0xd3, 0xfe, 0xfa, 0xc0, 0x18, 0xae,
+	0xdb, 0xa0, 0x45, 0x4f, 0x97, 0x73, 0x8a, 0x6e, 0x43, 0x9b, 0xbe, 0x12, 0x8c, 0xcc, 0xe6, 0x84,
+	0x91, 0x80, 0xf7, 0x37, 0x06, 0xe6, 0xd0, 0xda, 0xbb, 0x5a, 0x70, 0x21, 0x9f, 0x53, 0xdb, 0x52,
+	0xdb, 0x0f, 0xd4, 0x6e, 0xbc, 0x0f, 0xdd, 0x03, 0xc2, 0x84, 0x27, 0xad, 0x56, 0xa2, 0x95, 0x13,
+	0x27, 0x6b, 0x43, 0x90, 0xa3, 0xd8, 0x79, 0xf9, 0x13, 0xfb, 0xd0, 0x49, 0xc1, 0xea, 0x67, 0x71,
+	0x17, 0x2e, 0xcd, 0x13, 0xed, 0x99, 0x20, 0x47, 0x33, 0xc2, 0x18, 0x59, 0xc6, 0x89, 0xbc, 0x98,
+	0x2e, 0x3d, 0x25, 0x47, 0xf7, 0xe4, 0x02, 0xde, 0x87, 0x96, 0x1d, 0x9d, 0xd8, 0xd4, 0x89, 0x98,
+	0x8b, 0x76, 0x00, 0x9e, 0xfb, 0x11, 0x11, 0x33, 0x97, 0x08, 0xd2, 0x37, 0x06, 0xe6, 0xb0, 0x69,
+	0xb7, 0x94, 0x64, 0x4c, 0x04, 0x91, 0x51, 0x3c, 0xf4, 0x42, 0xc2, 0x96, 0x7a, 0x5d, 0xda, 0xdc,
+	0xb6, 0x41, 0x8b, 0xe4, 0x06, 0xfc, 0xb7, 0x01, 0xd6, 0x24, 0xe4, 0x94, 0x89, 0x9a, 0x51, 0xb8,
+	0x0b, 0x5b, 0x2c, 0x3a, 0x99, 0x31, 0x65, 0x46, 0xce, 0x64, 0x6b, 0xef, 0xbf, 0x05, 0x67, 0x53,
+	0x53, 0xed, 0x2e, 0x4b, 0x7e, 0x2a, 0x3f, 0xd0, 0x00, 0xda, 0x12, 0xc1, 0x4b, 0xb4, 0xcd, 0x81,
+	0x39, 0x34, 0x6d, 0x60, 0xd1, 0xc9, 0x24, 0xde, 0xf1, 0x01, 0x74, 0x0a, 0x91, 0x51, 0x95, 0xd2,
+	0xb2, 0xdb, 0xf9, 0x98, 0x9c, 0xaa, 0x83, 0xf5, 0x5a, 0x75, 0xf0, 0x23, 0xb4, 0x9e, 0x51, 0x47,
+	0x44, 0x6c, 0xe2, 0xf2, 0x7a, 0x69, 0xbb, 0x09, 0xbd, 0x63, 0xa5, 0x99, 0x79, 0xd0, 0x54, 0x1e,
+	0x74, 0x8e, 0x63, 0x40, 0x9d, 0xae, 0x7f, 0x0c, 0xb0, 0xa6, 0x94, 0x30, 0xe7, 0x45, 0xcd, 0x08,
+	0xd7, 0xac, 0x0b, 0x34, 0x06, 0xf4, 0xd3, 0x82, 0xb2, 0x65, 0x31, 0x27, 0xe6, 0xb9, 0x39, 0xd9,
+	0x52, 0x1a, 0xf9, 0xac, 0x20, 0x58, 0x13, 0xd1, 0xfc, 0x65, 0x7c, 0x29, 0xd5, 0xef, 0x77, 0x0c,
+	0xf1, 0x02, 0x90, 0xf6, 0x7f, 0x12, 0xca, 0xdb, 0xcd, 0x75, 0x18, 0x30, 0x74, 0x14, 0x03, 0xa4,
+	0xc1, 0x33, 0x94, 0x5f, 0x96, 0x14, 0x26, 0xf9, 0xff, 0x02, 0xda, 0x5c, 0x69, 0xea, 0x83, 0x55,
+	0xf9, 0x5a, 0x7b, 0xfd, 0x62, 0x56, 0xb2, 0xd0, 0xda, 0x16, 0xcf, 0x3e, 0xf0, 0x5f, 0x06, 0xf4,
+	0xf4, 0xe2, 0xfd, 0xe5, 0x64, 0xfc, 0x9e, 0x63, 0xdf, 0x85, 0xa6, 0xe7, 0xc6, 0x64, 0xd7, 0xf4,
+	0xdc, 0xf7, 0x10, 0xc5, 0x9f, 0x0d, 0xe8, 0x3d, 0x8d, 0xe6, 0xfb, 0x4f, 0x74, 0xc2, 0xf8, 0xc2,
+	0xaf, 0x49, 0x33, 0x57, 0xe0, 0x82, 0xbc, 0x6e, 0xe1, 0x42, 0xc7, 0xd1, 0xb4, 0x37, 0x58, 0x74,
+	0xf2, 0x78, 0x11, 0x48, 0x3e, 0xf3, 0x5c, 0x1e, 0x5f, 0x3f, 0xf9, 0x53, 0x33, 0x38, 0x17, 0x24,
+	0x74, 0x28, 0xef, 0xaf, 0x69, 0x4e, 0x49, 0x05, 0xf8, 0x07, 0xb0, 0xa6, 0x82, 0x79, 0xe1, 0x91,
+	0x4d, 0xe7, 0xfe, 0xb2, 0x9e, 0x11, 0xff, 0x87, 0x36, 0x57, 0xba, 0x33, 0x26, 0x95, 0x63, 0x12,
+	0xb5, 0x78, 0x86, 0x87, 0xbf, 0x87, 0xd6, 0xfd, 0x28, 0xf2, 0xdf, 0x02, 0x7c, 0x07, 0xe0, 0x30,
+	0x8a, 0xfc, 0x1c, 0xf4, 0xa6, 0xdd, 0x3a, 0x4c, 0xb0, 0x30, 0xcf, 0x37, 0x5c, 0x3b, 0x3a, 0x19,
+	0x45, 0x8b, 0xb0, 0x66, 0x0c, 0x3f, 0x81, 0xcb, 0xb9, 0xfa, 0x91, 0xe1, 0x74, 0x24, 0x48, 0x1c,
+	0x50, 0xe4, 0x9c, 0x82, 0xc7, 0xd7, 0xe0, 0xc2, 0x28, 0x0a, 0x02, 0x12, 0xba, 0x32, 0xce, 0x4e,
+	0xe0, 0x26, 0x33, 0x85, 0x13, 0xb8, 0xf8, 0x4f, 0x03, 0x60, 0x22, 0xbb, 0x9e, 0xae, 0xce, 0xf7,
+	0xd3, 0x8e, 0x77, 0x00, 0x74, 0xc3, 0x55, 0x7d, 0xd4, 0x54, 0x7d, 0xb4, 0xa5, 0x24, 0x67, 0xb6,
+	0xd1, 0xb5, 0x5a, 0x55, 0x79, 0x17, 0xe0, 0x81, 0xbf, 0xe0, 0x31, 0xb5, 0xed, 0xc1, 0x7f, 0x4a,
+	0x36, 0x15, 0xee, 0xf6, 0xa5, 0xa2, 0x65, 0x9a, 0x1e, 0xbf, 0x83, 0xde, 0x98, 0xfa, 0x54, 0xd0,
+	0xb7, 0xb8, 0xa5, 0x57, 0x61, 0xb3, 0xc4, 0xbd, 0x17, 0xbc, 0x98, 0x75, 0x7f, 0x55, 0xac, 0x7b,
+	0x14, 0xd0, 0x50, 0xc8, 0xc0, 0xa9, 0xc2, 0xd3, 0x9f, 0x79, 0x40, 0x2b, 0x96, 0x29, 0xb4, 0x6b,
+	0xd0, 0x2a, 0x67, 0x74, 0x93, 0x25, 0x65, 0x92, 0x46, 0x51, 0x69, 0x9b, 0x4a, 0x5b, 0x47, 0x31,
+	0xd1, 0x95, 0x0d, 0x36, 0x3f, 0xcf, 0x6c, 0x4a, 0x81, 0x1c, 0x65, 0xf0, 0x2f, 0x46, 0x6e, 0x3e,
+	0x50, 0xd6, 0xc4, 0x23, 0x84, 0x91, 0x8e, 0x10, 0xb2, 0x9b, 0x88, 0x48, 0x10, 0xff, 0x54, 0x51,
+	0x75, 0x94, 0x38, 0x2d, 0xd7, 0x3b, 0xd0, 0x89, 0x6d, 0xe6, 0x33, 0x59, 0x09, 0x31, 0xbf, 0x97,
+	0x39, 0x31, 0x75, 0xdc, 0x4e, 0xdc, 0xe6, 0xf2, 0x0b, 0xff, 0x6e, 0xe4, 0x07, 0xd6, 0x49, 0xf8,
+	0x3c, 0xaa, 0xdd, 0xf4, 0x56, 0x32, 0x73, 0x04, 0xbd, 0x94, 0x24, 0x0b, 0x86, 0x6e, 0x17, 0xd0,
+	0x0b, 0x51, 0xb1, 0xbb, 0x99, 0x8a, 0x32, 0x76, 0x02, 0xdd, 0xa4, 0x37, 0xd3, 0x50, 0x78, 0x62,
+	0xb9, 0x7a, 0x65, 0x68, 0x3e, 0x6e, 0x26, 0x7c, 0x8c, 0x19, 0x80, 0x86, 0x52, 0x53, 0x51, 0x2d,
+	0x97, 0x6f, 0x81, 0x15, 0xf7, 0xf9, 0x74, 0x84, 0xaa, 0xee, 0xa7, 0x70, 0x9c, 0x9e, 0x82, 0x67,
+	0x70, 0xf1, 0x21, 0x15, 0xb1, 0x07, 0x63, 0x5e, 0xb3, 0xb6, 0xcb, 0x05, 0xdb, 0x3c, 0x55, 0xb0,
+	0x7b, 0x7f, 0x74, 0xa0, 0xf3, 0xad, 0x32, 0x63, 0x4a, 0xd9, 0xb1, 0xe7, 0x50, 0xf4, 0x08, 0xb6,
+	0x46, 0x8c, 0x12, 0x41, 0xb3, 0x1c, 0xa3, 0x9d, 0x82, 0xa9, 0xe5, 0x37, 0xc0, 0xf6, 0x59, 0xbe,
+	0xe3, 0x06, 0x7a, 0x00, 0x9d, 0x47, 0x84, 0xe7, 0x60, 0xae, 0x55, 0xc0, 0x48, 0x4b, 0xb6, 0x8b,
+	0xe1, 0x48, 0xe9, 0x1b, 0x37, 0x90, 0x0d, 0x68, 0x4c, 0xb9, 0xc3, 0xbc, 0x43, 0xba, 0x2a, 0xd8,
+	0xf9, 0x06, 0xe3, 0x06, 0x7a, 0x02, 0x3d, 0x55, 0x65, 0xab, 0x02, 0xde, 0xa8, 0x58, 0x4c, 0x49,
+	0xba, 0x81, 0xbe, 0x86, 0xde, 0xf4, 0x85, 0xfc, 0x4c, 0xd6, 0x38, 0xba, 0x5c, 0xd2, 0x52, 0x24,
+	0x5e, 0x89, 0x95, 0x3c, 0xe0, 0x70, 0x03, 0x1d, 0x00, 0x2a, 0x62, 0xa9, 0x6b, 0x76, 0xae, 0x85,
+	0x55, 0x8b, 0x52, 0x13, 0x37, 0xd0, 0x18, 0xba, 0x63, 0x16, 0xcd, 0x57, 0xf5, 0xb7, 0x22, 0xa5,
+	0x77, 0xc0, 0xd2, 0xc5, 0xa1, 0x5a, 0x0e, 0xba, 0x52, 0xd8, 0x95, 0xb5, 0xa1, 0x2a, 0xf5, 0x87,
+	0xd0, 0x49, 0x32, 0xa9, 0x01, 0xce, 0xb5, 0xa1, 0x0a, 0x1d, 0x37, 0xd0, 0x97, 0xd0, 0x92, 0xde,
+	0xac, 0x00, 0x52, 0x61, 0xc9, 0x57, 0xd0, 0xd3, 0x8e, 0xa4, 0xf4, 0x51, 0x82, 0x29, 0xbe, 0xec,
+	0xaa, 0x60, 0xf6, 0xa1, 0x2b, 0xf3, 0x94, 0x6e, 0xe6, 0xe7, 0x1b, 0x53, 0xc1, 0x5c, 0x71, 0xd2,
+	0x47, 0xd0, 0x91, 0x4e, 0xbd, 0x9b, 0x45, 0xb7, 0x61, 0x43, 0xbf, 0xc5, 0x50, 0xbf, 0x14, 0xbe,
+	0xf4, 0x81, 0x56, 0xba, 0x6a, 0xe9, 0xdb, 0x45, 0x27, 0x28, 0xe5, 0x1b, 0xd9, 0x4c, 0x4b, 0x26,
+	0x14, 0xa9, 0xb4, 0x94, 0xa0, 0x8c, 0x1c, 0x71, 0x03, 0x3d, 0x82, 0x76, 0x9e, 0xb8, 0xd0, 0xff,
+	0x0a, 0x5b, 0x4f, 0x71, 0xda, 0x39, 0x26, 0xdd, 0x87, 0x0d, 0x3d, 0x82, 0xa3, 0xca, 0xa1, 0x7d,
+	0xfb, 0x7a, 0x61, 0xa5, 0x34, 0xe2, 0xaa, 0xab, 0x09, 0xd9, 0x18, 0x8f, 0xae, 0x9f, 0x81, 0x93,
+	0x4e, 0x0e, 0x6f, 0xc4, 0x3a, 0x80, 0x4e, 0xe1, 0x29, 0x82, 0x6e, 0x9c, 0x01, 0x97, 0x7f, 0xa6,
+	0xbc, 0x11, 0xf1, 0x16, 0x98, 0xa3, 0xc0, 0xad, 0x20, 0x8b, 0x92, 0xd3, 0xb9, 0x21, 0xb7, 0x81,
+	0xee, 0x01, 0x64, 0x73, 0x4f, 0xc9, 0xad, 0xd2, 0x40, 0x54, 0x7d, 0x23, 0x2f, 0x1e, 0x30, 0xea,
+	0x47, 0xc4, 0x7d, 0x47, 0x66, 0xb8, 0x05, 0xeb, 0x6a, 0x8a, 0x2b, 0x71, 0x42, 0x36, 0xd9, 0x55,
+	0x53, 0x8a, 0x9c, 0x6e, 0xe7, 0xc4, 0x11, 0x6f, 0x73, 0xee, 0xe1, 0x86, 0xfa, 0xf3, 0xed, 0xd3,
+	0x7f, 0x03, 0x00, 0x00, 0xff, 0xff, 0x05, 0xda, 0x37, 0xc4, 0xa7, 0x13, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -1579,56 +1580,56 @@ const _ = grpc.SupportPackageIsVersion4
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type MilvusServiceClient interface {
 	//*
-	// @brief This method is used to create table
+	// @brief This method is used to create collection
 	//
-	// @param TableSchema, use to provide table information to be created.
+	// @param CollectionSchema, use to provide collection information to be created.
 	//
 	// @return Status
-	CreateTable(ctx context.Context, in *TableSchema, opts ...grpc.CallOption) (*Status, error)
+	CreateCollection(ctx context.Context, in *CollectionSchema, opts ...grpc.CallOption) (*Status, error)
 	//*
-	// @brief This method is used to test table existence.
+	// @brief This method is used to test collection existence.
 	//
-	// @param TableName, table name is going to be tested.
+	// @param CollectionName, collection name is going to be tested.
 	//
 	// @return BoolReply
-	HasTable(ctx context.Context, in *TableName, opts ...grpc.CallOption) (*BoolReply, error)
+	HasCollection(ctx context.Context, in *CollectionName, opts ...grpc.CallOption) (*BoolReply, error)
 	//*
-	// @brief This method is used to get table schema.
+	// @brief This method is used to get collection schema.
 	//
-	// @param TableName, target table name.
+	// @param CollectionName, target collection name.
 	//
-	// @return TableSchema
-	DescribeTable(ctx context.Context, in *TableName, opts ...grpc.CallOption) (*TableSchema, error)
+	// @return CollectionSchema
+	DescribeCollection(ctx context.Context, in *CollectionName, opts ...grpc.CallOption) (*CollectionSchema, error)
 	//*
-	// @brief This method is used to get table schema.
+	// @brief This method is used to get collection schema.
 	//
-	// @param TableName, target table name.
+	// @param CollectionName, target collection name.
 	//
-	// @return TableRowCount
-	CountTable(ctx context.Context, in *TableName, opts ...grpc.CallOption) (*TableRowCount, error)
+	// @return CollectionRowCount
+	CountCollection(ctx context.Context, in *CollectionName, opts ...grpc.CallOption) (*CollectionRowCount, error)
 	//*
-	// @brief This method is used to list all tables.
+	// @brief This method is used to list all collections.
 	//
 	// @param Command, dummy parameter.
 	//
-	// @return TableNameList
-	ShowTables(ctx context.Context, in *Command, opts ...grpc.CallOption) (*TableNameList, error)
+	// @return CollectionNameList
+	ShowCollections(ctx context.Context, in *Command, opts ...grpc.CallOption) (*CollectionNameList, error)
 	//*
-	// @brief This method is used to get table detail information.
+	// @brief This method is used to get collection detail information.
 	//
-	// @param TableName, target table name.
+	// @param CollectionName, target collection name.
 	//
-	// @return TableInfo
-	ShowTableInfo(ctx context.Context, in *TableName, opts ...grpc.CallOption) (*TableInfo, error)
+	// @return CollectionInfo
+	ShowCollectionInfo(ctx context.Context, in *CollectionName, opts ...grpc.CallOption) (*CollectionInfo, error)
 	//*
-	// @brief This method is used to delete table.
+	// @brief This method is used to delete collection.
 	//
-	// @param TableName, table name is going to be deleted.
+	// @param CollectionName, collection name is going to be deleted.
 	//
-	// @return TableNameList
-	DropTable(ctx context.Context, in *TableName, opts ...grpc.CallOption) (*Status, error)
+	// @return CollectionNameList
+	DropCollection(ctx context.Context, in *CollectionName, opts ...grpc.CallOption) (*Status, error)
 	//*
-	// @brief This method is used to build index by table in sync mode.
+	// @brief This method is used to build index by collection in sync mode.
 	//
 	// @param IndexParam, index paramters.
 	//
@@ -1637,17 +1638,17 @@ type MilvusServiceClient interface {
 	//*
 	// @brief This method is used to describe index
 	//
-	// @param TableName, target table name.
+	// @param CollectionName, target collection name.
 	//
 	// @return IndexParam
-	DescribeIndex(ctx context.Context, in *TableName, opts ...grpc.CallOption) (*IndexParam, error)
+	DescribeIndex(ctx context.Context, in *CollectionName, opts ...grpc.CallOption) (*IndexParam, error)
 	//*
 	// @brief This method is used to drop index
 	//
-	// @param TableName, target table name.
+	// @param CollectionName, target collection name.
 	//
 	// @return Status
-	DropIndex(ctx context.Context, in *TableName, opts ...grpc.CallOption) (*Status, error)
+	DropIndex(ctx context.Context, in *CollectionName, opts ...grpc.CallOption) (*Status, error)
 	//*
 	// @brief This method is used to create partition
 	//
@@ -1658,10 +1659,10 @@ type MilvusServiceClient interface {
 	//*
 	// @brief This method is used to show partition information
 	//
-	// @param TableName, target table name.
+	// @param CollectionName, target collection name.
 	//
 	// @return PartitionList
-	ShowPartitions(ctx context.Context, in *TableName, opts ...grpc.CallOption) (*PartitionList, error)
+	ShowPartitions(ctx context.Context, in *CollectionName, opts ...grpc.CallOption) (*PartitionList, error)
 	//*
 	// @brief This method is used to drop partition
 	//
@@ -1670,7 +1671,7 @@ type MilvusServiceClient interface {
 	// @return Status
 	DropPartition(ctx context.Context, in *PartitionParam, opts ...grpc.CallOption) (*Status, error)
 	//*
-	// @brief This method is used to add vector array to table.
+	// @brief This method is used to add vector array to collection.
 	//
 	// @param InsertParam, insert parameters.
 	//
@@ -1686,12 +1687,12 @@ type MilvusServiceClient interface {
 	//*
 	// @brief This method is used to get vector ids from a segment
 	//
-	// @param GetVectorIDsParam, target table and segment
+	// @param GetVectorIDsParam, target collection and segment
 	//
 	// @return VectorIds
 	GetVectorIDs(ctx context.Context, in *GetVectorIDsParam, opts ...grpc.CallOption) (*VectorIds, error)
 	//*
-	// @brief This method is used to query vector in table.
+	// @brief This method is used to query vector in collection.
 	//
 	// @param SearchParam, search parameters.
 	//
@@ -1726,12 +1727,12 @@ type MilvusServiceClient interface {
 	// @return status
 	DeleteByID(ctx context.Context, in *DeleteByIDParam, opts ...grpc.CallOption) (*Status, error)
 	//*
-	// @brief This method is used to preload table
+	// @brief This method is used to preload collection
 	//
-	// @param TableName, target table name.
+	// @param CollectionName, target collection name.
 	//
 	// @return Status
-	PreloadTable(ctx context.Context, in *TableName, opts ...grpc.CallOption) (*Status, error)
+	PreloadCollection(ctx context.Context, in *CollectionName, opts ...grpc.CallOption) (*Status, error)
 	//*
 	// @brief This method is used to flush buffer into storage.
 	//
@@ -1740,12 +1741,12 @@ type MilvusServiceClient interface {
 	// @return Status
 	Flush(ctx context.Context, in *FlushParam, opts ...grpc.CallOption) (*Status, error)
 	//*
-	// @brief This method is used to compact table
+	// @brief This method is used to compact collection
 	//
-	// @param TableName, target table name.
+	// @param CollectionName, target collection name.
 	//
 	// @return Status
-	Compact(ctx context.Context, in *TableName, opts ...grpc.CallOption) (*Status, error)
+	Compact(ctx context.Context, in *CollectionName, opts ...grpc.CallOption) (*Status, error)
 }
 
 type milvusServiceClient struct {
@@ -1756,63 +1757,63 @@ func NewMilvusServiceClient(cc *grpc.ClientConn) MilvusServiceClient {
 	return &milvusServiceClient{cc}
 }
 
-func (c *milvusServiceClient) CreateTable(ctx context.Context, in *TableSchema, opts ...grpc.CallOption) (*Status, error) {
+func (c *milvusServiceClient) CreateCollection(ctx context.Context, in *CollectionSchema, opts ...grpc.CallOption) (*Status, error) {
 	out := new(Status)
-	err := c.cc.Invoke(ctx, "/milvus.grpc.MilvusService/CreateTable", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/milvus.grpc.MilvusService/CreateCollection", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *milvusServiceClient) HasTable(ctx context.Context, in *TableName, opts ...grpc.CallOption) (*BoolReply, error) {
+func (c *milvusServiceClient) HasCollection(ctx context.Context, in *CollectionName, opts ...grpc.CallOption) (*BoolReply, error) {
 	out := new(BoolReply)
-	err := c.cc.Invoke(ctx, "/milvus.grpc.MilvusService/HasTable", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/milvus.grpc.MilvusService/HasCollection", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *milvusServiceClient) DescribeTable(ctx context.Context, in *TableName, opts ...grpc.CallOption) (*TableSchema, error) {
-	out := new(TableSchema)
-	err := c.cc.Invoke(ctx, "/milvus.grpc.MilvusService/DescribeTable", in, out, opts...)
+func (c *milvusServiceClient) DescribeCollection(ctx context.Context, in *CollectionName, opts ...grpc.CallOption) (*CollectionSchema, error) {
+	out := new(CollectionSchema)
+	err := c.cc.Invoke(ctx, "/milvus.grpc.MilvusService/DescribeCollection", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *milvusServiceClient) CountTable(ctx context.Context, in *TableName, opts ...grpc.CallOption) (*TableRowCount, error) {
-	out := new(TableRowCount)
-	err := c.cc.Invoke(ctx, "/milvus.grpc.MilvusService/CountTable", in, out, opts...)
+func (c *milvusServiceClient) CountCollection(ctx context.Context, in *CollectionName, opts ...grpc.CallOption) (*CollectionRowCount, error) {
+	out := new(CollectionRowCount)
+	err := c.cc.Invoke(ctx, "/milvus.grpc.MilvusService/CountCollection", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *milvusServiceClient) ShowTables(ctx context.Context, in *Command, opts ...grpc.CallOption) (*TableNameList, error) {
-	out := new(TableNameList)
-	err := c.cc.Invoke(ctx, "/milvus.grpc.MilvusService/ShowTables", in, out, opts...)
+func (c *milvusServiceClient) ShowCollections(ctx context.Context, in *Command, opts ...grpc.CallOption) (*CollectionNameList, error) {
+	out := new(CollectionNameList)
+	err := c.cc.Invoke(ctx, "/milvus.grpc.MilvusService/ShowCollections", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *milvusServiceClient) ShowTableInfo(ctx context.Context, in *TableName, opts ...grpc.CallOption) (*TableInfo, error) {
-	out := new(TableInfo)
-	err := c.cc.Invoke(ctx, "/milvus.grpc.MilvusService/ShowTableInfo", in, out, opts...)
+func (c *milvusServiceClient) ShowCollectionInfo(ctx context.Context, in *CollectionName, opts ...grpc.CallOption) (*CollectionInfo, error) {
+	out := new(CollectionInfo)
+	err := c.cc.Invoke(ctx, "/milvus.grpc.MilvusService/ShowCollectionInfo", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *milvusServiceClient) DropTable(ctx context.Context, in *TableName, opts ...grpc.CallOption) (*Status, error) {
+func (c *milvusServiceClient) DropCollection(ctx context.Context, in *CollectionName, opts ...grpc.CallOption) (*Status, error) {
 	out := new(Status)
-	err := c.cc.Invoke(ctx, "/milvus.grpc.MilvusService/DropTable", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/milvus.grpc.MilvusService/DropCollection", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1828,7 +1829,7 @@ func (c *milvusServiceClient) CreateIndex(ctx context.Context, in *IndexParam, o
 	return out, nil
 }
 
-func (c *milvusServiceClient) DescribeIndex(ctx context.Context, in *TableName, opts ...grpc.CallOption) (*IndexParam, error) {
+func (c *milvusServiceClient) DescribeIndex(ctx context.Context, in *CollectionName, opts ...grpc.CallOption) (*IndexParam, error) {
 	out := new(IndexParam)
 	err := c.cc.Invoke(ctx, "/milvus.grpc.MilvusService/DescribeIndex", in, out, opts...)
 	if err != nil {
@@ -1837,7 +1838,7 @@ func (c *milvusServiceClient) DescribeIndex(ctx context.Context, in *TableName, 
 	return out, nil
 }
 
-func (c *milvusServiceClient) DropIndex(ctx context.Context, in *TableName, opts ...grpc.CallOption) (*Status, error) {
+func (c *milvusServiceClient) DropIndex(ctx context.Context, in *CollectionName, opts ...grpc.CallOption) (*Status, error) {
 	out := new(Status)
 	err := c.cc.Invoke(ctx, "/milvus.grpc.MilvusService/DropIndex", in, out, opts...)
 	if err != nil {
@@ -1855,7 +1856,7 @@ func (c *milvusServiceClient) CreatePartition(ctx context.Context, in *Partition
 	return out, nil
 }
 
-func (c *milvusServiceClient) ShowPartitions(ctx context.Context, in *TableName, opts ...grpc.CallOption) (*PartitionList, error) {
+func (c *milvusServiceClient) ShowPartitions(ctx context.Context, in *CollectionName, opts ...grpc.CallOption) (*PartitionList, error) {
 	out := new(PartitionList)
 	err := c.cc.Invoke(ctx, "/milvus.grpc.MilvusService/ShowPartitions", in, out, opts...)
 	if err != nil {
@@ -1945,9 +1946,9 @@ func (c *milvusServiceClient) DeleteByID(ctx context.Context, in *DeleteByIDPara
 	return out, nil
 }
 
-func (c *milvusServiceClient) PreloadTable(ctx context.Context, in *TableName, opts ...grpc.CallOption) (*Status, error) {
+func (c *milvusServiceClient) PreloadCollection(ctx context.Context, in *CollectionName, opts ...grpc.CallOption) (*Status, error) {
 	out := new(Status)
-	err := c.cc.Invoke(ctx, "/milvus.grpc.MilvusService/PreloadTable", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/milvus.grpc.MilvusService/PreloadCollection", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1963,7 +1964,7 @@ func (c *milvusServiceClient) Flush(ctx context.Context, in *FlushParam, opts ..
 	return out, nil
 }
 
-func (c *milvusServiceClient) Compact(ctx context.Context, in *TableName, opts ...grpc.CallOption) (*Status, error) {
+func (c *milvusServiceClient) Compact(ctx context.Context, in *CollectionName, opts ...grpc.CallOption) (*Status, error) {
 	out := new(Status)
 	err := c.cc.Invoke(ctx, "/milvus.grpc.MilvusService/Compact", in, out, opts...)
 	if err != nil {
@@ -1975,56 +1976,56 @@ func (c *milvusServiceClient) Compact(ctx context.Context, in *TableName, opts .
 // MilvusServiceServer is the server API for MilvusService service.
 type MilvusServiceServer interface {
 	//*
-	// @brief This method is used to create table
+	// @brief This method is used to create collection
 	//
-	// @param TableSchema, use to provide table information to be created.
+	// @param CollectionSchema, use to provide collection information to be created.
 	//
 	// @return Status
-	CreateTable(context.Context, *TableSchema) (*Status, error)
+	CreateCollection(context.Context, *CollectionSchema) (*Status, error)
 	//*
-	// @brief This method is used to test table existence.
+	// @brief This method is used to test collection existence.
 	//
-	// @param TableName, table name is going to be tested.
+	// @param CollectionName, collection name is going to be tested.
 	//
 	// @return BoolReply
-	HasTable(context.Context, *TableName) (*BoolReply, error)
+	HasCollection(context.Context, *CollectionName) (*BoolReply, error)
 	//*
-	// @brief This method is used to get table schema.
+	// @brief This method is used to get collection schema.
 	//
-	// @param TableName, target table name.
+	// @param CollectionName, target collection name.
 	//
-	// @return TableSchema
-	DescribeTable(context.Context, *TableName) (*TableSchema, error)
+	// @return CollectionSchema
+	DescribeCollection(context.Context, *CollectionName) (*CollectionSchema, error)
 	//*
-	// @brief This method is used to get table schema.
+	// @brief This method is used to get collection schema.
 	//
-	// @param TableName, target table name.
+	// @param CollectionName, target collection name.
 	//
-	// @return TableRowCount
-	CountTable(context.Context, *TableName) (*TableRowCount, error)
+	// @return CollectionRowCount
+	CountCollection(context.Context, *CollectionName) (*CollectionRowCount, error)
 	//*
-	// @brief This method is used to list all tables.
+	// @brief This method is used to list all collections.
 	//
 	// @param Command, dummy parameter.
 	//
-	// @return TableNameList
-	ShowTables(context.Context, *Command) (*TableNameList, error)
+	// @return CollectionNameList
+	ShowCollections(context.Context, *Command) (*CollectionNameList, error)
 	//*
-	// @brief This method is used to get table detail information.
+	// @brief This method is used to get collection detail information.
 	//
-	// @param TableName, target table name.
+	// @param CollectionName, target collection name.
 	//
-	// @return TableInfo
-	ShowTableInfo(context.Context, *TableName) (*TableInfo, error)
+	// @return CollectionInfo
+	ShowCollectionInfo(context.Context, *CollectionName) (*CollectionInfo, error)
 	//*
-	// @brief This method is used to delete table.
+	// @brief This method is used to delete collection.
 	//
-	// @param TableName, table name is going to be deleted.
+	// @param CollectionName, collection name is going to be deleted.
 	//
-	// @return TableNameList
-	DropTable(context.Context, *TableName) (*Status, error)
+	// @return CollectionNameList
+	DropCollection(context.Context, *CollectionName) (*Status, error)
 	//*
-	// @brief This method is used to build index by table in sync mode.
+	// @brief This method is used to build index by collection in sync mode.
 	//
 	// @param IndexParam, index paramters.
 	//
@@ -2033,17 +2034,17 @@ type MilvusServiceServer interface {
 	//*
 	// @brief This method is used to describe index
 	//
-	// @param TableName, target table name.
+	// @param CollectionName, target collection name.
 	//
 	// @return IndexParam
-	DescribeIndex(context.Context, *TableName) (*IndexParam, error)
+	DescribeIndex(context.Context, *CollectionName) (*IndexParam, error)
 	//*
 	// @brief This method is used to drop index
 	//
-	// @param TableName, target table name.
+	// @param CollectionName, target collection name.
 	//
 	// @return Status
-	DropIndex(context.Context, *TableName) (*Status, error)
+	DropIndex(context.Context, *CollectionName) (*Status, error)
 	//*
 	// @brief This method is used to create partition
 	//
@@ -2054,10 +2055,10 @@ type MilvusServiceServer interface {
 	//*
 	// @brief This method is used to show partition information
 	//
-	// @param TableName, target table name.
+	// @param CollectionName, target collection name.
 	//
 	// @return PartitionList
-	ShowPartitions(context.Context, *TableName) (*PartitionList, error)
+	ShowPartitions(context.Context, *CollectionName) (*PartitionList, error)
 	//*
 	// @brief This method is used to drop partition
 	//
@@ -2066,7 +2067,7 @@ type MilvusServiceServer interface {
 	// @return Status
 	DropPartition(context.Context, *PartitionParam) (*Status, error)
 	//*
-	// @brief This method is used to add vector array to table.
+	// @brief This method is used to add vector array to collection.
 	//
 	// @param InsertParam, insert parameters.
 	//
@@ -2082,12 +2083,12 @@ type MilvusServiceServer interface {
 	//*
 	// @brief This method is used to get vector ids from a segment
 	//
-	// @param GetVectorIDsParam, target table and segment
+	// @param GetVectorIDsParam, target collection and segment
 	//
 	// @return VectorIds
 	GetVectorIDs(context.Context, *GetVectorIDsParam) (*VectorIds, error)
 	//*
-	// @brief This method is used to query vector in table.
+	// @brief This method is used to query vector in collection.
 	//
 	// @param SearchParam, search parameters.
 	//
@@ -2122,12 +2123,12 @@ type MilvusServiceServer interface {
 	// @return status
 	DeleteByID(context.Context, *DeleteByIDParam) (*Status, error)
 	//*
-	// @brief This method is used to preload table
+	// @brief This method is used to preload collection
 	//
-	// @param TableName, target table name.
+	// @param CollectionName, target collection name.
 	//
 	// @return Status
-	PreloadTable(context.Context, *TableName) (*Status, error)
+	PreloadCollection(context.Context, *CollectionName) (*Status, error)
 	//*
 	// @brief This method is used to flush buffer into storage.
 	//
@@ -2136,52 +2137,52 @@ type MilvusServiceServer interface {
 	// @return Status
 	Flush(context.Context, *FlushParam) (*Status, error)
 	//*
-	// @brief This method is used to compact table
+	// @brief This method is used to compact collection
 	//
-	// @param TableName, target table name.
+	// @param CollectionName, target collection name.
 	//
 	// @return Status
-	Compact(context.Context, *TableName) (*Status, error)
+	Compact(context.Context, *CollectionName) (*Status, error)
 }
 
 // UnimplementedMilvusServiceServer can be embedded to have forward compatible implementations.
 type UnimplementedMilvusServiceServer struct {
 }
 
-func (*UnimplementedMilvusServiceServer) CreateTable(ctx context.Context, req *TableSchema) (*Status, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CreateTable not implemented")
+func (*UnimplementedMilvusServiceServer) CreateCollection(ctx context.Context, req *CollectionSchema) (*Status, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateCollection not implemented")
 }
-func (*UnimplementedMilvusServiceServer) HasTable(ctx context.Context, req *TableName) (*BoolReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method HasTable not implemented")
+func (*UnimplementedMilvusServiceServer) HasCollection(ctx context.Context, req *CollectionName) (*BoolReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method HasCollection not implemented")
 }
-func (*UnimplementedMilvusServiceServer) DescribeTable(ctx context.Context, req *TableName) (*TableSchema, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DescribeTable not implemented")
+func (*UnimplementedMilvusServiceServer) DescribeCollection(ctx context.Context, req *CollectionName) (*CollectionSchema, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DescribeCollection not implemented")
 }
-func (*UnimplementedMilvusServiceServer) CountTable(ctx context.Context, req *TableName) (*TableRowCount, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CountTable not implemented")
+func (*UnimplementedMilvusServiceServer) CountCollection(ctx context.Context, req *CollectionName) (*CollectionRowCount, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CountCollection not implemented")
 }
-func (*UnimplementedMilvusServiceServer) ShowTables(ctx context.Context, req *Command) (*TableNameList, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ShowTables not implemented")
+func (*UnimplementedMilvusServiceServer) ShowCollections(ctx context.Context, req *Command) (*CollectionNameList, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ShowCollections not implemented")
 }
-func (*UnimplementedMilvusServiceServer) ShowTableInfo(ctx context.Context, req *TableName) (*TableInfo, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ShowTableInfo not implemented")
+func (*UnimplementedMilvusServiceServer) ShowCollectionInfo(ctx context.Context, req *CollectionName) (*CollectionInfo, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ShowCollectionInfo not implemented")
 }
-func (*UnimplementedMilvusServiceServer) DropTable(ctx context.Context, req *TableName) (*Status, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DropTable not implemented")
+func (*UnimplementedMilvusServiceServer) DropCollection(ctx context.Context, req *CollectionName) (*Status, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DropCollection not implemented")
 }
 func (*UnimplementedMilvusServiceServer) CreateIndex(ctx context.Context, req *IndexParam) (*Status, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateIndex not implemented")
 }
-func (*UnimplementedMilvusServiceServer) DescribeIndex(ctx context.Context, req *TableName) (*IndexParam, error) {
+func (*UnimplementedMilvusServiceServer) DescribeIndex(ctx context.Context, req *CollectionName) (*IndexParam, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DescribeIndex not implemented")
 }
-func (*UnimplementedMilvusServiceServer) DropIndex(ctx context.Context, req *TableName) (*Status, error) {
+func (*UnimplementedMilvusServiceServer) DropIndex(ctx context.Context, req *CollectionName) (*Status, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DropIndex not implemented")
 }
 func (*UnimplementedMilvusServiceServer) CreatePartition(ctx context.Context, req *PartitionParam) (*Status, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreatePartition not implemented")
 }
-func (*UnimplementedMilvusServiceServer) ShowPartitions(ctx context.Context, req *TableName) (*PartitionList, error) {
+func (*UnimplementedMilvusServiceServer) ShowPartitions(ctx context.Context, req *CollectionName) (*PartitionList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ShowPartitions not implemented")
 }
 func (*UnimplementedMilvusServiceServer) DropPartition(ctx context.Context, req *PartitionParam) (*Status, error) {
@@ -2211,13 +2212,13 @@ func (*UnimplementedMilvusServiceServer) Cmd(ctx context.Context, req *Command) 
 func (*UnimplementedMilvusServiceServer) DeleteByID(ctx context.Context, req *DeleteByIDParam) (*Status, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteByID not implemented")
 }
-func (*UnimplementedMilvusServiceServer) PreloadTable(ctx context.Context, req *TableName) (*Status, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method PreloadTable not implemented")
+func (*UnimplementedMilvusServiceServer) PreloadCollection(ctx context.Context, req *CollectionName) (*Status, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PreloadCollection not implemented")
 }
 func (*UnimplementedMilvusServiceServer) Flush(ctx context.Context, req *FlushParam) (*Status, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Flush not implemented")
 }
-func (*UnimplementedMilvusServiceServer) Compact(ctx context.Context, req *TableName) (*Status, error) {
+func (*UnimplementedMilvusServiceServer) Compact(ctx context.Context, req *CollectionName) (*Status, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Compact not implemented")
 }
 
@@ -2225,128 +2226,128 @@ func RegisterMilvusServiceServer(s *grpc.Server, srv MilvusServiceServer) {
 	s.RegisterService(&_MilvusService_serviceDesc, srv)
 }
 
-func _MilvusService_CreateTable_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(TableSchema)
+func _MilvusService_CreateCollection_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CollectionSchema)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MilvusServiceServer).CreateTable(ctx, in)
+		return srv.(MilvusServiceServer).CreateCollection(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/milvus.grpc.MilvusService/CreateTable",
+		FullMethod: "/milvus.grpc.MilvusService/CreateCollection",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MilvusServiceServer).CreateTable(ctx, req.(*TableSchema))
+		return srv.(MilvusServiceServer).CreateCollection(ctx, req.(*CollectionSchema))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _MilvusService_HasTable_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(TableName)
+func _MilvusService_HasCollection_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CollectionName)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MilvusServiceServer).HasTable(ctx, in)
+		return srv.(MilvusServiceServer).HasCollection(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/milvus.grpc.MilvusService/HasTable",
+		FullMethod: "/milvus.grpc.MilvusService/HasCollection",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MilvusServiceServer).HasTable(ctx, req.(*TableName))
+		return srv.(MilvusServiceServer).HasCollection(ctx, req.(*CollectionName))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _MilvusService_DescribeTable_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(TableName)
+func _MilvusService_DescribeCollection_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CollectionName)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MilvusServiceServer).DescribeTable(ctx, in)
+		return srv.(MilvusServiceServer).DescribeCollection(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/milvus.grpc.MilvusService/DescribeTable",
+		FullMethod: "/milvus.grpc.MilvusService/DescribeCollection",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MilvusServiceServer).DescribeTable(ctx, req.(*TableName))
+		return srv.(MilvusServiceServer).DescribeCollection(ctx, req.(*CollectionName))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _MilvusService_CountTable_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(TableName)
+func _MilvusService_CountCollection_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CollectionName)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MilvusServiceServer).CountTable(ctx, in)
+		return srv.(MilvusServiceServer).CountCollection(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/milvus.grpc.MilvusService/CountTable",
+		FullMethod: "/milvus.grpc.MilvusService/CountCollection",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MilvusServiceServer).CountTable(ctx, req.(*TableName))
+		return srv.(MilvusServiceServer).CountCollection(ctx, req.(*CollectionName))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _MilvusService_ShowTables_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _MilvusService_ShowCollections_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Command)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MilvusServiceServer).ShowTables(ctx, in)
+		return srv.(MilvusServiceServer).ShowCollections(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/milvus.grpc.MilvusService/ShowTables",
+		FullMethod: "/milvus.grpc.MilvusService/ShowCollections",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MilvusServiceServer).ShowTables(ctx, req.(*Command))
+		return srv.(MilvusServiceServer).ShowCollections(ctx, req.(*Command))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _MilvusService_ShowTableInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(TableName)
+func _MilvusService_ShowCollectionInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CollectionName)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MilvusServiceServer).ShowTableInfo(ctx, in)
+		return srv.(MilvusServiceServer).ShowCollectionInfo(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/milvus.grpc.MilvusService/ShowTableInfo",
+		FullMethod: "/milvus.grpc.MilvusService/ShowCollectionInfo",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MilvusServiceServer).ShowTableInfo(ctx, req.(*TableName))
+		return srv.(MilvusServiceServer).ShowCollectionInfo(ctx, req.(*CollectionName))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _MilvusService_DropTable_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(TableName)
+func _MilvusService_DropCollection_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CollectionName)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MilvusServiceServer).DropTable(ctx, in)
+		return srv.(MilvusServiceServer).DropCollection(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/milvus.grpc.MilvusService/DropTable",
+		FullMethod: "/milvus.grpc.MilvusService/DropCollection",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MilvusServiceServer).DropTable(ctx, req.(*TableName))
+		return srv.(MilvusServiceServer).DropCollection(ctx, req.(*CollectionName))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -2370,7 +2371,7 @@ func _MilvusService_CreateIndex_Handler(srv interface{}, ctx context.Context, de
 }
 
 func _MilvusService_DescribeIndex_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(TableName)
+	in := new(CollectionName)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -2382,13 +2383,13 @@ func _MilvusService_DescribeIndex_Handler(srv interface{}, ctx context.Context, 
 		FullMethod: "/milvus.grpc.MilvusService/DescribeIndex",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MilvusServiceServer).DescribeIndex(ctx, req.(*TableName))
+		return srv.(MilvusServiceServer).DescribeIndex(ctx, req.(*CollectionName))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _MilvusService_DropIndex_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(TableName)
+	in := new(CollectionName)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -2400,7 +2401,7 @@ func _MilvusService_DropIndex_Handler(srv interface{}, ctx context.Context, dec 
 		FullMethod: "/milvus.grpc.MilvusService/DropIndex",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MilvusServiceServer).DropIndex(ctx, req.(*TableName))
+		return srv.(MilvusServiceServer).DropIndex(ctx, req.(*CollectionName))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -2424,7 +2425,7 @@ func _MilvusService_CreatePartition_Handler(srv interface{}, ctx context.Context
 }
 
 func _MilvusService_ShowPartitions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(TableName)
+	in := new(CollectionName)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -2436,7 +2437,7 @@ func _MilvusService_ShowPartitions_Handler(srv interface{}, ctx context.Context,
 		FullMethod: "/milvus.grpc.MilvusService/ShowPartitions",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MilvusServiceServer).ShowPartitions(ctx, req.(*TableName))
+		return srv.(MilvusServiceServer).ShowPartitions(ctx, req.(*CollectionName))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -2603,20 +2604,20 @@ func _MilvusService_DeleteByID_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
-func _MilvusService_PreloadTable_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(TableName)
+func _MilvusService_PreloadCollection_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CollectionName)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MilvusServiceServer).PreloadTable(ctx, in)
+		return srv.(MilvusServiceServer).PreloadCollection(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/milvus.grpc.MilvusService/PreloadTable",
+		FullMethod: "/milvus.grpc.MilvusService/PreloadCollection",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MilvusServiceServer).PreloadTable(ctx, req.(*TableName))
+		return srv.(MilvusServiceServer).PreloadCollection(ctx, req.(*CollectionName))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -2640,7 +2641,7 @@ func _MilvusService_Flush_Handler(srv interface{}, ctx context.Context, dec func
 }
 
 func _MilvusService_Compact_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(TableName)
+	in := new(CollectionName)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -2652,7 +2653,7 @@ func _MilvusService_Compact_Handler(srv interface{}, ctx context.Context, dec fu
 		FullMethod: "/milvus.grpc.MilvusService/Compact",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MilvusServiceServer).Compact(ctx, req.(*TableName))
+		return srv.(MilvusServiceServer).Compact(ctx, req.(*CollectionName))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -2662,32 +2663,32 @@ var _MilvusService_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*MilvusServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "CreateTable",
-			Handler:    _MilvusService_CreateTable_Handler,
+			MethodName: "CreateCollection",
+			Handler:    _MilvusService_CreateCollection_Handler,
 		},
 		{
-			MethodName: "HasTable",
-			Handler:    _MilvusService_HasTable_Handler,
+			MethodName: "HasCollection",
+			Handler:    _MilvusService_HasCollection_Handler,
 		},
 		{
-			MethodName: "DescribeTable",
-			Handler:    _MilvusService_DescribeTable_Handler,
+			MethodName: "DescribeCollection",
+			Handler:    _MilvusService_DescribeCollection_Handler,
 		},
 		{
-			MethodName: "CountTable",
-			Handler:    _MilvusService_CountTable_Handler,
+			MethodName: "CountCollection",
+			Handler:    _MilvusService_CountCollection_Handler,
 		},
 		{
-			MethodName: "ShowTables",
-			Handler:    _MilvusService_ShowTables_Handler,
+			MethodName: "ShowCollections",
+			Handler:    _MilvusService_ShowCollections_Handler,
 		},
 		{
-			MethodName: "ShowTableInfo",
-			Handler:    _MilvusService_ShowTableInfo_Handler,
+			MethodName: "ShowCollectionInfo",
+			Handler:    _MilvusService_ShowCollectionInfo_Handler,
 		},
 		{
-			MethodName: "DropTable",
-			Handler:    _MilvusService_DropTable_Handler,
+			MethodName: "DropCollection",
+			Handler:    _MilvusService_DropCollection_Handler,
 		},
 		{
 			MethodName: "CreateIndex",
@@ -2746,8 +2747,8 @@ var _MilvusService_serviceDesc = grpc.ServiceDesc{
 			Handler:    _MilvusService_DeleteByID_Handler,
 		},
 		{
-			MethodName: "PreloadTable",
-			Handler:    _MilvusService_PreloadTable_Handler,
+			MethodName: "PreloadCollection",
+			Handler:    _MilvusService_PreloadCollection_Handler,
 		},
 		{
 			MethodName: "Flush",
