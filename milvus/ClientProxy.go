@@ -44,6 +44,8 @@ func (client *Milvusclient) Connect(connectParam ConnectParam) error {
 	var opts []grpc.DialOption
 	opts = append(opts, grpc.WithInsecure())
 	opts = append(opts, grpc.WithBlock())
+	opts = append(opts, grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(-1)))
+	opts = append(opts, grpc.WithDefaultCallOptions(grpc.MaxCallSendMsgSize(-1)))
 
 	serverAddr := connectParam.IPAddress + ":" + connectParam.Port
 

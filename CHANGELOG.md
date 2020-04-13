@@ -7,6 +7,7 @@
 - \#5 - Search interface bug
 - \#10 - When the collection is empty, the search client throws exceptions
 - \#15 - Search won't return status when return nq = 0
+- \#20 - Receive large dataset failed
 
 ### Improvement
 ---
