@@ -24,6 +24,7 @@ import (
 	"context"
 	pb "github.com/milvus-io/milvus-sdk-go/milvus/grpc/gen"
 	"google.golang.org/grpc"
+	"math"
 	"time"
 )
 
@@ -44,8 +45,8 @@ func (client *Milvusclient) Connect(connectParam ConnectParam) error {
 	var opts []grpc.DialOption
 	opts = append(opts, grpc.WithInsecure())
 	opts = append(opts, grpc.WithBlock())
-	opts = append(opts, grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(-1)))
-	opts = append(opts, grpc.WithDefaultCallOptions(grpc.MaxCallSendMsgSize(-1)))
+	opts = append(opts, grpc.WithDefaultCallOptions(grpc.MaxCallSendMsgSize(math.MaxInt64)))
+	opts = append(opts, grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(math.MaxInt64)))
 
 	serverAddr := connectParam.IPAddress + ":" + connectParam.Port
 
