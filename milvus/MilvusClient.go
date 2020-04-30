@@ -22,7 +22,7 @@ package milvus
 
 import ()
 
-var clientVersion string = "0.2.0"
+var clientVersion string = "0.4.0"
 
 // MetricType metric type
 type MetricType int64
@@ -100,14 +100,6 @@ type PartitionStat struct {
 	RowCount int64
 	// SegmentsStat array of partition's SegmentStat
 	SegmentsStat []SegmentStat
-}
-
-//CollectionInfo
-type CollectionInfo struct {
-	// TotalRowCount collection total row count
-	TotalRowCount int64
-	// PartitionsStat collection's parititons statistics
-	PartitionsStat []PartitionStat
 }
 
 //CollectionParam informations of a collection
@@ -195,6 +187,19 @@ type SearchParam struct {
 	ExtraParams string
 }
 
+type SearchByIDParam struct {
+	// CollectionName collection name for search
+	CollectionName string
+	// QueryEntities query entities raw array
+	IdArray []int64
+	// Topk topk
+	Topk int64
+	// PartitionTag partition tag array
+	PartitionTag []string
+	// ExtraParams extra parameters
+	ExtraParams string
+}
+
 //QueryResult Query result
 type QueryResult struct {
 	// Ids id array
@@ -271,10 +276,10 @@ type MilvusClient interface {
 	// return indicate if insert is successful.
 	Insert(insertParam *InsertParam) ([]int64, Status, error)
 
-	// GetEntityByID method
+	// GetEntitiesByID method
 	// This method is used to get entity by entity id
 	// return entity data
-	GetEntityByID(collectionName string, entity_id int64) (Entity, Status, error)
+	GetEntitiesByID(collectionName string, entity_id []int64) ([]Entity, Status, error)
 
 	// GetEntityIDs method
 	// This method is used to get entity ids
@@ -285,6 +290,11 @@ type MilvusClient interface {
 	// This method is used to query entity in collection.
 	// return indicate if query is successful.
 	Search(searchParam SearchParam) (TopkQueryResult, Status, error)
+
+	// SearchByID method
+	// This method is used to query entity in collection.
+	// return indicate if query is successful.
+	SearchByID(searchByIDParam SearchByIDParam) (TopkQueryResult, Status, error)
 
 	// DeleteByID method
 	// This method is used to delete entities by ids
@@ -309,7 +319,7 @@ type MilvusClient interface {
 	// ShowCollectionInfo method
 	// This method is used to get collection informations
 	// return collection informations
-	ShowCollectionInfo(collectionName string) (CollectionInfo, Status, error)
+	ShowCollectionInfo(collectionName string) (string, Status, error)
 
 	// ServerVersion method
 	// This method is used to give the server version.
