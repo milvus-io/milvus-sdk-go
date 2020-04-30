@@ -22,6 +22,7 @@ package milvus
 
 import (
 	"context"
+	"errors"
 	pb "github.com/milvus-io/milvus-sdk-go/milvus/grpc/gen"
 	"google.golang.org/grpc"
 	"math"
@@ -62,6 +63,21 @@ func (client *Milvusclient) Connect(connectParam ConnectParam) error {
 	milvusGrpcClient := NewMilvusGrpcClient(milvusclient)
 
 	client.Instance = milvusGrpcClient
+
+	serverVersion, status, err := client.ServerVersion()
+	if err != nil {
+		return err
+	}
+	if !status.Ok() {
+		println("Get server version status: " + status.GetMessage())
+		return err
+	}
+	if (serverVersion != "0.8.0" && serverVersion != "0.9.0") {
+		println("Server version check failed, this client supposed to connect milvus-0.9.0.")
+		client.Instance = nil
+		err = errors.New("Connecto server failed, please check server version.")
+		return err
+	}
 
 	return nil
 }
@@ -143,17 +159,23 @@ func (client *Milvusclient) Insert(insertParam *InsertParam) ([]int64, Status, e
 
 ////////////////////////////////////////////////////////////////////////////
 
-func (client *Milvusclient) GetEntityByID(collectionName string, vector_id int64) (Entity, Status, error) {
-	grpcIdentity := pb.VectorIdentity{collectionName, vector_id, struct{}{}, nil, 0}
-	grpcVectorData, err := client.Instance.GetVectorByID(grpcIdentity)
+func (client *Milvusclient) GetEntitiesByID(collectionName string, vector_id []int64) ([]Entity, Status, error) {
+	grpcIdentity := pb.VectorsIdentity{collectionName, vector_id, struct{}{}, nil, 0}
+	grpcVectorData, err := client.Instance.GetVectorsByID(grpcIdentity)
 	if err != nil {
-		return Entity{nil, nil}, nil, err
+		return nil, nil, err
 	}
-	if grpcVectorData.VectorData != nil {
-		return Entity{grpcVectorData.VectorData.FloatData, grpcVectorData.VectorData.BinaryData},
-			status{int64(grpcVectorData.Status.ErrorCode), grpcVectorData.Status.Reason}, err
+	if grpcVectorData.VectorsData != nil {
+		entityLen := len(grpcVectorData.VectorsData)
+		var entity = make([]Entity, entityLen)
+		var i int64
+		for i = 0;i < int64(entityLen); i++ {
+			entity[i].FloatData = grpcVectorData.VectorsData[i].FloatData
+			entity[i].BinaryData = grpcVectorData.VectorsData[i].BinaryData
+		}
+		return entity, status{int64(grpcVectorData.Status.ErrorCode), grpcVectorData.Status.Reason}, err
 	}
-	return Entity{nil, nil}, status{int64(grpcVectorData.Status.ErrorCode), grpcVectorData.Status.Reason}, err
+	return nil, status{int64(grpcVectorData.Status.ErrorCode), grpcVectorData.Status.Reason}, err
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -193,6 +215,37 @@ func (client *Milvusclient) Search(searchParam SearchParam) (TopkQueryResult, St
 	}
 	var result = make([]QueryResult, nq)
 	topk := int64(len(topkQueryResult.GetIds())) / nq
+	for i = 0; i < nq; i++ {
+		result[i].Ids = make([]int64, topk)
+		result[i].Distances = make([]float32, topk)
+		for j = 0; j < topk; j++ {
+			result[i].Ids[j] = topkQueryResult.GetIds()[i*topk+j]
+			result[i].Distances[j] = topkQueryResult.GetDistances()[i*topk+j]
+		}
+	}
+	return TopkQueryResult{result}, status{int64(topkQueryResult.Status.ErrorCode), topkQueryResult.Status.Reason}, nil
+}
+
+////////////////////////////////////////////////////////////////////////////
+
+func (client *Milvusclient) SearchByID(searchByIDParam SearchByIDParam) (TopkQueryResult, Status, error) {
+	keyValuePair := make([]*pb.KeyValuePair, 1)
+	pair := pb.KeyValuePair{"params", searchByIDParam.ExtraParams, struct{}{}, nil, 0}
+	keyValuePair[0] = &pair
+	grpcSearchByIDParam := pb.SearchByIDParam{searchByIDParam.CollectionName, searchByIDParam.PartitionTag, searchByIDParam.IdArray, searchByIDParam.Topk,
+		keyValuePair, struct{}{}, nil, 0,}
+
+	topkQueryResult, err := client.Instance.SearchByID(grpcSearchByIDParam)
+	if err != nil {
+		return TopkQueryResult{nil}, nil, err
+	}
+	nq := topkQueryResult.GetRowNum()
+	if nq == 0 {
+		return TopkQueryResult{nil}, status{int64(topkQueryResult.Status.ErrorCode), topkQueryResult.Status.Reason,}, err
+	}
+	var result = make([]QueryResult, nq)
+	topk := int64(len(topkQueryResult.GetIds())) / nq
+	var i, j int64
 	for i = 0; i < nq; i++ {
 		result[i].Ids = make([]int64, topk)
 		result[i].Distances = make([]float32, topk)
@@ -251,28 +304,13 @@ func (client *Milvusclient) ShowCollections() ([]string, Status, error) {
 
 ////////////////////////////////////////////////////////////////////////////
 
-func (client *Milvusclient) ShowCollectionInfo(collectionName string) (CollectionInfo, Status, error) {
+func (client *Milvusclient) ShowCollectionInfo(collectionName string) (string, Status, error) {
 	grpcCollectionName := pb.CollectionName{collectionName, struct{}{}, nil, 0}
-	grpcCollectionInfo, err := client.Instance.ShowCollectionInfos(grpcCollectionName)
+	grpcCollectionInfo, err := client.Instance.ShowCollectionInfo(grpcCollectionName)
 	if err != nil {
-		return CollectionInfo{0, nil}, nil, err
+		return "", nil, err
 	}
-	partitionStats := make([]PartitionStat, len(grpcCollectionInfo.PartitionsStat))
-	var i, j int
-	for i = 0; i < len(grpcCollectionInfo.PartitionsStat); i++ {
-		partitionStats[i].Tag = grpcCollectionInfo.PartitionsStat[i].Tag
-		partitionStats[i].RowCount = grpcCollectionInfo.PartitionsStat[i].TotalRowCount
-		segmentStat := make([]SegmentStat, len(grpcCollectionInfo.PartitionsStat[i].SegmentsStat))
-		for j = 0; j < len(grpcCollectionInfo.GetPartitionsStat()[i].GetSegmentsStat()); j++ {
-			segmentStat[j] = SegmentStat{grpcCollectionInfo.PartitionsStat[i].SegmentsStat[j].SegmentName,
-				grpcCollectionInfo.PartitionsStat[i].SegmentsStat[j].RowCount,
-				grpcCollectionInfo.PartitionsStat[i].SegmentsStat[j].IndexName,
-				grpcCollectionInfo.PartitionsStat[i].SegmentsStat[j].DataSize}
-		}
-		partitionStats[i].SegmentsStat = segmentStat
-	}
-	collectionInfo := CollectionInfo{grpcCollectionInfo.TotalRowCount, partitionStats}
-	return collectionInfo, status{int64(grpcCollectionInfo.Status.ErrorCode), grpcCollectionInfo.Status.Reason}, err
+	return grpcCollectionInfo.JsonInfo, status{int64(grpcCollectionInfo.Status.ErrorCode), grpcCollectionInfo.Status.Reason}, err
 }
 
 ////////////////////////////////////////////////////////////////////////////

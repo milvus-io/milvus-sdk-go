@@ -1,5 +1,22 @@
 # Changelog     
 
+## milvus-sdk-go 0.3.0 (2020-04-15)
+
+### Bug
+---
+- \#24 - sdk version error
+
+### Improvement
+---
+- \#26 - Change GetEntityByID to GetEntitiesByID
+
+### Feature
+---
+- \#25 - Add SearchByID interface
+
+### Task
+---
+
 ## milvus-sdk-go 0.2.0 (2020-03-31)
 
 ### Bug

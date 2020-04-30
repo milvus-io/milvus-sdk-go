@@ -41,7 +41,7 @@ type MilvusGrpcClient interface {
 
 	ShowCollections() (pb.CollectionNameList, error)
 
-	ShowCollectionInfos(collectionName pb.CollectionName) (pb.CollectionInfo, error)
+	ShowCollectionInfo(collectionName pb.CollectionName) (pb.CollectionInfo, error)
 
 	DropCollection(collectionName pb.CollectionName) (pb.Status, error)
 
@@ -59,11 +59,13 @@ type MilvusGrpcClient interface {
 
 	Insert(insertParam pb.InsertParam) (pb.VectorIds, error)
 
-	GetVectorByID(identity pb.VectorIdentity) (pb.VectorData, error)
+	GetVectorsByID(identity pb.VectorsIdentity) (pb.VectorsData, error)
 
 	GetVectorIDs(param pb.GetVectorIDsParam) (pb.VectorIds, error)
 
 	Search(searchParam pb.SearchParam) (*pb.TopKQueryResult, error)
+
+	SearchByID(searchByIDParam pb.SearchByIDParam) (*pb.TopKQueryResult, error)
 
 	SearchInFiles(searchInFilesParam pb.SearchInFilesParam) (*pb.TopKQueryResult, error)
 
@@ -138,12 +140,12 @@ func (grpcClient *milvusGrpcClient) ShowCollections() (pb.CollectionNameList, er
 	return *collectionNameList, err
 }
 
-func (grpcClient *milvusGrpcClient) ShowCollectionInfos(collectionName pb.CollectionName) (pb.CollectionInfo, error) {
+func (grpcClient *milvusGrpcClient) ShowCollectionInfo(collectionName pb.CollectionName) (pb.CollectionInfo, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	collectionInfo, err := grpcClient.serviceInstance.ShowCollectionInfo(ctx, &collectionName)
 	if err != nil {
-		return pb.CollectionInfo{nil, 0, nil, struct{}{}, nil, 0,}, err
+		return pb.CollectionInfo{nil, "", struct{}{}, nil, 0,}, err
 	}
 	return *collectionInfo, err
 }
@@ -226,13 +228,13 @@ func (grpcClient *milvusGrpcClient) Insert(insertParam pb.InsertParam) (pb.Vecto
 	return *vectorIds, err
 }
 
-func (grpcClient *milvusGrpcClient) GetVectorByID(identity pb.VectorIdentity) (pb.VectorData, error) {
+func (grpcClient *milvusGrpcClient) GetVectorsByID(identity pb.VectorsIdentity) (pb.VectorsData, error) {
 	ctx := context.Background()
-	status, err := grpcClient.serviceInstance.GetVectorByID(ctx, &identity)
+	vectorsData, err := grpcClient.serviceInstance.GetVectorsByID(ctx, &identity)
 	if err != nil {
-		return pb.VectorData{nil, nil, struct{}{}, nil, 0,}, err
+		return pb.VectorsData{nil, nil, struct{}{}, nil, 0,}, err
 	}
-	return *status, err
+	return *vectorsData, err
 }
 
 func (grpcClient *milvusGrpcClient) GetVectorIDs(param pb.GetVectorIDsParam) (pb.VectorIds, error) {
@@ -249,6 +251,15 @@ func (grpcClient *milvusGrpcClient) Search(searchParam pb.SearchParam) (*pb.TopK
 	topkQueryResult, err := grpcClient.serviceInstance.Search(ctx, &searchParam)
 	if err != nil {
 		return &pb.TopKQueryResult{nil, 0, nil, nil, struct{}{}, nil, 0,}, err
+	}
+	return topkQueryResult, err
+}
+
+func (grpcClient *milvusGrpcClient) SearchByID(searchByIDParam pb.SearchByIDParam) (*pb.TopKQueryResult, error) {
+	ctx := context.Background()
+	topkQueryResult, err := grpcClient.serviceInstance.SearchByID(ctx, &searchByIDParam)
+	if err != nil {
+		return &pb.TopKQueryResult{nil, 0, nil, nil, struct{}{}, nil, 0}, err
 	}
 	return topkQueryResult, err
 }
