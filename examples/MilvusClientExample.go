@@ -277,7 +277,7 @@ func example(address string, port string) {
 		println("Drop collection failed: " + status.GetMessage())
 		return
 	}
-	println("Drop collection " + collectionName + "success!")
+	println("Drop collection " + collectionName + " success!")
 
 	//GetConfig
 	var configInfo string

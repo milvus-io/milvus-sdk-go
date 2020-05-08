@@ -213,17 +213,19 @@ func (client *Milvusclient) Search(searchParam SearchParam) (TopkQueryResult, St
 	if nq == 0 {
 		return TopkQueryResult{nil}, status{int64(topkQueryResult.Status.ErrorCode), topkQueryResult.Status.Reason,}, err
 	}
-	var result = make([]QueryResult, nq)
+	var queryResult []QueryResult
 	topk := int64(len(topkQueryResult.GetIds())) / nq
 	for i = 0; i < nq; i++ {
-		result[i].Ids = make([]int64, topk)
-		result[i].Distances = make([]float32, topk)
+		var result QueryResult
 		for j = 0; j < topk; j++ {
-			result[i].Ids[j] = topkQueryResult.GetIds()[i*topk+j]
-			result[i].Distances[j] = topkQueryResult.GetDistances()[i*topk+j]
+			if (topkQueryResult.GetIds()[i*topk+j]) != -1 {
+				result.Ids = append(result.Ids, topkQueryResult.GetIds()[i*topk+j])
+				result.Distances = append(result.Distances, topkQueryResult.GetDistances()[i*topk+j])
+			}
 		}
+		queryResult = append(queryResult, result)
 	}
-	return TopkQueryResult{result}, status{int64(topkQueryResult.Status.ErrorCode), topkQueryResult.Status.Reason}, nil
+	return TopkQueryResult{queryResult}, status{int64(topkQueryResult.Status.ErrorCode), topkQueryResult.Status.Reason}, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////

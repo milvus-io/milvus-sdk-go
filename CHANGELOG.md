@@ -9,6 +9,7 @@
 ### Improvement
 ---
 - \#26 - Change GetEntityByID to GetEntitiesByID
+- \#29 - Filtering id = -1 result when total count < topk
 
 ### Feature
 ---
