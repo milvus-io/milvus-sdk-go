@@ -159,7 +159,7 @@ func (client *Milvusclient) Insert(insertParam *InsertParam) ([]int64, Status, e
 
 ////////////////////////////////////////////////////////////////////////////
 
-func (client *Milvusclient) GetEntitiesByID(collectionName string, vector_id []int64) ([]Entity, Status, error) {
+func (client *Milvusclient) GetEntityByID(collectionName string, vector_id []int64) ([]Entity, Status, error) {
 	grpcIdentity := pb.VectorsIdentity{collectionName, vector_id, struct{}{}, nil, 0}
 	grpcVectorData, err := client.Instance.GetVectorsByID(grpcIdentity)
 	if err != nil {
@@ -180,8 +180,8 @@ func (client *Milvusclient) GetEntitiesByID(collectionName string, vector_id []i
 
 ////////////////////////////////////////////////////////////////////////////
 
-func (client *Milvusclient) GetEntityIDs(getEntityIDsParam GetEntityIDsParam) ([]int64, Status, error) {
-	grpcParam := pb.GetVectorIDsParam{getEntityIDsParam.CollectionName, getEntityIDsParam.SegmentName, struct{}{}, nil, 0}
+func (client *Milvusclient) ListIDInSegment(listIDInSegmentParam ListIDInSegmentParam) ([]int64, Status, error) {
+	grpcParam := pb.GetVectorIDsParam{listIDInSegmentParam.CollectionName, listIDInSegmentParam.SegmentName, struct{}{}, nil, 0}
 	vectorIDs, err := client.Instance.GetVectorIDs(grpcParam)
 	if err != nil {
 		return nil, nil, err
@@ -261,7 +261,7 @@ func (client *Milvusclient) SearchByID(searchByIDParam SearchByIDParam) (TopkQue
 
 ////////////////////////////////////////////////////////////////////////////
 
-func (client *Milvusclient) DeleteByID(collectionName string, id_array []int64) (Status, error) {
+func (client *Milvusclient) DeleteEntityByID(collectionName string, id_array []int64) (Status, error) {
 	grpcParam := pb.DeleteByIDParam{collectionName, id_array, struct{}{}, nil, 0}
 	grpcStatus, err := client.Instance.DeleteByID(grpcParam)
 	if err != nil {
@@ -272,7 +272,7 @@ func (client *Milvusclient) DeleteByID(collectionName string, id_array []int64) 
 
 ////////////////////////////////////////////////////////////////////////////
 
-func (client *Milvusclient) DescribeCollection(collectionName string) (CollectionParam, Status, error) {
+func (client *Milvusclient) GetCollectionInfo(collectionName string) (CollectionParam, Status, error) {
 	grpcCollectionName := pb.CollectionName{collectionName, struct{}{}, nil, 0}
 	collectionSchema, err := client.Instance.DescribeCollection(grpcCollectionName)
 	if err != nil {
@@ -284,7 +284,7 @@ func (client *Milvusclient) DescribeCollection(collectionName string) (Collectio
 
 ////////////////////////////////////////////////////////////////////////////
 
-func (client *Milvusclient) CountCollection(collectionName string) (int64, Status, error) {
+func (client *Milvusclient) CountEntities(collectionName string) (int64, Status, error) {
 	grpcCollectionName := pb.CollectionName{collectionName, struct{}{}, nil, 0}
 	rowCount, err := client.Instance.CountCollection(grpcCollectionName)
 	if err != nil {
@@ -296,7 +296,7 @@ func (client *Milvusclient) CountCollection(collectionName string) (int64, Statu
 
 ////////////////////////////////////////////////////////////////////////////
 
-func (client *Milvusclient) ShowCollections() ([]string, Status, error) {
+func (client *Milvusclient) ListCollections() ([]string, Status, error) {
 	collectionNameList, err := client.Instance.ShowCollections()
 	if err != nil {
 		return nil, nil, err
@@ -306,7 +306,7 @@ func (client *Milvusclient) ShowCollections() ([]string, Status, error) {
 
 ////////////////////////////////////////////////////////////////////////////
 
-func (client *Milvusclient) ShowCollectionInfo(collectionName string) (string, Status, error) {
+func (client *Milvusclient) GetCollectionStats(collectionName string) (string, Status, error) {
 	grpcCollectionName := pb.CollectionName{collectionName, struct{}{}, nil, 0}
 	grpcCollectionInfo, err := client.Instance.ShowCollectionInfo(grpcCollectionName)
 	if err != nil {
@@ -342,7 +342,7 @@ func (client *Milvusclient) ServerStatus() (string, Status, error) {
 
 ////////////////////////////////////////////////////////////////////////////
 
-func (client *Milvusclient) PreloadCollection(collectionName string) (Status, error) {
+func (client *Milvusclient) LoadCollection(collectionName string) (Status, error) {
 	grpcCollectionName := pb.CollectionName{collectionName, struct{}{}, nil, 0}
 	grpcStatus, err := client.Instance.PreloadCollection(grpcCollectionName)
 	if err != nil {
@@ -353,7 +353,7 @@ func (client *Milvusclient) PreloadCollection(collectionName string) (Status, er
 
 ////////////////////////////////////////////////////////////////////////////
 
-func (client *Milvusclient) DescribeIndex(collectionName string) (IndexParam, Status, error) {
+func (client *Milvusclient) GetIndexInfo(collectionName string) (IndexParam, Status, error) {
 	grpcCollectionName := pb.CollectionName{collectionName, struct{}{}, nil, 0}
 	indexParam, err := client.Instance.DescribeIndex(grpcCollectionName)
 	if err != nil {
@@ -395,7 +395,7 @@ func (client *Milvusclient) CreatePartition(partitionParam PartitionParam) (Stat
 
 ////////////////////////////////////////////////////////////////////////////
 
-func (client *Milvusclient) ShowPartitions(collectionName string) ([]PartitionParam, Status, error) {
+func (client *Milvusclient) ListPartitions(collectionName string) ([]PartitionParam, Status, error) {
 	grpcCollectionName := pb.CollectionName{collectionName, struct{}{}, nil, 0}
 	grpcPartitionList, err := client.Instance.ShowPartitions(grpcCollectionName)
 	if err != nil {

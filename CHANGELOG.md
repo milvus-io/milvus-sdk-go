@@ -1,10 +1,9 @@
 # Changelog     
 
-## milvus-sdk-go 0.3.0 (2020-04-15)
+## milvus-sdk-go 0.4.0 (TBD)
 
 ### Bug
 ---
-- \#24 - sdk version error
 
 ### Improvement
 ---
@@ -14,6 +13,22 @@
 ### Feature
 ---
 - \#25 - Add SearchByID interface
+- \#31 - Rename sdk interfaces
+
+### Task
+---
+
+## milvus-sdk-go 0.3.0 (2020-04-15)
+
+### Bug
+---
+- \#24 - sdk version error
+
+### Improvement
+---
+
+### Feature
+---
 
 ### Task
 ---

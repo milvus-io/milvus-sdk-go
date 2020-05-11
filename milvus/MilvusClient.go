@@ -222,7 +222,7 @@ type PartitionParam struct {
 	PartitionTag string
 }
 
-type GetEntityIDsParam struct {
+type ListIDInSegmentParam struct {
 	CollectionName string
 	SegmentName    string
 }
@@ -276,15 +276,15 @@ type MilvusClient interface {
 	// return indicate if insert is successful.
 	Insert(insertParam *InsertParam) ([]int64, Status, error)
 
-	// GetEntitiesByID method
+	// GetEntityByID method
 	// This method is used to get entity by entity id
 	// return entity data
-	GetEntitiesByID(collectionName string, entity_id []int64) ([]Entity, Status, error)
+	GetEntityByID(collectionName string, entity_id []int64) ([]Entity, Status, error)
 
-	// GetEntityIDs method
+	// ListIDInSegment method
 	// This method is used to get entity ids
 	// return entity ids
-	GetEntityIDs(getEntityIDsParam GetEntityIDsParam) ([]int64, Status, error)
+	ListIDInSegment(listIDInSegmentParam ListIDInSegmentParam) ([]int64, Status, error)
 
 	// Search method
 	// This method is used to query entity in collection.
@@ -296,30 +296,30 @@ type MilvusClient interface {
 	// return indicate if query is successful.
 	SearchByID(searchByIDParam SearchByIDParam) (TopkQueryResult, Status, error)
 
-	// DeleteByID method
+	// DeleteEntityByID method
 	// This method is used to delete entities by ids
 	// return indicate if delete is successful
-	DeleteByID(collectionName string, id_array []int64) (Status, error)
+	DeleteEntityByID(collectionName string, id_array []int64) (Status, error)
 
-	// DescribeCollection method
+	// GetCollectionInfo method
 	// This method is used to show collection information.
 	//return indicate if this operation is successful.
-	DescribeCollection(collectionName string) (CollectionParam, Status, error)
+	GetCollectionInfo(collectionName string) (CollectionParam, Status, error)
 
-	// CountCollection method
+	// CountEntities method
 	// This method is used to get collection row count.
 	// return indicate if this operation is successful.
-	CountCollection(collectionName string) (int64, Status, error)
+	CountEntities(collectionName string) (int64, Status, error)
 
-	// ShowCollections method
+	// ListCollections method
 	// This method is used to list all collections.
 	// return indicate if this operation is successful.
-	ShowCollections() ([]string, Status, error)
+	ListCollections() ([]string, Status, error)
 
-	// ShowCollectionInfo method
+	// GetCollectionStats method
 	// This method is used to get collection informations
 	// return collection informations
-	ShowCollectionInfo(collectionName string) (string, Status, error)
+	GetCollectionStats(collectionName string) (string, Status, error)
 
 	// ServerVersion method
 	// This method is used to give the server version.
@@ -331,15 +331,15 @@ type MilvusClient interface {
 	// return server status.
 	ServerStatus() (string, Status, error)
 
-	// PreloadCollection method
+	// LoadCollection method
 	// This method is used to preload collection
 	// return indicate if this operation is successful.
-	PreloadCollection(collectionName string) (Status, error)
+	LoadCollection(collectionName string) (Status, error)
 
-	// DescribeIndex method
+	// GetIndexInfo method
 	// This method is used to describe index
 	// return indicate if this operation is successful.
-	DescribeIndex(collectionName string) (IndexParam, Status, error)
+	GetIndexInfo(collectionName string) (IndexParam, Status, error)
 
 	// DropIndex method
 	// This method is used to drop index of collection(and its partitions)
@@ -351,10 +351,10 @@ type MilvusClient interface {
 	// return indicate if partition is created successfully
 	CreatePartition(partitionParam PartitionParam) (Status, error)
 
-	// ShowPartition method
+	// ListPartitions method
 	// This method is used to create collection
 	// return indicate if this operation is successful
-	ShowPartitions(collectionName string) ([]PartitionParam, Status, error)
+	ListPartitions(collectionName string) ([]PartitionParam, Status, error)
 
 	// DropPartition method
 	// This method is used to delete collection partition.
