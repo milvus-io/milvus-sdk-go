@@ -104,7 +104,7 @@ func example(address string, port string) {
 
 	//test show collections
 	var collections []string
-	collections, status, err = client.ShowCollections()
+	collections, status, err = client.ListCollections()
 	if err != nil {
 		println("ShowCollections rpc failed: " + err.Error())
 		return
@@ -146,7 +146,7 @@ func example(address string, port string) {
 	time.Sleep(3 * time.Second)
 
 	//test describe collection
-	collectionParam, status, err = client.DescribeCollection(collectionName)
+	collectionParam, status, err = client.GetCollectionInfo(collectionName)
 	if err != nil {
 		println("DescribeCollection rpc failed: " + err.Error())
 		return
@@ -190,7 +190,7 @@ func example(address string, port string) {
 
 	//test CountCollection
 	var collectionCount int64
-	collectionCount, status, err = client.CountCollection(collectionName)
+	collectionCount, status, err = client.CountEntities(collectionName)
 	if err != nil {
 		println("CountCollection rpc failed: " + err.Error())
 		return
@@ -217,7 +217,7 @@ func example(address string, port string) {
 	println("Create index success!")
 
 	//Describe index
-	indexParam, status, err = client.DescribeIndex(collectionName)
+	indexParam, status, err = client.GetIndexInfo(collectionName)
 	if err != nil {
 		println("DescribeIndex rpc failed: " + err.Error())
 		return
@@ -228,7 +228,7 @@ func example(address string, port string) {
 	println(indexParam.CollectionName + "----index type:" + strconv.Itoa(int(indexParam.IndexType)))
 
 	//Preload collection
-	status, err = client.PreloadCollection(collectionName)
+	status, err = client.LoadCollection(collectionName)
 	if err != nil {
 		println("PreloadCollection rpc failed: " + err.Error())
 		return

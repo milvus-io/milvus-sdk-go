@@ -85,7 +85,7 @@ func TestCollection(t *testing.T) {
 	}
 
 	// test ShowCollections
-	collections, status, err := client.ShowCollections()
+	collections, status, err := client.ListCollections()
 	if err != nil {
 		t.Error("ShowCollections error")
 		return
@@ -195,7 +195,7 @@ func TestEntity(t *testing.T) {
 	}
 
 	// test ShowCollectionInfos
-	collectionInfos, status, err := client.ShowCollectionInfo(TABLENAME)
+	collectionInfos, status, err := client.GetCollectionStats(TABLENAME)
 	if err != nil {
 		t.Error("ShowCollectionInfo error")
 		return
@@ -217,8 +217,8 @@ func TestEntity(t *testing.T) {
 	segmentName := collections.Partitions[0].Segments[0].Name
 
 	// test GetEntityIds
-	getEntityIDsParam := milvus.GetEntityIDsParam{TABLENAME, string(segmentName)}
-	entityIDs, status, err := client.GetEntityIDs(getEntityIDsParam)
+	listIDInSegment := milvus.ListIDInSegmentParam{TABLENAME, string(segmentName)}
+	entityIDs, status, err := client.ListIDInSegment(listIDInSegment)
 	if err != nil {
 		t.Error("GetEntityIDs error")
 		return
@@ -229,7 +229,7 @@ func TestEntity(t *testing.T) {
 	}
 
 	// test GetEntityById
-	rowRecord, status, err := client.GetEntitiesByID(TABLENAME, entityIDs[0:10])
+	rowRecord, status, err := client.GetEntityByID(TABLENAME, entityIDs[0:10])
 	if err != nil {
 		t.Error("GetEntityByID error")
 		return
@@ -244,7 +244,7 @@ func TestEntity(t *testing.T) {
 	// test DeleteByID
 	id_array := make([]int64, 1)
 	id_array[0] = entityIDs[0]
-	status, err = client.DeleteByID(TABLENAME, id_array)
+	status, err = client.DeleteEntityByID(TABLENAME, id_array)
 	if err != nil {
 		t.Error("DeleteByID error")
 		return
@@ -266,7 +266,7 @@ func TestIndex(t *testing.T) {
 	}
 
 	// test DescribeIndex
-	indexInfo, status, err := client.DescribeIndex(TABLENAME)
+	indexInfo, status, err := client.GetIndexInfo(TABLENAME)
 	if err != nil {
 		t.Error("DescribeIndex error")
 		return
@@ -392,8 +392,8 @@ func TestPartition(t *testing.T) {
 		t.Error("CreatePartition status check error")
 	}
 
-	// test ShowPartitions
-	partitionParam, status, err := client.ShowPartitions(TABLENAME)
+	// test ListPartitions
+	partitionParam, status, err := client.ListPartitions(TABLENAME)
 	if !status.Ok() {
 		t.Error("ShowPartitions status check error")
 	}
