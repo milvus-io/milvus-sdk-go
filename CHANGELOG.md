@@ -17,6 +17,7 @@
 
 ### Task
 ---
+- \#33 - Remove SearchByID
 
 ## milvus-sdk-go 0.3.0 (2020-04-15)
 

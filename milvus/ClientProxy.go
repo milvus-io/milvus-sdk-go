@@ -230,37 +230,6 @@ func (client *Milvusclient) Search(searchParam SearchParam) (TopkQueryResult, St
 
 ////////////////////////////////////////////////////////////////////////////
 
-func (client *Milvusclient) SearchByID(searchByIDParam SearchByIDParam) (TopkQueryResult, Status, error) {
-	keyValuePair := make([]*pb.KeyValuePair, 1)
-	pair := pb.KeyValuePair{"params", searchByIDParam.ExtraParams, struct{}{}, nil, 0}
-	keyValuePair[0] = &pair
-	grpcSearchByIDParam := pb.SearchByIDParam{searchByIDParam.CollectionName, searchByIDParam.PartitionTag, searchByIDParam.IdArray, searchByIDParam.Topk,
-		keyValuePair, struct{}{}, nil, 0,}
-
-	topkQueryResult, err := client.Instance.SearchByID(grpcSearchByIDParam)
-	if err != nil {
-		return TopkQueryResult{nil}, nil, err
-	}
-	nq := topkQueryResult.GetRowNum()
-	if nq == 0 {
-		return TopkQueryResult{nil}, status{int64(topkQueryResult.Status.ErrorCode), topkQueryResult.Status.Reason,}, err
-	}
-	var result = make([]QueryResult, nq)
-	topk := int64(len(topkQueryResult.GetIds())) / nq
-	var i, j int64
-	for i = 0; i < nq; i++ {
-		result[i].Ids = make([]int64, topk)
-		result[i].Distances = make([]float32, topk)
-		for j = 0; j < topk; j++ {
-			result[i].Ids[j] = topkQueryResult.GetIds()[i*topk+j]
-			result[i].Distances[j] = topkQueryResult.GetDistances()[i*topk+j]
-		}
-	}
-	return TopkQueryResult{result}, status{int64(topkQueryResult.Status.ErrorCode), topkQueryResult.Status.Reason}, nil
-}
-
-////////////////////////////////////////////////////////////////////////////
-
 func (client *Milvusclient) DeleteEntityByID(collectionName string, id_array []int64) (Status, error) {
 	grpcParam := pb.DeleteByIDParam{collectionName, id_array, struct{}{}, nil, 0}
 	grpcStatus, err := client.Instance.DeleteByID(grpcParam)
