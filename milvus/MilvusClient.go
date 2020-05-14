@@ -187,19 +187,6 @@ type SearchParam struct {
 	ExtraParams string
 }
 
-type SearchByIDParam struct {
-	// CollectionName collection name for search
-	CollectionName string
-	// QueryEntities query entities raw array
-	IdArray []int64
-	// Topk topk
-	Topk int64
-	// PartitionTag partition tag array
-	PartitionTag []string
-	// ExtraParams extra parameters
-	ExtraParams string
-}
-
 //QueryResult Query result
 type QueryResult struct {
 	// Ids id array
@@ -290,11 +277,6 @@ type MilvusClient interface {
 	// This method is used to query entity in collection.
 	// return indicate if query is successful.
 	Search(searchParam SearchParam) (TopkQueryResult, Status, error)
-
-	// SearchByID method
-	// This method is used to query entity in collection.
-	// return indicate if query is successful.
-	SearchByID(searchByIDParam SearchByIDParam) (TopkQueryResult, Status, error)
 
 	// DeleteEntityByID method
 	// This method is used to delete entities by ids

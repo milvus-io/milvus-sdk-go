@@ -65,8 +65,6 @@ type MilvusGrpcClient interface {
 
 	Search(searchParam pb.SearchParam) (*pb.TopKQueryResult, error)
 
-	SearchByID(searchByIDParam pb.SearchByIDParam) (*pb.TopKQueryResult, error)
-
 	SearchInFiles(searchInFilesParam pb.SearchInFilesParam) (*pb.TopKQueryResult, error)
 
 	Cmd(command pb.Command) (pb.StringReply, error)
@@ -251,15 +249,6 @@ func (grpcClient *milvusGrpcClient) Search(searchParam pb.SearchParam) (*pb.TopK
 	topkQueryResult, err := grpcClient.serviceInstance.Search(ctx, &searchParam)
 	if err != nil {
 		return &pb.TopKQueryResult{nil, 0, nil, nil, struct{}{}, nil, 0,}, err
-	}
-	return topkQueryResult, err
-}
-
-func (grpcClient *milvusGrpcClient) SearchByID(searchByIDParam pb.SearchByIDParam) (*pb.TopKQueryResult, error) {
-	ctx := context.Background()
-	topkQueryResult, err := grpcClient.serviceInstance.SearchByID(ctx, &searchByIDParam)
-	if err != nil {
-		return &pb.TopKQueryResult{nil, 0, nil, nil, struct{}{}, nil, 0}, err
 	}
 	return topkQueryResult, err
 }
