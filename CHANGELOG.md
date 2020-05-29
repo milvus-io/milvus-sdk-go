@@ -1,6 +1,21 @@
 # Changelog     
 
-## milvus-sdk-go 0.4.0 (TBD)
+## milvus-sdk-go 0.4.1 (2020-05-29)
+
+### Bug
+---
+- \#35 - Fix SeverVersion check for milvus-0.9.1
+
+### Improvement
+---
+
+### Feature
+---
+
+### Task
+---
+
+## milvus-sdk-go 0.4.0 (2020-05-15)
 
 ### Bug
 ---
