@@ -5,6 +5,7 @@
 ### Bug
 ---
 - \#37 - Fix sever version check for milvus-0.10.0
+- \#39 - ListPartitions returns wrong result
 ### Improvement
 ---
 
