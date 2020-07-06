@@ -373,7 +373,8 @@ func (client *Milvusclient) ListPartitions(collectionName string) ([]PartitionPa
 	var partitionList = make([]PartitionParam, len(grpcPartitionList.GetPartitionTagArray()))
 	var i int
 	for i = 0; i < len(grpcPartitionList.GetPartitionTagArray()); i++ {
-		partitionList[i].CollectionName = grpcPartitionList.GetPartitionTagArray()[i]
+		partitionList[i].PartitionTag = grpcPartitionList.GetPartitionTagArray()[i]
+		partitionList[i].CollectionName = collectionName
 	}
 	return partitionList, status{int64(grpcPartitionList.GetStatus().GetErrorCode()), grpcPartitionList.GetStatus().GetReason()}, err
 }
