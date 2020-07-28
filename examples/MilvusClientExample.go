@@ -240,7 +240,7 @@ func example(address string, port string) {
 
 	println("**************************************************")
 
-	//Search with IVFSQ8 index
+	//Search with IVFFLAT index
 	extraParams = "{\"nprobe\" : 32}"
 	searchParam = milvus.SearchParam{collectionName, queryRecords, topk, nil, extraParams}
 	topkQueryResult, status, err = client.Search(searchParam)
