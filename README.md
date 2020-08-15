@@ -11,6 +11,7 @@ Go SDK for [Milvus](https://github.com/milvus-io/milvus). To contribute code to 
 | 0.9.1 | 0.4.1|
 | 0.10.0 | 0.4.2|
 | 0.10.1 | 0.4.3|
+| 0.10.2 | 0.4.4|
 
 ### Getting started
 
