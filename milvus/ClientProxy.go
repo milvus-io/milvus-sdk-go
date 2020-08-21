@@ -213,7 +213,7 @@ func (client *Milvusclient) Search(searchParam SearchParam) (TopkQueryResult, St
 	if nq == 0 {
 		return TopkQueryResult{nil}, status{int64(topkQueryResult.Status.ErrorCode), topkQueryResult.Status.Reason,}, err
 	}
-	var queryResult []QueryResult
+	queryResult := make([]QueryResult, 0, nq)
 	topk := int64(len(topkQueryResult.GetIds())) / nq
 	for i = 0; i < nq; i++ {
 		var result QueryResult
