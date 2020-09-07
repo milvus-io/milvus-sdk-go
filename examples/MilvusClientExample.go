@@ -57,9 +57,7 @@ func example(address string, port string) {
 	println("Server status: connected")
 
 	//Get server version
-	var version string
-	var status milvus.Status
-	version, status, err = client.ServerVersion()
+	version, status, err := client.ServerVersion()
 	if err != nil {
 		println("Cmd rpc failed: " + err.Error())
 	}
@@ -71,25 +69,17 @@ func example(address string, port string) {
 
 	//test create collection
 	collectionParam := milvus.CollectionParam{collectionName, dimension, indexFileSize, metricType}
-	var hasCollection bool
-	//hasCollection, status, err = client.HasCollection(collectionName)
+	status, err = client.CreateCollection(collectionParam)
 	if err != nil {
-		println("HasCollection rpc failed: " + err.Error())
+		println("CreateCollection rpc failed: " + err.Error())
+		return
 	}
-	if hasCollection == false {
-		status, err = client.CreateCollection(collectionParam)
-		if err != nil {
-			println("CreateCollection rpc failed: " + err.Error())
-			return
-		}
-		if !status.Ok() {
-			println("Create collection failed: " + status.GetMessage())
-			return
-		}
-		println("Create collection " + collectionName + " success")
+	if !status.Ok() {
+		println("Create collection failed: " + status.GetMessage())
+		return
 	}
-
-	hasCollection, status, err = client.HasCollection(collectionName)
+	println("Create collection " + collectionName + " success")
+	hasCollection, status, err := client.HasCollection(collectionName)
 	if err != nil {
 		println("HasCollection rpc failed: " + err.Error())
 		return
@@ -103,8 +93,7 @@ func example(address string, port string) {
 	println("**************************************************")
 
 	//test show collections
-	var collections []string
-	collections, status, err = client.ListCollections()
+	collections, status, err := client.ListCollections()
 	if err != nil {
 		println("ShowCollections rpc failed: " + err.Error())
 		return
@@ -172,10 +161,9 @@ func example(address string, port string) {
 	println("**************************************************")
 
 	//Search without create index
-	var topkQueryResult milvus.TopkQueryResult
 	extraParams := "{\"nprobe\" : 32}"
 	searchParam := milvus.SearchParam{collectionName, queryRecords, topk, nil, extraParams}
-	topkQueryResult, status, err = client.Search(searchParam)
+	topkQueryResult, status, err := client.Search(searchParam)
 	if err != nil {
 		println("Search rpc failed: " + err.Error())
 	}
@@ -189,8 +177,7 @@ func example(address string, port string) {
 	println("**************************************************")
 
 	//test CountCollection
-	var collectionCount int64
-	collectionCount, status, err = client.CountEntities(collectionName)
+	collectionCount, status, err := client.CountEntities(collectionName)
 	if err != nil {
 		println("CountCollection rpc failed: " + err.Error())
 		return
@@ -280,8 +267,7 @@ func example(address string, port string) {
 	println("Drop collection " + collectionName + " success!")
 
 	//GetConfig
-	var configInfo string
-	configInfo, status, err = client.GetConfig("*")
+	configInfo, status, err := client.GetConfig("*")
 	if !status.Ok() {
 		println("Get config failed: " + status.GetMessage())
 	}
@@ -297,8 +283,7 @@ func example(address string, port string) {
 	println("Client disconnect server success!")
 
 	//Server status
-	var serverStatus string
-	serverStatus, status, err = client.ServerStatus()
+	serverStatus, status, err := client.ServerStatus()
 	if !status.Ok() {
 		println("Get server status failed: " + status.GetMessage())
 	}
