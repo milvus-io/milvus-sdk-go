@@ -72,7 +72,7 @@ func (client *Milvusclient) Connect(connectParam ConnectParam) error {
 		println("Get server version status: " + status.GetMessage())
 		return err
 	}
-	if (serverVersion[0:4] != "0.10") {
+	if serverVersion[0:4] != "0.10" {
 		println("Server version check failed, this client supposed to connect milvus-0.10.x")
 		client.Instance = nil
 		err = errors.New("Connecto server failed, please check server version.")
@@ -169,7 +169,7 @@ func (client *Milvusclient) GetEntityByID(collectionName string, vector_id []int
 		entityLen := len(grpcVectorData.VectorsData)
 		var entity = make([]Entity, entityLen)
 		var i int64
-		for i = 0;i < int64(entityLen); i++ {
+		for i = 0; i < int64(entityLen); i++ {
 			entity[i].FloatData = grpcVectorData.VectorsData[i].FloatData
 			entity[i].BinaryData = grpcVectorData.VectorsData[i].BinaryData
 		}
@@ -211,7 +211,7 @@ func (client *Milvusclient) Search(searchParam SearchParam) (TopkQueryResult, St
 	}
 	nq := topkQueryResult.GetRowNum()
 	if nq == 0 {
-		return TopkQueryResult{nil}, status{int64(topkQueryResult.Status.ErrorCode), topkQueryResult.Status.Reason,}, err
+		return TopkQueryResult{nil}, status{int64(topkQueryResult.Status.ErrorCode), topkQueryResult.Status.Reason}, err
 	}
 	var queryResult []QueryResult
 	topk := int64(len(topkQueryResult.GetIds())) / nq
