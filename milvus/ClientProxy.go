@@ -360,9 +360,6 @@ func (client *Milvusclient) Search(searchParam SearchParam) (TopkQueryResult, St
 	jsonDsl, err := json.Marshal(searchParam.Dsl)
 	dsl := gjson.Parse(string(jsonDsl))
 	err = ParseDsl(dsl, vectorParam, &grpcVectorRecord)
-	if err != nil {
-		return TopkQueryResult{nil}, nil, err
-	}
 
 	grpcVectorParam := pb.VectorParam{vectorParam.Str, &grpcVectorRecord,
 		struct{}{}, nil, 0,}

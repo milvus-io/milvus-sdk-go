@@ -217,6 +217,8 @@ type SearchParam struct {
 	ExtraParams string
 }
 
+
+
 //QueryResult Query result
 type QueryResult struct {
 	// Ids id array
