@@ -175,8 +175,6 @@ type VectorRecord struct {
 // FieldValue
 type FieldValue struct {
 	FieldName string
-	PartitionTag string
-	DataType DataType
 	RawData interface{}
 	IdArray []int64
 }
@@ -212,7 +210,7 @@ type SearchParam struct {
 	// CollectionName collection name for search
 	CollectionName string
 	// QueryEntities query entities raw array
-	Dsl string
+	Dsl map[string]interface{}
 	// PartitionTag partition tag array
 	PartitionTag []string
 	// ExtraParams extra parameters
@@ -362,7 +360,7 @@ type MilvusClient interface {
 	// DropIndex method
 	// This method is used to drop index of collection(and its partitions)
 	// return indicate if this operation is successful.
-	DropIndex(indexParam IndexParam) (Status, error)
+	DropIndex(collectionName string, fieldName string) (Status, error)
 
 	// CreatePartition method
 	// This method is used to create collection partition

@@ -28,14 +28,14 @@ import (
 var collectionName string = "test_go"
 var dimension int64 = 128
 var indexFileSize int64 = 1024
-var metricType int64 = int64(milvus.L2)
+var metricType string = string(milvus.L2)
 var nq int64 = 100
 var nprobe int64 = 64
 var nb int64 = 100000
 var topk int64 = 100
 var nlist int64 = 16384
 
-func example(address string, port string) {
+func ClientTest(address string, port string) {
 	var grpcClient milvus.Milvusclient
 	var i, j int64
 	client := milvus.NewMilvusClient(grpcClient.Instance)
@@ -67,9 +67,27 @@ func example(address string, port string) {
 	}
 	println("Server version: " + version)
 
+	fields := make([]milvus.Field, 3)
+	fields[0].FieldName = "int64"
+	fields[0].DataType = milvus.INT64
+	fields[1].FieldName = "float"
+	fields[1].DataType = milvus.FLOAT
+	fields[2].FieldName = "float_vector"
+	fields[2].DataType = milvus.VECTORFLOAT
+
+	fieldByt := []byte(`{"dim": 128}`)
+	fields[2].ExtraParams = string(fieldByt)
+
+	colByt := []byte(`{"auto_id": true, "segment_row_count": 5000}`)
+	extraParam := string(colByt)
+
 	//test create collection
-	collectionParam := milvus.CollectionParam{collectionName, dimension, indexFileSize, metricType}
-	status, err = client.CreateCollection(collectionParam)
+	mapping := milvus.Mapping{
+		CollectionName: collectionName,
+		Fields:         fields,
+		ExtraParams:    extraParam,
+	}
+	status, err = client.CreateCollection(mapping)
 	if err != nil {
 		println("CreateCollection rpc failed: " + err.Error())
 		return
@@ -108,17 +126,35 @@ func example(address string, port string) {
 	}
 
 	//test insert vectors
-	records := make([]milvus.Entity, nb)
-	recordArray := make([][]float32, nb)
+	fieldValue := make([]milvus.FieldValue, 3)
+	int64Data := make([]int64, nb)
+	floatData := make([]float32, nb)
+	vectorData := make([][]float32, nb)
 	for i = 0; i < nb; i++ {
-		recordArray[i] = make([]float32, dimension)
+		int64Data[i] = i
+		floatData[i] = float32(i + nb)
+		vectorData[i] = make([]float32, dimension)
 		for j = 0; j < dimension; j++ {
-			recordArray[i][j] = float32(i % (j + 1))
+			vectorData[i][j] = float32(i % (j + 1))
 		}
-		records[i].FloatData = recordArray[i]
 	}
-	insertParam := milvus.InsertParam{collectionName, "", records, nil}
-	id_array, status, err := client.Insert(&insertParam)
+	fieldValue[0] = milvus.FieldValue{
+		FieldName:    "int64",
+		RawData:      int64Data,
+		IdArray:      nil,
+	}
+	fieldValue[1] = milvus.FieldValue{
+		FieldName:    "float",
+		RawData:      floatData,
+		IdArray:      nil,
+	}
+	fieldValue[2] = milvus.FieldValue{
+		FieldName:    "float_vector",
+		RawData:      vectorData,
+		IdArray:      nil,
+	}
+	insertParam := milvus.InsertParam{collectionName, "", fieldValue, nil}
+	id_array, status, err := client.Insert(insertParam)
 	if err != nil {
 		println("Insert rpc failed: " + err.Error())
 		return
@@ -135,7 +171,7 @@ func example(address string, port string) {
 	time.Sleep(3 * time.Second)
 
 	//test describe collection
-	collectionParam, status, err = client.GetCollectionInfo(collectionName)
+	getMapping, status, err := client.GetCollectionInfo(collectionName)
 	if err != nil {
 		println("DescribeCollection rpc failed: " + err.Error())
 		return
@@ -144,25 +180,36 @@ func example(address string, port string) {
 		println("Create index failed: " + status.GetMessage())
 		return
 	}
-	println("CollectionName:" + collectionParam.CollectionName + "----Dimension:" + strconv.Itoa(int(collectionParam.Dimension)) +
-		"----IndexFileSize:" + strconv.Itoa(int(collectionParam.IndexFileSize)))
-
-	//Construct query vectors
-	queryRecords := make([]milvus.Entity, nq)
-	queryVectors := make([][]float32, nq)
-	for i = 0; i < nq; i++ {
-		queryVectors[i] = make([]float32, dimension)
-		for j = 0; j < dimension; j++ {
-			queryVectors[i][j] = float32(i % (j + 1))
-		}
-		queryRecords[i].FloatData = queryVectors[i]
+	println("Collection name: " + getMapping.CollectionName)
+	for _, field := range getMapping.Fields {
+		println("field name: " + field.FieldName + "\t field type: " + string(field.DataType) +
+			"\t field index params: " + field.IndexParams + "\t field extra params: " + field.ExtraParams)
 	}
+	println("Collection extra params: " + getMapping.ExtraParams)
 
 	println("**************************************************")
 
+	//Construct query vectors
+	dsl := map[string]interface{}{
+		"bool": map[string]interface{}{
+			"must": map[string]interface{}{
+				"vector": map[string]interface{}{
+					"float_vector": map[string]interface{}{
+						"topk": topk,
+						"metric_type": "L2",
+						"query": vectorData[0:5],
+						"params": map[string]interface{}{
+							"nprobe": 10,
+						},
+					},
+				},
+			},
+		},
+	}
+	searchParam := milvus.SearchParam{collectionName, dsl, nil, ""}
+
+
 	//Search without create index
-	extraParams := "{\"nprobe\" : 32}"
-	searchParam := milvus.SearchParam{collectionName, queryRecords, topk, nil, extraParams}
 	topkQueryResult, status, err := client.Search(searchParam)
 	if err != nil {
 		println("Search rpc failed: " + err.Error())
@@ -190,8 +237,13 @@ func example(address string, port string) {
 
 	//Create index
 	println("Start create index...")
-	extraParams = "{\"nlist\" : 16384}"
-	indexParam := milvus.IndexParam{collectionName, milvus.IVFFLAT, extraParams}
+	indexParams := map[string]interface{}{
+		"index_type": milvus.IVFFLAT,
+		"params": map[string]interface{}{
+			"nlist": nlist,
+		},
+	}
+	indexParam := milvus.IndexParam{collectionName, "float_vector", indexParams}
 	status, err = client.CreateIndex(&indexParam)
 	if err != nil {
 		println("CreateIndex rpc failed: " + err.Error())
@@ -202,17 +254,6 @@ func example(address string, port string) {
 		return
 	}
 	println("Create index success!")
-
-	//Describe index
-	indexParam, status, err = client.GetIndexInfo(collectionName)
-	if err != nil {
-		println("DescribeIndex rpc failed: " + err.Error())
-		return
-	}
-	if !status.Ok() {
-		println("Describe index failed: " + status.GetMessage())
-	}
-	println(indexParam.CollectionName + "----index type:" + strconv.Itoa(int(indexParam.IndexType)))
 
 	//Preload collection
 	status, err = client.LoadCollection(collectionName)
@@ -228,8 +269,6 @@ func example(address string, port string) {
 	println("**************************************************")
 
 	//Search with IVFFLAT index
-	extraParams = "{\"nprobe\" : 32}"
-	searchParam = milvus.SearchParam{collectionName, queryRecords, topk, nil, extraParams}
 	topkQueryResult, status, err = client.Search(searchParam)
 	if err != nil {
 		println("Search rpc failed: " + err.Error())
@@ -248,7 +287,7 @@ func example(address string, port string) {
 	println("**************************************************")
 
 	//Drop index
-	status, err = client.DropIndex(collectionName)
+	status, err = client.DropIndex(collectionName, "float_vector")
 	if err != nil {
 		println("DropIndex rpc failed: " + err.Error())
 		return
@@ -294,5 +333,5 @@ func example(address string, port string) {
 func main() {
 	address := "localhost"
 	port := "19530"
-	example(address, port)
+	ClientTest(address, port)
 }
