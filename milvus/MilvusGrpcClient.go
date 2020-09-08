@@ -31,11 +31,11 @@ var timeout time.Duration = 10 * time.Second
 
 // MilvusGrpcClient call grpc generated code interface
 type MilvusGrpcClient interface {
-	CreateCollection(collectionSchema pb.CollectionSchema) (pb.Status, error)
+	CreateCollection(mapping pb.Mapping) (pb.Status, error)
 
 	HasCollection(collectionName pb.CollectionName) (pb.BoolReply, error)
 
-	DescribeCollection(collectionName pb.CollectionName) (pb.CollectionSchema, error)
+	DescribeCollection(collectionName pb.CollectionName) (pb.Mapping, error)
 
 	CountCollection(collectionName pb.CollectionName) (pb.CollectionRowCount, error)
 
@@ -47,9 +47,7 @@ type MilvusGrpcClient interface {
 
 	CreateIndex(indexParam pb.IndexParam) (pb.Status, error)
 
-	DescribeIndex(collectionName pb.CollectionName) (pb.IndexParam, error)
-
-	DropIndex(collectionName pb.CollectionName) (pb.Status, error)
+	DropIndex(indexParam pb.IndexParam) (pb.Status, error)
 
 	CreatePartition(partitionParam pb.PartitionParam) (pb.Status, error)
 
@@ -57,15 +55,15 @@ type MilvusGrpcClient interface {
 
 	DropPartition(partitionParam pb.PartitionParam) (pb.Status, error)
 
-	Insert(insertParam pb.InsertParam) (pb.VectorIds, error)
+	Insert(insertParam pb.InsertParam) (pb.EntityIds, error)
 
-	GetVectorsByID(identity pb.VectorsIdentity) (pb.VectorsData, error)
+	GetEntityByID(identity pb.EntityIdentity) (pb.Entities, error)
 
-	GetVectorIDs(param pb.GetVectorIDsParam) (pb.VectorIds, error)
+	GetEntityIDs(param pb.GetEntityIDsParam) (pb.EntityIds, error)
 
-	Search(searchParam pb.SearchParam) (*pb.TopKQueryResult, error)
+	Search(searchParam pb.SearchParam) (*pb.QueryResult, error)
 
-	SearchInFiles(searchInFilesParam pb.SearchInFilesParam) (*pb.TopKQueryResult, error)
+	//SearchInSegment(searchInSegmentParam pb.SearchInSegmentParam) (*pb.QueryResult, error)
 
 	Cmd(command pb.Command) (pb.StringReply, error)
 
@@ -75,7 +73,7 @@ type MilvusGrpcClient interface {
 
 	Flush(param pb.FlushParam) (pb.Status, error)
 
-	Compact(name pb.CollectionName) (pb.Status, error)
+	Compact(compactParam pb.CompactParam) (pb.Status, error)
 }
 
 type milvusGrpcClient struct {
@@ -87,10 +85,10 @@ func NewMilvusGrpcClient(client pb.MilvusServiceClient) MilvusGrpcClient {
 	return &milvusGrpcClient{client}
 }
 
-func (grpcClient *milvusGrpcClient) CreateCollection(collectionSchema pb.CollectionSchema) (pb.Status, error) {
+func (grpcClient *milvusGrpcClient) CreateCollection(mapping pb.Mapping) (pb.Status, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	reply, err := grpcClient.serviceInstance.CreateCollection(ctx, &collectionSchema)
+	reply, err := grpcClient.serviceInstance.CreateCollection(ctx, &mapping)
 	if err != nil {
 		return pb.Status{0, "", struct{}{}, nil, 0}, err
 	}
@@ -107,12 +105,12 @@ func (grpcClient *milvusGrpcClient) HasCollection(collectionName pb.CollectionNa
 	return *boolReply, err
 }
 
-func (grpcClient *milvusGrpcClient) DescribeCollection(collectionName pb.CollectionName) (pb.CollectionSchema, error) {
+func (grpcClient *milvusGrpcClient) DescribeCollection(collectionName pb.CollectionName) (pb.Mapping, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	collectionSchema, err := grpcClient.serviceInstance.DescribeCollection(ctx, &collectionName)
 	if err != nil {
-		return pb.CollectionSchema{nil, "", 0, 0, 0, nil, struct{}{}, nil, 0}, err
+		return pb.Mapping{nil, "", nil, nil, struct{}{}, nil, 0,}, err
 	}
 	return *collectionSchema, err
 }
@@ -167,20 +165,20 @@ func (grpcClient *milvusGrpcClient) CreateIndex(indexParam pb.IndexParam) (pb.St
 	return *status, err
 }
 
-func (grpcClient *milvusGrpcClient) DescribeIndex(collectionName pb.CollectionName) (pb.IndexParam, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
-	indexParam, err := grpcClient.serviceInstance.DescribeIndex(ctx, &collectionName)
-	if err != nil {
-		return pb.IndexParam{nil, "", 0, nil, struct{}{}, nil, 0}, err
-	}
-	return *indexParam, err
-}
+//func (grpcClient *milvusGrpcClient) DescribeIndex(collectionName pb.CollectionName) (pb.IndexParam, error) {
+//	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+//	defer cancel()
+//	indexParam, err := grpcClient.serviceInstance.DescribeIndex(ctx, &collectionName)
+//	if err != nil {
+//		//return pb.IndexParam{nil, "", 0, nil, struct{}{}, nil, 0,}, err
+//	}
+//	return *indexParam, err
+//}
 
-func (grpcClient *milvusGrpcClient) DropIndex(collectionName pb.CollectionName) (pb.Status, error) {
+func (grpcClient *milvusGrpcClient) DropIndex(indexParam pb.IndexParam) (pb.Status, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	status, err := grpcClient.serviceInstance.DropIndex(ctx, &collectionName)
+	status, err := grpcClient.serviceInstance.DropIndex(ctx, &indexParam)
 	if err != nil {
 		return pb.Status{0, "", struct{}{}, nil, 0}, err
 	}
@@ -217,49 +215,40 @@ func (grpcClient *milvusGrpcClient) DropPartition(partitionParam pb.PartitionPar
 	return *status, err
 }
 
-func (grpcClient *milvusGrpcClient) Insert(insertParam pb.InsertParam) (pb.VectorIds, error) {
+func (grpcClient *milvusGrpcClient) Insert(insertParam pb.InsertParam) (pb.EntityIds, error) {
 	ctx := context.Background()
-	vectorIds, err := grpcClient.serviceInstance.Insert(ctx, &insertParam)
+	entityIds, err := grpcClient.serviceInstance.Insert(ctx, &insertParam)
 	if err != nil {
-		return pb.VectorIds{nil, nil, struct{}{}, nil, 0}, err
+		return pb.EntityIds{nil, nil, struct{}{}, nil, 0,}, err
 	}
-	return *vectorIds, err
+	return *entityIds, err
 }
 
-func (grpcClient *milvusGrpcClient) GetVectorsByID(identity pb.VectorsIdentity) (pb.VectorsData, error) {
+func (grpcClient *milvusGrpcClient) GetEntityByID(identity pb.EntityIdentity) (pb.Entities, error) {
 	ctx := context.Background()
-	vectorsData, err := grpcClient.serviceInstance.GetVectorsByID(ctx, &identity)
+	vectorsData, err := grpcClient.serviceInstance.GetEntityByID(ctx, &identity)
 	if err != nil {
-		return pb.VectorsData{nil, nil, struct{}{}, nil, 0}, err
+		return pb.Entities{nil, nil, nil, nil, struct{}{}, nil, 0,}, err
 	}
 	return *vectorsData, err
 }
 
-func (grpcClient *milvusGrpcClient) GetVectorIDs(param pb.GetVectorIDsParam) (pb.VectorIds, error) {
+func (grpcClient *milvusGrpcClient) GetEntityIDs(param pb.GetEntityIDsParam) (pb.EntityIds, error) {
 	ctx := context.Background()
-	status, err := grpcClient.serviceInstance.GetVectorIDs(ctx, &param)
+	status, err := grpcClient.serviceInstance.GetEntityIDs(ctx, &param)
 	if err != nil {
-		return pb.VectorIds{nil, nil, struct{}{}, nil, 0}, err
+		return pb.EntityIds{nil, nil, struct{}{}, nil, 0,}, err
 	}
 	return *status, err
 }
 
-func (grpcClient *milvusGrpcClient) Search(searchParam pb.SearchParam) (*pb.TopKQueryResult, error) {
+func (grpcClient *milvusGrpcClient) Search(searchParam pb.SearchParam) (*pb.QueryResult, error) {
 	ctx := context.Background()
-	topkQueryResult, err := grpcClient.serviceInstance.Search(ctx, &searchParam)
+	queryResult, err := grpcClient.serviceInstance.Search(ctx, &searchParam)
 	if err != nil {
-		return &pb.TopKQueryResult{nil, 0, nil, nil, struct{}{}, nil, 0}, err
+		return &pb.QueryResult{nil, nil, 0, nil, nil, nil, struct{}{}, nil, 0,}, err
 	}
-	return topkQueryResult, err
-}
-
-func (grpcClient *milvusGrpcClient) SearchInFiles(searchInFilesParam pb.SearchInFilesParam) (*pb.TopKQueryResult, error) {
-	ctx := context.Background()
-	topkQueryResult, err := grpcClient.serviceInstance.SearchInFiles(ctx, &searchInFilesParam)
-	if err != nil {
-		return &pb.TopKQueryResult{nil, 0, nil, nil, struct{}{}, nil, 0}, err
-	}
-	return topkQueryResult, err
+	return queryResult, err
 }
 
 func (grpcClient *milvusGrpcClient) Cmd(command pb.Command) (pb.StringReply, error) {
@@ -302,10 +291,10 @@ func (grpcClient *milvusGrpcClient) Flush(param pb.FlushParam) (pb.Status, error
 	return *status, err
 }
 
-func (grpcClient *milvusGrpcClient) Compact(collectionName pb.CollectionName) (pb.Status, error) {
+func (grpcClient *milvusGrpcClient) Compact(compactParam pb.CompactParam) (pb.Status, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	status, err := grpcClient.serviceInstance.Compact(ctx, &collectionName)
+	status, err := grpcClient.serviceInstance.Compact(ctx, &compactParam)
 	if err != nil {
 		return pb.Status{0, "", struct{}{}, nil, 0}, err
 	}

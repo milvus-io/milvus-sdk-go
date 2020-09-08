@@ -24,48 +24,50 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
+//*
+// @brief Field data type
 type DataType int32
 
 const (
-	DataType_NULL    DataType = 0
-	DataType_INT8    DataType = 1
-	DataType_INT16   DataType = 2
-	DataType_INT32   DataType = 3
-	DataType_INT64   DataType = 4
-	DataType_STRING  DataType = 20
-	DataType_BOOL    DataType = 30
-	DataType_FLOAT   DataType = 40
-	DataType_DOUBLE  DataType = 41
-	DataType_VECTOR  DataType = 100
-	DataType_UNKNOWN DataType = 9999
+	DataType_NONE          DataType = 0
+	DataType_BOOL          DataType = 1
+	DataType_INT8          DataType = 2
+	DataType_INT16         DataType = 3
+	DataType_INT32         DataType = 4
+	DataType_INT64         DataType = 5
+	DataType_FLOAT         DataType = 10
+	DataType_DOUBLE        DataType = 11
+	DataType_STRING        DataType = 20
+	DataType_VECTOR_BINARY DataType = 100
+	DataType_VECTOR_FLOAT  DataType = 101
 )
 
 var DataType_name = map[int32]string{
-	0:    "NULL",
-	1:    "INT8",
-	2:    "INT16",
-	3:    "INT32",
-	4:    "INT64",
-	20:   "STRING",
-	30:   "BOOL",
-	40:   "FLOAT",
-	41:   "DOUBLE",
-	100:  "VECTOR",
-	9999: "UNKNOWN",
+	0:   "NONE",
+	1:   "BOOL",
+	2:   "INT8",
+	3:   "INT16",
+	4:   "INT32",
+	5:   "INT64",
+	10:  "FLOAT",
+	11:  "DOUBLE",
+	20:  "STRING",
+	100: "VECTOR_BINARY",
+	101: "VECTOR_FLOAT",
 }
 
 var DataType_value = map[string]int32{
-	"NULL":    0,
-	"INT8":    1,
-	"INT16":   2,
-	"INT32":   3,
-	"INT64":   4,
-	"STRING":  20,
-	"BOOL":    30,
-	"FLOAT":   40,
-	"DOUBLE":  41,
-	"VECTOR":  100,
-	"UNKNOWN": 9999,
+	"NONE":          0,
+	"BOOL":          1,
+	"INT8":          2,
+	"INT16":         3,
+	"INT32":         4,
+	"INT64":         5,
+	"FLOAT":         10,
+	"DOUBLE":        11,
+	"STRING":        20,
+	"VECTOR_BINARY": 100,
+	"VECTOR_FLOAT":  101,
 }
 
 func (x DataType) String() string {
@@ -145,7 +147,7 @@ func (Occur) EnumDescriptor() ([]byte, []int) {
 }
 
 //*
-// @brief general usage
+// @brief General usage
 type KeyValuePair struct {
 	Key                  string   `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
 	Value                string   `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
@@ -284,81 +286,119 @@ func (m *CollectionNameList) GetCollectionNames() []string {
 }
 
 //*
-// @brief Collection schema
-// metric_type: 1-L2, 2-IP
-type CollectionSchema struct {
-	Status               *Status         `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
-	CollectionName       string          `protobuf:"bytes,2,opt,name=collection_name,json=collectionName,proto3" json:"collection_name,omitempty"`
-	Dimension            int64           `protobuf:"varint,3,opt,name=dimension,proto3" json:"dimension,omitempty"`
-	IndexFileSize        int64           `protobuf:"varint,4,opt,name=index_file_size,json=indexFileSize,proto3" json:"index_file_size,omitempty"`
-	MetricType           int32           `protobuf:"varint,5,opt,name=metric_type,json=metricType,proto3" json:"metric_type,omitempty"`
-	ExtraParams          []*KeyValuePair `protobuf:"bytes,6,rep,name=extra_params,json=extraParams,proto3" json:"extra_params,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
-	XXX_unrecognized     []byte          `json:"-"`
-	XXX_sizecache        int32           `json:"-"`
+// @brief Field name
+type FieldName struct {
+	CollectionName       string   `protobuf:"bytes,1,opt,name=collection_name,json=collectionName,proto3" json:"collection_name,omitempty"`
+	FieldName            string   `protobuf:"bytes,2,opt,name=field_name,json=fieldName,proto3" json:"field_name,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *CollectionSchema) Reset()         { *m = CollectionSchema{} }
-func (m *CollectionSchema) String() string { return proto.CompactTextString(m) }
-func (*CollectionSchema) ProtoMessage()    {}
-func (*CollectionSchema) Descriptor() ([]byte, []int) {
+func (m *FieldName) Reset()         { *m = FieldName{} }
+func (m *FieldName) String() string { return proto.CompactTextString(m) }
+func (*FieldName) ProtoMessage()    {}
+func (*FieldName) Descriptor() ([]byte, []int) {
 	return fileDescriptor_02345ba45cc0e303, []int{3}
 }
 
-func (m *CollectionSchema) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_CollectionSchema.Unmarshal(m, b)
+func (m *FieldName) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_FieldName.Unmarshal(m, b)
 }
-func (m *CollectionSchema) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_CollectionSchema.Marshal(b, m, deterministic)
+func (m *FieldName) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_FieldName.Marshal(b, m, deterministic)
 }
-func (m *CollectionSchema) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CollectionSchema.Merge(m, src)
+func (m *FieldName) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_FieldName.Merge(m, src)
 }
-func (m *CollectionSchema) XXX_Size() int {
-	return xxx_messageInfo_CollectionSchema.Size(m)
+func (m *FieldName) XXX_Size() int {
+	return xxx_messageInfo_FieldName.Size(m)
 }
-func (m *CollectionSchema) XXX_DiscardUnknown() {
-	xxx_messageInfo_CollectionSchema.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_CollectionSchema proto.InternalMessageInfo
-
-func (m *CollectionSchema) GetStatus() *Status {
-	if m != nil {
-		return m.Status
-	}
-	return nil
+func (m *FieldName) XXX_DiscardUnknown() {
+	xxx_messageInfo_FieldName.DiscardUnknown(m)
 }
 
-func (m *CollectionSchema) GetCollectionName() string {
+var xxx_messageInfo_FieldName proto.InternalMessageInfo
+
+func (m *FieldName) GetCollectionName() string {
 	if m != nil {
 		return m.CollectionName
 	}
 	return ""
 }
 
-func (m *CollectionSchema) GetDimension() int64 {
+func (m *FieldName) GetFieldName() string {
 	if m != nil {
-		return m.Dimension
+		return m.FieldName
 	}
-	return 0
+	return ""
 }
 
-func (m *CollectionSchema) GetIndexFileSize() int64 {
-	if m != nil {
-		return m.IndexFileSize
-	}
-	return 0
+//*
+// @brief Collection mapping
+// @extra_params: key-value pair for extra parameters of the collection
+//    typically usage:
+//        extra_params["params"] = {segment_row_count: 1000000, auto_id: true}
+//    Note:
+//        the segment_row_count specify segment row count limit for merging
+//        the auto_id = true means entity id is auto-generated by milvus
+type Mapping struct {
+	Status               *Status         `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
+	CollectionName       string          `protobuf:"bytes,2,opt,name=collection_name,json=collectionName,proto3" json:"collection_name,omitempty"`
+	Fields               []*FieldParam   `protobuf:"bytes,3,rep,name=fields,proto3" json:"fields,omitempty"`
+	ExtraParams          []*KeyValuePair `protobuf:"bytes,4,rep,name=extra_params,json=extraParams,proto3" json:"extra_params,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
+	XXX_unrecognized     []byte          `json:"-"`
+	XXX_sizecache        int32           `json:"-"`
 }
 
-func (m *CollectionSchema) GetMetricType() int32 {
-	if m != nil {
-		return m.MetricType
-	}
-	return 0
+func (m *Mapping) Reset()         { *m = Mapping{} }
+func (m *Mapping) String() string { return proto.CompactTextString(m) }
+func (*Mapping) ProtoMessage()    {}
+func (*Mapping) Descriptor() ([]byte, []int) {
+	return fileDescriptor_02345ba45cc0e303, []int{4}
 }
 
-func (m *CollectionSchema) GetExtraParams() []*KeyValuePair {
+func (m *Mapping) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Mapping.Unmarshal(m, b)
+}
+func (m *Mapping) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Mapping.Marshal(b, m, deterministic)
+}
+func (m *Mapping) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Mapping.Merge(m, src)
+}
+func (m *Mapping) XXX_Size() int {
+	return xxx_messageInfo_Mapping.Size(m)
+}
+func (m *Mapping) XXX_DiscardUnknown() {
+	xxx_messageInfo_Mapping.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Mapping proto.InternalMessageInfo
+
+func (m *Mapping) GetStatus() *Status {
+	if m != nil {
+		return m.Status
+	}
+	return nil
+}
+
+func (m *Mapping) GetCollectionName() string {
+	if m != nil {
+		return m.CollectionName
+	}
+	return ""
+}
+
+func (m *Mapping) GetFields() []*FieldParam {
+	if m != nil {
+		return m.Fields
+	}
+	return nil
+}
+
+func (m *Mapping) GetExtraParams() []*KeyValuePair {
 	if m != nil {
 		return m.ExtraParams
 	}
@@ -366,7 +406,56 @@ func (m *CollectionSchema) GetExtraParams() []*KeyValuePair {
 }
 
 //*
-// @brief Params of partition
+// @brief Collection mapping list
+type MappingList struct {
+	Status               *Status    `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
+	MappingList          []*Mapping `protobuf:"bytes,2,rep,name=mapping_list,json=mappingList,proto3" json:"mapping_list,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
+	XXX_unrecognized     []byte     `json:"-"`
+	XXX_sizecache        int32      `json:"-"`
+}
+
+func (m *MappingList) Reset()         { *m = MappingList{} }
+func (m *MappingList) String() string { return proto.CompactTextString(m) }
+func (*MappingList) ProtoMessage()    {}
+func (*MappingList) Descriptor() ([]byte, []int) {
+	return fileDescriptor_02345ba45cc0e303, []int{5}
+}
+
+func (m *MappingList) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_MappingList.Unmarshal(m, b)
+}
+func (m *MappingList) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_MappingList.Marshal(b, m, deterministic)
+}
+func (m *MappingList) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MappingList.Merge(m, src)
+}
+func (m *MappingList) XXX_Size() int {
+	return xxx_messageInfo_MappingList.Size(m)
+}
+func (m *MappingList) XXX_DiscardUnknown() {
+	xxx_messageInfo_MappingList.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MappingList proto.InternalMessageInfo
+
+func (m *MappingList) GetStatus() *Status {
+	if m != nil {
+		return m.Status
+	}
+	return nil
+}
+
+func (m *MappingList) GetMappingList() []*Mapping {
+	if m != nil {
+		return m.MappingList
+	}
+	return nil
+}
+
+//*
+// @brief Parameters of partition
 type PartitionParam struct {
 	CollectionName       string   `protobuf:"bytes,1,opt,name=collection_name,json=collectionName,proto3" json:"collection_name,omitempty"`
 	Tag                  string   `protobuf:"bytes,2,opt,name=tag,proto3" json:"tag,omitempty"`
@@ -379,7 +468,7 @@ func (m *PartitionParam) Reset()         { *m = PartitionParam{} }
 func (m *PartitionParam) String() string { return proto.CompactTextString(m) }
 func (*PartitionParam) ProtoMessage()    {}
 func (*PartitionParam) Descriptor() ([]byte, []int) {
-	return fileDescriptor_02345ba45cc0e303, []int{4}
+	return fileDescriptor_02345ba45cc0e303, []int{6}
 }
 
 func (m *PartitionParam) XXX_Unmarshal(b []byte) error {
@@ -428,7 +517,7 @@ func (m *PartitionList) Reset()         { *m = PartitionList{} }
 func (m *PartitionList) String() string { return proto.CompactTextString(m) }
 func (*PartitionList) ProtoMessage()    {}
 func (*PartitionList) Descriptor() ([]byte, []int) {
-	return fileDescriptor_02345ba45cc0e303, []int{5}
+	return fileDescriptor_02345ba45cc0e303, []int{7}
 }
 
 func (m *PartitionList) XXX_Unmarshal(b []byte) error {
@@ -464,8 +553,8 @@ func (m *PartitionList) GetPartitionTagArray() []string {
 }
 
 //*
-// @brief Record inserted
-type RowRecord struct {
+// @brief Vector row record
+type VectorRowRecord struct {
 	FloatData            []float32 `protobuf:"fixed32,1,rep,packed,name=float_data,json=floatData,proto3" json:"float_data,omitempty"`
 	BinaryData           []byte    `protobuf:"bytes,2,opt,name=binary_data,json=binaryData,proto3" json:"binary_data,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
@@ -473,39 +562,39 @@ type RowRecord struct {
 	XXX_sizecache        int32     `json:"-"`
 }
 
-func (m *RowRecord) Reset()         { *m = RowRecord{} }
-func (m *RowRecord) String() string { return proto.CompactTextString(m) }
-func (*RowRecord) ProtoMessage()    {}
-func (*RowRecord) Descriptor() ([]byte, []int) {
-	return fileDescriptor_02345ba45cc0e303, []int{6}
+func (m *VectorRowRecord) Reset()         { *m = VectorRowRecord{} }
+func (m *VectorRowRecord) String() string { return proto.CompactTextString(m) }
+func (*VectorRowRecord) ProtoMessage()    {}
+func (*VectorRowRecord) Descriptor() ([]byte, []int) {
+	return fileDescriptor_02345ba45cc0e303, []int{8}
 }
 
-func (m *RowRecord) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_RowRecord.Unmarshal(m, b)
+func (m *VectorRowRecord) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_VectorRowRecord.Unmarshal(m, b)
 }
-func (m *RowRecord) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_RowRecord.Marshal(b, m, deterministic)
+func (m *VectorRowRecord) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_VectorRowRecord.Marshal(b, m, deterministic)
 }
-func (m *RowRecord) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_RowRecord.Merge(m, src)
+func (m *VectorRowRecord) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_VectorRowRecord.Merge(m, src)
 }
-func (m *RowRecord) XXX_Size() int {
-	return xxx_messageInfo_RowRecord.Size(m)
+func (m *VectorRowRecord) XXX_Size() int {
+	return xxx_messageInfo_VectorRowRecord.Size(m)
 }
-func (m *RowRecord) XXX_DiscardUnknown() {
-	xxx_messageInfo_RowRecord.DiscardUnknown(m)
+func (m *VectorRowRecord) XXX_DiscardUnknown() {
+	xxx_messageInfo_VectorRowRecord.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_RowRecord proto.InternalMessageInfo
+var xxx_messageInfo_VectorRowRecord proto.InternalMessageInfo
 
-func (m *RowRecord) GetFloatData() []float32 {
+func (m *VectorRowRecord) GetFloatData() []float32 {
 	if m != nil {
 		return m.FloatData
 	}
 	return nil
 }
 
-func (m *RowRecord) GetBinaryData() []byte {
+func (m *VectorRowRecord) GetBinaryData() []byte {
 	if m != nil {
 		return m.BinaryData
 	}
@@ -513,11 +602,182 @@ func (m *RowRecord) GetBinaryData() []byte {
 }
 
 //*
-// @brief Params to be inserted
+// @brief Attribute record
+type AttrRecord struct {
+	Int32Value           []int32   `protobuf:"varint,1,rep,packed,name=int32_value,json=int32Value,proto3" json:"int32_value,omitempty"`
+	Int64Value           []int64   `protobuf:"varint,2,rep,packed,name=int64_value,json=int64Value,proto3" json:"int64_value,omitempty"`
+	FloatValue           []float32 `protobuf:"fixed32,3,rep,packed,name=float_value,json=floatValue,proto3" json:"float_value,omitempty"`
+	DoubleValue          []float64 `protobuf:"fixed64,4,rep,packed,name=double_value,json=doubleValue,proto3" json:"double_value,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
+	XXX_unrecognized     []byte    `json:"-"`
+	XXX_sizecache        int32     `json:"-"`
+}
+
+func (m *AttrRecord) Reset()         { *m = AttrRecord{} }
+func (m *AttrRecord) String() string { return proto.CompactTextString(m) }
+func (*AttrRecord) ProtoMessage()    {}
+func (*AttrRecord) Descriptor() ([]byte, []int) {
+	return fileDescriptor_02345ba45cc0e303, []int{9}
+}
+
+func (m *AttrRecord) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_AttrRecord.Unmarshal(m, b)
+}
+func (m *AttrRecord) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_AttrRecord.Marshal(b, m, deterministic)
+}
+func (m *AttrRecord) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AttrRecord.Merge(m, src)
+}
+func (m *AttrRecord) XXX_Size() int {
+	return xxx_messageInfo_AttrRecord.Size(m)
+}
+func (m *AttrRecord) XXX_DiscardUnknown() {
+	xxx_messageInfo_AttrRecord.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_AttrRecord proto.InternalMessageInfo
+
+func (m *AttrRecord) GetInt32Value() []int32 {
+	if m != nil {
+		return m.Int32Value
+	}
+	return nil
+}
+
+func (m *AttrRecord) GetInt64Value() []int64 {
+	if m != nil {
+		return m.Int64Value
+	}
+	return nil
+}
+
+func (m *AttrRecord) GetFloatValue() []float32 {
+	if m != nil {
+		return m.FloatValue
+	}
+	return nil
+}
+
+func (m *AttrRecord) GetDoubleValue() []float64 {
+	if m != nil {
+		return m.DoubleValue
+	}
+	return nil
+}
+
+//*
+// @brief Vector records
+type VectorRecord struct {
+	Records              []*VectorRowRecord `protobuf:"bytes,1,rep,name=records,proto3" json:"records,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
+	XXX_unrecognized     []byte             `json:"-"`
+	XXX_sizecache        int32              `json:"-"`
+}
+
+func (m *VectorRecord) Reset()         { *m = VectorRecord{} }
+func (m *VectorRecord) String() string { return proto.CompactTextString(m) }
+func (*VectorRecord) ProtoMessage()    {}
+func (*VectorRecord) Descriptor() ([]byte, []int) {
+	return fileDescriptor_02345ba45cc0e303, []int{10}
+}
+
+func (m *VectorRecord) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_VectorRecord.Unmarshal(m, b)
+}
+func (m *VectorRecord) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_VectorRecord.Marshal(b, m, deterministic)
+}
+func (m *VectorRecord) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_VectorRecord.Merge(m, src)
+}
+func (m *VectorRecord) XXX_Size() int {
+	return xxx_messageInfo_VectorRecord.Size(m)
+}
+func (m *VectorRecord) XXX_DiscardUnknown() {
+	xxx_messageInfo_VectorRecord.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_VectorRecord proto.InternalMessageInfo
+
+func (m *VectorRecord) GetRecords() []*VectorRowRecord {
+	if m != nil {
+		return m.Records
+	}
+	return nil
+}
+
+//*
+// @brief Field values
+type FieldValue struct {
+	FieldName            string        `protobuf:"bytes,1,opt,name=field_name,json=fieldName,proto3" json:"field_name,omitempty"`
+	Type                 DataType      `protobuf:"varint,2,opt,name=type,proto3,enum=milvus.grpc.DataType" json:"type,omitempty"`
+	AttrRecord           *AttrRecord   `protobuf:"bytes,3,opt,name=attr_record,json=attrRecord,proto3" json:"attr_record,omitempty"`
+	VectorRecord         *VectorRecord `protobuf:"bytes,4,opt,name=vector_record,json=vectorRecord,proto3" json:"vector_record,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
+	XXX_unrecognized     []byte        `json:"-"`
+	XXX_sizecache        int32         `json:"-"`
+}
+
+func (m *FieldValue) Reset()         { *m = FieldValue{} }
+func (m *FieldValue) String() string { return proto.CompactTextString(m) }
+func (*FieldValue) ProtoMessage()    {}
+func (*FieldValue) Descriptor() ([]byte, []int) {
+	return fileDescriptor_02345ba45cc0e303, []int{11}
+}
+
+func (m *FieldValue) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_FieldValue.Unmarshal(m, b)
+}
+func (m *FieldValue) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_FieldValue.Marshal(b, m, deterministic)
+}
+func (m *FieldValue) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_FieldValue.Merge(m, src)
+}
+func (m *FieldValue) XXX_Size() int {
+	return xxx_messageInfo_FieldValue.Size(m)
+}
+func (m *FieldValue) XXX_DiscardUnknown() {
+	xxx_messageInfo_FieldValue.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_FieldValue proto.InternalMessageInfo
+
+func (m *FieldValue) GetFieldName() string {
+	if m != nil {
+		return m.FieldName
+	}
+	return ""
+}
+
+func (m *FieldValue) GetType() DataType {
+	if m != nil {
+		return m.Type
+	}
+	return DataType_NONE
+}
+
+func (m *FieldValue) GetAttrRecord() *AttrRecord {
+	if m != nil {
+		return m.AttrRecord
+	}
+	return nil
+}
+
+func (m *FieldValue) GetVectorRecord() *VectorRecord {
+	if m != nil {
+		return m.VectorRecord
+	}
+	return nil
+}
+
+//*
+// @brief Parameters for insert action
 type InsertParam struct {
 	CollectionName       string          `protobuf:"bytes,1,opt,name=collection_name,json=collectionName,proto3" json:"collection_name,omitempty"`
-	RowRecordArray       []*RowRecord    `protobuf:"bytes,2,rep,name=row_record_array,json=rowRecordArray,proto3" json:"row_record_array,omitempty"`
-	RowIdArray           []int64         `protobuf:"varint,3,rep,packed,name=row_id_array,json=rowIdArray,proto3" json:"row_id_array,omitempty"`
+	Fields               []*FieldValue   `protobuf:"bytes,2,rep,name=fields,proto3" json:"fields,omitempty"`
+	EntityIdArray        []int64         `protobuf:"varint,3,rep,packed,name=entity_id_array,json=entityIdArray,proto3" json:"entity_id_array,omitempty"`
 	PartitionTag         string          `protobuf:"bytes,4,opt,name=partition_tag,json=partitionTag,proto3" json:"partition_tag,omitempty"`
 	ExtraParams          []*KeyValuePair `protobuf:"bytes,5,rep,name=extra_params,json=extraParams,proto3" json:"extra_params,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
@@ -529,7 +789,7 @@ func (m *InsertParam) Reset()         { *m = InsertParam{} }
 func (m *InsertParam) String() string { return proto.CompactTextString(m) }
 func (*InsertParam) ProtoMessage()    {}
 func (*InsertParam) Descriptor() ([]byte, []int) {
-	return fileDescriptor_02345ba45cc0e303, []int{7}
+	return fileDescriptor_02345ba45cc0e303, []int{12}
 }
 
 func (m *InsertParam) XXX_Unmarshal(b []byte) error {
@@ -557,16 +817,16 @@ func (m *InsertParam) GetCollectionName() string {
 	return ""
 }
 
-func (m *InsertParam) GetRowRecordArray() []*RowRecord {
+func (m *InsertParam) GetFields() []*FieldValue {
 	if m != nil {
-		return m.RowRecordArray
+		return m.Fields
 	}
 	return nil
 }
 
-func (m *InsertParam) GetRowIdArray() []int64 {
+func (m *InsertParam) GetEntityIdArray() []int64 {
 	if m != nil {
-		return m.RowIdArray
+		return m.EntityIdArray
 	}
 	return nil
 }
@@ -586,61 +846,168 @@ func (m *InsertParam) GetExtraParams() []*KeyValuePair {
 }
 
 //*
-// @brief Vector ids
-type VectorIds struct {
+// @brief Entity ids
+type EntityIds struct {
 	Status               *Status  `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
-	VectorIdArray        []int64  `protobuf:"varint,2,rep,packed,name=vector_id_array,json=vectorIdArray,proto3" json:"vector_id_array,omitempty"`
+	EntityIdArray        []int64  `protobuf:"varint,2,rep,packed,name=entity_id_array,json=entityIdArray,proto3" json:"entity_id_array,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *VectorIds) Reset()         { *m = VectorIds{} }
-func (m *VectorIds) String() string { return proto.CompactTextString(m) }
-func (*VectorIds) ProtoMessage()    {}
-func (*VectorIds) Descriptor() ([]byte, []int) {
-	return fileDescriptor_02345ba45cc0e303, []int{8}
+func (m *EntityIds) Reset()         { *m = EntityIds{} }
+func (m *EntityIds) String() string { return proto.CompactTextString(m) }
+func (*EntityIds) ProtoMessage()    {}
+func (*EntityIds) Descriptor() ([]byte, []int) {
+	return fileDescriptor_02345ba45cc0e303, []int{13}
 }
 
-func (m *VectorIds) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_VectorIds.Unmarshal(m, b)
+func (m *EntityIds) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_EntityIds.Unmarshal(m, b)
 }
-func (m *VectorIds) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_VectorIds.Marshal(b, m, deterministic)
+func (m *EntityIds) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_EntityIds.Marshal(b, m, deterministic)
 }
-func (m *VectorIds) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_VectorIds.Merge(m, src)
+func (m *EntityIds) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EntityIds.Merge(m, src)
 }
-func (m *VectorIds) XXX_Size() int {
-	return xxx_messageInfo_VectorIds.Size(m)
+func (m *EntityIds) XXX_Size() int {
+	return xxx_messageInfo_EntityIds.Size(m)
 }
-func (m *VectorIds) XXX_DiscardUnknown() {
-	xxx_messageInfo_VectorIds.DiscardUnknown(m)
+func (m *EntityIds) XXX_DiscardUnknown() {
+	xxx_messageInfo_EntityIds.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_VectorIds proto.InternalMessageInfo
+var xxx_messageInfo_EntityIds proto.InternalMessageInfo
 
-func (m *VectorIds) GetStatus() *Status {
+func (m *EntityIds) GetStatus() *Status {
 	if m != nil {
 		return m.Status
 	}
 	return nil
 }
 
-func (m *VectorIds) GetVectorIdArray() []int64 {
+func (m *EntityIds) GetEntityIdArray() []int64 {
 	if m != nil {
-		return m.VectorIdArray
+		return m.EntityIdArray
 	}
 	return nil
 }
 
 //*
-// @brief Params for searching vector
+// @brief Search vector parameters
+type VectorParam struct {
+	Json                 string        `protobuf:"bytes,1,opt,name=json,proto3" json:"json,omitempty"`
+	RowRecord            *VectorRecord `protobuf:"bytes,2,opt,name=row_record,json=rowRecord,proto3" json:"row_record,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
+	XXX_unrecognized     []byte        `json:"-"`
+	XXX_sizecache        int32         `json:"-"`
+}
+
+func (m *VectorParam) Reset()         { *m = VectorParam{} }
+func (m *VectorParam) String() string { return proto.CompactTextString(m) }
+func (*VectorParam) ProtoMessage()    {}
+func (*VectorParam) Descriptor() ([]byte, []int) {
+	return fileDescriptor_02345ba45cc0e303, []int{14}
+}
+
+func (m *VectorParam) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_VectorParam.Unmarshal(m, b)
+}
+func (m *VectorParam) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_VectorParam.Marshal(b, m, deterministic)
+}
+func (m *VectorParam) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_VectorParam.Merge(m, src)
+}
+func (m *VectorParam) XXX_Size() int {
+	return xxx_messageInfo_VectorParam.Size(m)
+}
+func (m *VectorParam) XXX_DiscardUnknown() {
+	xxx_messageInfo_VectorParam.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_VectorParam proto.InternalMessageInfo
+
+func (m *VectorParam) GetJson() string {
+	if m != nil {
+		return m.Json
+	}
+	return ""
+}
+
+func (m *VectorParam) GetRowRecord() *VectorRecord {
+	if m != nil {
+		return m.RowRecord
+	}
+	return nil
+}
+
+//*
+// @brief Parameters for search action
+// @dsl example:
+//    {
+//   "query": {
+//       "bool": {
+//           "must": [
+//               {
+//                   "must":[
+//                       {
+//                           "should": [
+//                               {
+//                                   "term": {
+//                                       "gender": ["male"]
+//                                   }
+//                               },
+//                               {
+//                                   "range": {
+//                                       "height": {"gte": "170.0", "lte": "180.0"}
+//                                   }
+//                               }
+//                           ]
+//                       },
+//                       {
+//                           "must_not": [
+//                               {
+//                                   "term": {
+//                                       "age": [20, 21, 22, 23, 24, 25]
+//                                   }
+//                               },
+//                               {
+//                                   "Range": {
+//                                       "weight": {"lte": "100"}
+//                                   }
+//                               }
+//                           ]
+//                       }
+//                   ]
+//               },
+//               {
+//                   "must": [
+//                       {
+//                           "vector": {
+//                               "face_img": {
+//                                   "topk": 10,
+//                                   "metric_type": "L2",
+//                                   "query": [],
+//                                   "params": {
+//                                       "nprobe": 10
+//                                   }
+//                               }
+//                           }
+//                       }
+//                   ]
+//               }
+//           ]
+//       }
+//   },
+//   "fields": ["age", "face_img"]
+//   }
 type SearchParam struct {
 	CollectionName       string          `protobuf:"bytes,1,opt,name=collection_name,json=collectionName,proto3" json:"collection_name,omitempty"`
 	PartitionTagArray    []string        `protobuf:"bytes,2,rep,name=partition_tag_array,json=partitionTagArray,proto3" json:"partition_tag_array,omitempty"`
-	QueryRecordArray     []*RowRecord    `protobuf:"bytes,3,rep,name=query_record_array,json=queryRecordArray,proto3" json:"query_record_array,omitempty"`
-	Topk                 int64           `protobuf:"varint,4,opt,name=topk,proto3" json:"topk,omitempty"`
+	VectorParam          []*VectorParam  `protobuf:"bytes,3,rep,name=vector_param,json=vectorParam,proto3" json:"vector_param,omitempty"`
+	Dsl                  string          `protobuf:"bytes,4,opt,name=dsl,proto3" json:"dsl,omitempty"`
 	ExtraParams          []*KeyValuePair `protobuf:"bytes,5,rep,name=extra_params,json=extraParams,proto3" json:"extra_params,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
 	XXX_unrecognized     []byte          `json:"-"`
@@ -651,7 +1018,7 @@ func (m *SearchParam) Reset()         { *m = SearchParam{} }
 func (m *SearchParam) String() string { return proto.CompactTextString(m) }
 func (*SearchParam) ProtoMessage()    {}
 func (*SearchParam) Descriptor() ([]byte, []int) {
-	return fileDescriptor_02345ba45cc0e303, []int{9}
+	return fileDescriptor_02345ba45cc0e303, []int{15}
 }
 
 func (m *SearchParam) XXX_Unmarshal(b []byte) error {
@@ -686,18 +1053,18 @@ func (m *SearchParam) GetPartitionTagArray() []string {
 	return nil
 }
 
-func (m *SearchParam) GetQueryRecordArray() []*RowRecord {
+func (m *SearchParam) GetVectorParam() []*VectorParam {
 	if m != nil {
-		return m.QueryRecordArray
+		return m.VectorParam
 	}
 	return nil
 }
 
-func (m *SearchParam) GetTopk() int64 {
+func (m *SearchParam) GetDsl() string {
 	if m != nil {
-		return m.Topk
+		return m.Dsl
 	}
-	return 0
+	return ""
 }
 
 func (m *SearchParam) GetExtraParams() []*KeyValuePair {
@@ -708,8 +1075,8 @@ func (m *SearchParam) GetExtraParams() []*KeyValuePair {
 }
 
 //*
-// @brief Params for searching vector in files
-type SearchInFilesParam struct {
+// @brief Parameters for searching in segments
+type SearchInSegmentParam struct {
 	FileIdArray          []string     `protobuf:"bytes,1,rep,name=file_id_array,json=fileIdArray,proto3" json:"file_id_array,omitempty"`
 	SearchParam          *SearchParam `protobuf:"bytes,2,opt,name=search_param,json=searchParam,proto3" json:"search_param,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}     `json:"-"`
@@ -717,39 +1084,39 @@ type SearchInFilesParam struct {
 	XXX_sizecache        int32        `json:"-"`
 }
 
-func (m *SearchInFilesParam) Reset()         { *m = SearchInFilesParam{} }
-func (m *SearchInFilesParam) String() string { return proto.CompactTextString(m) }
-func (*SearchInFilesParam) ProtoMessage()    {}
-func (*SearchInFilesParam) Descriptor() ([]byte, []int) {
-	return fileDescriptor_02345ba45cc0e303, []int{10}
+func (m *SearchInSegmentParam) Reset()         { *m = SearchInSegmentParam{} }
+func (m *SearchInSegmentParam) String() string { return proto.CompactTextString(m) }
+func (*SearchInSegmentParam) ProtoMessage()    {}
+func (*SearchInSegmentParam) Descriptor() ([]byte, []int) {
+	return fileDescriptor_02345ba45cc0e303, []int{16}
 }
 
-func (m *SearchInFilesParam) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_SearchInFilesParam.Unmarshal(m, b)
+func (m *SearchInSegmentParam) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_SearchInSegmentParam.Unmarshal(m, b)
 }
-func (m *SearchInFilesParam) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_SearchInFilesParam.Marshal(b, m, deterministic)
+func (m *SearchInSegmentParam) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_SearchInSegmentParam.Marshal(b, m, deterministic)
 }
-func (m *SearchInFilesParam) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_SearchInFilesParam.Merge(m, src)
+func (m *SearchInSegmentParam) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SearchInSegmentParam.Merge(m, src)
 }
-func (m *SearchInFilesParam) XXX_Size() int {
-	return xxx_messageInfo_SearchInFilesParam.Size(m)
+func (m *SearchInSegmentParam) XXX_Size() int {
+	return xxx_messageInfo_SearchInSegmentParam.Size(m)
 }
-func (m *SearchInFilesParam) XXX_DiscardUnknown() {
-	xxx_messageInfo_SearchInFilesParam.DiscardUnknown(m)
+func (m *SearchInSegmentParam) XXX_DiscardUnknown() {
+	xxx_messageInfo_SearchInSegmentParam.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_SearchInFilesParam proto.InternalMessageInfo
+var xxx_messageInfo_SearchInSegmentParam proto.InternalMessageInfo
 
-func (m *SearchInFilesParam) GetFileIdArray() []string {
+func (m *SearchInSegmentParam) GetFileIdArray() []string {
 	if m != nil {
 		return m.FileIdArray
 	}
 	return nil
 }
 
-func (m *SearchInFilesParam) GetSearchParam() *SearchParam {
+func (m *SearchInSegmentParam) GetSearchParam() *SearchParam {
 	if m != nil {
 		return m.SearchParam
 	}
@@ -757,139 +1124,147 @@ func (m *SearchInFilesParam) GetSearchParam() *SearchParam {
 }
 
 //*
-// @brief Params for searching vector by ID
-type SearchByIDParam struct {
-	CollectionName       string          `protobuf:"bytes,1,opt,name=collection_name,json=collectionName,proto3" json:"collection_name,omitempty"`
-	PartitionTagArray    []string        `protobuf:"bytes,2,rep,name=partition_tag_array,json=partitionTagArray,proto3" json:"partition_tag_array,omitempty"`
-	IdArray              []int64         `protobuf:"varint,3,rep,packed,name=id_array,json=idArray,proto3" json:"id_array,omitempty"`
-	Topk                 int64           `protobuf:"varint,4,opt,name=topk,proto3" json:"topk,omitempty"`
-	ExtraParams          []*KeyValuePair `protobuf:"bytes,5,rep,name=extra_params,json=extraParams,proto3" json:"extra_params,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
-	XXX_unrecognized     []byte          `json:"-"`
-	XXX_sizecache        int32           `json:"-"`
+// @brief Entities
+type Entities struct {
+	Status               *Status       `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
+	Ids                  []int64       `protobuf:"varint,2,rep,packed,name=ids,proto3" json:"ids,omitempty"`
+	ValidRow             []bool        `protobuf:"varint,3,rep,packed,name=valid_row,json=validRow,proto3" json:"valid_row,omitempty"`
+	Fields               []*FieldValue `protobuf:"bytes,4,rep,name=fields,proto3" json:"fields,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
+	XXX_unrecognized     []byte        `json:"-"`
+	XXX_sizecache        int32         `json:"-"`
 }
 
-func (m *SearchByIDParam) Reset()         { *m = SearchByIDParam{} }
-func (m *SearchByIDParam) String() string { return proto.CompactTextString(m) }
-func (*SearchByIDParam) ProtoMessage()    {}
-func (*SearchByIDParam) Descriptor() ([]byte, []int) {
-	return fileDescriptor_02345ba45cc0e303, []int{11}
+func (m *Entities) Reset()         { *m = Entities{} }
+func (m *Entities) String() string { return proto.CompactTextString(m) }
+func (*Entities) ProtoMessage()    {}
+func (*Entities) Descriptor() ([]byte, []int) {
+	return fileDescriptor_02345ba45cc0e303, []int{17}
 }
 
-func (m *SearchByIDParam) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_SearchByIDParam.Unmarshal(m, b)
+func (m *Entities) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Entities.Unmarshal(m, b)
 }
-func (m *SearchByIDParam) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_SearchByIDParam.Marshal(b, m, deterministic)
+func (m *Entities) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Entities.Marshal(b, m, deterministic)
 }
-func (m *SearchByIDParam) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_SearchByIDParam.Merge(m, src)
+func (m *Entities) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Entities.Merge(m, src)
 }
-func (m *SearchByIDParam) XXX_Size() int {
-	return xxx_messageInfo_SearchByIDParam.Size(m)
+func (m *Entities) XXX_Size() int {
+	return xxx_messageInfo_Entities.Size(m)
 }
-func (m *SearchByIDParam) XXX_DiscardUnknown() {
-	xxx_messageInfo_SearchByIDParam.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_SearchByIDParam proto.InternalMessageInfo
-
-func (m *SearchByIDParam) GetCollectionName() string {
-	if m != nil {
-		return m.CollectionName
-	}
-	return ""
+func (m *Entities) XXX_DiscardUnknown() {
+	xxx_messageInfo_Entities.DiscardUnknown(m)
 }
 
-func (m *SearchByIDParam) GetPartitionTagArray() []string {
-	if m != nil {
-		return m.PartitionTagArray
-	}
-	return nil
-}
+var xxx_messageInfo_Entities proto.InternalMessageInfo
 
-func (m *SearchByIDParam) GetIdArray() []int64 {
-	if m != nil {
-		return m.IdArray
-	}
-	return nil
-}
-
-func (m *SearchByIDParam) GetTopk() int64 {
-	if m != nil {
-		return m.Topk
-	}
-	return 0
-}
-
-func (m *SearchByIDParam) GetExtraParams() []*KeyValuePair {
-	if m != nil {
-		return m.ExtraParams
-	}
-	return nil
-}
-
-//*
-// @brief Query result params
-type TopKQueryResult struct {
-	Status               *Status   `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
-	RowNum               int64     `protobuf:"varint,2,opt,name=row_num,json=rowNum,proto3" json:"row_num,omitempty"`
-	Ids                  []int64   `protobuf:"varint,3,rep,packed,name=ids,proto3" json:"ids,omitempty"`
-	Distances            []float32 `protobuf:"fixed32,4,rep,packed,name=distances,proto3" json:"distances,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
-	XXX_unrecognized     []byte    `json:"-"`
-	XXX_sizecache        int32     `json:"-"`
-}
-
-func (m *TopKQueryResult) Reset()         { *m = TopKQueryResult{} }
-func (m *TopKQueryResult) String() string { return proto.CompactTextString(m) }
-func (*TopKQueryResult) ProtoMessage()    {}
-func (*TopKQueryResult) Descriptor() ([]byte, []int) {
-	return fileDescriptor_02345ba45cc0e303, []int{12}
-}
-
-func (m *TopKQueryResult) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_TopKQueryResult.Unmarshal(m, b)
-}
-func (m *TopKQueryResult) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_TopKQueryResult.Marshal(b, m, deterministic)
-}
-func (m *TopKQueryResult) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_TopKQueryResult.Merge(m, src)
-}
-func (m *TopKQueryResult) XXX_Size() int {
-	return xxx_messageInfo_TopKQueryResult.Size(m)
-}
-func (m *TopKQueryResult) XXX_DiscardUnknown() {
-	xxx_messageInfo_TopKQueryResult.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_TopKQueryResult proto.InternalMessageInfo
-
-func (m *TopKQueryResult) GetStatus() *Status {
+func (m *Entities) GetStatus() *Status {
 	if m != nil {
 		return m.Status
 	}
 	return nil
 }
 
-func (m *TopKQueryResult) GetRowNum() int64 {
-	if m != nil {
-		return m.RowNum
-	}
-	return 0
-}
-
-func (m *TopKQueryResult) GetIds() []int64 {
+func (m *Entities) GetIds() []int64 {
 	if m != nil {
 		return m.Ids
 	}
 	return nil
 }
 
-func (m *TopKQueryResult) GetDistances() []float32 {
+func (m *Entities) GetValidRow() []bool {
+	if m != nil {
+		return m.ValidRow
+	}
+	return nil
+}
+
+func (m *Entities) GetFields() []*FieldValue {
+	if m != nil {
+		return m.Fields
+	}
+	return nil
+}
+
+//*
+// @brief Query result
+type QueryResult struct {
+	Status               *Status         `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
+	Entities             *Entities       `protobuf:"bytes,2,opt,name=entities,proto3" json:"entities,omitempty"`
+	RowNum               int64           `protobuf:"varint,3,opt,name=row_num,json=rowNum,proto3" json:"row_num,omitempty"`
+	Scores               []float32       `protobuf:"fixed32,4,rep,packed,name=scores,proto3" json:"scores,omitempty"`
+	Distances            []float32       `protobuf:"fixed32,5,rep,packed,name=distances,proto3" json:"distances,omitempty"`
+	ExtraParams          []*KeyValuePair `protobuf:"bytes,6,rep,name=extra_params,json=extraParams,proto3" json:"extra_params,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
+	XXX_unrecognized     []byte          `json:"-"`
+	XXX_sizecache        int32           `json:"-"`
+}
+
+func (m *QueryResult) Reset()         { *m = QueryResult{} }
+func (m *QueryResult) String() string { return proto.CompactTextString(m) }
+func (*QueryResult) ProtoMessage()    {}
+func (*QueryResult) Descriptor() ([]byte, []int) {
+	return fileDescriptor_02345ba45cc0e303, []int{18}
+}
+
+func (m *QueryResult) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_QueryResult.Unmarshal(m, b)
+}
+func (m *QueryResult) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_QueryResult.Marshal(b, m, deterministic)
+}
+func (m *QueryResult) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryResult.Merge(m, src)
+}
+func (m *QueryResult) XXX_Size() int {
+	return xxx_messageInfo_QueryResult.Size(m)
+}
+func (m *QueryResult) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryResult.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_QueryResult proto.InternalMessageInfo
+
+func (m *QueryResult) GetStatus() *Status {
+	if m != nil {
+		return m.Status
+	}
+	return nil
+}
+
+func (m *QueryResult) GetEntities() *Entities {
+	if m != nil {
+		return m.Entities
+	}
+	return nil
+}
+
+func (m *QueryResult) GetRowNum() int64 {
+	if m != nil {
+		return m.RowNum
+	}
+	return 0
+}
+
+func (m *QueryResult) GetScores() []float32 {
+	if m != nil {
+		return m.Scores
+	}
+	return nil
+}
+
+func (m *QueryResult) GetDistances() []float32 {
 	if m != nil {
 		return m.Distances
+	}
+	return nil
+}
+
+func (m *QueryResult) GetExtraParams() []*KeyValuePair {
+	if m != nil {
+		return m.ExtraParams
 	}
 	return nil
 }
@@ -908,7 +1283,7 @@ func (m *StringReply) Reset()         { *m = StringReply{} }
 func (m *StringReply) String() string { return proto.CompactTextString(m) }
 func (*StringReply) ProtoMessage()    {}
 func (*StringReply) Descriptor() ([]byte, []int) {
-	return fileDescriptor_02345ba45cc0e303, []int{13}
+	return fileDescriptor_02345ba45cc0e303, []int{19}
 }
 
 func (m *StringReply) XXX_Unmarshal(b []byte) error {
@@ -957,7 +1332,7 @@ func (m *BoolReply) Reset()         { *m = BoolReply{} }
 func (m *BoolReply) String() string { return proto.CompactTextString(m) }
 func (*BoolReply) ProtoMessage()    {}
 func (*BoolReply) Descriptor() ([]byte, []int) {
-	return fileDescriptor_02345ba45cc0e303, []int{14}
+	return fileDescriptor_02345ba45cc0e303, []int{20}
 }
 
 func (m *BoolReply) XXX_Unmarshal(b []byte) error {
@@ -1006,7 +1381,7 @@ func (m *CollectionRowCount) Reset()         { *m = CollectionRowCount{} }
 func (m *CollectionRowCount) String() string { return proto.CompactTextString(m) }
 func (*CollectionRowCount) ProtoMessage()    {}
 func (*CollectionRowCount) Descriptor() ([]byte, []int) {
-	return fileDescriptor_02345ba45cc0e303, []int{15}
+	return fileDescriptor_02345ba45cc0e303, []int{21}
 }
 
 func (m *CollectionRowCount) XXX_Unmarshal(b []byte) error {
@@ -1042,7 +1417,7 @@ func (m *CollectionRowCount) GetCollectionRowCount() int64 {
 }
 
 //*
-// @brief Give server Command
+// @brief Server command parameters
 type Command struct {
 	Cmd                  string   `protobuf:"bytes,1,opt,name=cmd,proto3" json:"cmd,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -1054,7 +1429,7 @@ func (m *Command) Reset()         { *m = Command{} }
 func (m *Command) String() string { return proto.CompactTextString(m) }
 func (*Command) ProtoMessage()    {}
 func (*Command) Descriptor() ([]byte, []int) {
-	return fileDescriptor_02345ba45cc0e303, []int{16}
+	return fileDescriptor_02345ba45cc0e303, []int{22}
 }
 
 func (m *Command) XXX_Unmarshal(b []byte) error {
@@ -1084,12 +1459,24 @@ func (m *Command) GetCmd() string {
 
 //*
 // @brief Index params
-// @index_type: 0-invalid, 1-idmap, 2-ivflat, 3-ivfsq8, 4-nsgmix
+// @collection_name: target collection
+// @field_name: target field
+// @index_name: a name for index provided by user, unique within this field
+// @extra_params: index parameters in json format
+//    for vector field:
+//        extra_params["index_type"] = one of the values: FLAT, IVF_LAT, IVF_SQ8, NSGMIX, IVFSQ8H,
+//                                                        PQ, HNSW, HNSW_SQ8NM, ANNOY
+//        extra_params["metric_type"] = one of the values: L2, IP, HAMMING, JACCARD, TANIMOTO
+//                                                         SUBSTRUCTURE, SUPERSTRUCTURE
+//        extra_params["params"] = extra parameters for index, for example ivflat: {nlist: 2048}
+//    for structured field:
+//        extra_params["index_type"] = one of the values: SORTED
 type IndexParam struct {
 	Status               *Status         `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
 	CollectionName       string          `protobuf:"bytes,2,opt,name=collection_name,json=collectionName,proto3" json:"collection_name,omitempty"`
-	IndexType            int32           `protobuf:"varint,3,opt,name=index_type,json=indexType,proto3" json:"index_type,omitempty"`
-	ExtraParams          []*KeyValuePair `protobuf:"bytes,4,rep,name=extra_params,json=extraParams,proto3" json:"extra_params,omitempty"`
+	FieldName            string          `protobuf:"bytes,3,opt,name=field_name,json=fieldName,proto3" json:"field_name,omitempty"`
+	IndexName            string          `protobuf:"bytes,4,opt,name=index_name,json=indexName,proto3" json:"index_name,omitempty"`
+	ExtraParams          []*KeyValuePair `protobuf:"bytes,5,rep,name=extra_params,json=extraParams,proto3" json:"extra_params,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
 	XXX_unrecognized     []byte          `json:"-"`
 	XXX_sizecache        int32           `json:"-"`
@@ -1099,7 +1486,7 @@ func (m *IndexParam) Reset()         { *m = IndexParam{} }
 func (m *IndexParam) String() string { return proto.CompactTextString(m) }
 func (*IndexParam) ProtoMessage()    {}
 func (*IndexParam) Descriptor() ([]byte, []int) {
-	return fileDescriptor_02345ba45cc0e303, []int{17}
+	return fileDescriptor_02345ba45cc0e303, []int{23}
 }
 
 func (m *IndexParam) XXX_Unmarshal(b []byte) error {
@@ -1134,11 +1521,18 @@ func (m *IndexParam) GetCollectionName() string {
 	return ""
 }
 
-func (m *IndexParam) GetIndexType() int32 {
+func (m *IndexParam) GetFieldName() string {
 	if m != nil {
-		return m.IndexType
+		return m.FieldName
 	}
-	return 0
+	return ""
+}
+
+func (m *IndexParam) GetIndexName() string {
+	if m != nil {
+		return m.IndexName
+	}
+	return ""
 }
 
 func (m *IndexParam) GetExtraParams() []*KeyValuePair {
@@ -1149,7 +1543,7 @@ func (m *IndexParam) GetExtraParams() []*KeyValuePair {
 }
 
 //*
-// @brief Flush params
+// @brief Parameters for flush action
 type FlushParam struct {
 	CollectionNameArray  []string `protobuf:"bytes,1,rep,name=collection_name_array,json=collectionNameArray,proto3" json:"collection_name_array,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -1161,7 +1555,7 @@ func (m *FlushParam) Reset()         { *m = FlushParam{} }
 func (m *FlushParam) String() string { return proto.CompactTextString(m) }
 func (*FlushParam) ProtoMessage()    {}
 func (*FlushParam) Descriptor() ([]byte, []int) {
-	return fileDescriptor_02345ba45cc0e303, []int{18}
+	return fileDescriptor_02345ba45cc0e303, []int{24}
 }
 
 func (m *FlushParam) XXX_Unmarshal(b []byte) error {
@@ -1190,7 +1584,56 @@ func (m *FlushParam) GetCollectionNameArray() []string {
 }
 
 //*
-// @brief Flush params
+// @brief Parameters for flush action
+type CompactParam struct {
+	CollectionName       string   `protobuf:"bytes,1,opt,name=collection_name,json=collectionName,proto3" json:"collection_name,omitempty"`
+	Threshold            float64  `protobuf:"fixed64,2,opt,name=threshold,proto3" json:"threshold,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *CompactParam) Reset()         { *m = CompactParam{} }
+func (m *CompactParam) String() string { return proto.CompactTextString(m) }
+func (*CompactParam) ProtoMessage()    {}
+func (*CompactParam) Descriptor() ([]byte, []int) {
+	return fileDescriptor_02345ba45cc0e303, []int{25}
+}
+
+func (m *CompactParam) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CompactParam.Unmarshal(m, b)
+}
+func (m *CompactParam) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CompactParam.Marshal(b, m, deterministic)
+}
+func (m *CompactParam) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CompactParam.Merge(m, src)
+}
+func (m *CompactParam) XXX_Size() int {
+	return xxx_messageInfo_CompactParam.Size(m)
+}
+func (m *CompactParam) XXX_DiscardUnknown() {
+	xxx_messageInfo_CompactParam.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CompactParam proto.InternalMessageInfo
+
+func (m *CompactParam) GetCollectionName() string {
+	if m != nil {
+		return m.CollectionName
+	}
+	return ""
+}
+
+func (m *CompactParam) GetThreshold() float64 {
+	if m != nil {
+		return m.Threshold
+	}
+	return 0
+}
+
+//*
+// @brief Parameters for deleting entities by id
 type DeleteByIDParam struct {
 	CollectionName       string   `protobuf:"bytes,1,opt,name=collection_name,json=collectionName,proto3" json:"collection_name,omitempty"`
 	IdArray              []int64  `protobuf:"varint,2,rep,packed,name=id_array,json=idArray,proto3" json:"id_array,omitempty"`
@@ -1203,7 +1646,7 @@ func (m *DeleteByIDParam) Reset()         { *m = DeleteByIDParam{} }
 func (m *DeleteByIDParam) String() string { return proto.CompactTextString(m) }
 func (*DeleteByIDParam) ProtoMessage()    {}
 func (*DeleteByIDParam) Descriptor() ([]byte, []int) {
-	return fileDescriptor_02345ba45cc0e303, []int{19}
+	return fileDescriptor_02345ba45cc0e303, []int{26}
 }
 
 func (m *DeleteByIDParam) XXX_Unmarshal(b []byte) error {
@@ -1239,7 +1682,36 @@ func (m *DeleteByIDParam) GetIdArray() []int64 {
 }
 
 //*
-// @brief collection information
+// @brief Return collection stats
+// @json_info: collection stats in json format, typically, the format is like:
+//     {
+//        row_count: xxx,
+//        data_size: xxx,
+//        partitions: [
+//          {
+//            tag: xxx,
+//            id: xxx,
+//            row_count: xxx,
+//            data_size: xxx,
+//            segments: [
+//              {
+//                 id: xxx,
+//                 row_count: xxx,
+//                 data_size: xxx,
+//                 files: [
+//                    {
+//                       field: xxx,
+//                       name: xxx,
+//                       index_type: xxx,
+//                       path: xxx,
+//                       data_size: xxx,
+//                    }
+//                 ]
+//              }
+//            ]
+//          }
+//        ]
+//     }
 type CollectionInfo struct {
 	Status               *Status  `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
 	JsonInfo             string   `protobuf:"bytes,2,opt,name=json_info,json=jsonInfo,proto3" json:"json_info,omitempty"`
@@ -1252,7 +1724,7 @@ func (m *CollectionInfo) Reset()         { *m = CollectionInfo{} }
 func (m *CollectionInfo) String() string { return proto.CompactTextString(m) }
 func (*CollectionInfo) ProtoMessage()    {}
 func (*CollectionInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor_02345ba45cc0e303, []int{20}
+	return fileDescriptor_02345ba45cc0e303, []int{27}
 }
 
 func (m *CollectionInfo) XXX_Unmarshal(b []byte) error {
@@ -1288,152 +1760,113 @@ func (m *CollectionInfo) GetJsonInfo() string {
 }
 
 //*
-// @brief vectors identity
-type VectorsIdentity struct {
+// @brief Parameters for returning entities id of a segment
+type GetEntityIDsParam struct {
 	CollectionName       string   `protobuf:"bytes,1,opt,name=collection_name,json=collectionName,proto3" json:"collection_name,omitempty"`
-	IdArray              []int64  `protobuf:"varint,2,rep,packed,name=id_array,json=idArray,proto3" json:"id_array,omitempty"`
+	SegmentId            int64    `protobuf:"varint,2,opt,name=segment_id,json=segmentId,proto3" json:"segment_id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *VectorsIdentity) Reset()         { *m = VectorsIdentity{} }
-func (m *VectorsIdentity) String() string { return proto.CompactTextString(m) }
-func (*VectorsIdentity) ProtoMessage()    {}
-func (*VectorsIdentity) Descriptor() ([]byte, []int) {
-	return fileDescriptor_02345ba45cc0e303, []int{21}
+func (m *GetEntityIDsParam) Reset()         { *m = GetEntityIDsParam{} }
+func (m *GetEntityIDsParam) String() string { return proto.CompactTextString(m) }
+func (*GetEntityIDsParam) ProtoMessage()    {}
+func (*GetEntityIDsParam) Descriptor() ([]byte, []int) {
+	return fileDescriptor_02345ba45cc0e303, []int{28}
 }
 
-func (m *VectorsIdentity) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_VectorsIdentity.Unmarshal(m, b)
+func (m *GetEntityIDsParam) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetEntityIDsParam.Unmarshal(m, b)
 }
-func (m *VectorsIdentity) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_VectorsIdentity.Marshal(b, m, deterministic)
+func (m *GetEntityIDsParam) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetEntityIDsParam.Marshal(b, m, deterministic)
 }
-func (m *VectorsIdentity) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_VectorsIdentity.Merge(m, src)
+func (m *GetEntityIDsParam) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetEntityIDsParam.Merge(m, src)
 }
-func (m *VectorsIdentity) XXX_Size() int {
-	return xxx_messageInfo_VectorsIdentity.Size(m)
+func (m *GetEntityIDsParam) XXX_Size() int {
+	return xxx_messageInfo_GetEntityIDsParam.Size(m)
 }
-func (m *VectorsIdentity) XXX_DiscardUnknown() {
-	xxx_messageInfo_VectorsIdentity.DiscardUnknown(m)
+func (m *GetEntityIDsParam) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetEntityIDsParam.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_VectorsIdentity proto.InternalMessageInfo
+var xxx_messageInfo_GetEntityIDsParam proto.InternalMessageInfo
 
-func (m *VectorsIdentity) GetCollectionName() string {
+func (m *GetEntityIDsParam) GetCollectionName() string {
 	if m != nil {
 		return m.CollectionName
 	}
 	return ""
 }
 
-func (m *VectorsIdentity) GetIdArray() []int64 {
+func (m *GetEntityIDsParam) GetSegmentId() int64 {
+	if m != nil {
+		return m.SegmentId
+	}
+	return 0
+}
+
+//*
+// @brief Entities identity
+type EntityIdentity struct {
+	CollectionName       string   `protobuf:"bytes,1,opt,name=collection_name,json=collectionName,proto3" json:"collection_name,omitempty"`
+	IdArray              []int64  `protobuf:"varint,2,rep,packed,name=id_array,json=idArray,proto3" json:"id_array,omitempty"`
+	FieldNames           []string `protobuf:"bytes,3,rep,name=field_names,json=fieldNames,proto3" json:"field_names,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *EntityIdentity) Reset()         { *m = EntityIdentity{} }
+func (m *EntityIdentity) String() string { return proto.CompactTextString(m) }
+func (*EntityIdentity) ProtoMessage()    {}
+func (*EntityIdentity) Descriptor() ([]byte, []int) {
+	return fileDescriptor_02345ba45cc0e303, []int{29}
+}
+
+func (m *EntityIdentity) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_EntityIdentity.Unmarshal(m, b)
+}
+func (m *EntityIdentity) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_EntityIdentity.Marshal(b, m, deterministic)
+}
+func (m *EntityIdentity) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EntityIdentity.Merge(m, src)
+}
+func (m *EntityIdentity) XXX_Size() int {
+	return xxx_messageInfo_EntityIdentity.Size(m)
+}
+func (m *EntityIdentity) XXX_DiscardUnknown() {
+	xxx_messageInfo_EntityIdentity.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EntityIdentity proto.InternalMessageInfo
+
+func (m *EntityIdentity) GetCollectionName() string {
+	if m != nil {
+		return m.CollectionName
+	}
+	return ""
+}
+
+func (m *EntityIdentity) GetIdArray() []int64 {
 	if m != nil {
 		return m.IdArray
 	}
 	return nil
 }
 
-//*
-// @brief vector data
-type VectorsData struct {
-	Status               *Status      `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
-	VectorsData          []*RowRecord `protobuf:"bytes,2,rep,name=vectors_data,json=vectorsData,proto3" json:"vectors_data,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}     `json:"-"`
-	XXX_unrecognized     []byte       `json:"-"`
-	XXX_sizecache        int32        `json:"-"`
-}
-
-func (m *VectorsData) Reset()         { *m = VectorsData{} }
-func (m *VectorsData) String() string { return proto.CompactTextString(m) }
-func (*VectorsData) ProtoMessage()    {}
-func (*VectorsData) Descriptor() ([]byte, []int) {
-	return fileDescriptor_02345ba45cc0e303, []int{22}
-}
-
-func (m *VectorsData) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_VectorsData.Unmarshal(m, b)
-}
-func (m *VectorsData) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_VectorsData.Marshal(b, m, deterministic)
-}
-func (m *VectorsData) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_VectorsData.Merge(m, src)
-}
-func (m *VectorsData) XXX_Size() int {
-	return xxx_messageInfo_VectorsData.Size(m)
-}
-func (m *VectorsData) XXX_DiscardUnknown() {
-	xxx_messageInfo_VectorsData.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_VectorsData proto.InternalMessageInfo
-
-func (m *VectorsData) GetStatus() *Status {
+func (m *EntityIdentity) GetFieldNames() []string {
 	if m != nil {
-		return m.Status
-	}
-	return nil
-}
-
-func (m *VectorsData) GetVectorsData() []*RowRecord {
-	if m != nil {
-		return m.VectorsData
+		return m.FieldNames
 	}
 	return nil
 }
 
 //*
-// @brief get vector ids from a segment parameters
-type GetVectorIDsParam struct {
-	CollectionName       string   `protobuf:"bytes,1,opt,name=collection_name,json=collectionName,proto3" json:"collection_name,omitempty"`
-	SegmentName          string   `protobuf:"bytes,2,opt,name=segment_name,json=segmentName,proto3" json:"segment_name,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *GetVectorIDsParam) Reset()         { *m = GetVectorIDsParam{} }
-func (m *GetVectorIDsParam) String() string { return proto.CompactTextString(m) }
-func (*GetVectorIDsParam) ProtoMessage()    {}
-func (*GetVectorIDsParam) Descriptor() ([]byte, []int) {
-	return fileDescriptor_02345ba45cc0e303, []int{23}
-}
-
-func (m *GetVectorIDsParam) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_GetVectorIDsParam.Unmarshal(m, b)
-}
-func (m *GetVectorIDsParam) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_GetVectorIDsParam.Marshal(b, m, deterministic)
-}
-func (m *GetVectorIDsParam) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetVectorIDsParam.Merge(m, src)
-}
-func (m *GetVectorIDsParam) XXX_Size() int {
-	return xxx_messageInfo_GetVectorIDsParam.Size(m)
-}
-func (m *GetVectorIDsParam) XXX_DiscardUnknown() {
-	xxx_messageInfo_GetVectorIDsParam.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_GetVectorIDsParam proto.InternalMessageInfo
-
-func (m *GetVectorIDsParam) GetCollectionName() string {
-	if m != nil {
-		return m.CollectionName
-	}
-	return ""
-}
-
-func (m *GetVectorIDsParam) GetSegmentName() string {
-	if m != nil {
-		return m.SegmentName
-	}
-	return ""
-}
-
+// @brief Vector field parameters
 type VectorFieldParam struct {
 	Dimension            int64    `protobuf:"varint,1,opt,name=dimension,proto3" json:"dimension,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -1445,7 +1878,7 @@ func (m *VectorFieldParam) Reset()         { *m = VectorFieldParam{} }
 func (m *VectorFieldParam) String() string { return proto.CompactTextString(m) }
 func (*VectorFieldParam) ProtoMessage()    {}
 func (*VectorFieldParam) Descriptor() ([]byte, []int) {
-	return fileDescriptor_02345ba45cc0e303, []int{24}
+	return fileDescriptor_02345ba45cc0e303, []int{30}
 }
 
 func (m *VectorFieldParam) XXX_Unmarshal(b []byte) error {
@@ -1473,6 +1906,8 @@ func (m *VectorFieldParam) GetDimension() int64 {
 	return 0
 }
 
+//*
+// @brief Field type
 type FieldType struct {
 	// Types that are valid to be assigned to Value:
 	//	*FieldType_DataType
@@ -1487,7 +1922,7 @@ func (m *FieldType) Reset()         { *m = FieldType{} }
 func (m *FieldType) String() string { return proto.CompactTextString(m) }
 func (*FieldType) ProtoMessage()    {}
 func (*FieldType) Descriptor() ([]byte, []int) {
-	return fileDescriptor_02345ba45cc0e303, []int{25}
+	return fileDescriptor_02345ba45cc0e303, []int{31}
 }
 
 func (m *FieldType) XXX_Unmarshal(b []byte) error {
@@ -1535,7 +1970,7 @@ func (m *FieldType) GetDataType() DataType {
 	if x, ok := m.GetValue().(*FieldType_DataType); ok {
 		return x.DataType
 	}
-	return DataType_NULL
+	return DataType_NONE
 }
 
 func (m *FieldType) GetVectorParam() *VectorFieldParam {
@@ -1553,11 +1988,14 @@ func (*FieldType) XXX_OneofWrappers() []interface{} {
 	}
 }
 
+//*
+// @brief Field parameters
 type FieldParam struct {
 	Id                   uint64          `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	Name                 string          `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Type                 *FieldType      `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`
-	ExtraParams          []*KeyValuePair `protobuf:"bytes,4,rep,name=extra_params,json=extraParams,proto3" json:"extra_params,omitempty"`
+	Type                 DataType        `protobuf:"varint,3,opt,name=type,proto3,enum=milvus.grpc.DataType" json:"type,omitempty"`
+	IndexParams          []*KeyValuePair `protobuf:"bytes,4,rep,name=index_params,json=indexParams,proto3" json:"index_params,omitempty"`
+	ExtraParams          []*KeyValuePair `protobuf:"bytes,5,rep,name=extra_params,json=extraParams,proto3" json:"extra_params,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
 	XXX_unrecognized     []byte          `json:"-"`
 	XXX_sizecache        int32           `json:"-"`
@@ -1567,7 +2005,7 @@ func (m *FieldParam) Reset()         { *m = FieldParam{} }
 func (m *FieldParam) String() string { return proto.CompactTextString(m) }
 func (*FieldParam) ProtoMessage()    {}
 func (*FieldParam) Descriptor() ([]byte, []int) {
-	return fileDescriptor_02345ba45cc0e303, []int{26}
+	return fileDescriptor_02345ba45cc0e303, []int{32}
 }
 
 func (m *FieldParam) XXX_Unmarshal(b []byte) error {
@@ -1602,9 +2040,16 @@ func (m *FieldParam) GetName() string {
 	return ""
 }
 
-func (m *FieldParam) GetType() *FieldType {
+func (m *FieldParam) GetType() DataType {
 	if m != nil {
 		return m.Type
+	}
+	return DataType_NONE
+}
+
+func (m *FieldParam) GetIndexParams() []*KeyValuePair {
+	if m != nil {
+		return m.IndexParams
 	}
 	return nil
 }
@@ -1616,316 +2061,54 @@ func (m *FieldParam) GetExtraParams() []*KeyValuePair {
 	return nil
 }
 
-type VectorFieldValue struct {
-	Value                []*RowRecord `protobuf:"bytes,1,rep,name=value,proto3" json:"value,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}     `json:"-"`
-	XXX_unrecognized     []byte       `json:"-"`
-	XXX_sizecache        int32        `json:"-"`
-}
-
-func (m *VectorFieldValue) Reset()         { *m = VectorFieldValue{} }
-func (m *VectorFieldValue) String() string { return proto.CompactTextString(m) }
-func (*VectorFieldValue) ProtoMessage()    {}
-func (*VectorFieldValue) Descriptor() ([]byte, []int) {
-	return fileDescriptor_02345ba45cc0e303, []int{27}
-}
-
-func (m *VectorFieldValue) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_VectorFieldValue.Unmarshal(m, b)
-}
-func (m *VectorFieldValue) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_VectorFieldValue.Marshal(b, m, deterministic)
-}
-func (m *VectorFieldValue) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_VectorFieldValue.Merge(m, src)
-}
-func (m *VectorFieldValue) XXX_Size() int {
-	return xxx_messageInfo_VectorFieldValue.Size(m)
-}
-func (m *VectorFieldValue) XXX_DiscardUnknown() {
-	xxx_messageInfo_VectorFieldValue.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_VectorFieldValue proto.InternalMessageInfo
-
-func (m *VectorFieldValue) GetValue() []*RowRecord {
-	if m != nil {
-		return m.Value
-	}
-	return nil
-}
-
-type FieldValue struct {
-	// Types that are valid to be assigned to Value:
-	//	*FieldValue_Int32Value
-	//	*FieldValue_Int64Value
-	//	*FieldValue_FloatValue
-	//	*FieldValue_DoubleValue
-	//	*FieldValue_StringValue
-	//	*FieldValue_BoolValue
-	//	*FieldValue_VectorValue
-	Value                isFieldValue_Value `protobuf_oneof:"value"`
+//*
+// @brief Vector field record
+type VectorFieldRecord struct {
+	Value                []*VectorRowRecord `protobuf:"bytes,1,rep,name=value,proto3" json:"value,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
 	XXX_unrecognized     []byte             `json:"-"`
 	XXX_sizecache        int32              `json:"-"`
 }
 
-func (m *FieldValue) Reset()         { *m = FieldValue{} }
-func (m *FieldValue) String() string { return proto.CompactTextString(m) }
-func (*FieldValue) ProtoMessage()    {}
-func (*FieldValue) Descriptor() ([]byte, []int) {
-	return fileDescriptor_02345ba45cc0e303, []int{28}
+func (m *VectorFieldRecord) Reset()         { *m = VectorFieldRecord{} }
+func (m *VectorFieldRecord) String() string { return proto.CompactTextString(m) }
+func (*VectorFieldRecord) ProtoMessage()    {}
+func (*VectorFieldRecord) Descriptor() ([]byte, []int) {
+	return fileDescriptor_02345ba45cc0e303, []int{33}
 }
 
-func (m *FieldValue) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_FieldValue.Unmarshal(m, b)
+func (m *VectorFieldRecord) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_VectorFieldRecord.Unmarshal(m, b)
 }
-func (m *FieldValue) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_FieldValue.Marshal(b, m, deterministic)
+func (m *VectorFieldRecord) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_VectorFieldRecord.Marshal(b, m, deterministic)
 }
-func (m *FieldValue) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_FieldValue.Merge(m, src)
+func (m *VectorFieldRecord) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_VectorFieldRecord.Merge(m, src)
 }
-func (m *FieldValue) XXX_Size() int {
-	return xxx_messageInfo_FieldValue.Size(m)
+func (m *VectorFieldRecord) XXX_Size() int {
+	return xxx_messageInfo_VectorFieldRecord.Size(m)
 }
-func (m *FieldValue) XXX_DiscardUnknown() {
-	xxx_messageInfo_FieldValue.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_FieldValue proto.InternalMessageInfo
-
-type isFieldValue_Value interface {
-	isFieldValue_Value()
+func (m *VectorFieldRecord) XXX_DiscardUnknown() {
+	xxx_messageInfo_VectorFieldRecord.DiscardUnknown(m)
 }
 
-type FieldValue_Int32Value struct {
-	Int32Value int32 `protobuf:"varint,1,opt,name=int32_value,json=int32Value,proto3,oneof"`
-}
+var xxx_messageInfo_VectorFieldRecord proto.InternalMessageInfo
 
-type FieldValue_Int64Value struct {
-	Int64Value int64 `protobuf:"varint,2,opt,name=int64_value,json=int64Value,proto3,oneof"`
-}
-
-type FieldValue_FloatValue struct {
-	FloatValue float32 `protobuf:"fixed32,3,opt,name=float_value,json=floatValue,proto3,oneof"`
-}
-
-type FieldValue_DoubleValue struct {
-	DoubleValue float64 `protobuf:"fixed64,4,opt,name=double_value,json=doubleValue,proto3,oneof"`
-}
-
-type FieldValue_StringValue struct {
-	StringValue string `protobuf:"bytes,5,opt,name=string_value,json=stringValue,proto3,oneof"`
-}
-
-type FieldValue_BoolValue struct {
-	BoolValue bool `protobuf:"varint,6,opt,name=bool_value,json=boolValue,proto3,oneof"`
-}
-
-type FieldValue_VectorValue struct {
-	VectorValue *VectorFieldValue `protobuf:"bytes,7,opt,name=vector_value,json=vectorValue,proto3,oneof"`
-}
-
-func (*FieldValue_Int32Value) isFieldValue_Value() {}
-
-func (*FieldValue_Int64Value) isFieldValue_Value() {}
-
-func (*FieldValue_FloatValue) isFieldValue_Value() {}
-
-func (*FieldValue_DoubleValue) isFieldValue_Value() {}
-
-func (*FieldValue_StringValue) isFieldValue_Value() {}
-
-func (*FieldValue_BoolValue) isFieldValue_Value() {}
-
-func (*FieldValue_VectorValue) isFieldValue_Value() {}
-
-func (m *FieldValue) GetValue() isFieldValue_Value {
+func (m *VectorFieldRecord) GetValue() []*VectorRowRecord {
 	if m != nil {
 		return m.Value
-	}
-	return nil
-}
-
-func (m *FieldValue) GetInt32Value() int32 {
-	if x, ok := m.GetValue().(*FieldValue_Int32Value); ok {
-		return x.Int32Value
-	}
-	return 0
-}
-
-func (m *FieldValue) GetInt64Value() int64 {
-	if x, ok := m.GetValue().(*FieldValue_Int64Value); ok {
-		return x.Int64Value
-	}
-	return 0
-}
-
-func (m *FieldValue) GetFloatValue() float32 {
-	if x, ok := m.GetValue().(*FieldValue_FloatValue); ok {
-		return x.FloatValue
-	}
-	return 0
-}
-
-func (m *FieldValue) GetDoubleValue() float64 {
-	if x, ok := m.GetValue().(*FieldValue_DoubleValue); ok {
-		return x.DoubleValue
-	}
-	return 0
-}
-
-func (m *FieldValue) GetStringValue() string {
-	if x, ok := m.GetValue().(*FieldValue_StringValue); ok {
-		return x.StringValue
-	}
-	return ""
-}
-
-func (m *FieldValue) GetBoolValue() bool {
-	if x, ok := m.GetValue().(*FieldValue_BoolValue); ok {
-		return x.BoolValue
-	}
-	return false
-}
-
-func (m *FieldValue) GetVectorValue() *VectorFieldValue {
-	if x, ok := m.GetValue().(*FieldValue_VectorValue); ok {
-		return x.VectorValue
-	}
-	return nil
-}
-
-// XXX_OneofWrappers is for the internal use of the proto package.
-func (*FieldValue) XXX_OneofWrappers() []interface{} {
-	return []interface{}{
-		(*FieldValue_Int32Value)(nil),
-		(*FieldValue_Int64Value)(nil),
-		(*FieldValue_FloatValue)(nil),
-		(*FieldValue_DoubleValue)(nil),
-		(*FieldValue_StringValue)(nil),
-		(*FieldValue_BoolValue)(nil),
-		(*FieldValue_VectorValue)(nil),
-	}
-}
-
-type Mapping struct {
-	Status               *Status       `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
-	CollectionId         uint64        `protobuf:"varint,2,opt,name=collection_id,json=collectionId,proto3" json:"collection_id,omitempty"`
-	CollectionName       string        `protobuf:"bytes,3,opt,name=collection_name,json=collectionName,proto3" json:"collection_name,omitempty"`
-	Fields               []*FieldParam `protobuf:"bytes,4,rep,name=fields,proto3" json:"fields,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
-	XXX_unrecognized     []byte        `json:"-"`
-	XXX_sizecache        int32         `json:"-"`
-}
-
-func (m *Mapping) Reset()         { *m = Mapping{} }
-func (m *Mapping) String() string { return proto.CompactTextString(m) }
-func (*Mapping) ProtoMessage()    {}
-func (*Mapping) Descriptor() ([]byte, []int) {
-	return fileDescriptor_02345ba45cc0e303, []int{29}
-}
-
-func (m *Mapping) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Mapping.Unmarshal(m, b)
-}
-func (m *Mapping) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Mapping.Marshal(b, m, deterministic)
-}
-func (m *Mapping) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Mapping.Merge(m, src)
-}
-func (m *Mapping) XXX_Size() int {
-	return xxx_messageInfo_Mapping.Size(m)
-}
-func (m *Mapping) XXX_DiscardUnknown() {
-	xxx_messageInfo_Mapping.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_Mapping proto.InternalMessageInfo
-
-func (m *Mapping) GetStatus() *Status {
-	if m != nil {
-		return m.Status
-	}
-	return nil
-}
-
-func (m *Mapping) GetCollectionId() uint64 {
-	if m != nil {
-		return m.CollectionId
-	}
-	return 0
-}
-
-func (m *Mapping) GetCollectionName() string {
-	if m != nil {
-		return m.CollectionName
-	}
-	return ""
-}
-
-func (m *Mapping) GetFields() []*FieldParam {
-	if m != nil {
-		return m.Fields
-	}
-	return nil
-}
-
-type MappingList struct {
-	Status               *Status    `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
-	MappingList          []*Mapping `protobuf:"bytes,2,rep,name=mapping_list,json=mappingList,proto3" json:"mapping_list,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
-	XXX_unrecognized     []byte     `json:"-"`
-	XXX_sizecache        int32      `json:"-"`
-}
-
-func (m *MappingList) Reset()         { *m = MappingList{} }
-func (m *MappingList) String() string { return proto.CompactTextString(m) }
-func (*MappingList) ProtoMessage()    {}
-func (*MappingList) Descriptor() ([]byte, []int) {
-	return fileDescriptor_02345ba45cc0e303, []int{30}
-}
-
-func (m *MappingList) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_MappingList.Unmarshal(m, b)
-}
-func (m *MappingList) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_MappingList.Marshal(b, m, deterministic)
-}
-func (m *MappingList) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MappingList.Merge(m, src)
-}
-func (m *MappingList) XXX_Size() int {
-	return xxx_messageInfo_MappingList.Size(m)
-}
-func (m *MappingList) XXX_DiscardUnknown() {
-	xxx_messageInfo_MappingList.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_MappingList proto.InternalMessageInfo
-
-func (m *MappingList) GetStatus() *Status {
-	if m != nil {
-		return m.Status
-	}
-	return nil
-}
-
-func (m *MappingList) GetMappingList() []*Mapping {
-	if m != nil {
-		return m.MappingList
 	}
 	return nil
 }
 
 type TermQuery struct {
 	FieldName            string          `protobuf:"bytes,1,opt,name=field_name,json=fieldName,proto3" json:"field_name,omitempty"`
-	Values               []byte          `protobuf:"bytes,2,opt,name=values,proto3" json:"values,omitempty"`
-	ValueNum             int64           `protobuf:"varint,3,opt,name=value_num,json=valueNum,proto3" json:"value_num,omitempty"`
-	Boost                float32         `protobuf:"fixed32,4,opt,name=boost,proto3" json:"boost,omitempty"`
-	ExtraParams          []*KeyValuePair `protobuf:"bytes,5,rep,name=extra_params,json=extraParams,proto3" json:"extra_params,omitempty"`
+	IntValue             []int64         `protobuf:"varint,2,rep,packed,name=int_value,json=intValue,proto3" json:"int_value,omitempty"`
+	DoubleValue          []float64       `protobuf:"fixed64,3,rep,packed,name=double_value,json=doubleValue,proto3" json:"double_value,omitempty"`
+	ValueNum             int64           `protobuf:"varint,4,opt,name=value_num,json=valueNum,proto3" json:"value_num,omitempty"`
+	Boost                float32         `protobuf:"fixed32,5,opt,name=boost,proto3" json:"boost,omitempty"`
+	ExtraParams          []*KeyValuePair `protobuf:"bytes,6,rep,name=extra_params,json=extraParams,proto3" json:"extra_params,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
 	XXX_unrecognized     []byte          `json:"-"`
 	XXX_sizecache        int32           `json:"-"`
@@ -1935,7 +2118,7 @@ func (m *TermQuery) Reset()         { *m = TermQuery{} }
 func (m *TermQuery) String() string { return proto.CompactTextString(m) }
 func (*TermQuery) ProtoMessage()    {}
 func (*TermQuery) Descriptor() ([]byte, []int) {
-	return fileDescriptor_02345ba45cc0e303, []int{31}
+	return fileDescriptor_02345ba45cc0e303, []int{34}
 }
 
 func (m *TermQuery) XXX_Unmarshal(b []byte) error {
@@ -1963,9 +2146,16 @@ func (m *TermQuery) GetFieldName() string {
 	return ""
 }
 
-func (m *TermQuery) GetValues() []byte {
+func (m *TermQuery) GetIntValue() []int64 {
 	if m != nil {
-		return m.Values
+		return m.IntValue
+	}
+	return nil
+}
+
+func (m *TermQuery) GetDoubleValue() []float64 {
+	if m != nil {
+		return m.DoubleValue
 	}
 	return nil
 }
@@ -2003,7 +2193,7 @@ func (m *CompareExpr) Reset()         { *m = CompareExpr{} }
 func (m *CompareExpr) String() string { return proto.CompactTextString(m) }
 func (*CompareExpr) ProtoMessage()    {}
 func (*CompareExpr) Descriptor() ([]byte, []int) {
-	return fileDescriptor_02345ba45cc0e303, []int{32}
+	return fileDescriptor_02345ba45cc0e303, []int{35}
 }
 
 func (m *CompareExpr) XXX_Unmarshal(b []byte) error {
@@ -2052,7 +2242,7 @@ func (m *RangeQuery) Reset()         { *m = RangeQuery{} }
 func (m *RangeQuery) String() string { return proto.CompactTextString(m) }
 func (*RangeQuery) ProtoMessage()    {}
 func (*RangeQuery) Descriptor() ([]byte, []int) {
-	return fileDescriptor_02345ba45cc0e303, []int{33}
+	return fileDescriptor_02345ba45cc0e303, []int{36}
 }
 
 func (m *RangeQuery) XXX_Unmarshal(b []byte) error {
@@ -2102,21 +2292,21 @@ func (m *RangeQuery) GetExtraParams() []*KeyValuePair {
 }
 
 type VectorQuery struct {
-	FieldName            string          `protobuf:"bytes,1,opt,name=field_name,json=fieldName,proto3" json:"field_name,omitempty"`
-	QueryBoost           float32         `protobuf:"fixed32,2,opt,name=query_boost,json=queryBoost,proto3" json:"query_boost,omitempty"`
-	Records              []*RowRecord    `protobuf:"bytes,3,rep,name=records,proto3" json:"records,omitempty"`
-	Topk                 int64           `protobuf:"varint,4,opt,name=topk,proto3" json:"topk,omitempty"`
-	ExtraParams          []*KeyValuePair `protobuf:"bytes,5,rep,name=extra_params,json=extraParams,proto3" json:"extra_params,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
-	XXX_unrecognized     []byte          `json:"-"`
-	XXX_sizecache        int32           `json:"-"`
+	FieldName            string             `protobuf:"bytes,1,opt,name=field_name,json=fieldName,proto3" json:"field_name,omitempty"`
+	QueryBoost           float32            `protobuf:"fixed32,2,opt,name=query_boost,json=queryBoost,proto3" json:"query_boost,omitempty"`
+	Records              []*VectorRowRecord `protobuf:"bytes,3,rep,name=records,proto3" json:"records,omitempty"`
+	Topk                 int64              `protobuf:"varint,4,opt,name=topk,proto3" json:"topk,omitempty"`
+	ExtraParams          []*KeyValuePair    `protobuf:"bytes,5,rep,name=extra_params,json=extraParams,proto3" json:"extra_params,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
+	XXX_unrecognized     []byte             `json:"-"`
+	XXX_sizecache        int32              `json:"-"`
 }
 
 func (m *VectorQuery) Reset()         { *m = VectorQuery{} }
 func (m *VectorQuery) String() string { return proto.CompactTextString(m) }
 func (*VectorQuery) ProtoMessage()    {}
 func (*VectorQuery) Descriptor() ([]byte, []int) {
-	return fileDescriptor_02345ba45cc0e303, []int{34}
+	return fileDescriptor_02345ba45cc0e303, []int{37}
 }
 
 func (m *VectorQuery) XXX_Unmarshal(b []byte) error {
@@ -2151,7 +2341,7 @@ func (m *VectorQuery) GetQueryBoost() float32 {
 	return 0
 }
 
-func (m *VectorQuery) GetRecords() []*RowRecord {
+func (m *VectorQuery) GetRecords() []*VectorRowRecord {
 	if m != nil {
 		return m.Records
 	}
@@ -2184,7 +2374,7 @@ func (m *BooleanQuery) Reset()         { *m = BooleanQuery{} }
 func (m *BooleanQuery) String() string { return proto.CompactTextString(m) }
 func (*BooleanQuery) ProtoMessage()    {}
 func (*BooleanQuery) Descriptor() ([]byte, []int) {
-	return fileDescriptor_02345ba45cc0e303, []int{35}
+	return fileDescriptor_02345ba45cc0e303, []int{38}
 }
 
 func (m *BooleanQuery) XXX_Unmarshal(b []byte) error {
@@ -2235,7 +2425,7 @@ func (m *GeneralQuery) Reset()         { *m = GeneralQuery{} }
 func (m *GeneralQuery) String() string { return proto.CompactTextString(m) }
 func (*GeneralQuery) ProtoMessage()    {}
 func (*GeneralQuery) Descriptor() ([]byte, []int) {
-	return fileDescriptor_02345ba45cc0e303, []int{36}
+	return fileDescriptor_02345ba45cc0e303, []int{39}
 }
 
 func (m *GeneralQuery) XXX_Unmarshal(b []byte) error {
@@ -2329,7 +2519,7 @@ func (*GeneralQuery) XXX_OneofWrappers() []interface{} {
 	}
 }
 
-type HSearchParam struct {
+type SearchParamPB struct {
 	CollectionName       string          `protobuf:"bytes,1,opt,name=collection_name,json=collectionName,proto3" json:"collection_name,omitempty"`
 	PartitionTagArray    []string        `protobuf:"bytes,2,rep,name=partition_tag_array,json=partitionTagArray,proto3" json:"partition_tag_array,omitempty"`
 	GeneralQuery         *GeneralQuery   `protobuf:"bytes,3,opt,name=general_query,json=generalQuery,proto3" json:"general_query,omitempty"`
@@ -2339,611 +2529,53 @@ type HSearchParam struct {
 	XXX_sizecache        int32           `json:"-"`
 }
 
-func (m *HSearchParam) Reset()         { *m = HSearchParam{} }
-func (m *HSearchParam) String() string { return proto.CompactTextString(m) }
-func (*HSearchParam) ProtoMessage()    {}
-func (*HSearchParam) Descriptor() ([]byte, []int) {
-	return fileDescriptor_02345ba45cc0e303, []int{37}
+func (m *SearchParamPB) Reset()         { *m = SearchParamPB{} }
+func (m *SearchParamPB) String() string { return proto.CompactTextString(m) }
+func (*SearchParamPB) ProtoMessage()    {}
+func (*SearchParamPB) Descriptor() ([]byte, []int) {
+	return fileDescriptor_02345ba45cc0e303, []int{40}
 }
 
-func (m *HSearchParam) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_HSearchParam.Unmarshal(m, b)
+func (m *SearchParamPB) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_SearchParamPB.Unmarshal(m, b)
 }
-func (m *HSearchParam) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_HSearchParam.Marshal(b, m, deterministic)
+func (m *SearchParamPB) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_SearchParamPB.Marshal(b, m, deterministic)
 }
-func (m *HSearchParam) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_HSearchParam.Merge(m, src)
+func (m *SearchParamPB) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SearchParamPB.Merge(m, src)
 }
-func (m *HSearchParam) XXX_Size() int {
-	return xxx_messageInfo_HSearchParam.Size(m)
+func (m *SearchParamPB) XXX_Size() int {
+	return xxx_messageInfo_SearchParamPB.Size(m)
 }
-func (m *HSearchParam) XXX_DiscardUnknown() {
-	xxx_messageInfo_HSearchParam.DiscardUnknown(m)
+func (m *SearchParamPB) XXX_DiscardUnknown() {
+	xxx_messageInfo_SearchParamPB.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_HSearchParam proto.InternalMessageInfo
+var xxx_messageInfo_SearchParamPB proto.InternalMessageInfo
 
-func (m *HSearchParam) GetCollectionName() string {
+func (m *SearchParamPB) GetCollectionName() string {
 	if m != nil {
 		return m.CollectionName
 	}
 	return ""
 }
 
-func (m *HSearchParam) GetPartitionTagArray() []string {
+func (m *SearchParamPB) GetPartitionTagArray() []string {
 	if m != nil {
 		return m.PartitionTagArray
 	}
 	return nil
 }
 
-func (m *HSearchParam) GetGeneralQuery() *GeneralQuery {
+func (m *SearchParamPB) GetGeneralQuery() *GeneralQuery {
 	if m != nil {
 		return m.GeneralQuery
 	}
 	return nil
 }
 
-func (m *HSearchParam) GetExtraParams() []*KeyValuePair {
-	if m != nil {
-		return m.ExtraParams
-	}
-	return nil
-}
-
-type HSearchInSegmentsParam struct {
-	SegmentIdArray       []string      `protobuf:"bytes,1,rep,name=segment_id_array,json=segmentIdArray,proto3" json:"segment_id_array,omitempty"`
-	SearchParam          *HSearchParam `protobuf:"bytes,2,opt,name=search_param,json=searchParam,proto3" json:"search_param,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
-	XXX_unrecognized     []byte        `json:"-"`
-	XXX_sizecache        int32         `json:"-"`
-}
-
-func (m *HSearchInSegmentsParam) Reset()         { *m = HSearchInSegmentsParam{} }
-func (m *HSearchInSegmentsParam) String() string { return proto.CompactTextString(m) }
-func (*HSearchInSegmentsParam) ProtoMessage()    {}
-func (*HSearchInSegmentsParam) Descriptor() ([]byte, []int) {
-	return fileDescriptor_02345ba45cc0e303, []int{38}
-}
-
-func (m *HSearchInSegmentsParam) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_HSearchInSegmentsParam.Unmarshal(m, b)
-}
-func (m *HSearchInSegmentsParam) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_HSearchInSegmentsParam.Marshal(b, m, deterministic)
-}
-func (m *HSearchInSegmentsParam) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_HSearchInSegmentsParam.Merge(m, src)
-}
-func (m *HSearchInSegmentsParam) XXX_Size() int {
-	return xxx_messageInfo_HSearchInSegmentsParam.Size(m)
-}
-func (m *HSearchInSegmentsParam) XXX_DiscardUnknown() {
-	xxx_messageInfo_HSearchInSegmentsParam.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_HSearchInSegmentsParam proto.InternalMessageInfo
-
-func (m *HSearchInSegmentsParam) GetSegmentIdArray() []string {
-	if m != nil {
-		return m.SegmentIdArray
-	}
-	return nil
-}
-
-func (m *HSearchInSegmentsParam) GetSearchParam() *HSearchParam {
-	if m != nil {
-		return m.SearchParam
-	}
-	return nil
-}
-
-type AttrRecord struct {
-	Value                []string `protobuf:"bytes,1,rep,name=value,proto3" json:"value,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *AttrRecord) Reset()         { *m = AttrRecord{} }
-func (m *AttrRecord) String() string { return proto.CompactTextString(m) }
-func (*AttrRecord) ProtoMessage()    {}
-func (*AttrRecord) Descriptor() ([]byte, []int) {
-	return fileDescriptor_02345ba45cc0e303, []int{39}
-}
-
-func (m *AttrRecord) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_AttrRecord.Unmarshal(m, b)
-}
-func (m *AttrRecord) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_AttrRecord.Marshal(b, m, deterministic)
-}
-func (m *AttrRecord) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_AttrRecord.Merge(m, src)
-}
-func (m *AttrRecord) XXX_Size() int {
-	return xxx_messageInfo_AttrRecord.Size(m)
-}
-func (m *AttrRecord) XXX_DiscardUnknown() {
-	xxx_messageInfo_AttrRecord.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_AttrRecord proto.InternalMessageInfo
-
-func (m *AttrRecord) GetValue() []string {
-	if m != nil {
-		return m.Value
-	}
-	return nil
-}
-
-type HEntity struct {
-	Status               *Status       `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
-	EntityId             int64         `protobuf:"varint,2,opt,name=entity_id,json=entityId,proto3" json:"entity_id,omitempty"`
-	FieldNames           []string      `protobuf:"bytes,3,rep,name=field_names,json=fieldNames,proto3" json:"field_names,omitempty"`
-	AttrRecords          []byte        `protobuf:"bytes,4,opt,name=attr_records,json=attrRecords,proto3" json:"attr_records,omitempty"`
-	RowNum               int64         `protobuf:"varint,5,opt,name=row_num,json=rowNum,proto3" json:"row_num,omitempty"`
-	ResultValues         []*FieldValue `protobuf:"bytes,6,rep,name=result_values,json=resultValues,proto3" json:"result_values,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
-	XXX_unrecognized     []byte        `json:"-"`
-	XXX_sizecache        int32         `json:"-"`
-}
-
-func (m *HEntity) Reset()         { *m = HEntity{} }
-func (m *HEntity) String() string { return proto.CompactTextString(m) }
-func (*HEntity) ProtoMessage()    {}
-func (*HEntity) Descriptor() ([]byte, []int) {
-	return fileDescriptor_02345ba45cc0e303, []int{40}
-}
-
-func (m *HEntity) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_HEntity.Unmarshal(m, b)
-}
-func (m *HEntity) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_HEntity.Marshal(b, m, deterministic)
-}
-func (m *HEntity) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_HEntity.Merge(m, src)
-}
-func (m *HEntity) XXX_Size() int {
-	return xxx_messageInfo_HEntity.Size(m)
-}
-func (m *HEntity) XXX_DiscardUnknown() {
-	xxx_messageInfo_HEntity.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_HEntity proto.InternalMessageInfo
-
-func (m *HEntity) GetStatus() *Status {
-	if m != nil {
-		return m.Status
-	}
-	return nil
-}
-
-func (m *HEntity) GetEntityId() int64 {
-	if m != nil {
-		return m.EntityId
-	}
-	return 0
-}
-
-func (m *HEntity) GetFieldNames() []string {
-	if m != nil {
-		return m.FieldNames
-	}
-	return nil
-}
-
-func (m *HEntity) GetAttrRecords() []byte {
-	if m != nil {
-		return m.AttrRecords
-	}
-	return nil
-}
-
-func (m *HEntity) GetRowNum() int64 {
-	if m != nil {
-		return m.RowNum
-	}
-	return 0
-}
-
-func (m *HEntity) GetResultValues() []*FieldValue {
-	if m != nil {
-		return m.ResultValues
-	}
-	return nil
-}
-
-type HQueryResult struct {
-	Status               *Status    `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
-	Entities             []*HEntity `protobuf:"bytes,2,rep,name=entities,proto3" json:"entities,omitempty"`
-	RowNum               int64      `protobuf:"varint,3,opt,name=row_num,json=rowNum,proto3" json:"row_num,omitempty"`
-	Score                []float32  `protobuf:"fixed32,4,rep,packed,name=score,proto3" json:"score,omitempty"`
-	Distance             []float32  `protobuf:"fixed32,5,rep,packed,name=distance,proto3" json:"distance,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
-	XXX_unrecognized     []byte     `json:"-"`
-	XXX_sizecache        int32      `json:"-"`
-}
-
-func (m *HQueryResult) Reset()         { *m = HQueryResult{} }
-func (m *HQueryResult) String() string { return proto.CompactTextString(m) }
-func (*HQueryResult) ProtoMessage()    {}
-func (*HQueryResult) Descriptor() ([]byte, []int) {
-	return fileDescriptor_02345ba45cc0e303, []int{41}
-}
-
-func (m *HQueryResult) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_HQueryResult.Unmarshal(m, b)
-}
-func (m *HQueryResult) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_HQueryResult.Marshal(b, m, deterministic)
-}
-func (m *HQueryResult) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_HQueryResult.Merge(m, src)
-}
-func (m *HQueryResult) XXX_Size() int {
-	return xxx_messageInfo_HQueryResult.Size(m)
-}
-func (m *HQueryResult) XXX_DiscardUnknown() {
-	xxx_messageInfo_HQueryResult.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_HQueryResult proto.InternalMessageInfo
-
-func (m *HQueryResult) GetStatus() *Status {
-	if m != nil {
-		return m.Status
-	}
-	return nil
-}
-
-func (m *HQueryResult) GetEntities() []*HEntity {
-	if m != nil {
-		return m.Entities
-	}
-	return nil
-}
-
-func (m *HQueryResult) GetRowNum() int64 {
-	if m != nil {
-		return m.RowNum
-	}
-	return 0
-}
-
-func (m *HQueryResult) GetScore() []float32 {
-	if m != nil {
-		return m.Score
-	}
-	return nil
-}
-
-func (m *HQueryResult) GetDistance() []float32 {
-	if m != nil {
-		return m.Distance
-	}
-	return nil
-}
-
-type HInsertParam struct {
-	CollectionName       string          `protobuf:"bytes,1,opt,name=collection_name,json=collectionName,proto3" json:"collection_name,omitempty"`
-	PartitionTag         string          `protobuf:"bytes,2,opt,name=partition_tag,json=partitionTag,proto3" json:"partition_tag,omitempty"`
-	Entities             *HEntity        `protobuf:"bytes,3,opt,name=entities,proto3" json:"entities,omitempty"`
-	EntityIdArray        []int64         `protobuf:"varint,4,rep,packed,name=entity_id_array,json=entityIdArray,proto3" json:"entity_id_array,omitempty"`
-	ExtraParams          []*KeyValuePair `protobuf:"bytes,5,rep,name=extra_params,json=extraParams,proto3" json:"extra_params,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
-	XXX_unrecognized     []byte          `json:"-"`
-	XXX_sizecache        int32           `json:"-"`
-}
-
-func (m *HInsertParam) Reset()         { *m = HInsertParam{} }
-func (m *HInsertParam) String() string { return proto.CompactTextString(m) }
-func (*HInsertParam) ProtoMessage()    {}
-func (*HInsertParam) Descriptor() ([]byte, []int) {
-	return fileDescriptor_02345ba45cc0e303, []int{42}
-}
-
-func (m *HInsertParam) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_HInsertParam.Unmarshal(m, b)
-}
-func (m *HInsertParam) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_HInsertParam.Marshal(b, m, deterministic)
-}
-func (m *HInsertParam) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_HInsertParam.Merge(m, src)
-}
-func (m *HInsertParam) XXX_Size() int {
-	return xxx_messageInfo_HInsertParam.Size(m)
-}
-func (m *HInsertParam) XXX_DiscardUnknown() {
-	xxx_messageInfo_HInsertParam.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_HInsertParam proto.InternalMessageInfo
-
-func (m *HInsertParam) GetCollectionName() string {
-	if m != nil {
-		return m.CollectionName
-	}
-	return ""
-}
-
-func (m *HInsertParam) GetPartitionTag() string {
-	if m != nil {
-		return m.PartitionTag
-	}
-	return ""
-}
-
-func (m *HInsertParam) GetEntities() *HEntity {
-	if m != nil {
-		return m.Entities
-	}
-	return nil
-}
-
-func (m *HInsertParam) GetEntityIdArray() []int64 {
-	if m != nil {
-		return m.EntityIdArray
-	}
-	return nil
-}
-
-func (m *HInsertParam) GetExtraParams() []*KeyValuePair {
-	if m != nil {
-		return m.ExtraParams
-	}
-	return nil
-}
-
-type HEntityIdentity struct {
-	CollectionName       string   `protobuf:"bytes,1,opt,name=collection_name,json=collectionName,proto3" json:"collection_name,omitempty"`
-	Id                   int64    `protobuf:"varint,2,opt,name=id,proto3" json:"id,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *HEntityIdentity) Reset()         { *m = HEntityIdentity{} }
-func (m *HEntityIdentity) String() string { return proto.CompactTextString(m) }
-func (*HEntityIdentity) ProtoMessage()    {}
-func (*HEntityIdentity) Descriptor() ([]byte, []int) {
-	return fileDescriptor_02345ba45cc0e303, []int{43}
-}
-
-func (m *HEntityIdentity) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_HEntityIdentity.Unmarshal(m, b)
-}
-func (m *HEntityIdentity) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_HEntityIdentity.Marshal(b, m, deterministic)
-}
-func (m *HEntityIdentity) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_HEntityIdentity.Merge(m, src)
-}
-func (m *HEntityIdentity) XXX_Size() int {
-	return xxx_messageInfo_HEntityIdentity.Size(m)
-}
-func (m *HEntityIdentity) XXX_DiscardUnknown() {
-	xxx_messageInfo_HEntityIdentity.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_HEntityIdentity proto.InternalMessageInfo
-
-func (m *HEntityIdentity) GetCollectionName() string {
-	if m != nil {
-		return m.CollectionName
-	}
-	return ""
-}
-
-func (m *HEntityIdentity) GetId() int64 {
-	if m != nil {
-		return m.Id
-	}
-	return 0
-}
-
-type HEntityIDs struct {
-	Status               *Status  `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
-	EntityIdArray        []int64  `protobuf:"varint,2,rep,packed,name=entity_id_array,json=entityIdArray,proto3" json:"entity_id_array,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *HEntityIDs) Reset()         { *m = HEntityIDs{} }
-func (m *HEntityIDs) String() string { return proto.CompactTextString(m) }
-func (*HEntityIDs) ProtoMessage()    {}
-func (*HEntityIDs) Descriptor() ([]byte, []int) {
-	return fileDescriptor_02345ba45cc0e303, []int{44}
-}
-
-func (m *HEntityIDs) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_HEntityIDs.Unmarshal(m, b)
-}
-func (m *HEntityIDs) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_HEntityIDs.Marshal(b, m, deterministic)
-}
-func (m *HEntityIDs) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_HEntityIDs.Merge(m, src)
-}
-func (m *HEntityIDs) XXX_Size() int {
-	return xxx_messageInfo_HEntityIDs.Size(m)
-}
-func (m *HEntityIDs) XXX_DiscardUnknown() {
-	xxx_messageInfo_HEntityIDs.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_HEntityIDs proto.InternalMessageInfo
-
-func (m *HEntityIDs) GetStatus() *Status {
-	if m != nil {
-		return m.Status
-	}
-	return nil
-}
-
-func (m *HEntityIDs) GetEntityIdArray() []int64 {
-	if m != nil {
-		return m.EntityIdArray
-	}
-	return nil
-}
-
-type HGetEntityIDsParam struct {
-	CollectionName       string   `protobuf:"bytes,1,opt,name=collection_name,json=collectionName,proto3" json:"collection_name,omitempty"`
-	SegmentName          string   `protobuf:"bytes,2,opt,name=segment_name,json=segmentName,proto3" json:"segment_name,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *HGetEntityIDsParam) Reset()         { *m = HGetEntityIDsParam{} }
-func (m *HGetEntityIDsParam) String() string { return proto.CompactTextString(m) }
-func (*HGetEntityIDsParam) ProtoMessage()    {}
-func (*HGetEntityIDsParam) Descriptor() ([]byte, []int) {
-	return fileDescriptor_02345ba45cc0e303, []int{45}
-}
-
-func (m *HGetEntityIDsParam) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_HGetEntityIDsParam.Unmarshal(m, b)
-}
-func (m *HGetEntityIDsParam) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_HGetEntityIDsParam.Marshal(b, m, deterministic)
-}
-func (m *HGetEntityIDsParam) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_HGetEntityIDsParam.Merge(m, src)
-}
-func (m *HGetEntityIDsParam) XXX_Size() int {
-	return xxx_messageInfo_HGetEntityIDsParam.Size(m)
-}
-func (m *HGetEntityIDsParam) XXX_DiscardUnknown() {
-	xxx_messageInfo_HGetEntityIDsParam.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_HGetEntityIDsParam proto.InternalMessageInfo
-
-func (m *HGetEntityIDsParam) GetCollectionName() string {
-	if m != nil {
-		return m.CollectionName
-	}
-	return ""
-}
-
-func (m *HGetEntityIDsParam) GetSegmentName() string {
-	if m != nil {
-		return m.SegmentName
-	}
-	return ""
-}
-
-type HDeleteByIDParam struct {
-	CollectionName       string   `protobuf:"bytes,1,opt,name=collection_name,json=collectionName,proto3" json:"collection_name,omitempty"`
-	IdArray              []int64  `protobuf:"varint,2,rep,packed,name=id_array,json=idArray,proto3" json:"id_array,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *HDeleteByIDParam) Reset()         { *m = HDeleteByIDParam{} }
-func (m *HDeleteByIDParam) String() string { return proto.CompactTextString(m) }
-func (*HDeleteByIDParam) ProtoMessage()    {}
-func (*HDeleteByIDParam) Descriptor() ([]byte, []int) {
-	return fileDescriptor_02345ba45cc0e303, []int{46}
-}
-
-func (m *HDeleteByIDParam) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_HDeleteByIDParam.Unmarshal(m, b)
-}
-func (m *HDeleteByIDParam) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_HDeleteByIDParam.Marshal(b, m, deterministic)
-}
-func (m *HDeleteByIDParam) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_HDeleteByIDParam.Merge(m, src)
-}
-func (m *HDeleteByIDParam) XXX_Size() int {
-	return xxx_messageInfo_HDeleteByIDParam.Size(m)
-}
-func (m *HDeleteByIDParam) XXX_DiscardUnknown() {
-	xxx_messageInfo_HDeleteByIDParam.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_HDeleteByIDParam proto.InternalMessageInfo
-
-func (m *HDeleteByIDParam) GetCollectionName() string {
-	if m != nil {
-		return m.CollectionName
-	}
-	return ""
-}
-
-func (m *HDeleteByIDParam) GetIdArray() []int64 {
-	if m != nil {
-		return m.IdArray
-	}
-	return nil
-}
-
-type HIndexParam struct {
-	Status               *Status         `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
-	CollectionName       string          `protobuf:"bytes,2,opt,name=collection_name,json=collectionName,proto3" json:"collection_name,omitempty"`
-	IndexType            int32           `protobuf:"varint,3,opt,name=index_type,json=indexType,proto3" json:"index_type,omitempty"`
-	ExtraParams          []*KeyValuePair `protobuf:"bytes,4,rep,name=extra_params,json=extraParams,proto3" json:"extra_params,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
-	XXX_unrecognized     []byte          `json:"-"`
-	XXX_sizecache        int32           `json:"-"`
-}
-
-func (m *HIndexParam) Reset()         { *m = HIndexParam{} }
-func (m *HIndexParam) String() string { return proto.CompactTextString(m) }
-func (*HIndexParam) ProtoMessage()    {}
-func (*HIndexParam) Descriptor() ([]byte, []int) {
-	return fileDescriptor_02345ba45cc0e303, []int{47}
-}
-
-func (m *HIndexParam) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_HIndexParam.Unmarshal(m, b)
-}
-func (m *HIndexParam) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_HIndexParam.Marshal(b, m, deterministic)
-}
-func (m *HIndexParam) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_HIndexParam.Merge(m, src)
-}
-func (m *HIndexParam) XXX_Size() int {
-	return xxx_messageInfo_HIndexParam.Size(m)
-}
-func (m *HIndexParam) XXX_DiscardUnknown() {
-	xxx_messageInfo_HIndexParam.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_HIndexParam proto.InternalMessageInfo
-
-func (m *HIndexParam) GetStatus() *Status {
-	if m != nil {
-		return m.Status
-	}
-	return nil
-}
-
-func (m *HIndexParam) GetCollectionName() string {
-	if m != nil {
-		return m.CollectionName
-	}
-	return ""
-}
-
-func (m *HIndexParam) GetIndexType() int32 {
-	if m != nil {
-		return m.IndexType
-	}
-	return 0
-}
-
-func (m *HIndexParam) GetExtraParams() []*KeyValuePair {
+func (m *SearchParamPB) GetExtraParams() []*KeyValuePair {
 	if m != nil {
 		return m.ExtraParams
 	}
@@ -2957,220 +2589,189 @@ func init() {
 	proto.RegisterType((*KeyValuePair)(nil), "milvus.grpc.KeyValuePair")
 	proto.RegisterType((*CollectionName)(nil), "milvus.grpc.CollectionName")
 	proto.RegisterType((*CollectionNameList)(nil), "milvus.grpc.CollectionNameList")
-	proto.RegisterType((*CollectionSchema)(nil), "milvus.grpc.CollectionSchema")
+	proto.RegisterType((*FieldName)(nil), "milvus.grpc.FieldName")
+	proto.RegisterType((*Mapping)(nil), "milvus.grpc.Mapping")
+	proto.RegisterType((*MappingList)(nil), "milvus.grpc.MappingList")
 	proto.RegisterType((*PartitionParam)(nil), "milvus.grpc.PartitionParam")
 	proto.RegisterType((*PartitionList)(nil), "milvus.grpc.PartitionList")
-	proto.RegisterType((*RowRecord)(nil), "milvus.grpc.RowRecord")
+	proto.RegisterType((*VectorRowRecord)(nil), "milvus.grpc.VectorRowRecord")
+	proto.RegisterType((*AttrRecord)(nil), "milvus.grpc.AttrRecord")
+	proto.RegisterType((*VectorRecord)(nil), "milvus.grpc.VectorRecord")
+	proto.RegisterType((*FieldValue)(nil), "milvus.grpc.FieldValue")
 	proto.RegisterType((*InsertParam)(nil), "milvus.grpc.InsertParam")
-	proto.RegisterType((*VectorIds)(nil), "milvus.grpc.VectorIds")
+	proto.RegisterType((*EntityIds)(nil), "milvus.grpc.EntityIds")
+	proto.RegisterType((*VectorParam)(nil), "milvus.grpc.VectorParam")
 	proto.RegisterType((*SearchParam)(nil), "milvus.grpc.SearchParam")
-	proto.RegisterType((*SearchInFilesParam)(nil), "milvus.grpc.SearchInFilesParam")
-	proto.RegisterType((*SearchByIDParam)(nil), "milvus.grpc.SearchByIDParam")
-	proto.RegisterType((*TopKQueryResult)(nil), "milvus.grpc.TopKQueryResult")
+	proto.RegisterType((*SearchInSegmentParam)(nil), "milvus.grpc.SearchInSegmentParam")
+	proto.RegisterType((*Entities)(nil), "milvus.grpc.Entities")
+	proto.RegisterType((*QueryResult)(nil), "milvus.grpc.QueryResult")
 	proto.RegisterType((*StringReply)(nil), "milvus.grpc.StringReply")
 	proto.RegisterType((*BoolReply)(nil), "milvus.grpc.BoolReply")
 	proto.RegisterType((*CollectionRowCount)(nil), "milvus.grpc.CollectionRowCount")
 	proto.RegisterType((*Command)(nil), "milvus.grpc.Command")
 	proto.RegisterType((*IndexParam)(nil), "milvus.grpc.IndexParam")
 	proto.RegisterType((*FlushParam)(nil), "milvus.grpc.FlushParam")
+	proto.RegisterType((*CompactParam)(nil), "milvus.grpc.CompactParam")
 	proto.RegisterType((*DeleteByIDParam)(nil), "milvus.grpc.DeleteByIDParam")
 	proto.RegisterType((*CollectionInfo)(nil), "milvus.grpc.CollectionInfo")
-	proto.RegisterType((*VectorsIdentity)(nil), "milvus.grpc.VectorsIdentity")
-	proto.RegisterType((*VectorsData)(nil), "milvus.grpc.VectorsData")
-	proto.RegisterType((*GetVectorIDsParam)(nil), "milvus.grpc.GetVectorIDsParam")
+	proto.RegisterType((*GetEntityIDsParam)(nil), "milvus.grpc.GetEntityIDsParam")
+	proto.RegisterType((*EntityIdentity)(nil), "milvus.grpc.EntityIdentity")
 	proto.RegisterType((*VectorFieldParam)(nil), "milvus.grpc.VectorFieldParam")
 	proto.RegisterType((*FieldType)(nil), "milvus.grpc.FieldType")
 	proto.RegisterType((*FieldParam)(nil), "milvus.grpc.FieldParam")
-	proto.RegisterType((*VectorFieldValue)(nil), "milvus.grpc.VectorFieldValue")
-	proto.RegisterType((*FieldValue)(nil), "milvus.grpc.FieldValue")
-	proto.RegisterType((*Mapping)(nil), "milvus.grpc.Mapping")
-	proto.RegisterType((*MappingList)(nil), "milvus.grpc.MappingList")
+	proto.RegisterType((*VectorFieldRecord)(nil), "milvus.grpc.VectorFieldRecord")
 	proto.RegisterType((*TermQuery)(nil), "milvus.grpc.TermQuery")
 	proto.RegisterType((*CompareExpr)(nil), "milvus.grpc.CompareExpr")
 	proto.RegisterType((*RangeQuery)(nil), "milvus.grpc.RangeQuery")
 	proto.RegisterType((*VectorQuery)(nil), "milvus.grpc.VectorQuery")
 	proto.RegisterType((*BooleanQuery)(nil), "milvus.grpc.BooleanQuery")
 	proto.RegisterType((*GeneralQuery)(nil), "milvus.grpc.GeneralQuery")
-	proto.RegisterType((*HSearchParam)(nil), "milvus.grpc.HSearchParam")
-	proto.RegisterType((*HSearchInSegmentsParam)(nil), "milvus.grpc.HSearchInSegmentsParam")
-	proto.RegisterType((*AttrRecord)(nil), "milvus.grpc.AttrRecord")
-	proto.RegisterType((*HEntity)(nil), "milvus.grpc.HEntity")
-	proto.RegisterType((*HQueryResult)(nil), "milvus.grpc.HQueryResult")
-	proto.RegisterType((*HInsertParam)(nil), "milvus.grpc.HInsertParam")
-	proto.RegisterType((*HEntityIdentity)(nil), "milvus.grpc.HEntityIdentity")
-	proto.RegisterType((*HEntityIDs)(nil), "milvus.grpc.HEntityIDs")
-	proto.RegisterType((*HGetEntityIDsParam)(nil), "milvus.grpc.HGetEntityIDsParam")
-	proto.RegisterType((*HDeleteByIDParam)(nil), "milvus.grpc.HDeleteByIDParam")
-	proto.RegisterType((*HIndexParam)(nil), "milvus.grpc.HIndexParam")
+	proto.RegisterType((*SearchParamPB)(nil), "milvus.grpc.SearchParamPB")
 }
 
 func init() { proto.RegisterFile("milvus.proto", fileDescriptor_02345ba45cc0e303) }
 
 var fileDescriptor_02345ba45cc0e303 = []byte{
-	// 2604 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xd4, 0x3a, 0x4b, 0x6f, 0xdb, 0xd8,
-	0xd5, 0x22, 0xa9, 0x87, 0x75, 0x48, 0x59, 0xcc, 0x8d, 0xe3, 0x68, 0x9c, 0x64, 0xe2, 0x61, 0x80,
-	0x7c, 0x9e, 0x7c, 0x45, 0x9a, 0x3a, 0x41, 0x92, 0x69, 0x33, 0x6d, 0x62, 0xcb, 0xb1, 0x14, 0x3b,
-	0xb2, 0x43, 0xcb, 0x0e, 0x50, 0x60, 0xa0, 0xa1, 0xc5, 0x1b, 0x87, 0x1d, 0x89, 0x54, 0x49, 0xca,
-	0x89, 0x67, 0xd5, 0x55, 0xbb, 0x9a, 0x76, 0xdf, 0xff, 0xd0, 0x55, 0x51, 0xa0, 0xbb, 0xf6, 0x2f,
-	0x14, 0x28, 0xd0, 0x5f, 0xd0, 0x6d, 0x57, 0xdd, 0xb6, 0x28, 0xee, 0x83, 0x4f, 0x53, 0xb2, 0x68,
-	0x27, 0x05, 0xba, 0x12, 0xef, 0xe1, 0xb9, 0x87, 0xe7, 0xfd, 0xb8, 0x57, 0xa0, 0x0c, 0xad, 0xc1,
-	0xf1, 0xd8, 0xbb, 0x3b, 0x72, 0x1d, 0xdf, 0x41, 0x32, 0x5f, 0x1d, 0xb9, 0xa3, 0xfe, 0x92, 0xe2,
-	0xf9, 0x86, 0x1f, 0xbc, 0xd2, 0x1e, 0x82, 0xb2, 0x85, 0x4f, 0x0e, 0x8c, 0xc1, 0x18, 0xef, 0x1a,
-	0x96, 0x8b, 0x54, 0x90, 0xbe, 0xc1, 0x27, 0x0d, 0x61, 0x59, 0x58, 0xa9, 0xea, 0xe4, 0x11, 0x2d,
-	0x40, 0xe9, 0x98, 0xbc, 0x6e, 0x88, 0x14, 0xc6, 0x16, 0xda, 0x17, 0x30, 0xbf, 0xee, 0x0c, 0x06,
-	0xb8, 0xef, 0x5b, 0x8e, 0xdd, 0x31, 0x86, 0x18, 0xfd, 0x1f, 0xd4, 0xfb, 0x21, 0xa4, 0x67, 0x1b,
-	0x43, 0xcc, 0xa9, 0xcc, 0xf7, 0x13, 0x88, 0xda, 0x00, 0x50, 0x72, 0xeb, 0xb6, 0xe5, 0xf9, 0xe8,
-	0xff, 0xa1, 0xcc, 0x18, 0xa3, 0xbb, 0xe4, 0xd5, 0xcb, 0x77, 0x63, 0x4c, 0xdf, 0xdd, 0xa3, 0xaf,
-	0x74, 0x8e, 0x82, 0x3e, 0x07, 0x35, 0xf5, 0x2d, 0xaf, 0x21, 0x2e, 0x4b, 0x2b, 0x55, 0xbd, 0x9e,
-	0xfc, 0x98, 0xa7, 0x7d, 0x27, 0x82, 0x1a, 0x7d, 0x6e, 0xaf, 0xff, 0x16, 0x0f, 0x8d, 0x7c, 0x1f,
-	0xcb, 0x10, 0x4c, 0xcc, 0x12, 0x0c, 0x5d, 0x87, 0xaa, 0x69, 0x0d, 0xb1, 0xed, 0x59, 0x8e, 0xdd,
-	0x90, 0x96, 0x85, 0x15, 0x49, 0x8f, 0x00, 0xe8, 0x36, 0xd4, 0x2d, 0xdb, 0xc4, 0xef, 0x7b, 0x6f,
-	0xac, 0x01, 0xee, 0x79, 0xd6, 0xb7, 0xb8, 0x51, 0xa4, 0x38, 0x35, 0x0a, 0x7e, 0x6e, 0x0d, 0xf0,
-	0x9e, 0xf5, 0x2d, 0x46, 0x37, 0x41, 0x1e, 0x62, 0xdf, 0xb5, 0xfa, 0x3d, 0xff, 0x64, 0x84, 0x1b,
-	0xa5, 0x65, 0x61, 0xa5, 0xa4, 0x03, 0x03, 0x75, 0x4f, 0x46, 0x18, 0x3d, 0x01, 0x05, 0xbf, 0xf7,
-	0x5d, 0xa3, 0x37, 0x32, 0x5c, 0x63, 0xe8, 0x35, 0xca, 0xcb, 0xd2, 0x8a, 0xbc, 0xfa, 0x49, 0x42,
-	0x84, 0xb8, 0x4d, 0x75, 0x99, 0xa2, 0xef, 0x52, 0x6c, 0x6d, 0x0b, 0xe6, 0x77, 0x0d, 0xd7, 0xb7,
-	0x08, 0xd7, 0x14, 0x34, 0xb3, 0xe1, 0x88, 0x6f, 0xf8, 0xc6, 0x11, 0x17, 0x9e, 0x3c, 0x6a, 0x03,
-	0xa8, 0x85, 0xc4, 0xf2, 0x5b, 0xf1, 0x2e, 0x5c, 0x1e, 0x05, 0xbb, 0x7b, 0xbe, 0x71, 0xd4, 0x33,
-	0x5c, 0xd7, 0x38, 0xe1, 0x86, 0xbc, 0x14, 0xbe, 0xea, 0x1a, 0x47, 0xcf, 0xc8, 0x0b, 0x6d, 0x0b,
-	0xaa, 0xba, 0xf3, 0x4e, 0xc7, 0x7d, 0xc7, 0x35, 0xd1, 0x0d, 0x80, 0x37, 0x03, 0xc7, 0xf0, 0x7b,
-	0xa6, 0xe1, 0x1b, 0x0d, 0x61, 0x59, 0x5a, 0x11, 0xf5, 0x2a, 0x85, 0x34, 0x0d, 0xdf, 0x20, 0x5a,
-	0x3c, 0xb4, 0x6c, 0xc3, 0x3d, 0x61, 0xef, 0x09, 0xcf, 0x8a, 0x0e, 0x0c, 0x44, 0x10, 0xb4, 0x7f,
-	0x09, 0x20, 0xb7, 0x6d, 0x0f, 0xbb, 0x7e, 0x4e, 0x2d, 0x3c, 0x05, 0xd5, 0x75, 0xde, 0xf5, 0x5c,
-	0xca, 0x46, 0x8c, 0x65, 0x79, 0x75, 0x31, 0x21, 0x6c, 0xc8, 0xaa, 0x3e, 0xef, 0x06, 0x8f, 0x54,
-	0x0e, 0xb4, 0x0c, 0x0a, 0xa1, 0x60, 0x05, 0xbb, 0xa5, 0x65, 0x69, 0x45, 0xd2, 0xc1, 0x75, 0xde,
-	0xb5, 0x39, 0xc6, 0x2d, 0xa8, 0x25, 0x34, 0x43, 0x3d, 0xa5, 0xaa, 0x2b, 0x71, 0x9d, 0x9c, 0xf2,
-	0x83, 0x52, 0x2e, 0x3f, 0xf8, 0x1a, 0xaa, 0x07, 0xb8, 0xef, 0x3b, 0x6e, 0xdb, 0xf4, 0xf2, 0x99,
-	0xed, 0x36, 0xd4, 0x8f, 0xe9, 0xce, 0x48, 0x02, 0x91, 0x4a, 0x50, 0x3b, 0xe6, 0x04, 0x99, 0xb9,
-	0xfe, 0x2d, 0x80, 0xbc, 0x87, 0x0d, 0xb7, 0xff, 0x36, 0xa7, 0x86, 0x73, 0xfa, 0x05, 0x6a, 0x02,
-	0xfa, 0xf9, 0x18, 0xbb, 0x27, 0x49, 0x9b, 0x48, 0x53, 0x6d, 0xa2, 0xd2, 0x1d, 0x71, 0xab, 0x20,
-	0x28, 0xfa, 0xce, 0xe8, 0x1b, 0x1e, 0x94, 0xf4, 0xf9, 0x82, 0x2a, 0x1e, 0x03, 0x62, 0xf2, 0xb7,
-	0x6d, 0x12, 0xdd, 0x1e, 0x53, 0x83, 0x06, 0x35, 0x9a, 0x01, 0x42, 0xe5, 0x09, 0x54, 0x2e, 0x99,
-	0x00, 0x03, 0xfb, 0xff, 0x08, 0x14, 0x8f, 0xee, 0x64, 0x1f, 0xa6, 0xee, 0x2b, 0xaf, 0x36, 0x92,
-	0x56, 0x89, 0x54, 0xab, 0xcb, 0x5e, 0xb4, 0xd0, 0xfe, 0x26, 0x40, 0x9d, 0xbd, 0x5c, 0x3b, 0x69,
-	0x37, 0x3f, 0xb2, 0xee, 0x3f, 0x81, 0xb9, 0x94, 0x1f, 0x57, 0xac, 0x8f, 0xa6, 0xd0, 0x5f, 0x09,
-	0x50, 0xef, 0x3a, 0xa3, 0xad, 0x57, 0xcc, 0x76, 0xde, 0x78, 0x90, 0x33, 0xe3, 0x5c, 0x85, 0x0a,
-	0x89, 0x3c, 0x7b, 0xcc, 0x54, 0x2a, 0xe9, 0x65, 0xd7, 0x79, 0xd7, 0x19, 0x0f, 0x49, 0x6a, 0xb3,
-	0x4c, 0x8f, 0x4b, 0x40, 0x1e, 0x59, 0x32, 0xf7, 0x7c, 0xc3, 0xee, 0x63, 0xaf, 0x51, 0x64, 0xe9,
-	0x25, 0x04, 0x68, 0x5f, 0x81, 0xbc, 0xe7, 0xbb, 0x96, 0x7d, 0xa4, 0xe3, 0xd1, 0xe0, 0x24, 0x1f,
-	0x13, 0x9f, 0x81, 0xe2, 0xd1, 0xbd, 0x3d, 0x97, 0x6c, 0xe6, 0xf9, 0x54, 0xf6, 0x22, 0x7a, 0xda,
-	0x6b, 0xa8, 0xae, 0x39, 0xce, 0xe0, 0x1c, 0xc4, 0x6f, 0x00, 0x1c, 0x3a, 0xce, 0x20, 0x46, 0x7a,
-	0x4e, 0xaf, 0x1e, 0x06, 0xb4, 0x34, 0x2f, 0x5e, 0x7b, 0x75, 0xe7, 0xdd, 0xba, 0x33, 0xb6, 0x73,
-	0xea, 0xf0, 0x1e, 0x2c, 0xc4, 0x5c, 0x89, 0xa8, 0xb3, 0x4f, 0x88, 0x70, 0x85, 0xa2, 0xfe, 0x29,
-	0xf2, 0xda, 0x35, 0xa8, 0xac, 0x3b, 0xc3, 0xa1, 0x61, 0x9b, 0x44, 0xcf, 0xfd, 0xa1, 0x19, 0xb4,
-	0x17, 0xfd, 0xa1, 0xa9, 0xfd, 0x49, 0x00, 0x68, 0x93, 0x02, 0xc8, 0x1c, 0xf5, 0xe3, 0x54, 0xe6,
-	0x1b, 0x00, 0xac, 0xf6, 0xd2, 0x92, 0x2a, 0xd1, 0x92, 0x5a, 0xa5, 0x90, 0xcc, 0x8a, 0x5a, 0xcc,
-	0xe5, 0x95, 0x4f, 0x01, 0x9e, 0x0f, 0xc6, 0x1e, 0xcf, 0x72, 0xab, 0x70, 0x25, 0xc5, 0x53, 0x22,
-	0xcc, 0x2f, 0x27, 0x39, 0x63, 0x99, 0x72, 0x1f, 0xea, 0x4d, 0x3c, 0xc0, 0x3e, 0x3e, 0x47, 0xc0,
-	0xc6, 0x03, 0x50, 0x4c, 0x04, 0xa0, 0xf6, 0xd3, 0x78, 0x8f, 0xd6, 0xb6, 0xdf, 0x38, 0xf9, 0xb4,
-	0x7b, 0x0d, 0xaa, 0x3f, 0xf3, 0x1c, 0xbb, 0x67, 0xd9, 0x6f, 0x1c, 0xae, 0xd7, 0x39, 0x02, 0x20,
-	0x94, 0x08, 0xcb, 0xac, 0x7c, 0x78, 0x6d, 0x13, 0xdb, 0xbe, 0xe5, 0x9f, 0x7c, 0x10, 0x96, 0xc7,
-	0x20, 0x73, 0xb2, 0xb4, 0x8a, 0xe7, 0xe2, 0xf7, 0x0b, 0x50, 0x58, 0x01, 0xf2, 0x82, 0x9a, 0x3f,
-	0xad, 0x00, 0xc8, 0xc7, 0xd1, 0x77, 0xb4, 0x1e, 0x5c, 0xda, 0xc4, 0x3e, 0xaf, 0x87, 0x4d, 0x2f,
-	0xa7, 0x09, 0x48, 0x40, 0xe3, 0xa3, 0x21, 0xb6, 0xfd, 0xb8, 0x0f, 0xca, 0x1c, 0x46, 0x7b, 0xde,
-	0x7b, 0xa0, 0x32, 0xea, 0xcf, 0x2d, 0x3c, 0x30, 0x19, 0xfd, 0x44, 0xbb, 0x28, 0xa4, 0xda, 0x45,
-	0xed, 0xd7, 0x02, 0x54, 0x29, 0x32, 0xf5, 0xd0, 0x07, 0x50, 0x25, 0x32, 0x31, 0xff, 0x25, 0xb8,
-	0xf3, 0xab, 0x57, 0x12, 0x82, 0x11, 0x31, 0x08, 0x66, 0xab, 0xa0, 0xcf, 0x99, 0xfc, 0x19, 0xad,
-	0x05, 0x1a, 0x49, 0x94, 0x91, 0x1b, 0x89, 0x8d, 0x69, 0xb6, 0x5a, 0x85, 0x40, 0x35, 0x74, 0xb9,
-	0x56, 0xe1, 0xed, 0xbf, 0xf6, 0x5b, 0x01, 0x20, 0xc6, 0xfd, 0x3c, 0x88, 0x16, 0x0b, 0xe4, 0xa2,
-	0x2e, 0x5a, 0x26, 0xc9, 0xf6, 0x31, 0xe1, 0xe9, 0x33, 0xba, 0x03, 0xc5, 0x30, 0xe0, 0xd2, 0x96,
-	0x08, 0x65, 0xd3, 0x29, 0xce, 0x85, 0x63, 0x30, 0xae, 0x5f, 0x8a, 0x84, 0xbe, 0x17, 0x0c, 0x2e,
-	0xc2, 0x54, 0x47, 0xe0, 0xe2, 0xfd, 0x4e, 0xe4, 0xe2, 0xb1, 0xcd, 0x9f, 0x81, 0x6c, 0xd9, 0xfe,
-	0xfd, 0xd5, 0x5e, 0x40, 0x42, 0x58, 0x29, 0xb5, 0x0a, 0x3a, 0x50, 0x60, 0x1c, 0xe5, 0xe1, 0x83,
-	0x5e, 0x34, 0x1e, 0x49, 0x1c, 0xe5, 0xe1, 0x83, 0x10, 0x85, 0x35, 0xa9, 0x0c, 0x85, 0xe8, 0x41,
-	0x24, 0x28, 0x14, 0xc8, 0x50, 0x6e, 0x81, 0x62, 0x3a, 0xe3, 0xc3, 0x01, 0xe6, 0x38, 0xa4, 0x5a,
-	0x0a, 0xc4, 0x08, 0x0c, 0x1a, 0x22, 0xf1, 0x92, 0xc1, 0x90, 0xc8, 0x50, 0x50, 0x25, 0x48, 0x0c,
-	0xca, 0x90, 0x6e, 0xf2, 0xd4, 0xcf, 0x50, 0xca, 0x24, 0xf5, 0xb7, 0x0a, 0x2c, 0xf9, 0x33, 0x84,
-	0xc8, 0x1d, 0x18, 0x4a, 0x65, 0xba, 0x3b, 0xd0, 0x4d, 0x91, 0x3b, 0xd0, 0x65, 0xe4, 0x0e, 0x7f,
-	0x10, 0xa0, 0xf2, 0xd2, 0x18, 0x8d, 0x2c, 0xfb, 0x28, 0x5f, 0x98, 0xde, 0x82, 0x5a, 0x2c, 0xac,
-	0x2c, 0x93, 0x2a, 0xae, 0xa8, 0x2b, 0x11, 0xb0, 0x6d, 0x66, 0xc5, 0x9e, 0x94, 0x19, 0x7b, 0xdf,
-	0x87, 0xf2, 0x1b, 0xc2, 0x6c, 0xe0, 0x30, 0x57, 0x4f, 0x3b, 0x19, 0x6b, 0x91, 0x38, 0x9a, 0xe6,
-	0x81, 0xcc, 0xd9, 0xce, 0x3f, 0xb0, 0x3c, 0x02, 0x65, 0xc8, 0xf6, 0xf6, 0x06, 0x96, 0xe7, 0xf3,
-	0x0c, 0xb3, 0x90, 0xd8, 0xc2, 0x89, 0xeb, 0xf2, 0x30, 0xfa, 0x8a, 0xf6, 0x7b, 0x01, 0xaa, 0x5d,
-	0xec, 0x0e, 0x69, 0xe3, 0x42, 0x47, 0x17, 0xc2, 0x4c, 0x3c, 0xa7, 0x54, 0x29, 0x84, 0x8a, 0xb4,
-	0x08, 0x65, 0xaa, 0x62, 0x8f, 0x4f, 0x2d, 0x7c, 0x45, 0xf2, 0x31, 0x7d, 0xa2, 0xed, 0x0b, 0x1b,
-	0x2f, 0xe7, 0x28, 0x80, 0x34, 0x30, 0x0b, 0x50, 0x3a, 0x74, 0x1c, 0xcf, 0xa7, 0xfe, 0x23, 0xea,
-	0x6c, 0x71, 0xc1, 0x76, 0xcb, 0x00, 0x79, 0xdd, 0x19, 0x8e, 0x0c, 0x17, 0x6f, 0xbc, 0x1f, 0xb9,
-	0xe8, 0x31, 0xcc, 0x39, 0x23, 0xec, 0x1a, 0xbe, 0xe3, 0xf2, 0x14, 0x74, 0x3d, 0x41, 0x88, 0xe3,
-	0xee, 0x70, 0x1c, 0x3d, 0xc4, 0x46, 0x0d, 0xa8, 0xd0, 0x67, 0xdb, 0xe4, 0xe9, 0x21, 0x58, 0x12,
-	0xc5, 0x80, 0x6e, 0xd8, 0x47, 0x78, 0x26, 0xcd, 0xac, 0xc6, 0xe9, 0x48, 0xa7, 0x3a, 0xe2, 0x18,
-	0xb3, 0xe1, 0x17, 0x22, 0xc5, 0x48, 0xd3, 0x14, 0x93, 0x2f, 0xdb, 0xfc, 0x45, 0x08, 0xca, 0xd4,
-	0x4c, 0x6c, 0xdf, 0x04, 0x99, 0xcd, 0x27, 0x8c, 0x11, 0x91, 0x32, 0x02, 0x14, 0xb4, 0x46, 0xb9,
-	0xb9, 0x07, 0x15, 0x36, 0xba, 0x78, 0x67, 0x4c, 0x2d, 0x01, 0xda, 0x47, 0xe8, 0xad, 0xdf, 0x83,
-	0x42, 0x5a, 0x4e, 0x6c, 0xd8, 0x4c, 0xa6, 0x15, 0x28, 0x39, 0xfd, 0xfe, 0x38, 0x30, 0x35, 0x4a,
-	0x90, 0xd9, 0x21, 0x6f, 0x74, 0x86, 0x80, 0x7e, 0x0c, 0xb5, 0x23, 0x6c, 0x63, 0xd7, 0x18, 0xf4,
-	0xa8, 0x4c, 0xdc, 0x36, 0xc9, 0x0f, 0x6f, 0x32, 0x0c, 0xd6, 0xb9, 0x2b, 0x47, 0xb1, 0x95, 0xf6,
-	0x9d, 0x08, 0x4a, 0xfc, 0x35, 0x7a, 0x0a, 0xb5, 0x43, 0xc6, 0x0a, 0x27, 0xc8, 0x42, 0x33, 0x49,
-	0x30, 0xce, 0x6c, 0xab, 0xa0, 0x2b, 0x87, 0x71, 0xe6, 0x1f, 0x01, 0xf8, 0xd8, 0x1d, 0x86, 0xfc,
-	0x9c, 0x2e, 0x3f, 0x61, 0x34, 0x92, 0x14, 0xe9, 0x87, 0xa1, 0xf9, 0x43, 0x90, 0x5d, 0xe2, 0x8e,
-	0x7c, 0x27, 0x2b, 0x5c, 0xc9, 0x9c, 0x12, 0xb9, 0x2b, 0xc9, 0xe4, 0x6e, 0xe4, 0xbc, 0x5f, 0x86,
-	0xe9, 0x95, 0x6d, 0x2e, 0x66, 0x0c, 0x6d, 0x31, 0xaf, 0x89, 0x32, 0x2b, 0x5d, 0x92, 0xcc, 0x4a,
-	0xf7, 0x69, 0x7f, 0x17, 0x40, 0x69, 0xfd, 0x57, 0x06, 0xe7, 0x53, 0x96, 0x93, 0x32, 0x14, 0x3d,
-	0xd9, 0x72, 0x17, 0x8c, 0xa2, 0x5f, 0x08, 0xb0, 0xd8, 0x0a, 0x06, 0xe4, 0x3d, 0xd6, 0x2c, 0xf1,
-	0xd6, 0x6b, 0x05, 0xd4, 0xa0, 0xa3, 0x4a, 0x8d, 0xc9, 0xf3, 0x1c, 0x1e, 0x4c, 0xca, 0x4f, 0x32,
-	0x27, 0xe5, 0x24, 0x0b, 0xad, 0x89, 0xa3, 0xb2, 0x06, 0xf0, 0xcc, 0xf7, 0x5d, 0x7e, 0xa4, 0xb4,
-	0x10, 0x6f, 0x18, 0xc2, 0x93, 0xce, 0x7f, 0x08, 0x50, 0x69, 0x6d, 0xb0, 0x16, 0x37, 0x6f, 0xff,
-	0xcc, 0x3a, 0xe3, 0xa0, 0xc8, 0x49, 0xfa, 0x1c, 0x03, 0xb4, 0x4d, 0x92, 0x13, 0xa2, 0x94, 0xc1,
-	0xc2, 0xbe, 0xaa, 0x43, 0x98, 0x33, 0xe8, 0x94, 0x68, 0xf8, 0xbe, 0xdb, 0x0b, 0x12, 0x43, 0x91,
-	0xd6, 0x02, 0xd9, 0x08, 0xd9, 0x4d, 0x4c, 0xb3, 0xa5, 0xc4, 0x34, 0xfb, 0x04, 0x6a, 0x2e, 0x9d,
-	0x8e, 0x7b, 0xbc, 0x90, 0x94, 0x27, 0xd5, 0x46, 0x6a, 0x1a, 0x5d, 0x61, 0xd8, 0x74, 0xe1, 0x69,
-	0x7f, 0x24, 0xfe, 0x77, 0xee, 0x11, 0xfb, 0x1e, 0x30, 0x21, 0x2d, 0x7e, 0x24, 0x9b, 0xae, 0x8f,
-	0x5c, 0x95, 0x7a, 0x88, 0x15, 0x17, 0x43, 0x4a, 0x88, 0xb1, 0x00, 0x25, 0xaf, 0xef, 0xb8, 0x98,
-	0x8f, 0xdf, 0x6c, 0x81, 0x96, 0x60, 0x2e, 0x98, 0xc3, 0x69, 0x8a, 0x13, 0xf5, 0x70, 0xad, 0xfd,
-	0x93, 0xb0, 0x7e, 0xae, 0x53, 0xbd, 0x53, 0x27, 0x6e, 0x62, 0xc6, 0x89, 0x5b, 0x5c, 0x36, 0x16,
-	0x2a, 0x67, 0xc9, 0x76, 0x1b, 0xea, 0xa1, 0x0f, 0x70, 0x3f, 0x2e, 0xb2, 0xb3, 0xb2, 0xc0, 0x13,
-	0x42, 0x37, 0xbe, 0x40, 0xee, 0x7e, 0x01, 0x75, 0xfe, 0xe9, 0xfc, 0xc3, 0x18, 0xeb, 0xe3, 0x99,
-	0x7b, 0x8a, 0x96, 0xa9, 0x19, 0x00, 0x01, 0xad, 0x66, 0xfe, 0x83, 0xc1, 0xb4, 0xb0, 0x62, 0x86,
-	0xb0, 0xda, 0xd7, 0x80, 0x5a, 0x9b, 0xd8, 0x0f, 0xbf, 0xf2, 0xe1, 0xc7, 0xad, 0x03, 0x50, 0x5b,
-	0x1f, 0x63, 0xa2, 0xfe, 0xb3, 0x00, 0x72, 0xeb, 0x7f, 0xfa, 0xb4, 0xe2, 0xce, 0x2f, 0x05, 0x98,
-	0x0b, 0x86, 0x45, 0x34, 0x07, 0xc5, 0xce, 0xfe, 0xf6, 0xb6, 0x5a, 0x20, 0x4f, 0xed, 0x4e, 0xf7,
-	0xb1, 0x2a, 0xa0, 0x2a, 0x94, 0xda, 0x9d, 0xee, 0x0f, 0x1e, 0xaa, 0x22, 0x7f, 0xbc, 0xbf, 0xaa,
-	0x4a, 0xfc, 0xf1, 0xe1, 0x03, 0xb5, 0x88, 0x00, 0xca, 0x7b, 0x5d, 0xbd, 0xdd, 0xd9, 0x54, 0x17,
-	0xc8, 0xb6, 0xb5, 0x9d, 0x9d, 0x6d, 0xf5, 0x53, 0x82, 0xf0, 0x7c, 0x7b, 0xe7, 0x59, 0x57, 0x5d,
-	0x21, 0x08, 0xcd, 0x9d, 0xfd, 0xb5, 0xed, 0x0d, 0xf5, 0x73, 0xf2, 0x7c, 0xb0, 0xb1, 0xde, 0xdd,
-	0xd1, 0x55, 0x13, 0x29, 0x50, 0xd9, 0xef, 0x6c, 0x75, 0x76, 0x5e, 0x77, 0xd4, 0xdf, 0x74, 0xee,
-	0xac, 0x43, 0x3d, 0xd5, 0x31, 0xa2, 0x32, 0x88, 0xdb, 0x5d, 0xb5, 0x80, 0x2a, 0x20, 0x6d, 0x77,
-	0x37, 0x54, 0x81, 0x00, 0x36, 0x5e, 0xa9, 0x22, 0xf9, 0xdd, 0xec, 0xaa, 0x12, 0x79, 0xb1, 0xd9,
-	0xdd, 0x50, 0x8b, 0x04, 0xd0, 0xd9, 0x50, 0x4b, 0x77, 0x1e, 0x43, 0x89, 0xf6, 0x22, 0x48, 0x86,
-	0x4a, 0xbb, 0x73, 0xf0, 0x6c, 0xbb, 0xdd, 0x64, 0xc2, 0xbc, 0xdc, 0xdf, 0xeb, 0xaa, 0x02, 0xe5,
-	0xb5, 0xb5, 0xb3, 0xbf, 0xdd, 0x54, 0x45, 0xa4, 0xc0, 0x1c, 0x81, 0xf6, 0x3a, 0x3b, 0x5d, 0x55,
-	0x5a, 0xfd, 0xeb, 0x22, 0xd4, 0x5e, 0x52, 0x8d, 0xed, 0x61, 0xf7, 0xd8, 0xea, 0x63, 0xd4, 0x02,
-	0x75, 0xdd, 0xc5, 0x86, 0x8f, 0xa3, 0x43, 0x13, 0x74, 0x23, 0xd5, 0x60, 0x26, 0xef, 0x91, 0x96,
-	0xb2, 0xec, 0xad, 0x15, 0xd0, 0x73, 0xa8, 0xb5, 0x0c, 0x2f, 0x46, 0xe6, 0xda, 0x04, 0x32, 0xc4,
-	0xdc, 0x4b, 0x8b, 0xa7, 0xfa, 0x1a, 0x76, 0x56, 0x57, 0x40, 0x3a, 0xa0, 0x26, 0xf6, 0xfa, 0xae,
-	0x75, 0x88, 0x67, 0x25, 0x36, 0x9d, 0x61, 0xad, 0x80, 0x5e, 0x11, 0xb5, 0x8f, 0x6d, 0x7f, 0x56,
-	0x82, 0x37, 0x27, 0xbc, 0x0c, 0x4f, 0xf7, 0x0a, 0xe8, 0x05, 0xd4, 0xf7, 0xde, 0x92, 0x65, 0xf0,
-	0xce, 0x43, 0x0b, 0xe9, 0xc6, 0x7c, 0x68, 0xd8, 0xe6, 0x44, 0x5a, 0xc1, 0x25, 0xa0, 0x56, 0x40,
-	0xbb, 0x80, 0x92, 0xb4, 0xe8, 0xb9, 0xd5, 0x54, 0x0e, 0x27, 0xbd, 0xa4, 0xe7, 0x54, 0x05, 0xd4,
-	0x84, 0xf9, 0xa6, 0xeb, 0x8c, 0x66, 0x95, 0x77, 0x82, 0x49, 0xbf, 0x04, 0x99, 0x39, 0x07, 0x8d,
-	0x7e, 0x94, 0x2c, 0xa5, 0x51, 0x46, 0x98, 0xb4, 0x7d, 0x13, 0x6a, 0x81, 0x25, 0x19, 0x81, 0xa9,
-	0x3c, 0x4c, 0xa2, 0xae, 0x15, 0xd0, 0x4f, 0xa0, 0x4a, 0xa4, 0x99, 0x81, 0xc8, 0x04, 0x4e, 0x36,
-	0xa0, 0xce, 0x04, 0x09, 0x2f, 0xee, 0x52, 0x64, 0x92, 0xb7, 0x83, 0x93, 0xc9, 0x28, 0x2d, 0xc3,
-	0x9b, 0x91, 0xc6, 0x64, 0x0f, 0xdf, 0x82, 0x79, 0x62, 0xee, 0x10, 0xdf, 0x9b, 0x2e, 0xd3, 0x52,
-	0xf6, 0x57, 0xb8, 0xef, 0xac, 0x43, 0x8d, 0xe8, 0xe6, 0x62, 0x82, 0x3d, 0x81, 0x32, 0x6b, 0x20,
-	0x50, 0x23, 0x65, 0x85, 0xb0, 0xab, 0x48, 0xc9, 0x13, 0x5e, 0xa3, 0xd1, 0x50, 0x98, 0x0f, 0x0f,
-	0x12, 0x3d, 0x52, 0x7b, 0xd0, 0xf5, 0x0c, 0xdc, 0xf0, 0xcc, 0x74, 0x29, 0x6b, 0x3a, 0x60, 0x47,
-	0x92, 0x05, 0xd4, 0x22, 0x63, 0x51, 0x74, 0x28, 0x89, 0x3e, 0x4d, 0xb5, 0xe5, 0xa9, 0xf3, 0xca,
-	0x29, 0x5c, 0xad, 0x41, 0x99, 0xb5, 0xc0, 0x68, 0xe2, 0x15, 0xd2, 0x52, 0x92, 0xcf, 0xd4, 0x2d,
-	0x0b, 0x95, 0x0c, 0xa2, 0x4b, 0xa5, 0x94, 0x54, 0xa9, 0xdb, 0xa6, 0x33, 0x69, 0xed, 0x42, 0x2d,
-	0x71, 0x31, 0x86, 0x6e, 0x66, 0x90, 0x8b, 0x5f, 0x9a, 0x9d, 0x49, 0xf1, 0x11, 0x48, 0xeb, 0x43,
-	0x73, 0x42, 0xda, 0x49, 0x09, 0x1d, 0xbb, 0x67, 0x29, 0xa0, 0x67, 0x00, 0x51, 0xa3, 0x90, 0x12,
-	0x2b, 0xd5, 0x41, 0x4c, 0x8e, 0xed, 0x4b, 0xbb, 0x2e, 0x1e, 0x38, 0x86, 0x79, 0xc1, 0x1c, 0xf3,
-	0x08, 0x4a, 0xf4, 0x22, 0x21, 0x95, 0x5d, 0xa2, 0xcb, 0x85, 0xc9, 0xc9, 0xa9, 0x42, 0x4b, 0x69,
-	0xdf, 0x3f, 0x67, 0x4a, 0x58, 0x64, 0x29, 0xa1, 0x75, 0x72, 0xe8, 0x5a, 0x71, 0x29, 0x32, 0x8f,
-	0xb6, 0x26, 0x91, 0xd9, 0x86, 0xcb, 0x2d, 0xc3, 0x3b, 0x45, 0xe3, 0x9c, 0xb5, 0xef, 0x05, 0x2c,
-	0x90, 0x60, 0xce, 0x47, 0x6e, 0x02, 0x67, 0x3b, 0xd0, 0x08, 0xb2, 0x6f, 0x3e, 0x7a, 0x99, 0xf2,
-	0x6b, 0x05, 0xf4, 0x1a, 0xae, 0xd0, 0xe2, 0x97, 0x8f, 0xda, 0x0c, 0xa5, 0xb4, 0x0d, 0x57, 0x48,
-	0x3e, 0x4c, 0xd3, 0xf5, 0x66, 0xf2, 0xec, 0xd8, 0xb9, 0xa6, 0x56, 0x40, 0x07, 0xd0, 0xc8, 0x22,
-	0x75, 0xe1, 0x7a, 0xfa, 0x12, 0xae, 0x72, 0x77, 0xff, 0x20, 0xb6, 0x69, 0x82, 0xc2, 0x52, 0x2b,
-	0x1f, 0xb1, 0x53, 0xa3, 0x7b, 0x3c, 0xed, 0x5e, 0xcd, 0x1a, 0xb6, 0xda, 0x4d, 0x8f, 0xea, 0x4d,
-	0x61, 0xdc, 0xf0, 0x3c, 0x37, 0xf9, 0x00, 0xe0, 0xcc, 0x54, 0xf2, 0x15, 0x2c, 0xc6, 0x49, 0x45,
-	0x47, 0x13, 0xe8, 0x56, 0x16, 0xd1, 0xd4, 0xd1, 0xc5, 0x99, 0xe4, 0x37, 0xa0, 0x16, 0xce, 0x3e,
-	0x19, 0x39, 0x27, 0x35, 0xc7, 0x2d, 0x65, 0x0e, 0x98, 0x34, 0x3c, 0x94, 0xf8, 0x08, 0x95, 0xca,
-	0xa0, 0xa7, 0xc7, 0xab, 0x69, 0xca, 0x7b, 0x41, 0xda, 0x4c, 0x92, 0xea, 0x36, 0xf8, 0xd8, 0x4a,
-	0xf9, 0x4a, 0x76, 0x92, 0xad, 0xd9, 0x92, 0xe1, 0x61, 0x99, 0xfe, 0xad, 0xec, 0xfe, 0x7f, 0x02,
-	0x00, 0x00, 0xff, 0xff, 0x70, 0x9c, 0x3b, 0xcf, 0x81, 0x26, 0x00, 0x00,
+	// 2223 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x19, 0x5d, 0x73, 0xdb, 0x58,
+	0xd5, 0xb2, 0xec, 0xc4, 0x3a, 0x92, 0x13, 0xf5, 0x36, 0xdb, 0x75, 0xd3, 0x96, 0xb6, 0x62, 0x06,
+	0xb2, 0x65, 0xa6, 0xec, 0xba, 0x9d, 0xb4, 0xd0, 0xee, 0xb2, 0x71, 0x92, 0x26, 0xa6, 0xa9, 0x93,
+	0xde, 0xb8, 0x65, 0x60, 0x87, 0x31, 0x8a, 0x75, 0x93, 0x8a, 0x95, 0x25, 0x73, 0x25, 0x27, 0xcd,
+	0x8f, 0x80, 0x19, 0x78, 0xe1, 0x87, 0xf0, 0x3f, 0x18, 0xde, 0xf6, 0x61, 0x67, 0x78, 0xe4, 0x07,
+	0xc0, 0x1b, 0x4f, 0xcc, 0xfd, 0xd0, 0x67, 0xec, 0xd4, 0xda, 0xb0, 0x4f, 0xbe, 0xba, 0xf7, 0x9c,
+	0x73, 0xcf, 0xf7, 0xc7, 0x35, 0x18, 0x23, 0xd7, 0x3b, 0x9d, 0x84, 0x0f, 0xc7, 0x34, 0x88, 0x02,
+	0xa4, 0xcb, 0xaf, 0x13, 0x3a, 0x1e, 0xae, 0x1a, 0x61, 0x64, 0x47, 0xf1, 0x91, 0xb5, 0x0e, 0xc6,
+	0x4b, 0x72, 0xfe, 0xd6, 0xf6, 0x26, 0xe4, 0xc0, 0x76, 0x29, 0x32, 0x41, 0xfd, 0x9a, 0x9c, 0xb7,
+	0x94, 0x7b, 0xca, 0x9a, 0x86, 0xd9, 0x12, 0xad, 0x40, 0xfd, 0x94, 0x1d, 0xb7, 0xaa, 0x7c, 0x4f,
+	0x7c, 0x58, 0x3f, 0x83, 0xa5, 0xcd, 0xc0, 0xf3, 0xc8, 0x30, 0x72, 0x03, 0xbf, 0x67, 0x8f, 0x08,
+	0xfa, 0x31, 0x2c, 0x0f, 0x93, 0x9d, 0x81, 0x6f, 0x8f, 0x88, 0xa4, 0xb2, 0x34, 0xcc, 0x01, 0x5a,
+	0x1e, 0xa0, 0x3c, 0xea, 0x9e, 0x1b, 0x46, 0xe8, 0x27, 0xb0, 0x20, 0x18, 0xe3, 0x58, 0x7a, 0xfb,
+	0xfa, 0xc3, 0x0c, 0xd3, 0x0f, 0x0f, 0xf9, 0x11, 0x96, 0x20, 0xe8, 0x13, 0x30, 0x0b, 0x77, 0x85,
+	0xad, 0xea, 0x3d, 0x75, 0x4d, 0xc3, 0xcb, 0xf9, 0xcb, 0x42, 0xeb, 0x10, 0xb4, 0x17, 0x2e, 0xf1,
+	0x9c, 0x52, 0x3c, 0xa2, 0x3b, 0x00, 0xc7, 0x0c, 0x4b, 0xc0, 0x08, 0xc9, 0xb5, 0xe3, 0x98, 0x8e,
+	0xf5, 0x77, 0x05, 0x16, 0x5f, 0xd9, 0xe3, 0xb1, 0xeb, 0x9f, 0x94, 0x63, 0x7c, 0x0a, 0x03, 0xd5,
+	0xa9, 0x0c, 0xfc, 0x14, 0x16, 0xf8, 0x75, 0x61, 0x4b, 0xbd, 0xa7, 0xae, 0xe9, 0xed, 0x8f, 0x73,
+	0x54, 0xb9, 0x44, 0x07, 0x36, 0xb5, 0x47, 0x58, 0x82, 0xa1, 0xe7, 0x60, 0x90, 0xf7, 0x11, 0xb5,
+	0x07, 0x63, 0xb6, 0x1d, 0xb6, 0x6a, 0x1c, 0xed, 0x66, 0x0e, 0x2d, 0x6b, 0x69, 0xac, 0x73, 0x70,
+	0x4e, 0x24, 0xb4, 0x42, 0xd0, 0xa5, 0x3c, 0xe5, 0x8d, 0xf1, 0x04, 0x8c, 0x91, 0xc0, 0x1d, 0x78,
+	0x6e, 0x18, 0x71, 0x43, 0xe8, 0xed, 0x95, 0x1c, 0x8a, 0x24, 0x8e, 0xf5, 0x51, 0x7a, 0x8b, 0xf5,
+	0x12, 0x96, 0x0e, 0x6c, 0x1a, 0xb9, 0x4c, 0x68, 0xce, 0xc7, 0xfc, 0xf6, 0x31, 0x41, 0x8d, 0xec,
+	0x13, 0xa9, 0x3b, 0xb6, 0xb4, 0x3c, 0x68, 0x26, 0xc4, 0xca, 0xcb, 0xf0, 0x10, 0xae, 0x8f, 0x63,
+	0xec, 0x41, 0x64, 0x9f, 0x0c, 0x6c, 0x4a, 0xed, 0x73, 0xe9, 0x53, 0xd7, 0x92, 0xa3, 0xbe, 0x7d,
+	0xb2, 0xc1, 0x0e, 0xac, 0xd7, 0xb0, 0xfc, 0x96, 0x0c, 0xa3, 0x80, 0xe2, 0xe0, 0x0c, 0x93, 0x61,
+	0x40, 0x1d, 0xee, 0x32, 0x5e, 0x60, 0x47, 0x03, 0xc7, 0x8e, 0xec, 0x96, 0x72, 0x4f, 0x5d, 0xab,
+	0x62, 0x8d, 0xef, 0x6c, 0xd9, 0x91, 0x8d, 0xee, 0x82, 0x7e, 0xe4, 0xfa, 0x36, 0x3d, 0x17, 0xe7,
+	0x8c, 0x73, 0x03, 0x83, 0xd8, 0x62, 0x00, 0xd6, 0x5f, 0x14, 0x80, 0x8d, 0x28, 0xa2, 0x92, 0xdc,
+	0x5d, 0xd0, 0x5d, 0x3f, 0x7a, 0xd4, 0x1e, 0x88, 0xe0, 0x63, 0xf4, 0xea, 0x18, 0xf8, 0x16, 0xb7,
+	0xa1, 0x04, 0x58, 0x7f, 0x3c, 0x88, 0xa3, 0x53, 0x5d, 0x53, 0x39, 0xc0, 0xfa, 0xe3, 0x04, 0x40,
+	0x30, 0x24, 0x00, 0x54, 0xce, 0x91, 0xe0, 0x51, 0x00, 0xdc, 0x07, 0xc3, 0x09, 0x26, 0x47, 0x1e,
+	0x91, 0x10, 0xcc, 0x65, 0x14, 0xac, 0x8b, 0x3d, 0x0e, 0x62, 0xbd, 0x00, 0x43, 0xca, 0x29, 0xb8,
+	0x5a, 0x87, 0x45, 0xca, 0x57, 0x21, 0xe7, 0x48, 0x6f, 0xdf, 0xce, 0x69, 0xb5, 0xa0, 0x13, 0x1c,
+	0x03, 0x5b, 0xff, 0x50, 0x00, 0xb8, 0xd3, 0x8a, 0x9b, 0xf3, 0xe1, 0xa5, 0x14, 0xc2, 0x0b, 0x7d,
+	0x02, 0xb5, 0xe8, 0x7c, 0x2c, 0x42, 0x63, 0xa9, 0xfd, 0x51, 0xee, 0x0a, 0xa6, 0xab, 0xfe, 0xf9,
+	0x98, 0x60, 0x0e, 0x82, 0x9e, 0x82, 0x6e, 0x47, 0x11, 0x1d, 0x88, 0x8b, 0x5a, 0x2a, 0x37, 0x75,
+	0x3e, 0x58, 0x52, 0xa5, 0x62, 0xb0, 0x53, 0x05, 0x7f, 0x01, 0xcd, 0x53, 0xce, 0x6e, 0x8c, 0x5b,
+	0xe3, 0xb8, 0x37, 0xa7, 0x09, 0x24, 0xb0, 0x8d, 0xd3, 0xcc, 0x97, 0xf5, 0x6f, 0x05, 0xf4, 0xae,
+	0x1f, 0x12, 0x1a, 0x95, 0xf4, 0xdd, 0x34, 0xb4, 0xab, 0xb3, 0x42, 0x9b, 0x6b, 0x29, 0x09, 0xed,
+	0x1f, 0xc1, 0x32, 0xf1, 0x23, 0x37, 0x3a, 0x1f, 0xb8, 0x8e, 0x74, 0x4c, 0x95, 0x5b, 0xbb, 0x29,
+	0xb6, 0xbb, 0x0e, 0x77, 0x4a, 0xf4, 0x43, 0x68, 0xe6, 0x9c, 0x98, 0x4b, 0xa4, 0x61, 0x23, 0xeb,
+	0xbe, 0x17, 0xf2, 0x44, 0xbd, 0x54, 0x9e, 0xf8, 0x1d, 0x68, 0xdb, 0xf2, 0xce, 0xb0, 0x5c, 0x84,
+	0x4d, 0x11, 0xa2, 0x3a, 0x45, 0x08, 0xeb, 0x2b, 0xd0, 0x85, 0xd2, 0x85, 0x56, 0x11, 0xd4, 0x7e,
+	0x1f, 0x06, 0xbe, 0x54, 0x25, 0x5f, 0xa3, 0xa7, 0x00, 0x34, 0x38, 0x8b, 0xcd, 0x56, 0xfd, 0x90,
+	0xd9, 0x34, 0x1a, 0xfb, 0xa3, 0xf5, 0x1f, 0x05, 0xf4, 0x43, 0x62, 0xd3, 0xe1, 0xbb, 0x92, 0x36,
+	0x2b, 0x99, 0x1f, 0xd0, 0x33, 0x90, 0xce, 0x22, 0xd4, 0x2c, 0x93, 0x78, 0x6b, 0x0a, 0x93, 0x22,
+	0x8b, 0xeb, 0xa7, 0x19, 0x99, 0x4d, 0x50, 0x9d, 0xd0, 0x93, 0xd6, 0x63, 0xcb, 0x2b, 0x1a, 0xed,
+	0x0c, 0x56, 0x84, 0xd0, 0x5d, 0xff, 0x90, 0x9c, 0x8c, 0x88, 0x2f, 0x3d, 0xd6, 0x82, 0xe6, 0xb1,
+	0xeb, 0x91, 0xd4, 0x20, 0x0a, 0x17, 0x47, 0x67, 0x9b, 0xb1, 0x4f, 0x3d, 0x03, 0x23, 0xe4, 0xb8,
+	0x52, 0x10, 0xa1, 0xed, 0xbc, 0x20, 0x19, 0x8d, 0x62, 0x3d, 0x4c, 0x3f, 0xac, 0xbf, 0x2a, 0xd0,
+	0xe0, 0xee, 0xe2, 0x92, 0x92, 0xde, 0x62, 0x82, 0xea, 0xca, 0x00, 0x51, 0x31, 0x5b, 0xa2, 0x5b,
+	0xa0, 0x9d, 0xda, 0x9e, 0xeb, 0x0c, 0x68, 0x70, 0xc6, 0xd5, 0xd9, 0xc0, 0x0d, 0xbe, 0x81, 0x83,
+	0xb3, 0x4c, 0x48, 0xd5, 0xe6, 0x0a, 0x29, 0xeb, 0xbf, 0x0a, 0xe8, 0xaf, 0x27, 0x84, 0x9e, 0x63,
+	0x12, 0x4e, 0xbc, 0x92, 0xc5, 0xe2, 0x33, 0x68, 0x10, 0x29, 0x95, 0xd4, 0x47, 0x3e, 0x45, 0xc5,
+	0x22, 0xe3, 0x04, 0x0c, 0x7d, 0x0c, 0x8b, 0xcc, 0x65, 0xfd, 0xc9, 0x88, 0xa7, 0x28, 0x15, 0x2f,
+	0xd0, 0xe0, 0xac, 0x37, 0x19, 0xa1, 0x1b, 0xb0, 0x10, 0x0e, 0x03, 0x4a, 0x04, 0xe7, 0x55, 0x2c,
+	0xbf, 0xd0, 0x6d, 0xd0, 0x1c, 0x37, 0x8c, 0x6c, 0x7f, 0x48, 0x84, 0xb9, 0xab, 0x38, 0xdd, 0xb8,
+	0xe0, 0x0f, 0x0b, 0xa5, 0xfc, 0xe1, 0xb7, 0xa0, 0x1f, 0x46, 0x94, 0x95, 0x63, 0x32, 0xf6, 0xce,
+	0xcb, 0xc9, 0x7e, 0x1f, 0x8c, 0x90, 0xe3, 0x0e, 0x28, 0x43, 0x96, 0x15, 0x58, 0x0f, 0x53, 0x7a,
+	0xd6, 0xaf, 0x40, 0xeb, 0x04, 0x81, 0xf7, 0x1d, 0x88, 0xdf, 0x01, 0x38, 0x0a, 0x02, 0x2f, 0x43,
+	0xba, 0x81, 0xb5, 0xa3, 0x98, 0x96, 0x15, 0x66, 0x1b, 0x47, 0x1c, 0x9c, 0x6d, 0x06, 0x13, 0xbf,
+	0xa4, 0xe9, 0x3e, 0x85, 0x95, 0x4c, 0xc0, 0x33, 0x93, 0x0c, 0x19, 0x11, 0x7e, 0x97, 0x8a, 0xd1,
+	0xf0, 0x02, 0x79, 0xeb, 0x16, 0x2c, 0x6e, 0x06, 0xa3, 0x91, 0xed, 0x3b, 0xcc, 0x29, 0x87, 0x23,
+	0x27, 0xee, 0x8d, 0x87, 0x23, 0xc7, 0xfa, 0xa7, 0x02, 0xd0, 0xf5, 0x1d, 0xf2, 0x5e, 0x04, 0xd4,
+	0xf7, 0xd3, 0x0a, 0xe6, 0x8b, 0xa5, 0x5a, 0x2c, 0x96, 0x77, 0x00, 0x5c, 0xc6, 0x82, 0x38, 0x16,
+	0x49, 0x43, 0xe3, 0x3b, 0xfc, 0xf8, 0x6a, 0xa9, 0xe3, 0x4b, 0x80, 0x17, 0xde, 0x24, 0x94, 0xe9,
+	0xb2, 0x0d, 0x1f, 0x15, 0x58, 0xce, 0x25, 0x8e, 0xeb, 0x79, 0xc6, 0x45, 0x3e, 0x7f, 0x03, 0xc6,
+	0x66, 0x30, 0x1a, 0xdb, 0xc3, 0xb2, 0x65, 0xf2, 0x36, 0x68, 0xd1, 0x3b, 0x4a, 0xc2, 0x77, 0x81,
+	0x27, 0x92, 0xbc, 0x82, 0xd3, 0x0d, 0xeb, 0x0d, 0x2c, 0x6f, 0x11, 0x8f, 0x44, 0xa4, 0x73, 0xde,
+	0xdd, 0x2a, 0x49, 0xf9, 0x26, 0x34, 0x0a, 0x35, 0x68, 0xd1, 0x95, 0xd5, 0xe7, 0x37, 0xd9, 0xb1,
+	0xa6, 0xeb, 0x1f, 0x07, 0xe5, 0x6c, 0x7a, 0x0b, 0x34, 0x56, 0xa1, 0x06, 0xae, 0x7f, 0x1c, 0x48,
+	0x6b, 0x36, 0xd8, 0x06, 0xa3, 0x64, 0x7d, 0x05, 0xd7, 0x76, 0x48, 0x24, 0xcb, 0xe7, 0x56, 0x58,
+	0x92, 0xe9, 0x3b, 0x00, 0xa1, 0x48, 0xde, 0x03, 0xd7, 0x91, 0xfe, 0xaa, 0xc9, 0x9d, 0xae, 0x63,
+	0x4d, 0x60, 0x29, 0x2e, 0xcc, 0xa2, 0x9e, 0xfe, 0x3f, 0xd4, 0xc1, 0x5b, 0xc8, 0xc4, 0xf5, 0xc4,
+	0x28, 0xa2, 0x61, 0x48, 0x7c, 0x2f, 0xb4, 0x3e, 0x05, 0x53, 0x94, 0xb1, 0x74, 0x22, 0x11, 0xa9,
+	0x6b, 0x44, 0xfc, 0xd0, 0x95, 0x75, 0x5b, 0xc5, 0xe9, 0x86, 0xf5, 0x27, 0x45, 0x0e, 0x64, 0xac,
+	0x89, 0x43, 0x8f, 0x41, 0x63, 0xed, 0xf0, 0x80, 0xb7, 0x7b, 0xca, 0x25, 0xed, 0xde, 0x6e, 0x05,
+	0x37, 0x1c, 0xb9, 0x46, 0x9d, 0x42, 0x75, 0x15, 0x49, 0xf8, 0xce, 0x94, 0xea, 0x9a, 0xb2, 0xb5,
+	0x5b, 0xc9, 0x15, 0xd9, 0xce, 0xa2, 0x1c, 0x6b, 0xad, 0x6f, 0xe2, 0xd6, 0x54, 0x70, 0xbf, 0x04,
+	0x55, 0x57, 0xc4, 0x78, 0x0d, 0x57, 0x5d, 0x87, 0x35, 0x20, 0x99, 0xd8, 0xe4, 0xeb, 0xa4, 0x3f,
+	0x55, 0x3f, 0xdc, 0x9f, 0x3e, 0x07, 0x43, 0x44, 0xe7, 0xdc, 0x63, 0x99, 0x9b, 0xe4, 0x93, 0xf0,
+	0x8a, 0xc1, 0xbb, 0x03, 0xd7, 0x32, 0x5a, 0x90, 0x6d, 0x6f, 0x3b, 0x1e, 0xe7, 0xe7, 0xe9, 0xdf,
+	0xa5, 0x8a, 0xbe, 0x55, 0x40, 0xeb, 0x13, 0x3a, 0xe2, 0x15, 0xf3, 0x43, 0xcd, 0xfb, 0x2d, 0xd0,
+	0x5c, 0x3f, 0xca, 0x4d, 0x25, 0x0d, 0xd7, 0x9f, 0x31, 0x72, 0xa8, 0x17, 0x46, 0x0e, 0x59, 0xe8,
+	0x27, 0x84, 0x17, 0xcb, 0x1a, 0x77, 0x9f, 0x06, 0xdf, 0x60, 0xe5, 0x72, 0x05, 0xea, 0x47, 0x41,
+	0x10, 0x46, 0xad, 0xfa, 0x3d, 0x65, 0xad, 0x8a, 0xc5, 0xc7, 0x15, 0xcb, 0xa1, 0x0d, 0x3a, 0xcf,
+	0x50, 0x94, 0x6c, 0xbf, 0x1f, 0x53, 0xf4, 0x14, 0x1a, 0xc1, 0x98, 0x50, 0x3b, 0x0a, 0xa8, 0xf4,
+	0xc8, 0xbc, 0x8e, 0x24, 0xec, 0xbe, 0x84, 0xc1, 0x09, 0x34, 0x6a, 0xc1, 0x22, 0x5f, 0xfb, 0x8e,
+	0xf4, 0x96, 0xf8, 0xd3, 0xfa, 0x9b, 0x02, 0x80, 0x6d, 0xff, 0x84, 0xcc, 0xa5, 0xc1, 0x76, 0x96,
+	0xce, 0xc5, 0xbe, 0x31, 0xc3, 0x6c, 0x72, 0x43, 0xaa, 0x18, 0xf5, 0x32, 0xc5, 0x94, 0x7b, 0x14,
+	0xf8, 0x46, 0x89, 0x7b, 0xf1, 0xb9, 0xd8, 0xbe, 0x0b, 0xfa, 0x1f, 0x18, 0xdc, 0x40, 0x30, 0x52,
+	0xe5, 0x8c, 0x00, 0xdf, 0xea, 0x70, 0x6e, 0x32, 0xc3, 0xa3, 0x5a, 0x62, 0x78, 0x64, 0x21, 0x18,
+	0x05, 0xe3, 0xaf, 0xa5, 0x33, 0xf0, 0xf5, 0x15, 0x23, 0xe3, 0x3d, 0x18, 0xac, 0x45, 0x21, 0xb6,
+	0x2f, 0x24, 0x5b, 0x83, 0x7a, 0x30, 0x1c, 0x4e, 0x62, 0x83, 0xa3, 0x1c, 0x99, 0x7d, 0x76, 0x82,
+	0x05, 0x00, 0x9b, 0x1a, 0x4f, 0x88, 0x4f, 0xa8, 0xed, 0x0d, 0xb8, 0x64, 0xd2, 0x42, 0xf9, 0x8b,
+	0x77, 0x04, 0x84, 0x68, 0x30, 0x8d, 0x93, 0xcc, 0x97, 0xf5, 0xc7, 0x2a, 0x18, 0xd9, 0x63, 0xf4,
+	0x25, 0x34, 0x8f, 0x04, 0x2b, 0x92, 0xa0, 0x32, 0x65, 0x9e, 0xc9, 0x32, 0xbb, 0x5b, 0xc1, 0xc6,
+	0x51, 0x96, 0xf9, 0x27, 0x00, 0x11, 0xa1, 0xa3, 0x84, 0x1f, 0x86, 0x7e, 0x23, 0x87, 0x9e, 0xc4,
+	0xee, 0x6e, 0x05, 0x6b, 0x51, 0x12, 0xc8, 0x3f, 0x07, 0x9d, 0x32, 0xa7, 0x94, 0x98, 0xd3, 0x66,
+	0xe7, 0xd4, 0x69, 0x77, 0x2b, 0x18, 0x68, 0xea, 0xc2, 0x9f, 0x27, 0x29, 0x58, 0x20, 0xd7, 0xa6,
+	0xcc, 0x05, 0x19, 0xdf, 0x49, 0xb3, 0x2f, 0xff, 0x64, 0xd9, 0x97, 0xe3, 0x59, 0xff, 0x52, 0xa0,
+	0x99, 0x99, 0x1f, 0x0e, 0x3a, 0xdf, 0xdf, 0x4c, 0x76, 0xc1, 0x74, 0xea, 0x14, 0x4d, 0xcf, 0x36,
+	0xdd, 0xd5, 0x82, 0xe9, 0xc1, 0x9f, 0x15, 0x68, 0xc4, 0xb5, 0x01, 0x35, 0xa0, 0xd6, 0xdb, 0xef,
+	0x6d, 0x9b, 0x15, 0xb6, 0xea, 0xec, 0xef, 0xef, 0x99, 0x0a, 0x5b, 0x75, 0x7b, 0xfd, 0xa7, 0x66,
+	0x15, 0x69, 0x50, 0xef, 0xf6, 0xfa, 0x9f, 0xad, 0x9b, 0xaa, 0x5c, 0x3e, 0x6a, 0x9b, 0x35, 0xb9,
+	0x5c, 0x7f, 0x6c, 0xd6, 0xd9, 0xf2, 0xc5, 0xde, 0xfe, 0x46, 0xdf, 0x04, 0x04, 0xb0, 0xb0, 0xb5,
+	0xff, 0xa6, 0xb3, 0xb7, 0x6d, 0xea, 0x6c, 0x7d, 0xd8, 0xc7, 0xdd, 0xde, 0x8e, 0xb9, 0x82, 0xae,
+	0x41, 0xf3, 0xed, 0xf6, 0x66, 0x7f, 0x1f, 0x0f, 0x3a, 0xdd, 0xde, 0x06, 0xfe, 0xb5, 0xc9, 0xda,
+	0x57, 0x43, 0x6e, 0x09, 0x64, 0xf2, 0x60, 0x13, 0x96, 0x0b, 0xd9, 0x0c, 0x2d, 0x40, 0x75, 0xaf,
+	0x6f, 0x56, 0xd0, 0x22, 0xa8, 0x7b, 0xfd, 0x6d, 0x53, 0x61, 0x1b, 0xdb, 0xaf, 0xcd, 0x2a, 0xfb,
+	0xdd, 0xe9, 0x9b, 0x2a, 0x3b, 0xd8, 0xe9, 0x6f, 0x9b, 0x35, 0xb6, 0xd1, 0xdb, 0x36, 0xeb, 0x0f,
+	0x9e, 0x42, 0x9d, 0x47, 0x08, 0xd2, 0x61, 0xb1, 0xdb, 0x7b, 0xbb, 0xb1, 0xd7, 0xdd, 0x12, 0x72,
+	0xbd, 0x7a, 0x73, 0xd8, 0x37, 0x15, 0xce, 0xd5, 0xee, 0xfe, 0x9b, 0xbd, 0x2d, 0xb3, 0x8a, 0x0c,
+	0x68, 0xb0, 0xdd, 0x41, 0x6f, 0xbf, 0x6f, 0xaa, 0xed, 0x6f, 0x9b, 0xd0, 0x7c, 0xc5, 0x95, 0x77,
+	0x48, 0xe8, 0xa9, 0x3b, 0x24, 0xe8, 0x17, 0x60, 0x6e, 0x52, 0x62, 0x47, 0x24, 0x6d, 0xc2, 0xd0,
+	0xd4, 0x87, 0xc4, 0xd5, 0x69, 0x6d, 0x98, 0x55, 0x41, 0x2f, 0xa0, 0xb9, 0x6b, 0x87, 0x19, 0xec,
+	0x5b, 0x85, 0xd4, 0x99, 0xf5, 0xa0, 0xd5, 0x1b, 0x17, 0x82, 0x4c, 0x0c, 0x1a, 0x15, 0xd4, 0x05,
+	0xb4, 0x45, 0xc2, 0x21, 0x75, 0x8f, 0xc8, 0xbc, 0xc4, 0xa6, 0xf2, 0x69, 0x55, 0xd0, 0x6b, 0xa6,
+	0xe4, 0x89, 0x1f, 0xcd, 0x4b, 0xe7, 0xee, 0x8c, 0xc3, 0x64, 0x22, 0xa9, 0xa0, 0x5f, 0xc2, 0xf2,
+	0xe1, 0x3b, 0xf6, 0x19, 0x9f, 0x85, 0x05, 0x2d, 0xc9, 0x89, 0x65, 0x26, 0xad, 0xf8, 0xd5, 0xdd,
+	0xaa, 0xa0, 0x03, 0x40, 0x79, 0x5a, 0xbc, 0xeb, 0xbd, 0x94, 0xc3, 0x59, 0x87, 0xbc, 0xcb, 0xad,
+	0xa0, 0x2d, 0x58, 0xda, 0xa2, 0xc1, 0x78, 0x5e, 0x79, 0x67, 0x58, 0xf2, 0x73, 0xd0, 0x85, 0x2b,
+	0xf0, 0xf9, 0x0a, 0xe5, 0xd3, 0x52, 0x3a, 0x73, 0xcd, 0x42, 0xdf, 0x84, 0x66, 0x6c, 0xc0, 0x0f,
+	0x10, 0x98, 0x75, 0x60, 0x55, 0xd0, 0x33, 0xd0, 0x98, 0x24, 0xdf, 0x8d, 0x83, 0x6d, 0x58, 0x16,
+	0x02, 0x24, 0xcf, 0xd2, 0x05, 0x3d, 0xe4, 0xdf, 0xbe, 0x67, 0x93, 0x31, 0x76, 0xed, 0x70, 0x4e,
+	0x1a, 0xb3, 0x1d, 0xfa, 0x25, 0x2c, 0x31, 0x33, 0x27, 0xf0, 0xe1, 0xe5, 0x46, 0x59, 0x9d, 0x7e,
+	0x8b, 0xf4, 0x19, 0xa6, 0x5c, 0x1a, 0x8c, 0xaf, 0x26, 0xd8, 0x73, 0x58, 0x10, 0xcf, 0xa7, 0xa8,
+	0x55, 0xd0, 0x6c, 0xf2, 0xa6, 0x5a, 0x90, 0x27, 0x79, 0x79, 0xe4, 0x6a, 0x69, 0x26, 0xc3, 0x14,
+	0x1b, 0x01, 0x0b, 0x2c, 0xe4, 0x67, 0xa1, 0xd5, 0xe9, 0xef, 0x33, 0x56, 0x05, 0xed, 0xb2, 0x6a,
+	0x9c, 0xce, 0x64, 0xe8, 0x07, 0x85, 0x62, 0x50, 0x18, 0xd7, 0x2e, 0x61, 0xe8, 0x0b, 0x58, 0x10,
+	0x75, 0x0c, 0xcd, 0x7c, 0x1c, 0x5b, 0xcd, 0x9f, 0x64, 0xde, 0x9f, 0x78, 0x1c, 0x2e, 0x17, 0x1e,
+	0xe9, 0xd0, 0xfd, 0x29, 0x84, 0xf2, 0x4f, 0x78, 0x97, 0x52, 0x7c, 0x02, 0xea, 0xe6, 0xc8, 0x99,
+	0x91, 0x19, 0x0a, 0x4c, 0x66, 0x9e, 0x6f, 0x2a, 0x68, 0x03, 0x20, 0x9d, 0xad, 0x51, 0xbe, 0x49,
+	0x2b, 0x0c, 0xdd, 0xb3, 0x8c, 0xbb, 0x03, 0xd7, 0x0e, 0x28, 0xf1, 0x02, 0xdb, 0xb9, 0x62, 0x1a,
+	0x78, 0x02, 0x75, 0xfe, 0x00, 0x51, 0x08, 0xbf, 0xf4, 0x51, 0x62, 0x16, 0xe2, 0x33, 0xfe, 0x6e,
+	0x33, 0xb6, 0x87, 0x11, 0xba, 0x79, 0xb1, 0x7d, 0x96, 0xaf, 0x11, 0xb3, 0x90, 0x3b, 0xd0, 0x90,
+	0x76, 0xeb, 0xa0, 0xd5, 0x59, 0xe6, 0x3c, 0xe8, 0x5c, 0xa6, 0xfe, 0xa3, 0x05, 0xfe, 0x07, 0xeb,
+	0xa3, 0xff, 0x05, 0x00, 0x00, 0xff, 0xff, 0x4d, 0x31, 0xfa, 0xf9, 0x8b, 0x1d, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -3191,7 +2792,7 @@ type MilvusServiceClient interface {
 	// @param CollectionSchema, use to provide collection information to be created.
 	//
 	// @return Status
-	CreateCollection(ctx context.Context, in *CollectionSchema, opts ...grpc.CallOption) (*Status, error)
+	CreateCollection(ctx context.Context, in *Mapping, opts ...grpc.CallOption) (*Status, error)
 	//*
 	// @brief This method is used to test collection existence.
 	//
@@ -3205,7 +2806,7 @@ type MilvusServiceClient interface {
 	// @param CollectionName, target collection name.
 	//
 	// @return CollectionSchema
-	DescribeCollection(ctx context.Context, in *CollectionName, opts ...grpc.CallOption) (*CollectionSchema, error)
+	DescribeCollection(ctx context.Context, in *CollectionName, opts ...grpc.CallOption) (*Mapping, error)
 	//*
 	// @brief This method is used to get collection schema.
 	//
@@ -3232,7 +2833,7 @@ type MilvusServiceClient interface {
 	//
 	// @param CollectionName, collection name is going to be deleted.
 	//
-	// @return CollectionNameList
+	// @return Status
 	DropCollection(ctx context.Context, in *CollectionName, opts ...grpc.CallOption) (*Status, error)
 	//*
 	// @brief This method is used to build index by collection in sync mode.
@@ -3244,17 +2845,17 @@ type MilvusServiceClient interface {
 	//*
 	// @brief This method is used to describe index
 	//
-	// @param CollectionName, target collection name.
+	// @param IndexParam, target index.
 	//
 	// @return IndexParam
-	DescribeIndex(ctx context.Context, in *CollectionName, opts ...grpc.CallOption) (*IndexParam, error)
+	DescribeIndex(ctx context.Context, in *IndexParam, opts ...grpc.CallOption) (*IndexParam, error)
 	//*
 	// @brief This method is used to drop index
 	//
-	// @param CollectionName, target collection name.
+	// @param IndexParam, target field. if the IndexParam.field_name is empty, will drop all index of the collection
 	//
 	// @return Status
-	DropIndex(ctx context.Context, in *CollectionName, opts ...grpc.CallOption) (*Status, error)
+	DropIndex(ctx context.Context, in *IndexParam, opts ...grpc.CallOption) (*Status, error)
 	//*
 	// @brief This method is used to create partition
 	//
@@ -3289,42 +2890,35 @@ type MilvusServiceClient interface {
 	// @param InsertParam, insert parameters.
 	//
 	// @return VectorIds
-	Insert(ctx context.Context, in *InsertParam, opts ...grpc.CallOption) (*VectorIds, error)
+	Insert(ctx context.Context, in *InsertParam, opts ...grpc.CallOption) (*EntityIds, error)
 	//*
-	// @brief This method is used to get vectors data by id array.
+	// @brief This method is used to get entities data by id array.
 	//
-	// @param VectorsIdentity, target vector id array.
+	// @param EntitiesIdentity, target entity id array.
 	//
-	// @return VectorsData
-	GetVectorsByID(ctx context.Context, in *VectorsIdentity, opts ...grpc.CallOption) (*VectorsData, error)
+	// @return EntitiesData
+	GetEntityByID(ctx context.Context, in *EntityIdentity, opts ...grpc.CallOption) (*Entities, error)
 	//*
 	// @brief This method is used to get vector ids from a segment
 	//
 	// @param GetVectorIDsParam, target collection and segment
 	//
 	// @return VectorIds
-	GetVectorIDs(ctx context.Context, in *GetVectorIDsParam, opts ...grpc.CallOption) (*VectorIds, error)
+	GetEntityIDs(ctx context.Context, in *GetEntityIDsParam, opts ...grpc.CallOption) (*EntityIds, error)
 	//*
 	// @brief This method is used to query vector in collection.
 	//
 	// @param SearchParam, search parameters.
 	//
-	// @return TopKQueryResult
-	Search(ctx context.Context, in *SearchParam, opts ...grpc.CallOption) (*TopKQueryResult, error)
-	//*
-	// @brief This method is used to query vector by id.
-	//
-	// @param SearchByIDParam, search parameters.
-	//
-	// @return TopKQueryResult
-	SearchByID(ctx context.Context, in *SearchByIDParam, opts ...grpc.CallOption) (*TopKQueryResult, error)
+	// @return KQueryResult
+	Search(ctx context.Context, in *SearchParam, opts ...grpc.CallOption) (*QueryResult, error)
 	//*
 	// @brief This method is used to query vector in specified files.
 	//
-	// @param SearchInFilesParam, search in files paremeters.
+	// @param SearchInSegmentParam, target segments to search.
 	//
 	// @return TopKQueryResult
-	SearchInFiles(ctx context.Context, in *SearchInFilesParam, opts ...grpc.CallOption) (*TopKQueryResult, error)
+	SearchInSegment(ctx context.Context, in *SearchInSegmentParam, opts ...grpc.CallOption) (*QueryResult, error)
 	//*
 	// @brief This method is used to give the server status.
 	//
@@ -3356,25 +2950,11 @@ type MilvusServiceClient interface {
 	//*
 	// @brief This method is used to compact collection
 	//
-	// @param CollectionName, target collection name.
+	// @param CompactParam, compact parameters
 	//
 	// @return Status
-	Compact(ctx context.Context, in *CollectionName, opts ...grpc.CallOption) (*Status, error)
-	CreateHybridCollection(ctx context.Context, in *Mapping, opts ...grpc.CallOption) (*Status, error)
-	HasHybridCollection(ctx context.Context, in *CollectionName, opts ...grpc.CallOption) (*BoolReply, error)
-	DropHybridCollection(ctx context.Context, in *CollectionName, opts ...grpc.CallOption) (*Status, error)
-	DescribeHybridCollection(ctx context.Context, in *CollectionName, opts ...grpc.CallOption) (*Mapping, error)
-	CountHybridCollection(ctx context.Context, in *CollectionName, opts ...grpc.CallOption) (*CollectionRowCount, error)
-	ShowHybridCollections(ctx context.Context, in *Command, opts ...grpc.CallOption) (*MappingList, error)
-	ShowHybridCollectionInfo(ctx context.Context, in *CollectionName, opts ...grpc.CallOption) (*CollectionInfo, error)
-	PreloadHybridCollection(ctx context.Context, in *CollectionName, opts ...grpc.CallOption) (*Status, error)
-	InsertEntity(ctx context.Context, in *HInsertParam, opts ...grpc.CallOption) (*HEntityIDs, error)
-	// TODO(yukun): will change to HQueryResult
-	HybridSearch(ctx context.Context, in *HSearchParam, opts ...grpc.CallOption) (*TopKQueryResult, error)
-	HybridSearchInSegments(ctx context.Context, in *HSearchInSegmentsParam, opts ...grpc.CallOption) (*TopKQueryResult, error)
-	GetEntityByID(ctx context.Context, in *HEntityIdentity, opts ...grpc.CallOption) (*HEntity, error)
-	GetEntityIDs(ctx context.Context, in *HGetEntityIDsParam, opts ...grpc.CallOption) (*HEntityIDs, error)
-	DeleteEntitiesByID(ctx context.Context, in *HDeleteByIDParam, opts ...grpc.CallOption) (*Status, error)
+	Compact(ctx context.Context, in *CompactParam, opts ...grpc.CallOption) (*Status, error)
+	SearchPB(ctx context.Context, in *SearchParamPB, opts ...grpc.CallOption) (*QueryResult, error)
 }
 
 type milvusServiceClient struct {
@@ -3385,7 +2965,7 @@ func NewMilvusServiceClient(cc *grpc.ClientConn) MilvusServiceClient {
 	return &milvusServiceClient{cc}
 }
 
-func (c *milvusServiceClient) CreateCollection(ctx context.Context, in *CollectionSchema, opts ...grpc.CallOption) (*Status, error) {
+func (c *milvusServiceClient) CreateCollection(ctx context.Context, in *Mapping, opts ...grpc.CallOption) (*Status, error) {
 	out := new(Status)
 	err := c.cc.Invoke(ctx, "/milvus.grpc.MilvusService/CreateCollection", in, out, opts...)
 	if err != nil {
@@ -3403,8 +2983,8 @@ func (c *milvusServiceClient) HasCollection(ctx context.Context, in *CollectionN
 	return out, nil
 }
 
-func (c *milvusServiceClient) DescribeCollection(ctx context.Context, in *CollectionName, opts ...grpc.CallOption) (*CollectionSchema, error) {
-	out := new(CollectionSchema)
+func (c *milvusServiceClient) DescribeCollection(ctx context.Context, in *CollectionName, opts ...grpc.CallOption) (*Mapping, error) {
+	out := new(Mapping)
 	err := c.cc.Invoke(ctx, "/milvus.grpc.MilvusService/DescribeCollection", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -3457,7 +3037,7 @@ func (c *milvusServiceClient) CreateIndex(ctx context.Context, in *IndexParam, o
 	return out, nil
 }
 
-func (c *milvusServiceClient) DescribeIndex(ctx context.Context, in *CollectionName, opts ...grpc.CallOption) (*IndexParam, error) {
+func (c *milvusServiceClient) DescribeIndex(ctx context.Context, in *IndexParam, opts ...grpc.CallOption) (*IndexParam, error) {
 	out := new(IndexParam)
 	err := c.cc.Invoke(ctx, "/milvus.grpc.MilvusService/DescribeIndex", in, out, opts...)
 	if err != nil {
@@ -3466,7 +3046,7 @@ func (c *milvusServiceClient) DescribeIndex(ctx context.Context, in *CollectionN
 	return out, nil
 }
 
-func (c *milvusServiceClient) DropIndex(ctx context.Context, in *CollectionName, opts ...grpc.CallOption) (*Status, error) {
+func (c *milvusServiceClient) DropIndex(ctx context.Context, in *IndexParam, opts ...grpc.CallOption) (*Status, error) {
 	out := new(Status)
 	err := c.cc.Invoke(ctx, "/milvus.grpc.MilvusService/DropIndex", in, out, opts...)
 	if err != nil {
@@ -3511,8 +3091,8 @@ func (c *milvusServiceClient) DropPartition(ctx context.Context, in *PartitionPa
 	return out, nil
 }
 
-func (c *milvusServiceClient) Insert(ctx context.Context, in *InsertParam, opts ...grpc.CallOption) (*VectorIds, error) {
-	out := new(VectorIds)
+func (c *milvusServiceClient) Insert(ctx context.Context, in *InsertParam, opts ...grpc.CallOption) (*EntityIds, error) {
+	out := new(EntityIds)
 	err := c.cc.Invoke(ctx, "/milvus.grpc.MilvusService/Insert", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -3520,26 +3100,26 @@ func (c *milvusServiceClient) Insert(ctx context.Context, in *InsertParam, opts 
 	return out, nil
 }
 
-func (c *milvusServiceClient) GetVectorsByID(ctx context.Context, in *VectorsIdentity, opts ...grpc.CallOption) (*VectorsData, error) {
-	out := new(VectorsData)
-	err := c.cc.Invoke(ctx, "/milvus.grpc.MilvusService/GetVectorsByID", in, out, opts...)
+func (c *milvusServiceClient) GetEntityByID(ctx context.Context, in *EntityIdentity, opts ...grpc.CallOption) (*Entities, error) {
+	out := new(Entities)
+	err := c.cc.Invoke(ctx, "/milvus.grpc.MilvusService/GetEntityByID", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *milvusServiceClient) GetVectorIDs(ctx context.Context, in *GetVectorIDsParam, opts ...grpc.CallOption) (*VectorIds, error) {
-	out := new(VectorIds)
-	err := c.cc.Invoke(ctx, "/milvus.grpc.MilvusService/GetVectorIDs", in, out, opts...)
+func (c *milvusServiceClient) GetEntityIDs(ctx context.Context, in *GetEntityIDsParam, opts ...grpc.CallOption) (*EntityIds, error) {
+	out := new(EntityIds)
+	err := c.cc.Invoke(ctx, "/milvus.grpc.MilvusService/GetEntityIDs", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *milvusServiceClient) Search(ctx context.Context, in *SearchParam, opts ...grpc.CallOption) (*TopKQueryResult, error) {
-	out := new(TopKQueryResult)
+func (c *milvusServiceClient) Search(ctx context.Context, in *SearchParam, opts ...grpc.CallOption) (*QueryResult, error) {
+	out := new(QueryResult)
 	err := c.cc.Invoke(ctx, "/milvus.grpc.MilvusService/Search", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -3547,18 +3127,9 @@ func (c *milvusServiceClient) Search(ctx context.Context, in *SearchParam, opts 
 	return out, nil
 }
 
-func (c *milvusServiceClient) SearchByID(ctx context.Context, in *SearchByIDParam, opts ...grpc.CallOption) (*TopKQueryResult, error) {
-	out := new(TopKQueryResult)
-	err := c.cc.Invoke(ctx, "/milvus.grpc.MilvusService/SearchByID", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *milvusServiceClient) SearchInFiles(ctx context.Context, in *SearchInFilesParam, opts ...grpc.CallOption) (*TopKQueryResult, error) {
-	out := new(TopKQueryResult)
-	err := c.cc.Invoke(ctx, "/milvus.grpc.MilvusService/SearchInFiles", in, out, opts...)
+func (c *milvusServiceClient) SearchInSegment(ctx context.Context, in *SearchInSegmentParam, opts ...grpc.CallOption) (*QueryResult, error) {
+	out := new(QueryResult)
+	err := c.cc.Invoke(ctx, "/milvus.grpc.MilvusService/SearchInSegment", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -3601,7 +3172,7 @@ func (c *milvusServiceClient) Flush(ctx context.Context, in *FlushParam, opts ..
 	return out, nil
 }
 
-func (c *milvusServiceClient) Compact(ctx context.Context, in *CollectionName, opts ...grpc.CallOption) (*Status, error) {
+func (c *milvusServiceClient) Compact(ctx context.Context, in *CompactParam, opts ...grpc.CallOption) (*Status, error) {
 	out := new(Status)
 	err := c.cc.Invoke(ctx, "/milvus.grpc.MilvusService/Compact", in, out, opts...)
 	if err != nil {
@@ -3610,126 +3181,9 @@ func (c *milvusServiceClient) Compact(ctx context.Context, in *CollectionName, o
 	return out, nil
 }
 
-func (c *milvusServiceClient) CreateHybridCollection(ctx context.Context, in *Mapping, opts ...grpc.CallOption) (*Status, error) {
-	out := new(Status)
-	err := c.cc.Invoke(ctx, "/milvus.grpc.MilvusService/CreateHybridCollection", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *milvusServiceClient) HasHybridCollection(ctx context.Context, in *CollectionName, opts ...grpc.CallOption) (*BoolReply, error) {
-	out := new(BoolReply)
-	err := c.cc.Invoke(ctx, "/milvus.grpc.MilvusService/HasHybridCollection", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *milvusServiceClient) DropHybridCollection(ctx context.Context, in *CollectionName, opts ...grpc.CallOption) (*Status, error) {
-	out := new(Status)
-	err := c.cc.Invoke(ctx, "/milvus.grpc.MilvusService/DropHybridCollection", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *milvusServiceClient) DescribeHybridCollection(ctx context.Context, in *CollectionName, opts ...grpc.CallOption) (*Mapping, error) {
-	out := new(Mapping)
-	err := c.cc.Invoke(ctx, "/milvus.grpc.MilvusService/DescribeHybridCollection", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *milvusServiceClient) CountHybridCollection(ctx context.Context, in *CollectionName, opts ...grpc.CallOption) (*CollectionRowCount, error) {
-	out := new(CollectionRowCount)
-	err := c.cc.Invoke(ctx, "/milvus.grpc.MilvusService/CountHybridCollection", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *milvusServiceClient) ShowHybridCollections(ctx context.Context, in *Command, opts ...grpc.CallOption) (*MappingList, error) {
-	out := new(MappingList)
-	err := c.cc.Invoke(ctx, "/milvus.grpc.MilvusService/ShowHybridCollections", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *milvusServiceClient) ShowHybridCollectionInfo(ctx context.Context, in *CollectionName, opts ...grpc.CallOption) (*CollectionInfo, error) {
-	out := new(CollectionInfo)
-	err := c.cc.Invoke(ctx, "/milvus.grpc.MilvusService/ShowHybridCollectionInfo", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *milvusServiceClient) PreloadHybridCollection(ctx context.Context, in *CollectionName, opts ...grpc.CallOption) (*Status, error) {
-	out := new(Status)
-	err := c.cc.Invoke(ctx, "/milvus.grpc.MilvusService/PreloadHybridCollection", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *milvusServiceClient) InsertEntity(ctx context.Context, in *HInsertParam, opts ...grpc.CallOption) (*HEntityIDs, error) {
-	out := new(HEntityIDs)
-	err := c.cc.Invoke(ctx, "/milvus.grpc.MilvusService/InsertEntity", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *milvusServiceClient) HybridSearch(ctx context.Context, in *HSearchParam, opts ...grpc.CallOption) (*TopKQueryResult, error) {
-	out := new(TopKQueryResult)
-	err := c.cc.Invoke(ctx, "/milvus.grpc.MilvusService/HybridSearch", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *milvusServiceClient) HybridSearchInSegments(ctx context.Context, in *HSearchInSegmentsParam, opts ...grpc.CallOption) (*TopKQueryResult, error) {
-	out := new(TopKQueryResult)
-	err := c.cc.Invoke(ctx, "/milvus.grpc.MilvusService/HybridSearchInSegments", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *milvusServiceClient) GetEntityByID(ctx context.Context, in *HEntityIdentity, opts ...grpc.CallOption) (*HEntity, error) {
-	out := new(HEntity)
-	err := c.cc.Invoke(ctx, "/milvus.grpc.MilvusService/GetEntityByID", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *milvusServiceClient) GetEntityIDs(ctx context.Context, in *HGetEntityIDsParam, opts ...grpc.CallOption) (*HEntityIDs, error) {
-	out := new(HEntityIDs)
-	err := c.cc.Invoke(ctx, "/milvus.grpc.MilvusService/GetEntityIDs", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *milvusServiceClient) DeleteEntitiesByID(ctx context.Context, in *HDeleteByIDParam, opts ...grpc.CallOption) (*Status, error) {
-	out := new(Status)
-	err := c.cc.Invoke(ctx, "/milvus.grpc.MilvusService/DeleteEntitiesByID", in, out, opts...)
+func (c *milvusServiceClient) SearchPB(ctx context.Context, in *SearchParamPB, opts ...grpc.CallOption) (*QueryResult, error) {
+	out := new(QueryResult)
+	err := c.cc.Invoke(ctx, "/milvus.grpc.MilvusService/SearchPB", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -3744,7 +3198,7 @@ type MilvusServiceServer interface {
 	// @param CollectionSchema, use to provide collection information to be created.
 	//
 	// @return Status
-	CreateCollection(context.Context, *CollectionSchema) (*Status, error)
+	CreateCollection(context.Context, *Mapping) (*Status, error)
 	//*
 	// @brief This method is used to test collection existence.
 	//
@@ -3758,7 +3212,7 @@ type MilvusServiceServer interface {
 	// @param CollectionName, target collection name.
 	//
 	// @return CollectionSchema
-	DescribeCollection(context.Context, *CollectionName) (*CollectionSchema, error)
+	DescribeCollection(context.Context, *CollectionName) (*Mapping, error)
 	//*
 	// @brief This method is used to get collection schema.
 	//
@@ -3785,7 +3239,7 @@ type MilvusServiceServer interface {
 	//
 	// @param CollectionName, collection name is going to be deleted.
 	//
-	// @return CollectionNameList
+	// @return Status
 	DropCollection(context.Context, *CollectionName) (*Status, error)
 	//*
 	// @brief This method is used to build index by collection in sync mode.
@@ -3797,17 +3251,17 @@ type MilvusServiceServer interface {
 	//*
 	// @brief This method is used to describe index
 	//
-	// @param CollectionName, target collection name.
+	// @param IndexParam, target index.
 	//
 	// @return IndexParam
-	DescribeIndex(context.Context, *CollectionName) (*IndexParam, error)
+	DescribeIndex(context.Context, *IndexParam) (*IndexParam, error)
 	//*
 	// @brief This method is used to drop index
 	//
-	// @param CollectionName, target collection name.
+	// @param IndexParam, target field. if the IndexParam.field_name is empty, will drop all index of the collection
 	//
 	// @return Status
-	DropIndex(context.Context, *CollectionName) (*Status, error)
+	DropIndex(context.Context, *IndexParam) (*Status, error)
 	//*
 	// @brief This method is used to create partition
 	//
@@ -3842,42 +3296,35 @@ type MilvusServiceServer interface {
 	// @param InsertParam, insert parameters.
 	//
 	// @return VectorIds
-	Insert(context.Context, *InsertParam) (*VectorIds, error)
+	Insert(context.Context, *InsertParam) (*EntityIds, error)
 	//*
-	// @brief This method is used to get vectors data by id array.
+	// @brief This method is used to get entities data by id array.
 	//
-	// @param VectorsIdentity, target vector id array.
+	// @param EntitiesIdentity, target entity id array.
 	//
-	// @return VectorsData
-	GetVectorsByID(context.Context, *VectorsIdentity) (*VectorsData, error)
+	// @return EntitiesData
+	GetEntityByID(context.Context, *EntityIdentity) (*Entities, error)
 	//*
 	// @brief This method is used to get vector ids from a segment
 	//
 	// @param GetVectorIDsParam, target collection and segment
 	//
 	// @return VectorIds
-	GetVectorIDs(context.Context, *GetVectorIDsParam) (*VectorIds, error)
+	GetEntityIDs(context.Context, *GetEntityIDsParam) (*EntityIds, error)
 	//*
 	// @brief This method is used to query vector in collection.
 	//
 	// @param SearchParam, search parameters.
 	//
-	// @return TopKQueryResult
-	Search(context.Context, *SearchParam) (*TopKQueryResult, error)
-	//*
-	// @brief This method is used to query vector by id.
-	//
-	// @param SearchByIDParam, search parameters.
-	//
-	// @return TopKQueryResult
-	SearchByID(context.Context, *SearchByIDParam) (*TopKQueryResult, error)
+	// @return KQueryResult
+	Search(context.Context, *SearchParam) (*QueryResult, error)
 	//*
 	// @brief This method is used to query vector in specified files.
 	//
-	// @param SearchInFilesParam, search in files paremeters.
+	// @param SearchInSegmentParam, target segments to search.
 	//
 	// @return TopKQueryResult
-	SearchInFiles(context.Context, *SearchInFilesParam) (*TopKQueryResult, error)
+	SearchInSegment(context.Context, *SearchInSegmentParam) (*QueryResult, error)
 	//*
 	// @brief This method is used to give the server status.
 	//
@@ -3909,38 +3356,24 @@ type MilvusServiceServer interface {
 	//*
 	// @brief This method is used to compact collection
 	//
-	// @param CollectionName, target collection name.
+	// @param CompactParam, compact parameters
 	//
 	// @return Status
-	Compact(context.Context, *CollectionName) (*Status, error)
-	CreateHybridCollection(context.Context, *Mapping) (*Status, error)
-	HasHybridCollection(context.Context, *CollectionName) (*BoolReply, error)
-	DropHybridCollection(context.Context, *CollectionName) (*Status, error)
-	DescribeHybridCollection(context.Context, *CollectionName) (*Mapping, error)
-	CountHybridCollection(context.Context, *CollectionName) (*CollectionRowCount, error)
-	ShowHybridCollections(context.Context, *Command) (*MappingList, error)
-	ShowHybridCollectionInfo(context.Context, *CollectionName) (*CollectionInfo, error)
-	PreloadHybridCollection(context.Context, *CollectionName) (*Status, error)
-	InsertEntity(context.Context, *HInsertParam) (*HEntityIDs, error)
-	// TODO(yukun): will change to HQueryResult
-	HybridSearch(context.Context, *HSearchParam) (*TopKQueryResult, error)
-	HybridSearchInSegments(context.Context, *HSearchInSegmentsParam) (*TopKQueryResult, error)
-	GetEntityByID(context.Context, *HEntityIdentity) (*HEntity, error)
-	GetEntityIDs(context.Context, *HGetEntityIDsParam) (*HEntityIDs, error)
-	DeleteEntitiesByID(context.Context, *HDeleteByIDParam) (*Status, error)
+	Compact(context.Context, *CompactParam) (*Status, error)
+	SearchPB(context.Context, *SearchParamPB) (*QueryResult, error)
 }
 
 // UnimplementedMilvusServiceServer can be embedded to have forward compatible implementations.
 type UnimplementedMilvusServiceServer struct {
 }
 
-func (*UnimplementedMilvusServiceServer) CreateCollection(ctx context.Context, req *CollectionSchema) (*Status, error) {
+func (*UnimplementedMilvusServiceServer) CreateCollection(ctx context.Context, req *Mapping) (*Status, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateCollection not implemented")
 }
 func (*UnimplementedMilvusServiceServer) HasCollection(ctx context.Context, req *CollectionName) (*BoolReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method HasCollection not implemented")
 }
-func (*UnimplementedMilvusServiceServer) DescribeCollection(ctx context.Context, req *CollectionName) (*CollectionSchema, error) {
+func (*UnimplementedMilvusServiceServer) DescribeCollection(ctx context.Context, req *CollectionName) (*Mapping, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DescribeCollection not implemented")
 }
 func (*UnimplementedMilvusServiceServer) CountCollection(ctx context.Context, req *CollectionName) (*CollectionRowCount, error) {
@@ -3958,10 +3391,10 @@ func (*UnimplementedMilvusServiceServer) DropCollection(ctx context.Context, req
 func (*UnimplementedMilvusServiceServer) CreateIndex(ctx context.Context, req *IndexParam) (*Status, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateIndex not implemented")
 }
-func (*UnimplementedMilvusServiceServer) DescribeIndex(ctx context.Context, req *CollectionName) (*IndexParam, error) {
+func (*UnimplementedMilvusServiceServer) DescribeIndex(ctx context.Context, req *IndexParam) (*IndexParam, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DescribeIndex not implemented")
 }
-func (*UnimplementedMilvusServiceServer) DropIndex(ctx context.Context, req *CollectionName) (*Status, error) {
+func (*UnimplementedMilvusServiceServer) DropIndex(ctx context.Context, req *IndexParam) (*Status, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DropIndex not implemented")
 }
 func (*UnimplementedMilvusServiceServer) CreatePartition(ctx context.Context, req *PartitionParam) (*Status, error) {
@@ -3976,23 +3409,20 @@ func (*UnimplementedMilvusServiceServer) ShowPartitions(ctx context.Context, req
 func (*UnimplementedMilvusServiceServer) DropPartition(ctx context.Context, req *PartitionParam) (*Status, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DropPartition not implemented")
 }
-func (*UnimplementedMilvusServiceServer) Insert(ctx context.Context, req *InsertParam) (*VectorIds, error) {
+func (*UnimplementedMilvusServiceServer) Insert(ctx context.Context, req *InsertParam) (*EntityIds, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Insert not implemented")
 }
-func (*UnimplementedMilvusServiceServer) GetVectorsByID(ctx context.Context, req *VectorsIdentity) (*VectorsData, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetVectorsByID not implemented")
+func (*UnimplementedMilvusServiceServer) GetEntityByID(ctx context.Context, req *EntityIdentity) (*Entities, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetEntityByID not implemented")
 }
-func (*UnimplementedMilvusServiceServer) GetVectorIDs(ctx context.Context, req *GetVectorIDsParam) (*VectorIds, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetVectorIDs not implemented")
+func (*UnimplementedMilvusServiceServer) GetEntityIDs(ctx context.Context, req *GetEntityIDsParam) (*EntityIds, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetEntityIDs not implemented")
 }
-func (*UnimplementedMilvusServiceServer) Search(ctx context.Context, req *SearchParam) (*TopKQueryResult, error) {
+func (*UnimplementedMilvusServiceServer) Search(ctx context.Context, req *SearchParam) (*QueryResult, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Search not implemented")
 }
-func (*UnimplementedMilvusServiceServer) SearchByID(ctx context.Context, req *SearchByIDParam) (*TopKQueryResult, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SearchByID not implemented")
-}
-func (*UnimplementedMilvusServiceServer) SearchInFiles(ctx context.Context, req *SearchInFilesParam) (*TopKQueryResult, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SearchInFiles not implemented")
+func (*UnimplementedMilvusServiceServer) SearchInSegment(ctx context.Context, req *SearchInSegmentParam) (*QueryResult, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SearchInSegment not implemented")
 }
 func (*UnimplementedMilvusServiceServer) Cmd(ctx context.Context, req *Command) (*StringReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Cmd not implemented")
@@ -4006,50 +3436,11 @@ func (*UnimplementedMilvusServiceServer) PreloadCollection(ctx context.Context, 
 func (*UnimplementedMilvusServiceServer) Flush(ctx context.Context, req *FlushParam) (*Status, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Flush not implemented")
 }
-func (*UnimplementedMilvusServiceServer) Compact(ctx context.Context, req *CollectionName) (*Status, error) {
+func (*UnimplementedMilvusServiceServer) Compact(ctx context.Context, req *CompactParam) (*Status, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Compact not implemented")
 }
-func (*UnimplementedMilvusServiceServer) CreateHybridCollection(ctx context.Context, req *Mapping) (*Status, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CreateHybridCollection not implemented")
-}
-func (*UnimplementedMilvusServiceServer) HasHybridCollection(ctx context.Context, req *CollectionName) (*BoolReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method HasHybridCollection not implemented")
-}
-func (*UnimplementedMilvusServiceServer) DropHybridCollection(ctx context.Context, req *CollectionName) (*Status, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DropHybridCollection not implemented")
-}
-func (*UnimplementedMilvusServiceServer) DescribeHybridCollection(ctx context.Context, req *CollectionName) (*Mapping, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DescribeHybridCollection not implemented")
-}
-func (*UnimplementedMilvusServiceServer) CountHybridCollection(ctx context.Context, req *CollectionName) (*CollectionRowCount, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CountHybridCollection not implemented")
-}
-func (*UnimplementedMilvusServiceServer) ShowHybridCollections(ctx context.Context, req *Command) (*MappingList, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ShowHybridCollections not implemented")
-}
-func (*UnimplementedMilvusServiceServer) ShowHybridCollectionInfo(ctx context.Context, req *CollectionName) (*CollectionInfo, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ShowHybridCollectionInfo not implemented")
-}
-func (*UnimplementedMilvusServiceServer) PreloadHybridCollection(ctx context.Context, req *CollectionName) (*Status, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method PreloadHybridCollection not implemented")
-}
-func (*UnimplementedMilvusServiceServer) InsertEntity(ctx context.Context, req *HInsertParam) (*HEntityIDs, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method InsertEntity not implemented")
-}
-func (*UnimplementedMilvusServiceServer) HybridSearch(ctx context.Context, req *HSearchParam) (*TopKQueryResult, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method HybridSearch not implemented")
-}
-func (*UnimplementedMilvusServiceServer) HybridSearchInSegments(ctx context.Context, req *HSearchInSegmentsParam) (*TopKQueryResult, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method HybridSearchInSegments not implemented")
-}
-func (*UnimplementedMilvusServiceServer) GetEntityByID(ctx context.Context, req *HEntityIdentity) (*HEntity, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetEntityByID not implemented")
-}
-func (*UnimplementedMilvusServiceServer) GetEntityIDs(ctx context.Context, req *HGetEntityIDsParam) (*HEntityIDs, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetEntityIDs not implemented")
-}
-func (*UnimplementedMilvusServiceServer) DeleteEntitiesByID(ctx context.Context, req *HDeleteByIDParam) (*Status, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DeleteEntitiesByID not implemented")
+func (*UnimplementedMilvusServiceServer) SearchPB(ctx context.Context, req *SearchParamPB) (*QueryResult, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SearchPB not implemented")
 }
 
 func RegisterMilvusServiceServer(s *grpc.Server, srv MilvusServiceServer) {
@@ -4057,7 +3448,7 @@ func RegisterMilvusServiceServer(s *grpc.Server, srv MilvusServiceServer) {
 }
 
 func _MilvusService_CreateCollection_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CollectionSchema)
+	in := new(Mapping)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -4069,7 +3460,7 @@ func _MilvusService_CreateCollection_Handler(srv interface{}, ctx context.Contex
 		FullMethod: "/milvus.grpc.MilvusService/CreateCollection",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MilvusServiceServer).CreateCollection(ctx, req.(*CollectionSchema))
+		return srv.(MilvusServiceServer).CreateCollection(ctx, req.(*Mapping))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -4201,7 +3592,7 @@ func _MilvusService_CreateIndex_Handler(srv interface{}, ctx context.Context, de
 }
 
 func _MilvusService_DescribeIndex_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CollectionName)
+	in := new(IndexParam)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -4213,13 +3604,13 @@ func _MilvusService_DescribeIndex_Handler(srv interface{}, ctx context.Context, 
 		FullMethod: "/milvus.grpc.MilvusService/DescribeIndex",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MilvusServiceServer).DescribeIndex(ctx, req.(*CollectionName))
+		return srv.(MilvusServiceServer).DescribeIndex(ctx, req.(*IndexParam))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _MilvusService_DropIndex_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CollectionName)
+	in := new(IndexParam)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -4231,7 +3622,7 @@ func _MilvusService_DropIndex_Handler(srv interface{}, ctx context.Context, dec 
 		FullMethod: "/milvus.grpc.MilvusService/DropIndex",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MilvusServiceServer).DropIndex(ctx, req.(*CollectionName))
+		return srv.(MilvusServiceServer).DropIndex(ctx, req.(*IndexParam))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -4326,38 +3717,38 @@ func _MilvusService_Insert_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
-func _MilvusService_GetVectorsByID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(VectorsIdentity)
+func _MilvusService_GetEntityByID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EntityIdentity)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MilvusServiceServer).GetVectorsByID(ctx, in)
+		return srv.(MilvusServiceServer).GetEntityByID(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/milvus.grpc.MilvusService/GetVectorsByID",
+		FullMethod: "/milvus.grpc.MilvusService/GetEntityByID",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MilvusServiceServer).GetVectorsByID(ctx, req.(*VectorsIdentity))
+		return srv.(MilvusServiceServer).GetEntityByID(ctx, req.(*EntityIdentity))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _MilvusService_GetVectorIDs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetVectorIDsParam)
+func _MilvusService_GetEntityIDs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetEntityIDsParam)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MilvusServiceServer).GetVectorIDs(ctx, in)
+		return srv.(MilvusServiceServer).GetEntityIDs(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/milvus.grpc.MilvusService/GetVectorIDs",
+		FullMethod: "/milvus.grpc.MilvusService/GetEntityIDs",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MilvusServiceServer).GetVectorIDs(ctx, req.(*GetVectorIDsParam))
+		return srv.(MilvusServiceServer).GetEntityIDs(ctx, req.(*GetEntityIDsParam))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -4380,38 +3771,20 @@ func _MilvusService_Search_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
-func _MilvusService_SearchByID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SearchByIDParam)
+func _MilvusService_SearchInSegment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SearchInSegmentParam)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MilvusServiceServer).SearchByID(ctx, in)
+		return srv.(MilvusServiceServer).SearchInSegment(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/milvus.grpc.MilvusService/SearchByID",
+		FullMethod: "/milvus.grpc.MilvusService/SearchInSegment",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MilvusServiceServer).SearchByID(ctx, req.(*SearchByIDParam))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _MilvusService_SearchInFiles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SearchInFilesParam)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MilvusServiceServer).SearchInFiles(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/milvus.grpc.MilvusService/SearchInFiles",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MilvusServiceServer).SearchInFiles(ctx, req.(*SearchInFilesParam))
+		return srv.(MilvusServiceServer).SearchInSegment(ctx, req.(*SearchInSegmentParam))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -4489,7 +3862,7 @@ func _MilvusService_Flush_Handler(srv interface{}, ctx context.Context, dec func
 }
 
 func _MilvusService_Compact_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CollectionName)
+	in := new(CompactParam)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -4501,259 +3874,25 @@ func _MilvusService_Compact_Handler(srv interface{}, ctx context.Context, dec fu
 		FullMethod: "/milvus.grpc.MilvusService/Compact",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MilvusServiceServer).Compact(ctx, req.(*CollectionName))
+		return srv.(MilvusServiceServer).Compact(ctx, req.(*CompactParam))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _MilvusService_CreateHybridCollection_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Mapping)
+func _MilvusService_SearchPB_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SearchParamPB)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MilvusServiceServer).CreateHybridCollection(ctx, in)
+		return srv.(MilvusServiceServer).SearchPB(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/milvus.grpc.MilvusService/CreateHybridCollection",
+		FullMethod: "/milvus.grpc.MilvusService/SearchPB",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MilvusServiceServer).CreateHybridCollection(ctx, req.(*Mapping))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _MilvusService_HasHybridCollection_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CollectionName)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MilvusServiceServer).HasHybridCollection(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/milvus.grpc.MilvusService/HasHybridCollection",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MilvusServiceServer).HasHybridCollection(ctx, req.(*CollectionName))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _MilvusService_DropHybridCollection_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CollectionName)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MilvusServiceServer).DropHybridCollection(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/milvus.grpc.MilvusService/DropHybridCollection",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MilvusServiceServer).DropHybridCollection(ctx, req.(*CollectionName))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _MilvusService_DescribeHybridCollection_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CollectionName)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MilvusServiceServer).DescribeHybridCollection(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/milvus.grpc.MilvusService/DescribeHybridCollection",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MilvusServiceServer).DescribeHybridCollection(ctx, req.(*CollectionName))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _MilvusService_CountHybridCollection_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CollectionName)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MilvusServiceServer).CountHybridCollection(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/milvus.grpc.MilvusService/CountHybridCollection",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MilvusServiceServer).CountHybridCollection(ctx, req.(*CollectionName))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _MilvusService_ShowHybridCollections_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Command)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MilvusServiceServer).ShowHybridCollections(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/milvus.grpc.MilvusService/ShowHybridCollections",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MilvusServiceServer).ShowHybridCollections(ctx, req.(*Command))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _MilvusService_ShowHybridCollectionInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CollectionName)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MilvusServiceServer).ShowHybridCollectionInfo(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/milvus.grpc.MilvusService/ShowHybridCollectionInfo",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MilvusServiceServer).ShowHybridCollectionInfo(ctx, req.(*CollectionName))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _MilvusService_PreloadHybridCollection_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CollectionName)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MilvusServiceServer).PreloadHybridCollection(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/milvus.grpc.MilvusService/PreloadHybridCollection",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MilvusServiceServer).PreloadHybridCollection(ctx, req.(*CollectionName))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _MilvusService_InsertEntity_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(HInsertParam)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MilvusServiceServer).InsertEntity(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/milvus.grpc.MilvusService/InsertEntity",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MilvusServiceServer).InsertEntity(ctx, req.(*HInsertParam))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _MilvusService_HybridSearch_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(HSearchParam)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MilvusServiceServer).HybridSearch(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/milvus.grpc.MilvusService/HybridSearch",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MilvusServiceServer).HybridSearch(ctx, req.(*HSearchParam))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _MilvusService_HybridSearchInSegments_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(HSearchInSegmentsParam)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MilvusServiceServer).HybridSearchInSegments(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/milvus.grpc.MilvusService/HybridSearchInSegments",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MilvusServiceServer).HybridSearchInSegments(ctx, req.(*HSearchInSegmentsParam))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _MilvusService_GetEntityByID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(HEntityIdentity)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MilvusServiceServer).GetEntityByID(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/milvus.grpc.MilvusService/GetEntityByID",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MilvusServiceServer).GetEntityByID(ctx, req.(*HEntityIdentity))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _MilvusService_GetEntityIDs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(HGetEntityIDsParam)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MilvusServiceServer).GetEntityIDs(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/milvus.grpc.MilvusService/GetEntityIDs",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MilvusServiceServer).GetEntityIDs(ctx, req.(*HGetEntityIDsParam))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _MilvusService_DeleteEntitiesByID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(HDeleteByIDParam)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MilvusServiceServer).DeleteEntitiesByID(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/milvus.grpc.MilvusService/DeleteEntitiesByID",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MilvusServiceServer).DeleteEntitiesByID(ctx, req.(*HDeleteByIDParam))
+		return srv.(MilvusServiceServer).SearchPB(ctx, req.(*SearchParamPB))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -4823,24 +3962,20 @@ var _MilvusService_serviceDesc = grpc.ServiceDesc{
 			Handler:    _MilvusService_Insert_Handler,
 		},
 		{
-			MethodName: "GetVectorsByID",
-			Handler:    _MilvusService_GetVectorsByID_Handler,
+			MethodName: "GetEntityByID",
+			Handler:    _MilvusService_GetEntityByID_Handler,
 		},
 		{
-			MethodName: "GetVectorIDs",
-			Handler:    _MilvusService_GetVectorIDs_Handler,
+			MethodName: "GetEntityIDs",
+			Handler:    _MilvusService_GetEntityIDs_Handler,
 		},
 		{
 			MethodName: "Search",
 			Handler:    _MilvusService_Search_Handler,
 		},
 		{
-			MethodName: "SearchByID",
-			Handler:    _MilvusService_SearchByID_Handler,
-		},
-		{
-			MethodName: "SearchInFiles",
-			Handler:    _MilvusService_SearchInFiles_Handler,
+			MethodName: "SearchInSegment",
+			Handler:    _MilvusService_SearchInSegment_Handler,
 		},
 		{
 			MethodName: "Cmd",
@@ -4863,60 +3998,8 @@ var _MilvusService_serviceDesc = grpc.ServiceDesc{
 			Handler:    _MilvusService_Compact_Handler,
 		},
 		{
-			MethodName: "CreateHybridCollection",
-			Handler:    _MilvusService_CreateHybridCollection_Handler,
-		},
-		{
-			MethodName: "HasHybridCollection",
-			Handler:    _MilvusService_HasHybridCollection_Handler,
-		},
-		{
-			MethodName: "DropHybridCollection",
-			Handler:    _MilvusService_DropHybridCollection_Handler,
-		},
-		{
-			MethodName: "DescribeHybridCollection",
-			Handler:    _MilvusService_DescribeHybridCollection_Handler,
-		},
-		{
-			MethodName: "CountHybridCollection",
-			Handler:    _MilvusService_CountHybridCollection_Handler,
-		},
-		{
-			MethodName: "ShowHybridCollections",
-			Handler:    _MilvusService_ShowHybridCollections_Handler,
-		},
-		{
-			MethodName: "ShowHybridCollectionInfo",
-			Handler:    _MilvusService_ShowHybridCollectionInfo_Handler,
-		},
-		{
-			MethodName: "PreloadHybridCollection",
-			Handler:    _MilvusService_PreloadHybridCollection_Handler,
-		},
-		{
-			MethodName: "InsertEntity",
-			Handler:    _MilvusService_InsertEntity_Handler,
-		},
-		{
-			MethodName: "HybridSearch",
-			Handler:    _MilvusService_HybridSearch_Handler,
-		},
-		{
-			MethodName: "HybridSearchInSegments",
-			Handler:    _MilvusService_HybridSearchInSegments_Handler,
-		},
-		{
-			MethodName: "GetEntityByID",
-			Handler:    _MilvusService_GetEntityByID_Handler,
-		},
-		{
-			MethodName: "GetEntityIDs",
-			Handler:    _MilvusService_GetEntityIDs_Handler,
-		},
-		{
-			MethodName: "DeleteEntitiesByID",
-			Handler:    _MilvusService_DeleteEntitiesByID_Handler,
+			MethodName: "SearchPB",
+			Handler:    _MilvusService_SearchPB_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

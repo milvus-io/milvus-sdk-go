@@ -19,54 +19,72 @@
 
 package milvus
 
-var clientVersion string = "0.4.0"
+import ()
+
+var clientVersion string = "0.5.0"
+
+// DataType
+type DataType int
 
 // MetricType metric type
-type MetricType int64
+type MetricType string
 
 // IndexType index type
-type IndexType int64
+type IndexType string
 
 const (
-	// L2 euclidean distance
-	L2 MetricType = 1
-	// IP inner product
-	IP MetricType = 2
-	// HAMMING hamming distance
-	HAMMING MetricType = 3
-	// JACCARD jaccard distance
-	JACCARD MetricType = 4
-	// TANIMOTO tanimoto distance
-	TANIMOTO MetricType = 5
-	// SUBSTRUCTURE substructure distance
-	SUBSTRUCTURE MetricType = 6
-	// SUPERSTRUCTURE superstructure
-	SUPERSTRUCTURE MetricType = 7
+	BOOL 			DataType = 1
+	INT32 			DataType = 4
+	INT64 			DataType = 5
+	FLOAT 			DataType = 10
+	DOUBLE 			DataType = 11
+	VECTORBINARY 	DataType = 100
+	VECTORFLOAT 	DataType = 101
 )
 
 const (
-	// INVALID invald index type
-	INVALID IndexType = 0
+	// L2 euclidean distance
+	L2 				MetricType = "L2"
+	// IP inner product
+	IP 				MetricType = "IP"
+	// HAMMING hamming distance
+	HAMMING 		MetricType = "HAMMING"
+	// JACCARD jaccard distance
+	JACCARD 		MetricType = "JACCARD"
+	// TANIMOTO tanimoto distance
+	TANIMOTO 		MetricType = "TANIMOTO"
+	// SUBSTRUCTURE substructure distance
+	SUBSTRUCTURE 	MetricType = "SUBSTRUCTURE"
+	// SUPERSTRUCTURE superstructure
+	SUPERSTRUCTURE 	MetricType = "SUPERSTRUCTURE"
+)
+
+const (
 	// FLAT flat
-	FLAT IndexType = 1
+	FLAT 			IndexType = "FLAT"
+	// BINFLAT bin_flat
+	BINFLAT 		IndexType = "BIN_FLAT"
 	// IVFFLAT ivfflat
-	IVFFLAT IndexType = 2
+	IVFFLAT 		IndexType = "IVF_FLAT"
+	// BINIVFFLAT bin_ivf_flat
+	BINIVFFLAT 		IndexType = "BIN_IVF_FLAT"
+
 	// IVFSQ8 ivfsq8
-	IVFSQ8 IndexType = 3
+	IVFSQ8 			IndexType = "IVF_SQ8"
 	//RNSG rnsg
-	RNSG IndexType = 4
+	RNSG 			IndexType = "NSG"
 	// IVFSQ8H ivfsq8h
-	IVFSQ8H IndexType = 5
+	IVFSQ8H 		IndexType = "IVF_SQ8_HYBRID"
 	// IVFPQ ivfpq
-	IVFPQ IndexType = 6
+	IVFPQ 			IndexType = "IVF_PQ"
 	// SPTAGKDT sptagkdt
-	SPTAGKDT IndexType = 7
+	SPTAGKDT 		IndexType = "SPTAG_KDT_RNT"
 	// SPTAGBKT sptagbkt
-	SPTAGBKT IndexType = 8
-	// HNSW hnsw
-	HNSW IndexType = 11
+	SPTAGBKT 		IndexType = "SPTAG_BKT_RNT"
+	// HNSW
+	HNSW 			IndexType = "HNSW"
 	// ANNOY annoy
-	ANNOY IndexType = 12
+	ANNOY 			IndexType = "ANNOY"
 )
 
 // ConnectParam Parameters for connect
@@ -99,24 +117,31 @@ type PartitionStat struct {
 	SegmentsStat []SegmentStat
 }
 
-//CollectionParam informations of a collection
-type CollectionParam struct {
+// Field
+type Field struct {
+	FieldName string
+	DataType DataType
+	IndexParams string
+	ExtraParams string
+}
+
+// CollectionParam informations of a collection
+type Mapping struct {
 	// CollectionName collection name
 	CollectionName string
-	// Dimension Entity dimension, must be a positive value
-	Dimension int64
-	// IndexFileSize Index file size, must be a positive value
-	IndexFileSize int64
-	// MetricType Index metric type
-	MetricType int64
+	// Fields fields
+	Fields []Field
+	// ExtraParams extra params
+	ExtraParams string
 }
 
 // IndexParam index parameters
 type IndexParam struct {
 	// CollectionName collection name for create index
 	CollectionName string
-	// IndexType create index type
-	IndexType IndexType
+	// FieldName field name for create index
+	FieldName string
+	// IndexParams string
 	// ExtraParams extra parameters
 	// 	Note: extra_params is extra parameters list, it must be json format
 	//        For different index type, parameter list is different accordingly, for example:
@@ -133,13 +158,33 @@ type IndexParam struct {
 	//        HNSW  "{M: '16', efConstruction:'500'}"
 	//            ///< M range:[5, 48]
 	//            ///< efConstruction range:[topk, 4096]
-	ExtraParams string
+	IndexParams map[string]interface{}
 }
 
-// Entity record typy
-type Entity struct {
+// VectorRowRecord
+type VectorRowRecord struct {
 	FloatData  []float32
 	BinaryData []byte
+}
+
+// VectorRecord
+type VectorRecord struct {
+	VectorRecord []VectorRowRecord
+}
+
+// FieldValue
+type FieldValue struct {
+	FieldName string
+	PartitionTag string
+	DataType DataType
+	RawData interface{}
+	IdArray []int64
+}
+
+// Entity
+type Entity struct {
+	EntityId int64
+	Entity map[string]interface{}
 }
 
 // InsertParam insert parameters
@@ -149,7 +194,7 @@ type InsertParam struct {
 	// PartitionTag partition tag
 	PartitionTag string
 	// RecordArray raw entities array
-	RecordArray []Entity
+	Fields []FieldValue
 	// IDArray id array
 	IDArray []int64
 }
@@ -167,22 +212,14 @@ type SearchParam struct {
 	// CollectionName collection name for search
 	CollectionName string
 	// QueryEntities query entities raw array
-	QueryEntities []Entity
-	// Topk topk
-	Topk int64
+	Dsl string
 	// PartitionTag partition tag array
 	PartitionTag []string
 	// ExtraParams extra parameters
-	//  Note: extra_params is extra parameters list, it must be json format, for example:
-	//	 	  For different index type, parameter list is different accordingly
-	//		  FLAT/IVFLAT/SQ8/IVFPQ:  "{nprobe: '32'}"
-	//			  ///< nprobe range:[1,999999]
-	// 		  NSG:  "{search_length:'100'}
-	//	 	 	  ///< search_length range:[10, 300]
-	//		  HNSW  "{ef: '64'}
-	//		 	  ///< ef range:[k, 4096]
 	ExtraParams string
 }
+
+
 
 //QueryResult Query result
 type QueryResult struct {
@@ -190,6 +227,8 @@ type QueryResult struct {
 	Ids []int64
 	// Distances distance array
 	Distances []float32
+	// Entities
+	Entities []Entity
 }
 
 // TopkQueryResult Topk query result
@@ -208,7 +247,12 @@ type PartitionParam struct {
 
 type ListIDInSegmentParam struct {
 	CollectionName string
-	SegmentName    string
+	SegmentId      int64
+}
+
+type CompactParam struct {
+	CollectionName string
+	threshold float64
 }
 
 // MilvusClient SDK main interface
@@ -238,7 +282,7 @@ type MilvusClient interface {
 	// This method is used to create collection
 	// param collectionParam is used to provide collection information to be created.
 	// return indicate if collection is created successfully
-	CreateCollection(collectionParam CollectionParam) (Status, error)
+	CreateCollection(mapping Mapping) (Status, error)
 
 	// HasCollection method
 	// This method is used to create collection.
@@ -258,12 +302,12 @@ type MilvusClient interface {
 	// Insert method
 	// This method is used to query entity in collection.
 	// return indicate if insert is successful.
-	Insert(insertParam *InsertParam) ([]int64, Status, error)
+	Insert(insertParam InsertParam) ([]int64, Status, error)
 
 	// GetEntityByID method
 	// This method is used to get entity by entity id
 	// return entity data
-	GetEntityByID(collectionName string, entity_id []int64) ([]Entity, Status, error)
+	GetEntityByID(collectionName string, fieldName []string, entityId []int64) ([]Entity, Status, error)
 
 	// ListIDInSegment method
 	// This method is used to get entity ids
@@ -283,7 +327,7 @@ type MilvusClient interface {
 	// GetCollectionInfo method
 	// This method is used to show collection information.
 	//return indicate if this operation is successful.
-	GetCollectionInfo(collectionName string) (CollectionParam, Status, error)
+	GetCollectionInfo(collectionName string) (Mapping, Status, error)
 
 	// CountEntities method
 	// This method is used to get collection row count.
@@ -315,15 +359,10 @@ type MilvusClient interface {
 	// return indicate if this operation is successful.
 	LoadCollection(collectionName string) (Status, error)
 
-	// GetIndexInfo method
-	// This method is used to describe index
-	// return indicate if this operation is successful.
-	GetIndexInfo(collectionName string) (IndexParam, Status, error)
-
 	// DropIndex method
 	// This method is used to drop index of collection(and its partitions)
 	// return indicate if this operation is successful.
-	DropIndex(collectionName string) (Status, error)
+	DropIndex(indexParam IndexParam) (Status, error)
 
 	// CreatePartition method
 	// This method is used to create collection partition
@@ -358,5 +397,5 @@ type MilvusClient interface {
 	// Compact method
 	// This method is used to compact collection
 	// return indicate if compact is successful
-	Compact(collectionName string) (Status, error)
+	Compact(compactParam CompactParam) (Status, error)
 }
