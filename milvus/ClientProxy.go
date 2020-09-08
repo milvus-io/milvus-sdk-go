@@ -76,8 +76,8 @@ func (client *Milvusclient) Connect(connectParam ConnectParam) error {
 		println("Get server version status: " + status.GetMessage())
 		return err
 	}
-	if serverVersion[0:5] != "0.11" {
-		println("Server version check failed, this client supposed to connect milvus-0.10.x")
+	if serverVersion[0:4] != "0.11" {
+		println("Server version check failed, this client supposed to connect milvus-0.11.x")
 		client.Instance = nil
 		err = errors.New("Connecto server failed, please check server version.")
 		return err
@@ -151,7 +151,7 @@ func (client *Milvusclient) CreateIndex(indexParam *IndexParam) (Status, error) 
 		grpcPair[i] = &pb.KeyValuePair{k, v.(string), struct{}{}, nil, 0,}
 	}
 
-	grpcIndexParam := pb.IndexParam{nil, indexParam.CollectionName, indexParam.FieldName, nil,
+	grpcIndexParam := pb.IndexParam{nil, indexParam.CollectionName, indexParam.FieldName, "",
 		grpcPair, struct{}{}, nil, 0,}
 	grpcStatus, err := client.Instance.CreateIndex(grpcIndexParam)
 	if err != nil {
@@ -357,8 +357,12 @@ func ParseDsl(dsl gjson.Result, vectorParam gjson.Result, vectorRecord *pb.Vecto
 func (client *Milvusclient) Search(searchParam SearchParam) (TopkQueryResult, Status, error) {
 	var vectorParam gjson.Result
 	var grpcVectorRecord pb.VectorRecord
-	dsl := gjson.Parse(searchParam.Dsl)
-	err := ParseDsl(dsl, vectorParam, &grpcVectorRecord)
+	jsonDsl, err := json.Marshal(searchParam.Dsl)
+	dsl := gjson.Parse(string(jsonDsl))
+	err = ParseDsl(dsl, vectorParam, &grpcVectorRecord)
+	if err != nil {
+		return TopkQueryResult{nil}, nil, err
+	}
 
 	grpcVectorParam := pb.VectorParam{vectorParam.Str, &grpcVectorRecord,
 		struct{}{}, nil, 0,}
@@ -590,8 +594,8 @@ func (client *Milvusclient) LoadCollection(collectionName string) (Status, error
 
 ////////////////////////////////////////////////////////////////////////////
 
-func (client *Milvusclient) DropIndex(indexParam IndexParam) (Status, error) {
-	grpcIndexParam := pb.IndexParam{nil, indexParam.CollectionName, indexParam.FieldName,
+func (client *Milvusclient) DropIndex(collectionName string, fieldName string) (Status, error) {
+	grpcIndexParam := pb.IndexParam{nil, collectionName, fieldName,
 		"", nil, struct{}{}, nil, 0}
 	grpcStatus, err := client.Instance.DropIndex(grpcIndexParam)
 	if err != nil {
