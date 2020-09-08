@@ -17,10 +17,7 @@
  * under the License.
  */
 
-// package milvus
 package milvus
-
-import ()
 
 var clientVersion string = "0.4.0"
 
