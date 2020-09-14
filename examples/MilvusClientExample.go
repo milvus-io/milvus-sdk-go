@@ -214,7 +214,6 @@ func ClientTest(address string, port string) {
 	}
 	searchParam := milvus.SearchParam{collectionName, dsl, nil}
 
-
 	//Search without create index
 	topkQueryResult, status, err := client.Search(searchParam)
 	if err != nil {
