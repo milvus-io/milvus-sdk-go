@@ -25,7 +25,6 @@ import (
 	"time"
 )
 
-var collectionName string = "test_go"
 var dimension int64 = 128
 var indexFileSize int64 = 1024
 var metricType string = string(milvus.L2)
@@ -36,6 +35,7 @@ var topk int64 = 100
 var nlist int64 = 16384
 
 func ClientTest(address string, port string) {
+	var collectionName string = "test_go"+ strconv.Itoa(12)
 	var grpcClient milvus.Milvusclient
 	var i, j int64
 	client := milvus.NewMilvusClient(grpcClient.Instance)
@@ -82,6 +82,7 @@ func ClientTest(address string, port string) {
 	extraParam := string(colByt)
 
 	//test create collection
+	println("********************************Test CreateCollection********************************")
 	mapping := milvus.Mapping{
 		CollectionName: collectionName,
 		Fields:         fields,
@@ -108,7 +109,7 @@ func ClientTest(address string, port string) {
 	}
 	println("Collection: " + collectionName + " exist")
 
-	println("**************************************************")
+	println("********************************Test ListCollections*******************************")
 
 	//test show collections
 	collections, status, err := client.ListCollections()
@@ -126,6 +127,7 @@ func ClientTest(address string, port string) {
 	}
 
 	//test insert vectors
+	println("********************************Test Insert*****************************************")
 	fieldValue := make([]milvus.FieldValue, 3)
 	int64Data := make([]int64, nb)
 	floatData := make([]float32, nb)
@@ -171,7 +173,9 @@ func ClientTest(address string, port string) {
 	time.Sleep(3 * time.Second)
 
 	//test describe collection
+	println("********************************Test GetCollectionInfo******************************")
 	getMapping, status, err := client.GetCollectionInfo(collectionName)
+	println("GetCollectionInfo finish")
 	if err != nil {
 		println("DescribeCollection rpc failed: " + err.Error())
 		return
@@ -182,31 +186,33 @@ func ClientTest(address string, port string) {
 	}
 	println("Collection name: " + getMapping.CollectionName)
 	for _, field := range getMapping.Fields {
-		println("field name: " + field.FieldName + "\t field type: " + string(field.DataType) +
+		println("field name: " + field.FieldName + "\t field type: " + strconv.Itoa(int(field.DataType)) +
 			"\t field index params: " + field.IndexParams + "\t field extra params: " + field.ExtraParams)
 	}
 	println("Collection extra params: " + getMapping.ExtraParams)
 
-	println("**************************************************")
-
 	//Construct query vectors
+	println("********************************Test Search*****************************************")
+
 	dsl := map[string]interface{}{
 		"bool": map[string]interface{}{
-			"must": map[string]interface{}{
-				"vector": map[string]interface{}{
-					"float_vector": map[string]interface{}{
-						"topk": topk,
-						"metric_type": "L2",
-						"query": vectorData[0:5],
-						"params": map[string]interface{}{
-							"nprobe": 10,
+			"must": []map[string]interface{}{
+				{
+					"vector": map[string]interface{}{
+						"float_vector": map[string]interface{}{
+							"topk":        topk,
+							"metric_type": "L2",
+							"query":       vectorData[0:5],
+							"params": map[string]interface{}{
+								"nprobe": 10,
+							},
 						},
 					},
 				},
 			},
 		},
 	}
-	searchParam := milvus.SearchParam{collectionName, dsl, nil, ""}
+	searchParam := milvus.SearchParam{collectionName, dsl, nil}
 
 
 	//Search without create index
@@ -215,13 +221,13 @@ func ClientTest(address string, port string) {
 		println("Search rpc failed: " + err.Error())
 	}
 	println("Search without index results: ")
-	for i = 0; i < 10; i++ {
+	for i = 0; i < 5; i++ {
 		print(topkQueryResult.QueryResultList[i].Ids[0])
 		print("        ")
 		println(topkQueryResult.QueryResultList[i].Distances[0])
 	}
 
-	println("**************************************************")
+	println("******************************Test CountEntities************************************")
 
 	//test CountCollection
 	collectionCount, status, err := client.CountEntities(collectionName)
@@ -236,9 +242,11 @@ func ClientTest(address string, port string) {
 	println("Collection count:" + strconv.Itoa(int(collectionCount)))
 
 	//Create index
+	println("******************************Test CreateIndex**************************************")
 	println("Start create index...")
 	indexParams := map[string]interface{}{
 		"index_type": milvus.IVFFLAT,
+		"metric_type": milvus.L2,
 		"params": map[string]interface{}{
 			"nlist": nlist,
 		},
@@ -256,6 +264,7 @@ func ClientTest(address string, port string) {
 	println("Create index success!")
 
 	//Preload collection
+	println("******************************Test LoadCollection************************************")
 	status, err = client.LoadCollection(collectionName)
 	if err != nil {
 		println("PreloadCollection rpc failed: " + err.Error())
@@ -266,7 +275,7 @@ func ClientTest(address string, port string) {
 	}
 	println("Preload collection success")
 
-	println("**************************************************")
+	println("**************************Test SearchWithIVFFLATIndex********************************")
 
 	//Search with IVFFLAT index
 	topkQueryResult, status, err = client.Search(searchParam)
@@ -278,13 +287,13 @@ func ClientTest(address string, port string) {
 		println("Search vectors failed: " + status.GetMessage())
 	}
 	println("Search with index results: ")
-	for i = 0; i < 10; i++ {
+	for i = 0; i < 5; i++ {
 		print(topkQueryResult.QueryResultList[i].Ids[0])
 		print("        ")
 		println(topkQueryResult.QueryResultList[i].Distances[0])
 	}
 
-	println("**************************************************")
+	println("******************************Test DropIndex**************************************")
 
 	//Drop index
 	status, err = client.DropIndex(collectionName, "float_vector")
@@ -295,8 +304,10 @@ func ClientTest(address string, port string) {
 	if !status.Ok() {
 		println("Drop index failed: " + status.GetMessage())
 	}
+	println("Drop float_vector index success")
 
 	//Drop collection
+	println("******************************Test DropCollection*********************************")
 	status, err = client.DropCollection(collectionName)
 	hasCollection, status1, err := client.HasCollection(collectionName)
 	if !status.Ok() || !status1.Ok() || hasCollection == true {
@@ -306,7 +317,7 @@ func ClientTest(address string, port string) {
 	println("Drop collection " + collectionName + " success!")
 
 	//GetConfig
-	configInfo, status, err := client.GetConfig("*")
+	configInfo, status, err := client.GetConfig("get_milvus_config")
 	if !status.Ok() {
 		println("Get config failed: " + status.GetMessage())
 	}
