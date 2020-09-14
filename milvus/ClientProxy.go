@@ -30,6 +30,8 @@ import (
 	"google.golang.org/grpc"
 	"math"
 	"reflect"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -144,11 +146,19 @@ func (client *Milvusclient) DropCollection(collectionName string) (Status, error
 }
 
 func (client *Milvusclient) CreateIndex(indexParam *IndexParam) (Status, error) {
-	var i int
 	paramLen := len(indexParam.IndexParams)
 	grpcPair := make([]*pb.KeyValuePair, paramLen)
+	offset := 0
 	for k, v := range indexParam.IndexParams {
-		grpcPair[i] = &pb.KeyValuePair{k, v.(string), struct{}{}, nil, 0,}
+		byt, _ := json.Marshal(v)
+		var value string
+		if k != "params" {
+			value = reflect.ValueOf(v).String()
+		} else {
+			value = string(byt)
+		}
+		grpcPair[offset] = &pb.KeyValuePair{k, value, struct{}{}, nil, 0,}
+		offset++
 	}
 
 	grpcIndexParam := pb.IndexParam{nil, indexParam.CollectionName, indexParam.FieldName, "",
@@ -190,26 +200,26 @@ func (client *Milvusclient) Insert(insertParam InsertParam) ([]int64, Status, er
 			}
 		case [][]float32:
 			vectorRowRecords := make([]*pb.VectorRowRecord, len(t))
-			for _, rowValue := range t {
+			for key0, rowValue := range t {
 				record := make([]float32, len(rowValue))
-				for _, value := range rowValue {
-					record = append(record, value)
+				for key1, value := range rowValue {
+					record[key1] = value
 				}
 				vectorRowRecord := pb.VectorRowRecord{record, nil,
 					struct{}{}, nil, 0,}
-				vectorRowRecords = append(vectorRowRecords, &vectorRowRecord)
+				vectorRowRecords[key0] = &vectorRowRecord
 			}
 			vectorRecord.Records = vectorRowRecords
 		case [][]byte:
 			vectorRowRecords := make([]*pb.VectorRowRecord, len(t))
-			for _, rowValue := range t {
+			for key0, rowValue := range t {
 				record := make([]byte, len(rowValue))
-				for _, value := range rowValue {
-					record = append(record, value)
+				for key1, value := range rowValue {
+					record[key1] = value
 				}
 				vectorRowRecord := pb.VectorRowRecord{nil, record,
 					struct{}{}, nil, 0}
-				vectorRowRecords = append(vectorRowRecords, &vectorRowRecord)
+				vectorRowRecords[key0] = &vectorRowRecord
 			}
 		case interface{}:
 			return nil, nil, errors.New("Field value type is wrong")
@@ -217,7 +227,6 @@ func (client *Milvusclient) Insert(insertParam InsertParam) ([]int64, Status, er
 		fieldValue[i] = &pb.FieldValue{insertParam.Fields[i].FieldName, 0, &attrRecord,
 			&vectorRecord, struct{}{}, nil, 0}
 	}
-
 	grpcInsertParam := pb.InsertParam{insertParam.CollectionName, fieldValue, insertParam.IDArray,
 		insertParam.PartitionTag, nil, struct{}{}, nil, 0}
 
@@ -298,85 +307,78 @@ func (client *Milvusclient) ListIDInSegment(listIDInSegmentParam ListIDInSegment
 
 ////////////////////////////////////////////////////////////////////////////
 
-func ParseDsl(dsl gjson.Result, vectorParam gjson.Result, vectorRecord *pb.VectorRecord) error {
-	if vectorParam := dsl.Get("vector"); vectorParam.Exists() {
-		queryValue := dsl.Get("vector.query").Value()
-		object := reflect.ValueOf(queryValue)
+func ParseDsl(dslString *string, vectorParam *string, vectorRecord *pb.VectorRecord) (string, error) {
+	dsl := gjson.Parse(*dslString)
+	if vectorJson := dsl.Get("vector"); vectorJson.Exists() {
+		vectorDsl := dsl.Get("vector")
+		var fieldName string
+		vectorDsl.ForEach(func(key, value gjson.Result) bool {
+			fieldName = key.String()
+			return true
+		})
+		queryKey := fieldName + ".query"
 
-		var items []interface{}
-		for i := 0; i < object.Len(); i++ {
-			items = append(items, object.Index(i).Interface())
-		}
-
-		var float_records [][]float32
-		var byte_records [][]byte
-		for _, v := range items {
-			item := reflect.ValueOf(v)
-			var float_record []float32
-			var byte_record []byte
-			for i := 0; i < item.NumField(); i++ {
-				itm := item.Field(i).Interface()
-				switch t := itm.(type) {
-				case float32:
-					float_record = append(float_record, t)
-				case byte:
-					byte_record = append(byte_record, t)
-				}
+		var floatRecords [][]float32
+		_ = json.Unmarshal([]byte(vectorDsl.Get(queryKey).String()), &floatRecords)
+		var byteRecords [][]byte
+		if floatRecords != nil {
+			vectorRecord.Records = make([]*pb.VectorRowRecord, len(floatRecords))
+			for i := 0; i < len(floatRecords); i++ {
+				vectorRowRecord := pb.VectorRowRecord{floatRecords[i], nil,
+					struct{}{}, nil, 0}
+				vectorRecord.Records[i] = &vectorRowRecord
 			}
-			float_records = append(float_records, float_record)
-			byte_records = append(byte_records, byte_record)
-		}
-		if float_records != nil {
-			vectorRecord.Records = make([]*pb.VectorRowRecord, len(float_records))
-			for i := 0; i < len(float_records); i++ {
-				vectorRecord.Records[i].FloatData = make([]float32, len(float_records[i]))
-				copy(vectorRecord.Records[i].FloatData, float_records[i])
-			}
-		} else if byte_records != nil {
-			vectorRecord.Records = make([]*pb.VectorRowRecord, len(byte_records))
-			for i := 0; i < len(byte_records); i++ {
-				vectorRecord.Records[i].BinaryData = make([]byte, len(byte_records[i]))
-				copy(vectorRecord.Records[i].BinaryData, byte_records[i])
+		} else if byteRecords != nil {
+			vectorRecord.Records = make([]*pb.VectorRowRecord, len(byteRecords))
+			for i := 0; i < len(byteRecords); i++ {
+				vectorRowRecord := pb.VectorRowRecord{nil, byteRecords[i],
+					struct{}{}, nil, 0}
+				vectorRecord.Records[i] = &vectorRowRecord
 			}
 		}
 
 		//if queryVector
-		sjson.Set(dsl.String(), "vector", "placeholder_1")
-		sjson.Delete(vectorParam.String(), "query")
-		return nil
+		vectorParamValue, _ := sjson.Delete(vectorJson.String(), queryKey)
+		valueJson := gjson.Parse(vectorParamValue)
+		vectorParamKey := "placeholder_1"
+		*vectorParam, _ = sjson.Set("", vectorParamKey, valueJson.Value())
+		return vectorDsl.String(), nil
 	}
 
 	for _, subObject := range dsl.Array() {
-		_ = ParseDsl(subObject, vectorParam, vectorRecord)
+		tmpObject := subObject.String()
+		vectorDsl, _ := ParseDsl(&tmpObject, vectorParam, vectorRecord)
+		if vectorDsl != "" {
+			return vectorDsl, nil
+		}
 	}
-	return nil
+	return "", nil
 }
 
 ////////////////////////////////////////////////////////////////////////////
 
 func (client *Milvusclient) Search(searchParam SearchParam) (TopkQueryResult, Status, error) {
-	var vectorParam gjson.Result
+	var vectorParam string
 	var grpcVectorRecord pb.VectorRecord
 	jsonDsl, err := json.Marshal(searchParam.Dsl)
 	dsl := gjson.Parse(string(jsonDsl))
-	err = ParseDsl(dsl, vectorParam, &grpcVectorRecord)
+	boolDsl := dsl.Get("bool.must")
+	boolDslString := boolDsl.String()
+	vectorDsl, err := ParseDsl(&boolDslString, &vectorParam, &grpcVectorRecord)
+	dslString := strings.Replace(string(jsonDsl), vectorDsl, "\"placeholder_1\"", -1)
 
-	grpcVectorParam := pb.VectorParam{vectorParam.Str, &grpcVectorRecord,
+	grpcVectorParam := pb.VectorParam{vectorParam, &grpcVectorRecord,
 		struct{}{}, nil, 0,}
 
 	grpcVectorParams := make([]*pb.VectorParam, 1)
-	grpcVectorParams = append(grpcVectorParams, &grpcVectorParam)
-
-	keyValuePair := make([]*pb.KeyValuePair, 1)
-	pair := pb.KeyValuePair{"params", searchParam.ExtraParams, struct{}{}, nil, 0}
-	keyValuePair[0] = &pair
+	grpcVectorParams[0] = &grpcVectorParam
 
 	grpcSearchParam := pb.SearchParam{
 		CollectionName:       searchParam.CollectionName,
 		PartitionTagArray:    searchParam.PartitionTag,
 		VectorParam:          grpcVectorParams,
-		Dsl:                  dsl.Str,
-		ExtraParams:          keyValuePair,
+		Dsl:                  dslString,
+		ExtraParams:          nil,
 		XXX_NoUnkeyedLiteral: struct{}{},
 		XXX_unrecognized:     nil,
 		XXX_sizecache:        0,
@@ -400,8 +402,6 @@ func (client *Milvusclient) Search(searchParam SearchParam) (TopkQueryResult, St
 			validIds = append(validIds, grpcFieldValue.Ids[i])
 		}
 	}
-
-	queryResult := make([]QueryResult, 0, nq)
 
 	fieldSize := len(grpcFieldValue.Fields)
 	entities := make([]Entity, len(validIds))
@@ -435,6 +435,7 @@ func (client *Milvusclient) Search(searchParam SearchParam) (TopkQueryResult, St
 
 	topkQueryResult := make([]QueryResult, nq)
 	topk := int64(len(grpcQueryResult.GetDistances())) / nq
+	println("nq: " + strconv.Itoa(int(nq)) + " --- topk: " + strconv.Itoa(int(topk)))
 	offset := 0
 	for i = 0; i < nq; i++ {
 		var oneResult QueryResult
@@ -448,13 +449,16 @@ func (client *Milvusclient) Search(searchParam SearchParam) (TopkQueryResult, St
 				break
 			}
 		}
+		if newSize == 0 {
+			newSize = topk
+		}
 		oneResult.Entities = make([]Entity, newSize)
 		oneResult.Entities = entities[offset : int64(offset) + newSize]
 		offset += int(newSize)
-		topkQueryResult = append(topkQueryResult, oneResult)
+		topkQueryResult[i] = oneResult
 	}
 
-	return TopkQueryResult{queryResult}, status{int64(grpcQueryResult.Status.ErrorCode), grpcQueryResult.Status.Reason}, nil
+	return TopkQueryResult{topkQueryResult}, status{int64(grpcQueryResult.Status.ErrorCode), grpcQueryResult.Status.Reason}, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -482,13 +486,13 @@ func (client *Milvusclient) GetCollectionInfo(collectionName string) (Mapping, S
 	var i, j int
 	for i = 0; i < fieldSize; i++ {
 		grpcField := grpcMapping.Fields[i]
-		var indexParam map[string]string
+		indexParam := make(map[string]string, len(grpcField.IndexParams))
 		for j = 0; j < len(grpcField.IndexParams); j++ {
 			indexParam[grpcField.IndexParams[j].Key] = grpcField.IndexParams[j].Value
 		}
 		jsonParam, _ := json.Marshal(indexParam)
 
-		var paramMap map[string]interface{}
+		paramMap := make(map[string]interface{}, len(grpcField.ExtraParams))
 		for j = 0; j < len(grpcField.ExtraParams); j++ {
 			paramMap[grpcField.ExtraParams[j].Key] = grpcField.ExtraParams[j].Value
 		}
@@ -503,9 +507,9 @@ func (client *Milvusclient) GetCollectionInfo(collectionName string) (Mapping, S
 		}
 	}
 
-	var paramMap map[string]interface{}
+	paramMap := make(map[string]interface{}, len(grpcMapping.ExtraParams))
 	for i = 0; i < len(grpcMapping.ExtraParams); i++ {
-		paramMap[grpcMapping.ExtraParams[i].Key] = grpcMapping.ExtraParams[j].Value
+		paramMap[grpcMapping.ExtraParams[i].Key] = grpcMapping.ExtraParams[i].Value
 	}
 	jsonParam, _ := json.Marshal(paramMap)
 
