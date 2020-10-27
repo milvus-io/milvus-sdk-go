@@ -89,16 +89,27 @@ func DropAllCollections() {
 //     documentation (https://milvus-io.github.io/milvus-sdk-python/pythondoc/v0.3.0/index.html).
 // ------
 func CreateCollection() {
-	fields := make([]milvus.Field, 3)
-	fields[0].FieldName = "duration"
-	fields[0].DataType = milvus.INT32
-	fields[1].FieldName = "release_year"
-	fields[1].DataType = milvus.INT32
-	fields[2].FieldName = "embedding"
-	fields[2].DataType = milvus.VECTORFLOAT
-
 	fieldByt := []byte(`{"dim": 8}`)
-	fields[2].ExtraParams = string(fieldByt)
+	fields := []milvus.Field{
+		{
+			"duration",
+			milvus.INT32,
+			"",
+			"",
+		},
+		{
+			"release_year",
+			milvus.INT32,
+			"",
+			"",
+		},
+		{
+			"embedding",
+			milvus.VECTORFLOAT,
+			"",
+			string(fieldByt),
+		},
+	}
 
 	colByt := []byte(`{"auto_id": false, "segment_row_count": 5000}`)
 	extraParam := string(colByt)
@@ -137,7 +148,7 @@ func CheckCollectionInfo() {
 	println("Collection name: " + collectionName)
 	for _, field := range mapping.Fields {
 		fmt.Printf("field name: %-20s field type: %-10s extra params: %-20s\n",
-			field.FieldName, strconv.Itoa(int(field.DataType)), field.ExtraParams)
+			field.Name, strconv.Itoa(int(field.Type)), field.ExtraParams)
 	}
 }
 
@@ -442,12 +453,12 @@ func ClientTest_dummy(address string, port string) {
 	println("Server version: " + version)
 
 	fields := make([]milvus.Field, 3)
-	fields[0].FieldName = "int64"
-	fields[0].DataType = milvus.INT64
-	fields[1].FieldName = "float"
-	fields[1].DataType = milvus.FLOAT
-	fields[2].FieldName = "float_vector"
-	fields[2].DataType = milvus.VECTORFLOAT
+	fields[0].Name = "int64"
+	fields[0].Type = milvus.INT64
+	fields[1].Name = "float"
+	fields[1].Type = milvus.FLOAT
+	fields[2].Name = "float_vector"
+	fields[2].Type = milvus.VECTORFLOAT
 
 	fieldByt := []byte(`{"dim": 128}`)
 	fields[2].ExtraParams = string(fieldByt)
@@ -557,7 +568,7 @@ func ClientTest_dummy(address string, port string) {
 	}
 	println("Collection name: " + getMapping.CollectionName)
 	for _, field := range getMapping.Fields {
-		println("field name: " + field.FieldName + "\t field type: " + strconv.Itoa(int(field.DataType)) +
+		println("field name: " + field.Name + "\t field type: " + strconv.Itoa(int(field.Type)) +
 			"\t field index params: " + field.IndexParams + "\t field extra params: " + field.ExtraParams)
 	}
 	println("Collection extra params: " + getMapping.ExtraParams)
