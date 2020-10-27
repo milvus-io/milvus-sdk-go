@@ -176,7 +176,6 @@ type VectorRecord struct {
 type FieldValue struct {
 	FieldName string
 	RawData interface{}
-	IdArray []int64
 }
 
 // Entity
@@ -189,12 +188,12 @@ type Entity struct {
 type InsertParam struct {
 	// CollectionName collection name
 	CollectionName string
-	// PartitionTag partition tag
-	PartitionTag string
 	// RecordArray raw entities array
 	Fields []FieldValue
 	// IDArray id array
 	IDArray []int64
+	// PartitionTag partition tag
+	PartitionTag string
 }
 
 // Range range information, for DATE range, the format is like: 'year-month-day'

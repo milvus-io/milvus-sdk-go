@@ -81,7 +81,7 @@ func (client *Milvusclient) Connect(connectParam ConnectParam) error {
 	if serverVersion[0:4] != "0.11" {
 		println("Server version check failed, this client supposed to connect milvus-0.11.x")
 		client.Instance = nil
-		err = errors.New("Connecto server failed, please check server version.")
+		err = errors.New("Connect to server failed, please check server version.")
 		return err
 	}
 
@@ -114,7 +114,7 @@ func (client *Milvusclient) CreateCollection(mapping Mapping) (Status, error) {
 	grpcParam := make([]*pb.KeyValuePair, 1)
 	grpcParam[0] = &pb.KeyValuePair{"params", mapping.ExtraParams,
 		struct{}{}, nil, 0,}
-	grpcMapping := pb.Mapping{nil, mapping.CollectionName, grpcFields, nil,
+	grpcMapping := pb.Mapping{nil, mapping.CollectionName, grpcFields, grpcParam,
 		struct{}{}, nil, 0,
 	}
 
@@ -183,20 +183,24 @@ func (client *Milvusclient) Insert(insertParam InsertParam) ([]int64, Status, er
 		field := insertParam.Fields[i]
 		switch t := field.RawData.(type) {
 		case []int32:
-			for _, value := range t {
-				attrRecord.Int32Value = append(attrRecord.Int32Value, value)
+			attrRecord.Int32Value = make([]int32, len(t))
+			for j, value := range t {
+				attrRecord.Int32Value[j] = value
 			}
 		case []int64:
-			for _, value := range t {
-				attrRecord.Int64Value = append(attrRecord.Int64Value, value)
+			attrRecord.Int64Value = make([]int64, len(t))
+			for j, value := range t {
+				attrRecord.Int64Value[j] = value
 			}
 		case []float32:
-			for _, value := range t {
-				attrRecord.FloatValue = append(attrRecord.FloatValue, value)
+			attrRecord.FloatValue = make([]float32, len(t))
+			for j, value := range t {
+				attrRecord.FloatValue[j] = value
 			}
 		case []float64:
-			for _, value := range t {
-				attrRecord.DoubleValue = append(attrRecord.DoubleValue, value)
+			attrRecord.DoubleValue = make([]float64, len(t))
+			for j, value := range t {
+				attrRecord.DoubleValue[j] = value
 			}
 		case [][]float32:
 			vectorRowRecords := make([]*pb.VectorRowRecord, len(t))
@@ -234,7 +238,7 @@ func (client *Milvusclient) Insert(insertParam InsertParam) ([]int64, Status, er
 	if err != nil {
 		return nil, nil, err
 	}
-	if insertParam.IDArray != nil {
+	if vectorIds.EntityIdArray == nil {
 		return nil, status{int64(vectorIds.Status.ErrorCode), vectorIds.Status.Reason}, err
 	}
 	id_array := vectorIds.EntityIdArray
@@ -253,40 +257,37 @@ func (client *Milvusclient) GetEntityByID(collectionName string, fieldName []str
 	}
 
 	var i, j int
-	var validIds []int64
-	for i = 0; i < len(grpcFieldValue.ValidRow); i++ {
-		if grpcFieldValue.ValidRow[i] {
-			validIds = append(validIds, grpcFieldValue.Ids[i])
-		}
-	}
-
+	rowCount := len(grpcFieldValue.ValidRow)
 	fieldSize := len(grpcFieldValue.Fields)
-	entities := make([]Entity, len(validIds))
-	for i = 0; i < fieldSize; i++ {
-		if attrRecord := grpcFieldValue.Fields[i].AttrRecord; attrRecord != nil {
-			for j = 0; j < len(validIds); j++ {
-				if len(attrRecord.Int32Value) > 0 {
-					entities[j].Entity[grpcFieldValue.Fields[i].FieldName] = attrRecord.Int32Value[j]
-				} else if len(attrRecord.Int64Value) > 0 {
-					entities[j].Entity[grpcFieldValue.Fields[i].FieldName] = attrRecord.Int64Value[j]
-				} else if len(attrRecord.FloatValue) > 0 {
-					entities[j].Entity[grpcFieldValue.Fields[i].FieldName] = attrRecord.FloatValue[j]
-				} else if len(attrRecord.DoubleValue) > 0 {
-					entities[j].Entity[grpcFieldValue.Fields[i].FieldName] = attrRecord.DoubleValue[j]
+	entities := make([]Entity, rowCount)
+	off := 0
+	for i = 0; i < rowCount; i++ {
+		entities[i].Entity = make(map[string]interface{}, fieldSize)
+		for j = 0; j < fieldSize; j++ {
+			if grpcFieldValue.ValidRow[i] {
+				if attrRecord := grpcFieldValue.Fields[j].AttrRecord; attrRecord != nil {
+					if len(attrRecord.Int32Value) > 0 {
+						entities[i].Entity[grpcFieldValue.Fields[j].FieldName] = attrRecord.Int32Value[off]
+					} else if len(attrRecord.Int64Value) > 0 {
+						entities[i].Entity[grpcFieldValue.Fields[j].FieldName] = attrRecord.Int64Value[off]
+					} else if len(attrRecord.FloatValue) > 0 {
+						entities[i].Entity[grpcFieldValue.Fields[j].FieldName] = attrRecord.FloatValue[off]
+					} else if len(attrRecord.DoubleValue) > 0 {
+						entities[i].Entity[grpcFieldValue.Fields[j].FieldName] = attrRecord.DoubleValue[off]
+					}
+				} else if vectorRecord := grpcFieldValue.Fields[j].VectorRecord; vectorRecord != nil {
+					if floatSize := len(vectorRecord.Records[off].FloatData); floatSize > 0 {
+						entities[i].Entity[grpcFieldValue.Fields[j].FieldName] = vectorRecord.Records[off].FloatData
+					} else if binSize := len(vectorRecord.Records[off].BinaryData); binSize > 0 {
+						entities[i].Entity[grpcFieldValue.Fields[j].FieldName] = vectorRecord.Records[off].BinaryData
+					}
 				}
+			} else {
+				entities[i].Entity[grpcFieldValue.Fields[j].FieldName] = nil
 			}
-		} else if vectorRecord := grpcFieldValue.Fields[i].VectorRecord; vectorRecord != nil {
-			for j = 0; j < len(validIds); j++ {
-				if floatSize := len(vectorRecord.Records[j].FloatData); floatSize > 0 {
-					floatData := make([]float32, floatSize)
-					copy(floatData, vectorRecord.Records[j].FloatData)
-					entities[j].Entity[grpcFieldValue.Fields[i].FieldName] = floatData
-				} else if binSize := len(vectorRecord.Records[j].BinaryData); binSize > 0 {
-					binData := make([]byte, binSize)
-					copy(binData, vectorRecord.Records[j].BinaryData)
-					entities[j].Entity[grpcFieldValue.Fields[i].FieldName] = binData
-				}
-			}
+		}
+		if grpcFieldValue.ValidRow[i] {
+			off++
 		}
 	}
 
@@ -396,40 +397,37 @@ func (client *Milvusclient) Search(searchParam SearchParam) (TopkQueryResult, St
 	grpcFieldValue := grpcQueryResult.Entities
 
 	var i, j int64
-	var validIds []int64
-	for i = 0; i < int64(len(grpcFieldValue.ValidRow)); i++ {
-		if grpcFieldValue.ValidRow[i] {
-			validIds = append(validIds, grpcFieldValue.Ids[i])
-		}
-	}
-
+	rowCount := len(grpcFieldValue.ValidRow)
 	fieldSize := len(grpcFieldValue.Fields)
-	entities := make([]Entity, len(validIds))
-	for i = 0; i < int64(fieldSize); i++ {
-		if attrRecord := grpcFieldValue.Fields[i].AttrRecord; attrRecord != nil {
-			for j = 0; j < int64(len(validIds)); j++ {
-				if len(attrRecord.Int32Value) > 0 {
-					entities[j].Entity[grpcFieldValue.Fields[i].FieldName] = attrRecord.Int32Value[j]
-				} else if len(attrRecord.Int64Value) > 0 {
-					entities[j].Entity[grpcFieldValue.Fields[i].FieldName] = attrRecord.Int64Value[j]
-				} else if len(attrRecord.FloatValue) > 0 {
-					entities[j].Entity[grpcFieldValue.Fields[i].FieldName] = attrRecord.FloatValue[j]
-				} else if len(attrRecord.DoubleValue) > 0 {
-					entities[j].Entity[grpcFieldValue.Fields[i].FieldName] = attrRecord.DoubleValue[j]
+	entities := make([]Entity, rowCount)
+	off := 0
+	for i = 0; i < int64(rowCount); i++ {
+		entities[i].Entity = make(map[string]interface{}, fieldSize)
+		for j = 0; j < int64(fieldSize); j++ {
+			if grpcFieldValue.ValidRow[i] {
+				if attrRecord := grpcFieldValue.Fields[j].AttrRecord; attrRecord != nil {
+					if len(attrRecord.Int32Value) > 0 {
+						entities[i].Entity[grpcFieldValue.Fields[j].FieldName] = attrRecord.Int32Value[off]
+					} else if len(attrRecord.Int64Value) > 0 {
+						entities[i].Entity[grpcFieldValue.Fields[j].FieldName] = attrRecord.Int64Value[off]
+					} else if len(attrRecord.FloatValue) > 0 {
+						entities[i].Entity[grpcFieldValue.Fields[j].FieldName] = attrRecord.FloatValue[off]
+					} else if len(attrRecord.DoubleValue) > 0 {
+						entities[i].Entity[grpcFieldValue.Fields[j].FieldName] = attrRecord.DoubleValue[off]
+					}
+				} else if vectorRecord := grpcFieldValue.Fields[j].VectorRecord; vectorRecord != nil {
+					if floatSize := len(vectorRecord.Records[off].FloatData); floatSize > 0 {
+						entities[i].Entity[grpcFieldValue.Fields[j].FieldName] = vectorRecord.Records[off].FloatData
+					} else if binSize := len(vectorRecord.Records[off].BinaryData); binSize > 0 {
+						entities[i].Entity[grpcFieldValue.Fields[j].FieldName] = vectorRecord.Records[off].BinaryData
+					}
 				}
+			} else {
+				entities[i].Entity[grpcFieldValue.Fields[j].FieldName] = nil
 			}
-		} else if vectorRecord := grpcFieldValue.Fields[i].VectorRecord; vectorRecord != nil {
-			for j = 0; j < int64(len(validIds)); j++ {
-				if floatSize := len(vectorRecord.Records[j].FloatData); floatSize > 0 {
-					floatData := make([]float32, floatSize)
-					copy(floatData, vectorRecord.Records[j].FloatData)
-					entities[j].Entity[grpcFieldValue.Fields[i].FieldName] = floatData
-				} else if binSize := len(vectorRecord.Records[j].BinaryData); binSize > 0 {
-					binData := make([]byte, binSize)
-					copy(binData, vectorRecord.Records[j].BinaryData)
-					entities[j].Entity[grpcFieldValue.Fields[i].FieldName] = binData
-				}
-			}
+		}
+		if grpcFieldValue.ValidRow[i] {
+			off++
 		}
 	}
 
