@@ -8,6 +8,7 @@
 #GoLand generated files
 .idea/
 .bin/
+bin/
 
 # Test binary, built with `go test -c`
 *.test

@@ -107,7 +107,7 @@ func (client *Milvusclient) CreateCollection(mapping Mapping) (Status, error) {
 		pair := pb.KeyValuePair{"params", field.ExtraParams,
 			struct{}{}, nil, 0,}
 		grpcPair[0] = &pair
-		grpcFields[i] = &pb.FieldParam{0, field.FieldName, pb.DataType(field.DataType), nil,
+		grpcFields[i] = &pb.FieldParam{0, field.Name, pb.DataType(field.Type), nil,
 			grpcPair, struct{}{}, nil, 0,
 		}
 	}
@@ -498,8 +498,8 @@ func (client *Milvusclient) GetCollectionInfo(collectionName string) (Mapping, S
 		extraParam := string(jsonExtraParam)
 
 		fields[i] = Field{
-			FieldName:   grpcField.Name,
-			DataType:    DataType(grpcField.Type),
+			Name:   grpcField.Name,
+			Type:    DataType(grpcField.Type),
 			IndexParams: string(jsonParam),
 			ExtraParams: extraParam,
 		}

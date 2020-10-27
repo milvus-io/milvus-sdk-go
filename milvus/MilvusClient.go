@@ -119,8 +119,8 @@ type PartitionStat struct {
 
 // Field
 type Field struct {
-	FieldName string
-	DataType DataType
+	Name string
+	Type DataType
 	IndexParams string
 	ExtraParams string
 }
