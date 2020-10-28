@@ -223,15 +223,15 @@ func InsertEntities() {
 	ids := []int64 {1, 2, 3}
 	fieldValue := []milvus.FieldValue {
 		{
-			FieldName:    "duration",
+			Name:    "duration",
 			RawData:      durations,
 		},
 		{
-			FieldName:    "release_year",
+			Name:    "release_year",
 			RawData:      release_years,
 		},
 		{
-			FieldName:    "embedding",
+			Name:    "embedding",
 			RawData:      embedding,
 		},
 	}
@@ -526,15 +526,15 @@ func ClientTest_dummy(address string, port string) {
 		}
 	}
 	fieldValue[0] = milvus.FieldValue{
-		FieldName:    "int64",
+		Name:    "int64",
 		RawData:      int64Data,
 	}
 	fieldValue[1] = milvus.FieldValue{
-		FieldName:    "float",
+		Name:    "float",
 		RawData:      floatData,
 	}
 	fieldValue[2] = milvus.FieldValue{
-		FieldName:    "float_vector",
+		Name:    "float_vector",
 		RawData:      vectorData,
 	}
 	insertParam := milvus.InsertParam{collectionName, nil, nil, ""}
