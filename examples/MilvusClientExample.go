@@ -111,7 +111,7 @@ func CreateCollection() {
 		},
 	}
 
-	colByt := []byte(`{"auto_id": false, "segment_row_count": 5000}`)
+	colByt := []byte(`{"auto_id": false, "segment_row_limit": 5000}`)
 	extraParam := string(colByt)
 
 	//test create collection
@@ -463,7 +463,7 @@ func ClientTest_dummy(address string, port string) {
 	fieldByt := []byte(`{"dim": 128}`)
 	fields[2].ExtraParams = string(fieldByt)
 
-	colByt := []byte(`{"auto_id": true, "segment_row_count": 5000}`)
+	colByt := []byte(`{"auto_id": true, "segment_row_limit": 5000}`)
 	extraParam := string(colByt)
 
 	//test create collection
