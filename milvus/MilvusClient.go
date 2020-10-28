@@ -174,7 +174,7 @@ type VectorRecord struct {
 
 // FieldValue
 type FieldValue struct {
-	FieldName string
+	Name string
 	RawData interface{}
 }
 

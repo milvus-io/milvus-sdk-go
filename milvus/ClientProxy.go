@@ -228,7 +228,7 @@ func (client *Milvusclient) Insert(insertParam InsertParam) ([]int64, Status, er
 		case interface{}:
 			return nil, nil, errors.New("Field value type is wrong")
 		}
-		fieldValue[i] = &pb.FieldValue{insertParam.Fields[i].FieldName, 0, &attrRecord,
+		fieldValue[i] = &pb.FieldValue{insertParam.Fields[i].Name, 0, &attrRecord,
 			&vectorRecord, struct{}{}, nil, 0}
 	}
 	grpcInsertParam := pb.InsertParam{insertParam.CollectionName, fieldValue, insertParam.IDArray,
