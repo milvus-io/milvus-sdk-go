@@ -60,7 +60,7 @@ func JudgeStatus(funcName string, status milvus.Status, err error) {
 // ------
 
 var HOST string = "localhost"
-var PORT string = "19530"
+var PORT int64 = 19530
 
 // ------
 // Basic create collection:
@@ -419,7 +419,7 @@ func main() {
 }
 
 
-func ClientTest_dummy(address string, port string) {
+func ClientTest_dummy(address string, port int64) {
 	var collectionName string = "test_go"+ strconv.Itoa(12)
 	var grpcClient milvus.Milvusclient
 	var i, j int64

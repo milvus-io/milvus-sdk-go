@@ -55,7 +55,7 @@ func (client *Milvusclient) Connect(connectParam ConnectParam) error {
 	opts = append(opts, grpc.WithDefaultCallOptions(grpc.MaxCallSendMsgSize(math.MaxInt64)))
 	opts = append(opts, grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(math.MaxInt64)))
 
-	serverAddr := connectParam.IPAddress + ":" + connectParam.Port
+	serverAddr := connectParam.IPAddress + ":" + strconv.Itoa(int(connectParam.Port))
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
