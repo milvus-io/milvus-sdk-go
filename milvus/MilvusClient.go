@@ -72,7 +72,7 @@ const (
 	// IVFSQ8 ivfsq8
 	IVFSQ8 			IndexType = "IVF_SQ8"
 	//RNSG rnsg
-	RNSG 			IndexType = "NSG"
+	RNSG 			IndexType = "RNSG"
 	// IVFSQ8H ivfsq8h
 	IVFSQ8H 		IndexType = "IVF_SQ8_HYBRID"
 	// IVFPQ ivfpq
@@ -85,6 +85,12 @@ const (
 	HNSW 			IndexType = "HNSW"
 	// ANNOY annoy
 	ANNOY 			IndexType = "ANNOY"
+	// RHNSWFLAT rhsw_flat
+	RHNSWFLAT		IndexType = "RHNSW_FLAT"
+	// RHNSWPQ RHNSW_PQ
+	RHNSWPQ 		IndexType = "RHNSW_PQ"
+	// RHNSWSQ8 RHNSW_SQ8
+	RHNSWSQ8 		IndexType = "RHNSW_SQ8"
 )
 
 // ConnectParam Parameters for connect
@@ -92,7 +98,7 @@ type ConnectParam struct {
 	// IPAddress Server IP address
 	IPAddress string
 	// Port Server port
-	Port string
+	Port int64
 }
 
 // SegmentStat segment statistics
