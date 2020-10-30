@@ -371,9 +371,14 @@ type MilvusClient interface {
 	CreatePartition(partitionParam PartitionParam) (Status, error)
 
 	// ListPartitions method
-	// This method is used to create collection
+	// This method is used to list partitions
 	// return indicate if this operation is successful
 	ListPartitions(collectionName string) ([]PartitionParam, Status, error)
+
+	// HasPartitions method
+	// This method is used to create collection
+	// return indicate if this operation is successful
+	HasPartition(param PartitionParam) (bool, Status, error)
 
 	// DropPartition method
 	// This method is used to delete collection partition.
