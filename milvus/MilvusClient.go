@@ -308,7 +308,7 @@ type MilvusClient interface {
 	// GetEntityByID method
 	// This method is used to get entity by entity id
 	// return entity data
-	GetEntityByID(collectionName string, fieldName []string, entityId []int64) ([]Entity, Status, error)
+	GetEntityByID(collectionName string, fields []string, entityId []int64) ([]Entity, Status, error)
 
 	// ListIDInSegment method
 	// This method is used to get entity ids

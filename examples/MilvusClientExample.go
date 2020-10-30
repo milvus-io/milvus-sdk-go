@@ -43,11 +43,11 @@ var client milvus.MilvusClient
 
 func JudgeStatus(funcName string, status milvus.Status, err error) {
 	if err != nil {
-		println(funcName + "rpc failed: " + err.Error())
+		println(funcName + " rpc failed: " + err.Error())
 		return
 	}
 	if !status.Ok() {
-		println(funcName + "failed: " + status.GetMessage())
+		println(funcName + " failed: " + status.GetMessage())
 		return
 	}
 }
