@@ -225,6 +225,7 @@ func (client *Milvusclient) Insert(insertParam InsertParam) ([]int64, Status, er
 					struct{}{}, nil, 0}
 				vectorRowRecords[key0] = &vectorRowRecord
 			}
+			vectorRecord.Records = vectorRowRecords
 		case interface{}:
 			return nil, nil, errors.New("Field value type is wrong")
 		}

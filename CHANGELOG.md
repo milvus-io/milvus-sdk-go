@@ -1,11 +1,27 @@
 # Changelog     
 
+## milvus-sdk-go 0.5.0 (TBD)
+
+### Bug
+---
+- \#61 - Insert binary vector failed
+
+### Improvement
+---
+
+### Feature
+---
+
+### Task
+---
+
 ## milvus-sdk-go 0.4.2 (2020-06-13)
 
 ### Bug
 ---
 - \#37 - Fix sever version check for milvus-0.10.0
 - \#39 - ListPartitions returns wrong result
+
 ### Improvement
 ---
 
