@@ -263,8 +263,9 @@ func (client *Milvusclient) GetEntityByID(collectionName string, fieldName []str
 	off := 0
 	for i = 0; i < rowCount; i++ {
 		entities[i].Entity = make(map[string]interface{}, fieldSize)
-		for j = 0; j < fieldSize; j++ {
-			if grpcFieldValue.ValidRow[i] {
+		entities[i].EntityId = grpcFieldValue.Ids[i]
+		if grpcFieldValue.ValidRow[i] {
+			for j = 0; j < fieldSize; j++ {
 				if attrRecord := grpcFieldValue.Fields[j].AttrRecord; attrRecord != nil {
 					if len(attrRecord.Int32Value) > 0 {
 						entities[i].Entity[grpcFieldValue.Fields[j].FieldName] = attrRecord.Int32Value[off]
@@ -282,12 +283,10 @@ func (client *Milvusclient) GetEntityByID(collectionName string, fieldName []str
 						entities[i].Entity[grpcFieldValue.Fields[j].FieldName] = vectorRecord.Records[off].BinaryData
 					}
 				}
-			} else {
-				entities[i].Entity[grpcFieldValue.Fields[j].FieldName] = nil
 			}
-		}
-		if grpcFieldValue.ValidRow[i] {
 			off++
+		} else {
+			entities[i].Entity = nil
 		}
 	}
 
