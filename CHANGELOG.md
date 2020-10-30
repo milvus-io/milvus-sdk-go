@@ -11,6 +11,7 @@
 
 ### Feature
 ---
+- \#64 - Function HasPartition is not found in go-sdk
 
 ### Task
 ---

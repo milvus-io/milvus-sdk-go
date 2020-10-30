@@ -53,6 +53,8 @@ type MilvusGrpcClient interface {
 
 	ShowPartitions(collectionName pb.CollectionName) (pb.PartitionList, error)
 
+	HasPartition(param pb.PartitionParam) (pb.BoolReply, error)
+
 	DropPartition(partitionParam pb.PartitionParam) (pb.Status, error)
 
 	Insert(insertParam pb.InsertParam) (pb.EntityIds, error)
@@ -203,6 +205,16 @@ func (grpcClient *milvusGrpcClient) ShowPartitions(collectionName pb.CollectionN
 		return pb.PartitionList{nil, nil, struct{}{}, nil, 0}, err
 	}
 	return *status, err
+}
+
+func (grpcClient *milvusGrpcClient) HasPartition(param pb.PartitionParam) (pb.BoolReply, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	reply, err := grpcClient.serviceInstance.HasPartition(ctx, &param)
+	if err != nil {
+		return pb.BoolReply{nil, false, struct{}{}, nil, 0}, err
+	}
+	return *reply, err
 }
 
 func (grpcClient *milvusGrpcClient) DropPartition(partitionParam pb.PartitionParam) (pb.Status, error) {

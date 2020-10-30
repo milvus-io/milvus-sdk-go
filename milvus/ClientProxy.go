@@ -636,6 +636,18 @@ func (client *Milvusclient) ListPartitions(collectionName string) ([]PartitionPa
 
 ////////////////////////////////////////////////////////////////////////////
 
+func (client *Milvusclient) HasPartition(param PartitionParam) (bool, Status, error) {
+	grpcParam := pb.PartitionParam{param.CollectionName, param.PartitionTag,
+		struct{}{}, nil, 0}
+	boolReply, err := client.Instance.HasPartition(grpcParam)
+	if err != nil {
+		return false, status{int64(RPCFailed), err.Error()}, err
+	}
+	return boolReply.BoolReply, status{int64(boolReply.Status.ErrorCode), boolReply.Status.Reason}, err
+}
+
+////////////////////////////////////////////////////////////////////////////
+
 func (client *Milvusclient) DropPartition(partitionParam PartitionParam) (Status, error) {
 	grpcPartitionParam := pb.PartitionParam{partitionParam.CollectionName,
 		partitionParam.PartitionTag, struct{}{}, nil, 0}
