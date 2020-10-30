@@ -248,8 +248,8 @@ func (client *Milvusclient) Insert(insertParam InsertParam) ([]int64, Status, er
 
 ////////////////////////////////////////////////////////////////////////////
 
-func (client *Milvusclient) GetEntityByID(collectionName string, fieldName []string, entity_id []int64) ([]Entity, Status, error) {
-	grpcIdentity := pb.EntityIdentity{collectionName, entity_id, fieldName,
+func (client *Milvusclient) GetEntityByID(collectionName string, fields []string, entity_id []int64) ([]Entity, Status, error) {
+	grpcIdentity := pb.EntityIdentity{collectionName, entity_id, fields,
 		struct{}{}, nil, 0}
 
 	grpcFieldValue, err := client.Instance.GetEntityByID(grpcIdentity)

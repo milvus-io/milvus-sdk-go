@@ -5,6 +5,7 @@
 ### Bug
 ---
 - \#61 - Insert binary vector failed
+- \#66 - The interface GetEntityByID should not have a fieldName paramter in go-sdk
 
 ### Improvement
 ---
