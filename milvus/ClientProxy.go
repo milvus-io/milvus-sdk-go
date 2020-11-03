@@ -104,7 +104,7 @@ func (client *Milvusclient) CreateCollection(mapping Mapping) (Status, error) {
 	for i = 0; i < fieldSize; i++ {
 		field := mapping.Fields[i]
 		grpcPair := make([]*pb.KeyValuePair, 1)
-		pair := pb.KeyValuePair{"params", field.ExtraParams,
+		pair := pb.KeyValuePair{"params", field.ExtraParams.params,
 			struct{}{}, nil, 0,}
 		grpcPair[0] = &pair
 		grpcFields[i] = &pb.FieldParam{0, field.Name, pb.DataType(field.Type), nil,
@@ -112,7 +112,7 @@ func (client *Milvusclient) CreateCollection(mapping Mapping) (Status, error) {
 		}
 	}
 	grpcParam := make([]*pb.KeyValuePair, 1)
-	grpcParam[0] = &pb.KeyValuePair{"params", mapping.ExtraParams,
+	grpcParam[0] = &pb.KeyValuePair{"params", mapping.ExtraParams.params,
 		struct{}{}, nil, 0,}
 	grpcMapping := pb.Mapping{nil, mapping.CollectionName, grpcFields, grpcParam,
 		struct{}{}, nil, 0,
@@ -433,7 +433,6 @@ func (client *Milvusclient) Search(searchParam SearchParam) (TopkQueryResult, St
 
 	topkQueryResult := make([]QueryResult, nq)
 	topk := int64(len(grpcQueryResult.GetDistances())) / nq
-	println("nq: " + strconv.Itoa(int(nq)) + " --- topk: " + strconv.Itoa(int(topk)))
 	offset := 0
 	for i = 0; i < nq; i++ {
 		var oneResult QueryResult
@@ -477,7 +476,7 @@ func (client *Milvusclient) GetCollectionInfo(collectionName string) (Mapping, S
 		nil, 0}
 	grpcMapping, err := client.Instance.DescribeCollection(grpcCollectionName)
 	if err != nil {
-		return Mapping{"", nil, ""}, nil, err
+		return Mapping{"", nil, Params{""}}, nil, err
 	}
 	fieldSize := len(grpcMapping.Fields)
 	fields := make([]Field, fieldSize)
@@ -500,8 +499,8 @@ func (client *Milvusclient) GetCollectionInfo(collectionName string) (Mapping, S
 		fields[i] = Field{
 			Name:   grpcField.Name,
 			Type:    DataType(grpcField.Type),
-			IndexParams: string(jsonParam),
-			ExtraParams: extraParam,
+			IndexParams: Params{string(jsonParam)},
+			ExtraParams: Params{extraParam},
 		}
 	}
 
@@ -511,7 +510,7 @@ func (client *Milvusclient) GetCollectionInfo(collectionName string) (Mapping, S
 	}
 	jsonParam, _ := json.Marshal(paramMap)
 
-	return Mapping{grpcMapping.CollectionName, fields, string(jsonParam)},
+	return Mapping{grpcMapping.CollectionName, fields, Params{string(jsonParam)}},
 		status{int64(grpcMapping.GetStatus().GetErrorCode()), grpcMapping.Status.Reason}, err
 }
 
