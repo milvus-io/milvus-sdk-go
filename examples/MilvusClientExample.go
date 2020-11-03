@@ -27,7 +27,6 @@ import (
 	"time"
 )
 
-
 var collectionName string = "demp_films"
 var partitionTag string = "American"
 var dimension int64 = 8
@@ -52,7 +51,6 @@ func JudgeStatus(funcName string, status milvus.Status, err error) {
 	}
 }
 
-
 // ------
 // Setup:
 //    First of all, you need a runing Milvus(0.11.x). By default, Milvus runs on localhost in port 19530.
@@ -72,7 +70,7 @@ func DropAllCollections() {
 	collections, status, err := client.ListCollections()
 	JudgeStatus("ListCollection", status, err)
 	println("ShowCollections: ")
-	for _, col := range collections{
+	for _, col := range collections {
 		client.DropCollection(col)
 	}
 }
@@ -94,20 +92,20 @@ func CreateCollection() {
 		{
 			"duration",
 			milvus.INT32,
-			"",
-			"",
+			milvus.NewParams(""),
+			milvus.NewParams(""),
 		},
 		{
 			"release_year",
 			milvus.INT32,
-			"",
-			"",
+			milvus.Params{},
+			milvus.Params{},
 		},
 		{
 			"embedding",
 			milvus.VECTORFLOAT,
-			"",
-			string(fieldByt),
+			milvus.Params{},
+			milvus.NewParams(string(fieldByt)),
 		},
 	}
 
@@ -119,7 +117,7 @@ func CreateCollection() {
 	mapping := milvus.Mapping{
 		CollectionName: collectionName,
 		Fields:         fields,
-		ExtraParams:    extraParam,
+		ExtraParams:    milvus.NewParams(extraParam),
 	}
 	status, err := client.CreateCollection(mapping)
 	JudgeStatus("CreateCollection", status, err)
@@ -204,7 +202,6 @@ func CheckCollectionInfo() {
 //	}
 //}
 
-
 // ------
 // Basic insert entities:
 //     To insert these films into Milvus, we have to group values from the same field together like below.
@@ -214,25 +211,25 @@ func InsertEntities() {
 	durations := []int32{202, 226, 252}
 	release_years := []int32{2001, 2002, 2003}
 	embedding := make([][]float32, 3)
-	for  i := range embedding {
+	for i := range embedding {
 		embedding[i] = make([]float32, dimension)
 		for j := range embedding[i] {
 			embedding[i][j] = rand.Float32()
 		}
 	}
-	ids := []int64 {1, 2, 3}
-	fieldValue := []milvus.FieldValue {
+	ids := []int64{1, 2, 3}
+	fieldValue := []milvus.FieldValue{
 		{
 			Name:    "duration",
-			RawData:      durations,
+			RawData: durations,
 		},
 		{
 			Name:    "release_year",
-			RawData:      release_years,
+			RawData: release_years,
 		},
 		{
 			Name:    "embedding",
-			RawData:      embedding,
+			RawData: embedding,
 		},
 	}
 	insertParam := milvus.InsertParam{collectionName, fieldValue, ids, partitionTag}
@@ -346,6 +343,7 @@ func Search() {
 			},
 		},
 	}
+	println("\n----------search----------")
 	searchParam := milvus.SearchParam{collectionName, dsl, nil}
 	topkQueryResult, status, err := client.Search(searchParam)
 	JudgeStatus("Search", status, err)
@@ -418,9 +416,8 @@ func main() {
 	ClientTest()
 }
 
-
 func ClientTest_dummy(address string, port int64) {
-	var collectionName string = "test_go"+ strconv.Itoa(12)
+	var collectionName string = "test_go" + strconv.Itoa(12)
 	var grpcClient milvus.Milvusclient
 	var i, j int64
 	client := milvus.NewMilvusClient(grpcClient.Instance)
@@ -461,7 +458,7 @@ func ClientTest_dummy(address string, port int64) {
 	fields[2].Type = milvus.VECTORFLOAT
 
 	fieldByt := []byte(`{"dim": 128}`)
-	fields[2].ExtraParams = string(fieldByt)
+	fields[2].ExtraParams = milvus.NewParams(string(fieldByt))
 
 	colByt := []byte(`{"auto_id": true, "segment_row_limit": 5000}`)
 	extraParam := string(colByt)
@@ -471,7 +468,7 @@ func ClientTest_dummy(address string, port int64) {
 	mapping := milvus.Mapping{
 		CollectionName: collectionName,
 		Fields:         fields,
-		ExtraParams:    extraParam,
+		ExtraParams:    milvus.NewParams(extraParam),
 	}
 	status, err = client.CreateCollection(mapping)
 	if err != nil {
@@ -527,15 +524,15 @@ func ClientTest_dummy(address string, port int64) {
 	}
 	fieldValue[0] = milvus.FieldValue{
 		Name:    "int64",
-		RawData:      int64Data,
+		RawData: int64Data,
 	}
 	fieldValue[1] = milvus.FieldValue{
 		Name:    "float",
-		RawData:      floatData,
+		RawData: floatData,
 	}
 	fieldValue[2] = milvus.FieldValue{
 		Name:    "float_vector",
-		RawData:      vectorData,
+		RawData: vectorData,
 	}
 	insertParam := milvus.InsertParam{collectionName, nil, nil, ""}
 	id_array, status, err := client.Insert(insertParam)
@@ -569,9 +566,9 @@ func ClientTest_dummy(address string, port int64) {
 	println("Collection name: " + getMapping.CollectionName)
 	for _, field := range getMapping.Fields {
 		println("field name: " + field.Name + "\t field type: " + strconv.Itoa(int(field.Type)) +
-			"\t field index params: " + field.IndexParams + "\t field extra params: " + field.ExtraParams)
+			"\t field index params: " + field.IndexParams.GetParams() + "\t field extra params: " + field.ExtraParams.GetParams())
 	}
-	println("Collection extra params: " + getMapping.ExtraParams)
+	println("Collection extra params: " + getMapping.ExtraParams.GetParams())
 
 	//Construct query vectors
 	println("********************************Test Search*****************************************")
@@ -626,7 +623,7 @@ func ClientTest_dummy(address string, port int64) {
 	println("******************************Test CreateIndex**************************************")
 	println("Start create index...")
 	indexParams := map[string]interface{}{
-		"index_type": milvus.IVFFLAT,
+		"index_type":  milvus.IVFFLAT,
 		"metric_type": milvus.L2,
 		"params": map[string]interface{}{
 			"nlist": nlist,
@@ -721,4 +718,3 @@ func ClientTest_dummy(address string, port int64) {
 	println("Server status: " + serverStatus)
 
 }
-

@@ -13,6 +13,7 @@
 ### Feature
 ---
 - \#64 - Function HasPartition is not found in go-sdk
+- \#68 - Add "params" structure to process complex json string
 
 ### Task
 ---
