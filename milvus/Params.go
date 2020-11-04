@@ -13,7 +13,7 @@ func NewParams(params string) Params {
 	return Params{params}
 }
 
-func (p * Params) Get(key string) gjson.Result {
+func (p *Params) Get(key string) gjson.Result {
 	return gjson.Get(p.params, key)
 }
 

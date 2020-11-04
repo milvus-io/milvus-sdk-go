@@ -33,64 +33,64 @@ type MetricType string
 type IndexType string
 
 const (
-	BOOL 			DataType = 1
-	INT32 			DataType = 4
-	INT64 			DataType = 5
-	FLOAT 			DataType = 10
-	DOUBLE 			DataType = 11
-	VECTORBINARY 	DataType = 100
-	VECTORFLOAT 	DataType = 101
+	BOOL         DataType = 1
+	INT32        DataType = 4
+	INT64        DataType = 5
+	FLOAT        DataType = 10
+	DOUBLE       DataType = 11
+	VECTORBINARY DataType = 100
+	VECTORFLOAT  DataType = 101
 )
 
 const (
 	// L2 euclidean distance
-	L2 				MetricType = "L2"
+	L2 MetricType = "L2"
 	// IP inner product
-	IP 				MetricType = "IP"
+	IP MetricType = "IP"
 	// HAMMING hamming distance
-	HAMMING 		MetricType = "HAMMING"
+	HAMMING MetricType = "HAMMING"
 	// JACCARD jaccard distance
-	JACCARD 		MetricType = "JACCARD"
+	JACCARD MetricType = "JACCARD"
 	// TANIMOTO tanimoto distance
-	TANIMOTO 		MetricType = "TANIMOTO"
+	TANIMOTO MetricType = "TANIMOTO"
 	// SUBSTRUCTURE substructure distance
-	SUBSTRUCTURE 	MetricType = "SUBSTRUCTURE"
+	SUBSTRUCTURE MetricType = "SUBSTRUCTURE"
 	// SUPERSTRUCTURE superstructure
-	SUPERSTRUCTURE 	MetricType = "SUPERSTRUCTURE"
+	SUPERSTRUCTURE MetricType = "SUPERSTRUCTURE"
 )
 
 const (
 	// FLAT flat
-	FLAT 			IndexType = "FLAT"
+	FLAT IndexType = "FLAT"
 	// BINFLAT bin_flat
-	BINFLAT 		IndexType = "BIN_FLAT"
+	BINFLAT IndexType = "BIN_FLAT"
 	// IVFFLAT ivfflat
-	IVFFLAT 		IndexType = "IVF_FLAT"
+	IVFFLAT IndexType = "IVF_FLAT"
 	// BINIVFFLAT bin_ivf_flat
-	BINIVFFLAT 		IndexType = "BIN_IVF_FLAT"
+	BINIVFFLAT IndexType = "BIN_IVF_FLAT"
 
 	// IVFSQ8 ivfsq8
-	IVFSQ8 			IndexType = "IVF_SQ8"
+	IVFSQ8 IndexType = "IVF_SQ8"
 	//RNSG rnsg
-	RNSG 			IndexType = "RNSG"
+	RNSG IndexType = "RNSG"
 	// IVFSQ8H ivfsq8h
-	IVFSQ8H 		IndexType = "IVF_SQ8_HYBRID"
+	IVFSQ8H IndexType = "IVF_SQ8_HYBRID"
 	// IVFPQ ivfpq
-	IVFPQ 			IndexType = "IVF_PQ"
+	IVFPQ IndexType = "IVF_PQ"
 	// SPTAGKDT sptagkdt
-	SPTAGKDT 		IndexType = "SPTAG_KDT_RNT"
+	SPTAGKDT IndexType = "SPTAG_KDT_RNT"
 	// SPTAGBKT sptagbkt
-	SPTAGBKT 		IndexType = "SPTAG_BKT_RNT"
+	SPTAGBKT IndexType = "SPTAG_BKT_RNT"
 	// HNSW
-	HNSW 			IndexType = "HNSW"
+	HNSW IndexType = "HNSW"
 	// ANNOY annoy
-	ANNOY 			IndexType = "ANNOY"
+	ANNOY IndexType = "ANNOY"
 	// RHNSWFLAT rhsw_flat
-	RHNSWFLAT		IndexType = "RHNSW_FLAT"
+	RHNSWFLAT IndexType = "RHNSW_FLAT"
 	// RHNSWPQ RHNSW_PQ
-	RHNSWPQ 		IndexType = "RHNSW_PQ"
+	RHNSWPQ IndexType = "RHNSW_PQ"
 	// RHNSWSQ8 RHNSW_SQ8
-	RHNSWSQ8 		IndexType = "RHNSW_SQ8"
+	RHNSWSQ8 IndexType = "RHNSW_SQ8"
 )
 
 // ConnectParam Parameters for connect
@@ -125,8 +125,8 @@ type PartitionStat struct {
 
 // Field
 type Field struct {
-	Name string
-	Type DataType
+	Name        string
+	Type        DataType
 	IndexParams Params
 	ExtraParams Params
 }
@@ -180,14 +180,14 @@ type VectorRecord struct {
 
 // FieldValue
 type FieldValue struct {
-	Name string
+	Name    string
 	RawData interface{}
 }
 
 // Entity
 type Entity struct {
 	EntityId int64
-	Entity map[string]interface{}
+	Entity   map[string]interface{}
 }
 
 // InsertParam insert parameters
@@ -220,8 +220,6 @@ type SearchParam struct {
 	PartitionTag []string
 }
 
-
-
 //QueryResult Query result
 type QueryResult struct {
 	// Ids id array
@@ -253,7 +251,7 @@ type ListIDInSegmentParam struct {
 
 type CompactParam struct {
 	CollectionName string
-	threshold float64
+	threshold      float64
 }
 
 // MilvusClient SDK main interface

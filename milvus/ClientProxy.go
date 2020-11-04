@@ -105,7 +105,7 @@ func (client *Milvusclient) CreateCollection(mapping Mapping) (Status, error) {
 		field := mapping.Fields[i]
 		grpcPair := make([]*pb.KeyValuePair, 1)
 		pair := pb.KeyValuePair{"params", field.ExtraParams.params,
-			struct{}{}, nil, 0,}
+			struct{}{}, nil, 0}
 		grpcPair[0] = &pair
 		grpcFields[i] = &pb.FieldParam{0, field.Name, pb.DataType(field.Type), nil,
 			grpcPair, struct{}{}, nil, 0,
@@ -113,7 +113,7 @@ func (client *Milvusclient) CreateCollection(mapping Mapping) (Status, error) {
 	}
 	grpcParam := make([]*pb.KeyValuePair, 1)
 	grpcParam[0] = &pb.KeyValuePair{"params", mapping.ExtraParams.params,
-		struct{}{}, nil, 0,}
+		struct{}{}, nil, 0}
 	grpcMapping := pb.Mapping{nil, mapping.CollectionName, grpcFields, grpcParam,
 		struct{}{}, nil, 0,
 	}
@@ -157,12 +157,12 @@ func (client *Milvusclient) CreateIndex(indexParam *IndexParam) (Status, error) 
 		} else {
 			value = string(byt)
 		}
-		grpcPair[offset] = &pb.KeyValuePair{k, value, struct{}{}, nil, 0,}
+		grpcPair[offset] = &pb.KeyValuePair{k, value, struct{}{}, nil, 0}
 		offset++
 	}
 
 	grpcIndexParam := pb.IndexParam{nil, indexParam.CollectionName, indexParam.FieldName, "",
-		grpcPair, struct{}{}, nil, 0,}
+		grpcPair, struct{}{}, nil, 0}
 	grpcStatus, err := client.Instance.CreateIndex(grpcIndexParam)
 	if err != nil {
 		return nil, err
@@ -210,7 +210,7 @@ func (client *Milvusclient) Insert(insertParam InsertParam) ([]int64, Status, er
 					record[key1] = value
 				}
 				vectorRowRecord := pb.VectorRowRecord{record, nil,
-					struct{}{}, nil, 0,}
+					struct{}{}, nil, 0}
 				vectorRowRecords[key0] = &vectorRowRecord
 			}
 			vectorRecord.Records = vectorRowRecords
@@ -369,7 +369,7 @@ func (client *Milvusclient) Search(searchParam SearchParam) (TopkQueryResult, St
 	dslString := strings.Replace(string(jsonDsl), vectorDsl, "\"placeholder_1\"", -1)
 
 	grpcVectorParam := pb.VectorParam{vectorParam, &grpcVectorRecord,
-		struct{}{}, nil, 0,}
+		struct{}{}, nil, 0}
 
 	grpcVectorParams := make([]*pb.VectorParam, 1)
 	grpcVectorParams[0] = &grpcVectorParam
@@ -391,7 +391,7 @@ func (client *Milvusclient) Search(searchParam SearchParam) (TopkQueryResult, St
 	}
 	nq := grpcQueryResult.GetRowNum()
 	if nq == 0 {
-		return TopkQueryResult{nil}, status{int64(grpcQueryResult.Status.ErrorCode), grpcQueryResult.Status.Reason,}, err
+		return TopkQueryResult{nil}, status{int64(grpcQueryResult.Status.ErrorCode), grpcQueryResult.Status.Reason}, err
 	}
 
 	grpcFieldValue := grpcQueryResult.Entities
@@ -438,9 +438,9 @@ func (client *Milvusclient) Search(searchParam SearchParam) (TopkQueryResult, St
 		var oneResult QueryResult
 		var newSize int64
 		for j = 0; j < topk; j++ {
-			if grpcFieldValue.Ids[i * topk + j] != -1 {
-				oneResult.Ids = append(oneResult.Ids, grpcFieldValue.Ids[i* topk +j])
-				oneResult.Distances = append(oneResult.Distances, grpcQueryResult.Distances[i* topk + j])
+			if grpcFieldValue.Ids[i*topk+j] != -1 {
+				oneResult.Ids = append(oneResult.Ids, grpcFieldValue.Ids[i*topk+j])
+				oneResult.Distances = append(oneResult.Distances, grpcQueryResult.Distances[i*topk+j])
 			} else {
 				newSize = j
 				break
@@ -450,7 +450,7 @@ func (client *Milvusclient) Search(searchParam SearchParam) (TopkQueryResult, St
 			newSize = topk
 		}
 		oneResult.Entities = make([]Entity, newSize)
-		oneResult.Entities = entities[offset : int64(offset) + newSize]
+		oneResult.Entities = entities[offset : int64(offset)+newSize]
 		offset += int(newSize)
 		topkQueryResult[i] = oneResult
 	}
@@ -497,8 +497,8 @@ func (client *Milvusclient) GetCollectionInfo(collectionName string) (Mapping, S
 		extraParam := string(jsonExtraParam)
 
 		fields[i] = Field{
-			Name:   grpcField.Name,
-			Type:    DataType(grpcField.Type),
+			Name:        grpcField.Name,
+			Type:        DataType(grpcField.Type),
 			IndexParams: Params{string(jsonParam)},
 			ExtraParams: Params{extraParam},
 		}

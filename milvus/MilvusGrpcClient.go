@@ -112,7 +112,7 @@ func (grpcClient *milvusGrpcClient) DescribeCollection(collectionName pb.Collect
 	defer cancel()
 	collectionSchema, err := grpcClient.serviceInstance.DescribeCollection(ctx, &collectionName)
 	if err != nil {
-		return pb.Mapping{nil, "", nil, nil, struct{}{}, nil, 0,}, err
+		return pb.Mapping{nil, "", nil, nil, struct{}{}, nil, 0}, err
 	}
 	return *collectionSchema, err
 }
@@ -231,7 +231,7 @@ func (grpcClient *milvusGrpcClient) Insert(insertParam pb.InsertParam) (pb.Entit
 	ctx := context.Background()
 	entityIds, err := grpcClient.serviceInstance.Insert(ctx, &insertParam)
 	if err != nil {
-		return pb.EntityIds{nil, nil, struct{}{}, nil, 0,}, err
+		return pb.EntityIds{nil, nil, struct{}{}, nil, 0}, err
 	}
 	return *entityIds, err
 }
@@ -240,7 +240,7 @@ func (grpcClient *milvusGrpcClient) GetEntityByID(identity pb.EntityIdentity) (p
 	ctx := context.Background()
 	vectorsData, err := grpcClient.serviceInstance.GetEntityByID(ctx, &identity)
 	if err != nil {
-		return pb.Entities{nil, nil, nil, nil, struct{}{}, nil, 0,}, err
+		return pb.Entities{nil, nil, nil, nil, struct{}{}, nil, 0}, err
 	}
 	return *vectorsData, err
 }
@@ -249,7 +249,7 @@ func (grpcClient *milvusGrpcClient) GetEntityIDs(param pb.GetEntityIDsParam) (pb
 	ctx := context.Background()
 	status, err := grpcClient.serviceInstance.GetEntityIDs(ctx, &param)
 	if err != nil {
-		return pb.EntityIds{nil, nil, struct{}{}, nil, 0,}, err
+		return pb.EntityIds{nil, nil, struct{}{}, nil, 0}, err
 	}
 	return *status, err
 }
@@ -258,7 +258,7 @@ func (grpcClient *milvusGrpcClient) Search(searchParam pb.SearchParam) (*pb.Quer
 	ctx := context.Background()
 	queryResult, err := grpcClient.serviceInstance.Search(ctx, &searchParam)
 	if err != nil {
-		return &pb.QueryResult{nil, nil, 0, nil, nil, nil, struct{}{}, nil, 0,}, err
+		return &pb.QueryResult{nil, nil, 0, nil, nil, nil, struct{}{}, nil, 0}, err
 	}
 	return queryResult, err
 }
