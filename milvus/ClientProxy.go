@@ -40,8 +40,11 @@ type Milvusclient struct {
 }
 
 // NewMilvusClient is the constructor of MilvusClient
-func NewMilvusClient(client MilvusGrpcClient) MilvusClient {
-	return &Milvusclient{client}
+func NewMilvusClient(connectParam ConnectParam) (MilvusClient, error) {
+	var grpcClient MilvusGrpcClient
+	client := &Milvusclient{grpcClient}
+	err := client.Connect(connectParam)
+	return client, err
 }
 
 func (client *Milvusclient) GetClientVersion() string {

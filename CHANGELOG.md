@@ -9,6 +9,7 @@
 
 ### Improvement
 ---
+- \#71 - Change the initialization of go sdk client
 
 ### Feature
 ---
