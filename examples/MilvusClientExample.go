@@ -393,9 +393,8 @@ func DropPartition() {
 
 func ClientTest() {
 	connectParam := milvus.ConnectParam{HOST, PORT}
-	var grpcClient milvus.Milvusclient
-	client = milvus.NewMilvusClient(grpcClient.Instance)
-	err := client.Connect(connectParam)
+	var err error
+	client, err = milvus.NewMilvusClient(connectParam)
 	if err != nil {
 		println("Client connect failed: ", err.Error())
 	}
@@ -418,16 +417,14 @@ func main() {
 
 func ClientTest_dummy(address string, port int64) {
 	var collectionName string = "test_go" + strconv.Itoa(12)
-	var grpcClient milvus.Milvusclient
 	var i, j int64
-	client := milvus.NewMilvusClient(grpcClient.Instance)
 
 	//Client version
 	println("Client version: " + client.GetClientVersion())
 
 	//test connect
 	connectParam := milvus.ConnectParam{address, port}
-	err := client.Connect(connectParam)
+	client, err := milvus.NewMilvusClient(connectParam)
 	if err != nil {
 		println("client: connect failed: " + err.Error())
 	}
