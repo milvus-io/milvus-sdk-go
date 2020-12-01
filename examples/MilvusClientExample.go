@@ -20,11 +20,14 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"github.com/milvus-io/milvus-sdk-go/milvus"
+	"log"
 	"math/rand"
 	"strconv"
 	"time"
+
+	"github.com/milvus-io/milvus-sdk-go/milvus"
 )
 
 var collectionName string = "demp_films"
@@ -66,12 +69,12 @@ var PORT int64 = 19530
 //     The first thing we will do is to create a collection `demo_films`. Incase we've already had a collection
 //     named `demo_films`, we drop it before we create.
 // ------
-func DropAllCollections() {
-	collections, status, err := client.ListCollections()
+func DropAllCollections(ctx context.Context) {
+	collections, status, err := client.ListCollections(ctx)
 	JudgeStatus("ListCollection", status, err)
 	println("ShowCollections: ")
 	for _, col := range collections {
-		client.DropCollection(col)
+		client.DropCollection(ctx, col)
 	}
 }
 
@@ -86,7 +89,7 @@ func DropAllCollections() {
 //     For more information you can refer to the pymilvus
 //     documentation (https://milvus-io.github.io/milvus-sdk-python/pythondoc/v0.3.0/index.html).
 // ------
-func CreateCollection() {
+func CreateCollection(ctx context.Context) {
 	fieldByt := []byte(`{"dim": 8}`)
 	fields := []milvus.Field{
 		{
@@ -119,7 +122,7 @@ func CreateCollection() {
 		Fields:         fields,
 		ExtraParams:    milvus.NewParams(extraParam),
 	}
-	status, err := client.CreateCollection(mapping)
+	status, err := client.CreateCollection(ctx, mapping)
 	JudgeStatus("CreateCollection", status, err)
 }
 
@@ -128,9 +131,9 @@ func CreateCollection() {
 //     After create collection `demo_films`, we create a partition tagged "American", it means the films we
 //     will be inserted are from American.
 // ------
-func CreatePartition() {
+func CreatePartition(ctx context.Context) {
 	partitionParam := milvus.PartitionParam{collectionName, partitionTag}
-	status, err := client.CreatePartition(partitionParam)
+	status, err := client.CreatePartition(ctx, partitionParam)
 	JudgeStatus("CreatePartition", status, err)
 }
 
@@ -139,9 +142,9 @@ func CreatePartition() {
 //     You can check the collection info and partitions we've created by `get_collection_info` and
 //     `list_partitions`
 // ------
-func CheckCollectionInfo() {
+func CheckCollectionInfo(ctx context.Context) {
 	println("--------get collection info--------")
-	mapping, status, err := client.GetCollectionInfo(collectionName)
+	mapping, status, err := client.GetCollectionInfo(ctx, collectionName)
 	JudgeStatus("CreateCollection", status, err)
 	println("Collection name: " + collectionName)
 	for _, field := range mapping.Fields {
@@ -207,7 +210,7 @@ func CheckCollectionInfo() {
 //     To insert these films into Milvus, we have to group values from the same field together like below.
 //     Then these grouped data are used to create `hybrid_entities`.
 // ------
-func InsertEntities() {
+func InsertEntities(ctx context.Context) {
 	durations := []int32{202, 226, 252}
 	release_years := []int32{2001, 2002, 2003}
 	embedding := make([][]float32, 3)
@@ -233,7 +236,7 @@ func InsertEntities() {
 		},
 	}
 	insertParam := milvus.InsertParam{collectionName, fieldValue, ids, partitionTag}
-	id_array, status, err := client.Insert(insertParam)
+	id_array, status, err := client.Insert(ctx, insertParam)
 	JudgeStatus("Insert", status, err)
 	if len(id_array) != 3 {
 		println("ERROR: return id array is null")
@@ -246,13 +249,13 @@ func InsertEntities() {
 //     After insert entities into collection, we need to flush collection to make sure its on disk,
 //     so that we are able to retrive it.
 // ------
-func Flush() {
-	before_flush_counts, status, err := client.CountEntities(collectionName)
+func Flush(ctx context.Context) {
+	before_flush_counts, status, err := client.CountEntities(ctx, collectionName)
 	JudgeStatus("CountEntities", status, err)
 	collections := []string{collectionName}
-	status, err = client.Flush(collections)
+	status, err = client.Flush(ctx, collections)
 	JudgeStatus("Flush", status, err)
-	after_flush_counts, status, err := client.CountEntities(collectionName)
+	after_flush_counts, status, err := client.CountEntities(ctx, collectionName)
 	println("\n----------flush----------")
 	fmt.Printf("There are %d films in collection `%s` before flush\n", before_flush_counts, collectionName)
 	fmt.Printf("There are %d films in collection `%s` after flush\n", after_flush_counts, collectionName)
@@ -262,8 +265,8 @@ func Flush() {
 // Basic insert entities:
 //     We can get the detail of collection statistics info by `get_collection_stats`
 // ------
-func GetCollectionStats() {
-	info, status, err := client.GetCollectionStats(collectionName)
+func GetCollectionStats(ctx context.Context) {
+	info, status, err := client.GetCollectionStats(ctx, collectionName)
 	JudgeStatus("GetCollectionStats", status, err)
 	println("\n----------get collection stats----------")
 	println(info)
@@ -275,9 +278,9 @@ func GetCollectionStats() {
 //     We can get films by ids, if milvus can't find entity for a given id, `None` will be returned.
 //     In the case we provide below, we will only get 1 film with id=1 and the other is `None`
 // ------
-func GetEntityByID() {
+func GetEntityByID(ctx context.Context) {
 	ids := []int64{1, 200}
-	films, status, err := client.GetEntityByID(collectionName, nil, ids)
+	films, status, err := client.GetEntityByID(ctx, collectionName, nil, ids)
 	JudgeStatus("GetEntityByID", status, err)
 	println("\n----------get entity by id = 1, id = 200----------")
 	for i := range films {
@@ -308,7 +311,7 @@ func GetEntityByID() {
 //      Milvus provides Query DSL(Domain Specific Language) to support structured data filtering in queries.
 //      For now milvus suppots TermQuery and RangeQuery, they are structured as below.
 // ------
-func Search() {
+func Search(ctx context.Context) {
 	query_embedding := make([][]float64, 1)
 	for i := range query_embedding {
 		query_embedding[i] = make([]float64, dimension)
@@ -345,7 +348,7 @@ func Search() {
 	}
 	println("\n----------search----------")
 	searchParam := milvus.SearchParam{collectionName, dsl, nil}
-	topkQueryResult, status, err := client.Search(searchParam)
+	topkQueryResult, status, err := client.Search(ctx, searchParam)
 	JudgeStatus("Search", status, err)
 	for i := 0; i < 1; i++ {
 		print(topkQueryResult.QueryResultList[i].Ids[0])
@@ -359,18 +362,18 @@ func Search() {
 //     Now let's see how to delete things in Milvus.
 //     You can simply delete entities by their ids.
 // ------
-func DeleteEntities() {
+func DeleteEntities(ctx context.Context) {
 	ids := []int64{1, 2}
-	status, err := client.DeleteEntityByID(collectionName, ids)
+	status, err := client.DeleteEntityByID(ctx, collectionName, ids)
 	JudgeStatus("DeleteEntityByID", status, err)
 	collections := []string{collectionName}
-	status, err = client.Flush(collections)
+	status, err = client.Flush(ctx, collections)
 	JudgeStatus("Flush", status, err)
 
-	result, status, err := client.GetEntityByID(collectionName, nil, ids)
+	result, status, err := client.GetEntityByID(ctx, collectionName, nil, ids)
 	countsDeletes := len(result)
 	JudgeStatus("GetEntityByID", status, err)
-	countsInCollection, status, err := client.CountEntities(collectionName)
+	countsInCollection, status, err := client.CountEntities(ctx, collectionName)
 	println("\n----------delete id = 1, id = 2----------")
 	fmt.Printf("Get %d entities by id 1, 2\n", countsDeletes)
 	fmt.Printf("There are %d entities after delete films with 1, 2\n", countsInCollection)
@@ -380,338 +383,42 @@ func DeleteEntities() {
 // Basic delete:
 //     You can drop partitions we create, and drop the collection we create.
 // ------
-func DropPartition() {
+func DropPartition(ctx context.Context) {
 	partitionParam := milvus.PartitionParam{collectionName, partitionTag}
-	status, err := client.DropPartition(partitionParam)
+	status, err := client.DropPartition(ctx, partitionParam)
 	JudgeStatus("DropPartition", status, err)
-	collections, status, err := client.ListCollections()
+	collections, status, err := client.ListCollections(ctx)
 	for i := range collections {
-		status, err = client.DropCollection(collections[i])
+		status, err = client.DropCollection(ctx, collections[i])
 		JudgeStatus("DropCollection", status, err)
 	}
 }
 
 func ClientTest() {
-	connectParam := milvus.ConnectParam{HOST, PORT}
-	var err error
-	client, err = milvus.NewMilvusClient(connectParam)
+
+	connectParam := milvus.ConnectParam{IPAddress: HOST, Port: PORT}
+	ctx_, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	c, err := milvus.NewMilvusClient(ctx_, connectParam)
 	if err != nil {
-		println("Client connect failed: ", err.Error())
+		log.Fatalf("Client connect failed: %v", err)
 	}
-	DropAllCollections()
-	CreateCollection()
-	CreatePartition()
-	CheckCollectionInfo()
-	InsertEntities()
-	Flush()
-	GetCollectionStats()
-	GetEntityByID()
-	Search()
-	DeleteEntities()
-	DropPartition()
+	defer cancel()
+	client = c
+
+	ctx := context.TODO()
+	DropAllCollections(ctx)
+	CreateCollection(ctx)
+	CreatePartition(ctx)
+	CheckCollectionInfo(ctx)
+	InsertEntities(ctx)
+	Flush(ctx)
+	GetCollectionStats(ctx)
+	GetEntityByID(ctx)
+	Search(ctx)
+	DeleteEntities(ctx)
+	DropPartition(ctx)
 }
 
 func main() {
 	ClientTest()
-}
-
-func ClientTest_dummy(address string, port int64) {
-	var collectionName string = "test_go" + strconv.Itoa(12)
-	var i, j int64
-
-	//Client version
-	println("Client version: " + client.GetClientVersion())
-
-	//test connect
-	connectParam := milvus.ConnectParam{address, port}
-	client, err := milvus.NewMilvusClient(connectParam)
-	if err != nil {
-		println("client: connect failed: " + err.Error())
-	}
-
-	if client.IsConnected() == false {
-		println("client: not connected: ")
-		return
-	}
-	println("Server status: connected")
-
-	//Get server version
-	version, status, err := client.ServerVersion()
-	if err != nil {
-		println("Cmd rpc failed: " + err.Error())
-	}
-	if !status.Ok() {
-		println("Get server version failed: " + status.GetMessage())
-		return
-	}
-	println("Server version: " + version)
-
-	fields := make([]milvus.Field, 3)
-	fields[0].Name = "int64"
-	fields[0].Type = milvus.INT64
-	fields[1].Name = "float"
-	fields[1].Type = milvus.FLOAT
-	fields[2].Name = "float_vector"
-	fields[2].Type = milvus.VECTORFLOAT
-
-	fieldByt := []byte(`{"dim": 128}`)
-	fields[2].ExtraParams = milvus.NewParams(string(fieldByt))
-
-	colByt := []byte(`{"auto_id": true, "segment_row_limit": 5000}`)
-	extraParam := string(colByt)
-
-	//test create collection
-	println("********************************Test CreateCollection********************************")
-	mapping := milvus.Mapping{
-		CollectionName: collectionName,
-		Fields:         fields,
-		ExtraParams:    milvus.NewParams(extraParam),
-	}
-	status, err = client.CreateCollection(mapping)
-	if err != nil {
-		println("CreateCollection rpc failed: " + err.Error())
-		return
-	}
-	if !status.Ok() {
-		println("Create collection failed: " + status.GetMessage())
-		return
-	}
-	println("Create collection " + collectionName + " success")
-	hasCollection, status, err := client.HasCollection(collectionName)
-	if err != nil {
-		println("HasCollection rpc failed: " + err.Error())
-		return
-	}
-	if hasCollection == false {
-		println("Create collection failed: " + status.GetMessage())
-		return
-	}
-	println("Collection: " + collectionName + " exist")
-
-	println("********************************Test ListCollections*******************************")
-
-	//test show collections
-	collections, status, err := client.ListCollections()
-	if err != nil {
-		println("ShowCollections rpc failed: " + err.Error())
-		return
-	}
-	if !status.Ok() {
-		println("Show collections failed: " + status.GetMessage())
-		return
-	}
-	println("ShowCollections: ")
-	for i = 0; i < int64(len(collections)); i++ {
-		println(" - " + collections[i])
-	}
-
-	//test insert vectors
-	println("********************************Test Insert*****************************************")
-	fieldValue := make([]milvus.FieldValue, 3)
-	int64Data := make([]int64, nb)
-	floatData := make([]float32, nb)
-	vectorData := make([][]float32, nb)
-	for i = 0; i < nb; i++ {
-		int64Data[i] = i
-		floatData[i] = float32(i + nb)
-		vectorData[i] = make([]float32, dimension)
-		for j = 0; j < dimension; j++ {
-			vectorData[i][j] = float32(i % (j + 1))
-		}
-	}
-	fieldValue[0] = milvus.FieldValue{
-		Name:    "int64",
-		RawData: int64Data,
-	}
-	fieldValue[1] = milvus.FieldValue{
-		Name:    "float",
-		RawData: floatData,
-	}
-	fieldValue[2] = milvus.FieldValue{
-		Name:    "float_vector",
-		RawData: vectorData,
-	}
-	insertParam := milvus.InsertParam{collectionName, nil, nil, ""}
-	id_array, status, err := client.Insert(insertParam)
-	if err != nil {
-		println("Insert rpc failed: " + err.Error())
-		return
-	}
-	if !status.Ok() {
-		println("Insert vector failed: " + status.GetMessage())
-		return
-	}
-	if len(id_array) != int(nb) {
-		println("ERROR: return id array is null")
-	}
-	println("Insert vectors success!")
-
-	time.Sleep(3 * time.Second)
-
-	//test describe collection
-	println("********************************Test GetCollectionInfo******************************")
-	getMapping, status, err := client.GetCollectionInfo(collectionName)
-	println("GetCollectionInfo finish")
-	if err != nil {
-		println("DescribeCollection rpc failed: " + err.Error())
-		return
-	}
-	if !status.Ok() {
-		println("Create index failed: " + status.GetMessage())
-		return
-	}
-	println("Collection name: " + getMapping.CollectionName)
-	for _, field := range getMapping.Fields {
-		println("field name: " + field.Name + "\t field type: " + strconv.Itoa(int(field.Type)) +
-			"\t field index params: " + field.IndexParams.GetParams() + "\t field extra params: " + field.ExtraParams.GetParams())
-	}
-	println("Collection extra params: " + getMapping.ExtraParams.GetParams())
-
-	//Construct query vectors
-	println("********************************Test Search*****************************************")
-
-	dsl := map[string]interface{}{
-		"bool": map[string]interface{}{
-			"must": []map[string]interface{}{
-				{
-					"vector": map[string]interface{}{
-						"float_vector": map[string]interface{}{
-							"topk":        topk,
-							"metric_type": "L2",
-							"query":       vectorData[0:5],
-							"params": map[string]interface{}{
-								"nprobe": 10,
-							},
-						},
-					},
-				},
-			},
-		},
-	}
-	searchParam := milvus.SearchParam{collectionName, dsl, nil}
-
-	//Search without create index
-	topkQueryResult, status, err := client.Search(searchParam)
-	if err != nil {
-		println("Search rpc failed: " + err.Error())
-	}
-	println("Search without index results: ")
-	for i = 0; i < 5; i++ {
-		print(topkQueryResult.QueryResultList[i].Ids[0])
-		print("        ")
-		println(topkQueryResult.QueryResultList[i].Distances[0])
-	}
-
-	println("******************************Test CountEntities************************************")
-
-	//test CountCollection
-	collectionCount, status, err := client.CountEntities(collectionName)
-	if err != nil {
-		println("CountCollection rpc failed: " + err.Error())
-		return
-	}
-	if !status.Ok() {
-		println("Get collection count failed: " + status.GetMessage())
-		return
-	}
-	println("Collection count:" + strconv.Itoa(int(collectionCount)))
-
-	//Create index
-	println("******************************Test CreateIndex**************************************")
-	println("Start create index...")
-	indexParams := map[string]interface{}{
-		"index_type":  milvus.IVFFLAT,
-		"metric_type": milvus.L2,
-		"params": map[string]interface{}{
-			"nlist": nlist,
-		},
-	}
-	indexParam := milvus.IndexParam{collectionName, "float_vector", indexParams}
-	status, err = client.CreateIndex(&indexParam)
-	if err != nil {
-		println("CreateIndex rpc failed: " + err.Error())
-		return
-	}
-	if !status.Ok() {
-		println("Create index failed: " + status.GetMessage())
-		return
-	}
-	println("Create index success!")
-
-	//Preload collection
-	println("******************************Test LoadCollection************************************")
-	status, err = client.LoadCollection(collectionName)
-	if err != nil {
-		println("PreloadCollection rpc failed: " + err.Error())
-		return
-	}
-	if !status.Ok() {
-		println(status.GetMessage())
-	}
-	println("Preload collection success")
-
-	println("**************************Test SearchWithIVFFLATIndex********************************")
-
-	//Search with IVFFLAT index
-	topkQueryResult, status, err = client.Search(searchParam)
-	if err != nil {
-		println("Search rpc failed: " + err.Error())
-		return
-	}
-	if !status.Ok() {
-		println("Search vectors failed: " + status.GetMessage())
-	}
-	println("Search with index results: ")
-	for i = 0; i < 5; i++ {
-		print(topkQueryResult.QueryResultList[i].Ids[0])
-		print("        ")
-		println(topkQueryResult.QueryResultList[i].Distances[0])
-	}
-
-	println("******************************Test DropIndex**************************************")
-
-	//Drop index
-	status, err = client.DropIndex(collectionName, "float_vector")
-	if err != nil {
-		println("DropIndex rpc failed: " + err.Error())
-		return
-	}
-	if !status.Ok() {
-		println("Drop index failed: " + status.GetMessage())
-	}
-	println("Drop float_vector index success")
-
-	//Drop collection
-	println("******************************Test DropCollection*********************************")
-	status, err = client.DropCollection(collectionName)
-	hasCollection, status1, err := client.HasCollection(collectionName)
-	if !status.Ok() || !status1.Ok() || hasCollection == true {
-		println("Drop collection failed: " + status.GetMessage())
-		return
-	}
-	println("Drop collection " + collectionName + " success!")
-
-	//GetConfig
-	configInfo, status, err := client.GetConfig("get_milvus_config")
-	if !status.Ok() {
-		println("Get config failed: " + status.GetMessage())
-	}
-	println("config: ")
-	println(configInfo)
-
-	//Disconnect
-	err = client.Disconnect()
-	if err != nil {
-		println("Disconnect failed!")
-		return
-	}
-	println("Client disconnect server success!")
-
-	//Server status
-	serverStatus, status, err := client.ServerStatus()
-	if !status.Ok() {
-		println("Get server status failed: " + status.GetMessage())
-	}
-	println("Server status: " + serverStatus)
-
 }
