@@ -127,8 +127,8 @@ type PartitionStat struct {
 type Field struct {
 	Name        string
 	Type        DataType
-	IndexParams Params
-	ExtraParams Params
+	IndexParams *Params
+	ExtraParams *Params
 }
 
 // CollectionParam informations of a collection
@@ -138,7 +138,7 @@ type Mapping struct {
 	// Fields fields
 	Fields []Field
 	// ExtraParams extra params
-	ExtraParams Params
+	ExtraParams *Params
 }
 
 // IndexParam index parameters

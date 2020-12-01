@@ -477,7 +477,7 @@ func (client *Milvusclient) GetCollectionInfo(ctx context.Context, collectionNam
 		nil, 0}
 	grpcMapping, err := client.Instance.DescribeCollection(ctx, grpcCollectionName)
 	if err != nil {
-		return Mapping{"", nil, Params{""}}, nil, err
+		return Mapping{"", nil, NewParams("")}, nil, err
 	}
 	fieldSize := len(grpcMapping.Fields)
 	fields := make([]Field, fieldSize)
@@ -500,8 +500,8 @@ func (client *Milvusclient) GetCollectionInfo(ctx context.Context, collectionNam
 		fields[i] = Field{
 			Name:        grpcField.Name,
 			Type:        DataType(grpcField.Type),
-			IndexParams: Params{string(jsonParam)},
-			ExtraParams: Params{extraParam},
+			IndexParams: NewParams(string(jsonParam)),
+			ExtraParams: NewParams(extraParam),
 		}
 	}
 
@@ -511,7 +511,7 @@ func (client *Milvusclient) GetCollectionInfo(ctx context.Context, collectionNam
 	}
 	jsonParam, _ := json.Marshal(paramMap)
 
-	return Mapping{grpcMapping.CollectionName, fields, Params{string(jsonParam)}},
+	return Mapping{grpcMapping.CollectionName, fields, NewParams(string(jsonParam))},
 		status{int64(grpcMapping.GetStatus().GetErrorCode()), grpcMapping.Status.Reason}, err
 }
 

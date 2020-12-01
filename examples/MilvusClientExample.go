@@ -101,13 +101,13 @@ func CreateCollection(ctx context.Context) {
 		{
 			"release_year",
 			milvus.INT32,
-			milvus.Params{},
-			milvus.Params{},
+			milvus.NewParams(""),
+			milvus.NewParams(""),
 		},
 		{
 			"embedding",
 			milvus.VECTORFLOAT,
-			milvus.Params{},
+			milvus.NewParams(""),
 			milvus.NewParams(string(fieldByt)),
 		},
 	}
