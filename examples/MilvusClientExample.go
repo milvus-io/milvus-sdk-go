@@ -395,8 +395,7 @@ func DropPartition(ctx context.Context) {
 }
 
 func ClientTest() {
-
-	connectParam := milvus.ConnectParam{IPAddress: HOST, Port: PORT}
+	connectParam := milvus.ConnectParam{IPAddress: HOST, Port: PORT, ClientTag: ""}
 	ctx_, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	c, err := milvus.NewMilvusClient(ctx_, connectParam)
 	if err != nil {

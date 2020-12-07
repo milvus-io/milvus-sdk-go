@@ -99,6 +99,8 @@ type ConnectParam struct {
 	IPAddress string
 	// Port Server port
 	Port int64
+	// ClientTag client port
+	ClientTag string
 }
 
 // SegmentStat segment statistics

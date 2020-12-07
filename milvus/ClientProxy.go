@@ -24,6 +24,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"google.golang.org/grpc/metadata"
 	"math"
 	"reflect"
 	"strconv"
@@ -52,11 +53,19 @@ func (client *Milvusclient) GetClientVersion(ctx context.Context) string {
 }
 
 func (client *Milvusclient) Connect(ctx context.Context, connectParam ConnectParam) error {
+	var interceptor grpc.UnaryClientInterceptor
+	interceptor = func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+		reqMD := metadata.New(map[string]string{"client_tag": connectParam.ClientTag})
+		ctx = metadata.NewOutgoingContext(ctx, reqMD)
+		err := invoker(ctx, method, req, reply, cc, opts...)
+		return err
+	}
 	var opts []grpc.DialOption
 	opts = append(opts, grpc.WithInsecure())
 	opts = append(opts, grpc.WithBlock())
 	opts = append(opts, grpc.WithDefaultCallOptions(grpc.MaxCallSendMsgSize(math.MaxInt64)))
 	opts = append(opts, grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(math.MaxInt64)))
+	opts = append(opts, grpc.WithUnaryInterceptor(interceptor))
 
 	serverAddr := connectParam.IPAddress + ":" + strconv.Itoa(int(connectParam.Port))
 
