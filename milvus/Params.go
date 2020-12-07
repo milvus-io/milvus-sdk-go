@@ -23,6 +23,6 @@ func (p *Params) Set(key string, value interface{}) *Params {
 	return p
 }
 
-func (p *Params) GetParams() string {
+func (p *Params) String() string {
 	return p.params
 }
