@@ -104,8 +104,12 @@ func (client *Milvusclient) CreateCollection(ctx context.Context, mapping Mappin
 	var i int
 	for i = 0; i < fieldSize; i++ {
 		field := mapping.Fields[i]
+		ep := field.ExtraParams
+		if ep == nil {
+			ep = NewParams("")
+		}
 		grpcPair := make([]*pb.KeyValuePair, 1)
-		pair := pb.KeyValuePair{"params", field.ExtraParams.params,
+		pair := pb.KeyValuePair{"params", ep.params,
 			struct{}{}, nil, 0}
 		grpcPair[0] = &pair
 		grpcFields[i] = &pb.FieldParam{0, field.Name, pb.DataType(field.Type), nil,
@@ -113,7 +117,11 @@ func (client *Milvusclient) CreateCollection(ctx context.Context, mapping Mappin
 		}
 	}
 	grpcParam := make([]*pb.KeyValuePair, 1)
-	grpcParam[0] = &pb.KeyValuePair{"params", mapping.ExtraParams.params,
+	ep := mapping.ExtraParams
+	if ep == nil {
+		ep = NewParams("")
+	}
+	grpcParam[0] = &pb.KeyValuePair{"params", ep.params,
 		struct{}{}, nil, 0}
 	grpcMapping := pb.Mapping{nil, mapping.CollectionName, grpcFields, grpcParam,
 		struct{}{}, nil, 0,
