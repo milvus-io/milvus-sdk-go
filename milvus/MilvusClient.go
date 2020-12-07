@@ -91,6 +91,9 @@ const (
 	RHNSWPQ IndexType = "RHNSW_PQ"
 	// RHNSWSQ8 RHNSW_SQ8
 	RHNSWSQ8 IndexType = "RHNSW_SQ8"
+
+	// SORTED a scalar index
+	SORTED IndexType = "SORTED"
 )
 
 // ConnectParam Parameters for connect
