@@ -6,6 +6,7 @@
 ---
 - \#61 - Insert binary vector failed
 - \#66 - The interface GetEntityByID should not have a fieldName paramter in go-sdk
+- \#80 - Change status proto to remove enum ErrorCode
 
 ### Improvement
 ---
