@@ -214,6 +214,11 @@ type ListIDInSegmentParam struct {
 	SegmentName    string
 }
 
+type LoadCollectionParam struct {
+	CollectionName   string
+	PartitionTagList []string
+}
+
 // MilvusClient SDK main interface
 type MilvusClient interface {
 
@@ -316,7 +321,7 @@ type MilvusClient interface {
 	// LoadCollection method
 	// This method is used to preload collection
 	// return indicate if this operation is successful.
-	LoadCollection(collectionName string) (Status, error)
+	LoadCollection(param LoadCollectionParam) (Status, error)
 
 	// GetIndexInfo method
 	// This method is used to describe index

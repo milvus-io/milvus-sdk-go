@@ -1,5 +1,20 @@
 # Changelog     
 
+## milvus-sdk-go 0.4.5 
+
+### Bug
+---
+
+### Improvement
+---
+
+### Feature
+---
+- \#82 - Change LoadCollection interface
+
+### Task
+---
+
 ## milvus-sdk-go 0.4.2 (2020-06-13)
 
 ### Bug

@@ -71,7 +71,7 @@ type MilvusGrpcClient interface {
 
 	DeleteByID(param pb.DeleteByIDParam) (pb.Status, error)
 
-	PreloadCollection(collectionName pb.CollectionName) (pb.Status, error)
+	PreloadCollection(preloadCollectionParam pb.PreloadCollectionParam) (pb.Status, error)
 
 	Flush(param pb.FlushParam) (pb.Status, error)
 
@@ -92,7 +92,7 @@ func (grpcClient *milvusGrpcClient) CreateCollection(collectionSchema pb.Collect
 	defer cancel()
 	reply, err := grpcClient.serviceInstance.CreateCollection(ctx, &collectionSchema)
 	if err != nil {
-		return pb.Status{0, "", struct{}{}, nil, 0,}, err
+		return pb.Status{0, "", struct{}{}, nil, 0}, err
 	}
 	return *reply, err
 }
@@ -102,7 +102,7 @@ func (grpcClient *milvusGrpcClient) HasCollection(collectionName pb.CollectionNa
 	defer cancel()
 	boolReply, err := grpcClient.serviceInstance.HasCollection(ctx, &collectionName)
 	if err != nil {
-		return pb.BoolReply{nil, false, struct{}{}, nil, 0,}, err
+		return pb.BoolReply{nil, false, struct{}{}, nil, 0}, err
 	}
 	return *boolReply, err
 }
@@ -112,7 +112,7 @@ func (grpcClient *milvusGrpcClient) DescribeCollection(collectionName pb.Collect
 	defer cancel()
 	collectionSchema, err := grpcClient.serviceInstance.DescribeCollection(ctx, &collectionName)
 	if err != nil {
-		return pb.CollectionSchema{nil, "", 0, 0, 0, nil, struct{}{}, nil, 0,}, err
+		return pb.CollectionSchema{nil, "", 0, 0, 0, nil, struct{}{}, nil, 0}, err
 	}
 	return *collectionSchema, err
 }
@@ -122,7 +122,7 @@ func (grpcClient *milvusGrpcClient) CountCollection(collectionName pb.Collection
 	defer cancel()
 	count, err := grpcClient.serviceInstance.CountCollection(ctx, &collectionName)
 	if err != nil {
-		return pb.CollectionRowCount{nil, 0, struct{}{}, nil, 0,}, err
+		return pb.CollectionRowCount{nil, 0, struct{}{}, nil, 0}, err
 	}
 	return *count, err
 }
@@ -133,7 +133,7 @@ func (grpcClient *milvusGrpcClient) ShowCollections() (pb.CollectionNameList, er
 	defer cancel()
 	collectionNameList, err := grpcClient.serviceInstance.ShowCollections(ctx, &cmd)
 	if err != nil {
-		return pb.CollectionNameList{nil, nil, struct{}{}, nil, 0,}, err
+		return pb.CollectionNameList{nil, nil, struct{}{}, nil, 0}, err
 	}
 	return *collectionNameList, err
 }
@@ -143,7 +143,7 @@ func (grpcClient *milvusGrpcClient) ShowCollectionInfo(collectionName pb.Collect
 	defer cancel()
 	collectionInfo, err := grpcClient.serviceInstance.ShowCollectionInfo(ctx, &collectionName)
 	if err != nil {
-		return pb.CollectionInfo{nil, "", struct{}{}, nil, 0,}, err
+		return pb.CollectionInfo{nil, "", struct{}{}, nil, 0}, err
 	}
 	return *collectionInfo, err
 }
@@ -153,7 +153,7 @@ func (grpcClient *milvusGrpcClient) DropCollection(collectionName pb.CollectionN
 	defer cancel()
 	status, err := grpcClient.serviceInstance.DropCollection(ctx, &collectionName)
 	if err != nil {
-		return pb.Status{0, "", struct{}{}, nil, 0,}, err
+		return pb.Status{0, "", struct{}{}, nil, 0}, err
 	}
 	return *status, err
 }
@@ -162,7 +162,7 @@ func (grpcClient *milvusGrpcClient) CreateIndex(indexParam pb.IndexParam) (pb.St
 	ctx := context.Background()
 	status, err := grpcClient.serviceInstance.CreateIndex(ctx, &indexParam)
 	if err != nil {
-		return pb.Status{0, "", struct{}{}, nil, 0,}, err
+		return pb.Status{0, "", struct{}{}, nil, 0}, err
 	}
 	return *status, err
 }
@@ -172,7 +172,7 @@ func (grpcClient *milvusGrpcClient) DescribeIndex(collectionName pb.CollectionNa
 	defer cancel()
 	indexParam, err := grpcClient.serviceInstance.DescribeIndex(ctx, &collectionName)
 	if err != nil {
-		return pb.IndexParam{nil, "", 0, nil, struct{}{}, nil, 0,}, err
+		return pb.IndexParam{nil, "", 0, nil, struct{}{}, nil, 0}, err
 	}
 	return *indexParam, err
 }
@@ -182,7 +182,7 @@ func (grpcClient *milvusGrpcClient) DropIndex(collectionName pb.CollectionName) 
 	defer cancel()
 	status, err := grpcClient.serviceInstance.DropIndex(ctx, &collectionName)
 	if err != nil {
-		return pb.Status{0, "", struct{}{}, nil, 0,}, err
+		return pb.Status{0, "", struct{}{}, nil, 0}, err
 	}
 	return *status, err
 }
@@ -192,7 +192,7 @@ func (grpcClient *milvusGrpcClient) CreatePartition(partitionParam pb.PartitionP
 	defer cancel()
 	status, err := grpcClient.serviceInstance.CreatePartition(ctx, &partitionParam)
 	if err != nil {
-		return pb.Status{0, "", struct{}{}, nil, 0,}, err
+		return pb.Status{0, "", struct{}{}, nil, 0}, err
 	}
 	return *status, err
 }
@@ -202,7 +202,7 @@ func (grpcClient *milvusGrpcClient) ShowPartitions(collectionName pb.CollectionN
 	defer cancel()
 	status, err := grpcClient.serviceInstance.ShowPartitions(ctx, &collectionName)
 	if err != nil {
-		return pb.PartitionList{nil, nil, struct{}{}, nil, 0,}, err
+		return pb.PartitionList{nil, nil, struct{}{}, nil, 0}, err
 	}
 	return *status, err
 }
@@ -212,7 +212,7 @@ func (grpcClient *milvusGrpcClient) DropPartition(partitionParam pb.PartitionPar
 	defer cancel()
 	status, err := grpcClient.serviceInstance.DropPartition(ctx, &partitionParam)
 	if err != nil {
-		return pb.Status{0, "", struct{}{}, nil, 0,}, err
+		return pb.Status{0, "", struct{}{}, nil, 0}, err
 	}
 	return *status, err
 }
@@ -221,7 +221,7 @@ func (grpcClient *milvusGrpcClient) Insert(insertParam pb.InsertParam) (pb.Vecto
 	ctx := context.Background()
 	vectorIds, err := grpcClient.serviceInstance.Insert(ctx, &insertParam)
 	if err != nil {
-		return pb.VectorIds{nil, nil, struct{}{}, nil, 0,}, err
+		return pb.VectorIds{nil, nil, struct{}{}, nil, 0}, err
 	}
 	return *vectorIds, err
 }
@@ -230,7 +230,7 @@ func (grpcClient *milvusGrpcClient) GetVectorsByID(identity pb.VectorsIdentity) 
 	ctx := context.Background()
 	vectorsData, err := grpcClient.serviceInstance.GetVectorsByID(ctx, &identity)
 	if err != nil {
-		return pb.VectorsData{nil, nil, struct{}{}, nil, 0,}, err
+		return pb.VectorsData{nil, nil, struct{}{}, nil, 0}, err
 	}
 	return *vectorsData, err
 }
@@ -239,7 +239,7 @@ func (grpcClient *milvusGrpcClient) GetVectorIDs(param pb.GetVectorIDsParam) (pb
 	ctx := context.Background()
 	status, err := grpcClient.serviceInstance.GetVectorIDs(ctx, &param)
 	if err != nil {
-		return pb.VectorIds{nil, nil, struct{}{}, nil, 0,}, err
+		return pb.VectorIds{nil, nil, struct{}{}, nil, 0}, err
 	}
 	return *status, err
 }
@@ -248,7 +248,7 @@ func (grpcClient *milvusGrpcClient) Search(searchParam pb.SearchParam) (*pb.TopK
 	ctx := context.Background()
 	topkQueryResult, err := grpcClient.serviceInstance.Search(ctx, &searchParam)
 	if err != nil {
-		return &pb.TopKQueryResult{nil, 0, nil, nil, struct{}{}, nil, 0,}, err
+		return &pb.TopKQueryResult{nil, 0, nil, nil, struct{}{}, nil, 0}, err
 	}
 	return topkQueryResult, err
 }
@@ -257,7 +257,7 @@ func (grpcClient *milvusGrpcClient) SearchInFiles(searchInFilesParam pb.SearchIn
 	ctx := context.Background()
 	topkQueryResult, err := grpcClient.serviceInstance.SearchInFiles(ctx, &searchInFilesParam)
 	if err != nil {
-		return &pb.TopKQueryResult{nil, 0, nil, nil, struct{}{}, nil, 0,}, err
+		return &pb.TopKQueryResult{nil, 0, nil, nil, struct{}{}, nil, 0}, err
 	}
 	return topkQueryResult, err
 }
@@ -267,7 +267,7 @@ func (grpcClient *milvusGrpcClient) Cmd(command pb.Command) (pb.StringReply, err
 	defer cancel()
 	stringReply, err := grpcClient.serviceInstance.Cmd(ctx, &command)
 	if err != nil {
-		return pb.StringReply{nil, "", struct{}{}, nil, 0,}, err
+		return pb.StringReply{nil, "", struct{}{}, nil, 0}, err
 	}
 	return *stringReply, err
 }
@@ -277,17 +277,17 @@ func (grpcClient *milvusGrpcClient) DeleteByID(param pb.DeleteByIDParam) (pb.Sta
 	defer cancel()
 	status, err := grpcClient.serviceInstance.DeleteByID(ctx, &param)
 	if err != nil {
-		return pb.Status{0, "", struct{}{}, nil, 0,}, err
+		return pb.Status{0, "", struct{}{}, nil, 0}, err
 	}
 	return *status, err
 }
 
-func (grpcClient *milvusGrpcClient) PreloadCollection(collectionName pb.CollectionName) (pb.Status, error) {
+func (grpcClient *milvusGrpcClient) PreloadCollection(preloadCollectionParam pb.PreloadCollectionParam) (pb.Status, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	status, err := grpcClient.serviceInstance.PreloadCollection(ctx, &collectionName)
+	status, err := grpcClient.serviceInstance.PreloadCollection(ctx, &preloadCollectionParam)
 	if err != nil {
-		return pb.Status{0, "", struct{}{}, nil, 0,}, err
+		return pb.Status{0, "", struct{}{}, nil, 0}, err
 	}
 	return *status, err
 }
@@ -297,7 +297,7 @@ func (grpcClient *milvusGrpcClient) Flush(param pb.FlushParam) (pb.Status, error
 	defer cancel()
 	status, err := grpcClient.serviceInstance.Flush(ctx, &param)
 	if err != nil {
-		return pb.Status{0, "", struct{}{}, nil, 0,}, err
+		return pb.Status{0, "", struct{}{}, nil, 0}, err
 	}
 	return *status, err
 }
@@ -307,7 +307,7 @@ func (grpcClient *milvusGrpcClient) Compact(collectionName pb.CollectionName) (p
 	defer cancel()
 	status, err := grpcClient.serviceInstance.Compact(ctx, &collectionName)
 	if err != nil {
-		return pb.Status{0, "", struct{}{}, nil, 0,}, err
+		return pb.Status{0, "", struct{}{}, nil, 0}, err
 	}
 	return *status, err
 }

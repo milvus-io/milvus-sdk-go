@@ -228,7 +228,8 @@ func example(address string, port string) {
 	println(indexParam.CollectionName + "----index type:" + strconv.Itoa(int(indexParam.IndexType)))
 
 	//Preload collection
-	status, err = client.LoadCollection(collectionName)
+	loadCollectionParam := milvus.LoadCollectionParam{collectionName, nil}
+	status, err = client.LoadCollection(loadCollectionParam)
 	if err != nil {
 		println("PreloadCollection rpc failed: " + err.Error())
 		return
