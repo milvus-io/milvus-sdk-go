@@ -312,7 +312,7 @@ type MilvusClient interface {
 	// Search method
 	// This method is used to query entity in collection.
 	// return indicate if query is successful.
-	Search(searchParam SearchParam) (TopkQueryResult, Status, error)
+	Search(searchParam SearchParam,fields []string) (TopkQueryResult, Status, error)
 
 	// DeleteEntityByID method
 	// This method is used to delete entities by ids

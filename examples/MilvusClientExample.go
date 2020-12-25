@@ -347,12 +347,14 @@ func Search() {
 		},
 	}
 	searchParam := milvus.SearchParam{collectionName, dsl, nil}
-	topkQueryResult, status, err := client.Search(searchParam)
+	topkQueryResult, status, err := client.Search(searchParam,[]string{"release_year","duration"})
 	JudgeStatus("Search", status, err)
 	for i := 0; i < 1; i++ {
 		print(topkQueryResult.QueryResultList[i].Ids[0])
 		print("        ")
 		println(topkQueryResult.QueryResultList[i].Distances[0])
+		print("        ")
+		println(topkQueryResult.QueryResultList[i].Entities[0])
 	}
 }
 
@@ -597,7 +599,7 @@ func ClientTest_dummy(address string, port string) {
 	searchParam := milvus.SearchParam{collectionName, dsl, nil}
 
 	//Search without create index
-	topkQueryResult, status, err := client.Search(searchParam)
+	topkQueryResult, status, err := client.Search(searchParam,nil)
 	if err != nil {
 		println("Search rpc failed: " + err.Error())
 	}
@@ -659,7 +661,7 @@ func ClientTest_dummy(address string, port string) {
 	println("**************************Test SearchWithIVFFLATIndex********************************")
 
 	//Search with IVFFLAT index
-	topkQueryResult, status, err = client.Search(searchParam)
+	topkQueryResult, status, err = client.Search(searchParam,nil)
 	if err != nil {
 		println("Search rpc failed: " + err.Error())
 		return
