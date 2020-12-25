@@ -348,12 +348,14 @@ func Search(ctx context.Context) {
 	}
 	println("\n----------search----------")
 	searchParam := milvus.SearchParam{collectionName, dsl, nil}
-	topkQueryResult, status, err := client.Search(ctx, searchParam)
+	topkQueryResult, status, err := client.Search(ctx, searchParam,[]string{"release_year","duration"})
 	JudgeStatus("Search", status, err)
 	for i := 0; i < 1; i++ {
 		print(topkQueryResult.QueryResultList[i].Ids[0])
 		print("        ")
 		println(topkQueryResult.QueryResultList[i].Distances[0])
+		print("        ")
+		println(topkQueryResult.QueryResultList[i].Entities[0])
 	}
 }
 
