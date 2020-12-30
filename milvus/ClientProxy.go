@@ -376,7 +376,7 @@ func ParseDsl(dslString *string, vectorParam *string, vectorRecord *pb.VectorRec
 
 ////////////////////////////////////////////////////////////////////////////
 
-func (client *Milvusclient) Search(ctx context.Context, searchParam SearchParam,fields []string) (TopkQueryResult, Status, error) {
+func (client *Milvusclient) Search(ctx context.Context, searchParam SearchParam) (TopkQueryResult, Status, error) {
 	var vectorParam string
 	var grpcVectorRecord pb.VectorRecord
 	jsonDsl, err := json.Marshal(searchParam.Dsl)
@@ -393,11 +393,11 @@ func (client *Milvusclient) Search(ctx context.Context, searchParam SearchParam,
 	grpcVectorParams[0] = &grpcVectorParam
 
 	var extraParams []*pb.KeyValuePair
-	if len(fields)>0{
-		f := map[string][]string{"fields":fields}
-		para,_:= json.Marshal(f)
-		extraParam :=&pb.KeyValuePair{Key: "params",Value: string(para)}
-		extraParams = append(extraParams,extraParam)
+	if len(searchParam.Fields) > 0 {
+		f := map[string][]string{"fields": searchParam.Fields}
+		para, _ := json.Marshal(f)
+		extraParam := &pb.KeyValuePair{Key: "params", Value: string(para)}
+		extraParams = append(extraParams, extraParam)
 	}
 
 	grpcSearchParam := pb.SearchParam{

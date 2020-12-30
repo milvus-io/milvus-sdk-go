@@ -223,6 +223,8 @@ type SearchParam struct {
 	Dsl map[string]interface{}
 	// PartitionTag partition tag array
 	PartitionTag []string
+	// Fields fields
+	Fields []string
 }
 
 //QueryResult Query result
@@ -321,7 +323,7 @@ type MilvusClient interface {
 	// Search method
 	// This method is used to query entity in collection.
 	// return indicate if query is successful.
-	Search(ctx context.Context, searchParam SearchParam,fields []string) (TopkQueryResult, Status, error)
+	Search(ctx context.Context, searchParam SearchParam) (TopkQueryResult, Status, error)
 
 	// DeleteEntityByID method
 	// This method is used to delete entities by ids
