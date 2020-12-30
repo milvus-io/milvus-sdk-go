@@ -392,12 +392,20 @@ func (client *Milvusclient) Search(ctx context.Context, searchParam SearchParam)
 	grpcVectorParams := make([]*pb.VectorParam, 1)
 	grpcVectorParams[0] = &grpcVectorParam
 
+	var extraParams []*pb.KeyValuePair
+	if len(searchParam.Fields) > 0 {
+		f := map[string][]string{"fields": searchParam.Fields}
+		para, _ := json.Marshal(f)
+		extraParam := &pb.KeyValuePair{Key: "params", Value: string(para)}
+		extraParams = append(extraParams, extraParam)
+	}
+
 	grpcSearchParam := pb.SearchParam{
 		CollectionName:       searchParam.CollectionName,
 		PartitionTagArray:    searchParam.PartitionTag,
 		VectorParam:          grpcVectorParams,
 		Dsl:                  dslString,
-		ExtraParams:          nil,
+		ExtraParams:          extraParams,
 		XXX_NoUnkeyedLiteral: struct{}{},
 		XXX_unrecognized:     nil,
 		XXX_sizecache:        0,

@@ -223,6 +223,8 @@ type SearchParam struct {
 	Dsl map[string]interface{}
 	// PartitionTag partition tag array
 	PartitionTag []string
+	// Fields fields
+	Fields []string
 }
 
 //QueryResult Query result
