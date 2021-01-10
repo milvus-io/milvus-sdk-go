@@ -38,12 +38,12 @@ import (
 
 type Milvusclient struct {
 	Instance MilvusGrpcClient
+	conn     *grpc.ClientConn
 }
 
 // NewMilvusClient is the constructor of MilvusClient
 func NewMilvusClient(ctx context.Context, connectParam ConnectParam) (MilvusClient, error) {
-	var grpcClient MilvusGrpcClient
-	client := &Milvusclient{grpcClient}
+	client := &Milvusclient{}
 	err := client.Connect(ctx, connectParam)
 	return client, err
 }
@@ -73,6 +73,7 @@ func (client *Milvusclient) Connect(ctx context.Context, connectParam ConnectPar
 	if err != nil {
 		return err
 	}
+	client.conn = conn
 
 	milvusclient := pb.NewMilvusServiceClient(conn)
 
@@ -90,7 +91,7 @@ func (client *Milvusclient) Connect(ctx context.Context, connectParam ConnectPar
 	}
 	if serverVersion[0:4] != "0.11" {
 		println("Server version check failed, this client supposed to connect milvus-0.11.x")
-		client.Instance = nil
+		_ = client.Disconnect(ctx)
 		err = errors.New("Connect to server failed, please check server version.")
 		return err
 	}
@@ -104,7 +105,7 @@ func (client *Milvusclient) IsConnected(_ context.Context) bool {
 
 func (client *Milvusclient) Disconnect(_ context.Context) error {
 	client.Instance = nil
-	return nil
+	return client.conn.Close()
 }
 
 func (client *Milvusclient) CreateCollection(ctx context.Context, mapping Mapping) (Status, error) {
