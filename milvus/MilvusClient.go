@@ -22,7 +22,7 @@ package milvus
 
 import ()
 
-var clientVersion string = "0.4.0"
+var clientVersion string = "1.0.0"
 
 // MetricType metric type
 type MetricType int64
