@@ -35,7 +35,7 @@ var nb int64 = 100000
 var topk int64 = 100
 var nlist int64 = 16384
 
-func example(address string, port string) {
+func example(address string, port string, token string) {
 	var grpcClient milvus.Milvusclient
 	var i, j int64
 	client := milvus.NewMilvusClient(grpcClient.Instance)
@@ -44,7 +44,7 @@ func example(address string, port string) {
 	println("Client version: " + client.GetClientVersion())
 
 	//test connect
-	connectParam := milvus.ConnectParam{address, port, "xxxx"}
+	connectParam := milvus.ConnectParam{address, port, token}
 	err := client.Connect(connectParam)
 	if err != nil {
 		println("client: connect failed: " + err.Error())
@@ -309,6 +309,6 @@ func example(address string, port string) {
 
 func main() {
 	address := "localhost"
-	port := "19530"
-	example(address, port)
+	port := "19535"
+	example(address, port, "123456")
 }
