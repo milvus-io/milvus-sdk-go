@@ -23,10 +23,11 @@ package milvus
 import (
 	"context"
 	"errors"
-	pb "github.com/milvus-io/milvus-sdk-go/milvus/grpc/gen"
-	"google.golang.org/grpc"
 	"math"
 	"time"
+
+	pb "github.com/milvus-io/milvus-sdk-go/milvus/grpc/gen"
+	"google.golang.org/grpc"
 )
 
 type Milvusclient struct {
@@ -48,6 +49,9 @@ func (client *Milvusclient) Connect(connectParam ConnectParam) error {
 	opts = append(opts, grpc.WithBlock())
 	opts = append(opts, grpc.WithDefaultCallOptions(grpc.MaxCallSendMsgSize(math.MaxInt64)))
 	opts = append(opts, grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(math.MaxInt64)))
+
+	token := CloudToken{Token: connectParam.Token}
+	opts = append(opts, grpc.WithPerRPCCredentials(token))
 
 	serverAddr := connectParam.IPAddress + ":" + connectParam.Port
 

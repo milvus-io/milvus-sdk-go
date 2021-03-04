@@ -44,7 +44,7 @@ func example(address string, port string) {
 	println("Client version: " + client.GetClientVersion())
 
 	//test connect
-	connectParam := milvus.ConnectParam{address, port}
+	connectParam := milvus.ConnectParam{address, port, "xxxx"}
 	err := client.Connect(connectParam)
 	if err != nil {
 		println("client: connect failed: " + err.Error())

@@ -20,7 +20,7 @@
 // package milvus
 package milvus
 
-import ()
+import "context"
 
 var clientVersion string = "0.4.0"
 
@@ -72,12 +72,27 @@ const (
 	ANNOY IndexType = 12
 )
 
+type CloudToken struct {
+	Token string
+}
+
+func (c CloudToken) GetRequestMetadata(ctx context.Context, uri ...string) (map[string]string, error) {
+	return map[string]string{
+		"token": c.Token,
+	}, nil
+}
+
+func (c CloudToken) RequireTransportSecurity() bool {
+	return false
+}
+
 // ConnectParam Parameters for connect
 type ConnectParam struct {
 	// IPAddress Server IP address
 	IPAddress string
 	// Port Server port
-	Port string
+	Port  string
+	Token string
 }
 
 // SegmentStat segment statistics
