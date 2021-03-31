@@ -28,7 +28,7 @@ import (
 	"github.com/milvus-io/milvus-sdk-go/milvus"
 )
 
-var collectionName string = "test_go"
+var collectionName string = "test_go2"
 var dimension int64 = 128
 var indexFileSize int64 = 1024
 var metricType int64 = int64(milvus.L2)
@@ -41,8 +41,7 @@ var nlist int64 = 16384
 func example(address string, port string) {
 	var i, j int64
 	connectParam := milvus.ConnectParam{IPAddress: address, Port: port}
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+	ctx := context.TODO()
 	client, err := milvus.NewMilvusClient(ctx, connectParam)
 	if err != nil {
 		log.Fatalf("Client connect failed: %v", err)
