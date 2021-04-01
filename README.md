@@ -4,19 +4,7 @@ Go SDK for [Milvus](https://github.com/milvus-io/milvus). To contribute code to 
 
 |Milvus version| Recommended Go SDK version |
 |:-----:|:-----:|
-| experimental | 0.5.1|
-| 0.10.6 | 0.4.6|
-| 0.10.5 | 0.4.5|
-| 0.10.4 | 0.4.4|
-| 0.10.3 | 0.4.4|
-| 0.10.2 | 0.4.4|
-| 0.10.1 | 0.4.3|
-| 0.10.0 | 0.4.2|
-| 0.9.1 | 0.4.1|
-| 0.9.0 | 0.4.0|
-| 0.8.0 | 0.3.0|
-| 0.7.1 | 0.2.0|
-| 0.7.0 | 0.1.0|
+| 1.0.x | 1.0.0 |
 
 ### Getting started
 
