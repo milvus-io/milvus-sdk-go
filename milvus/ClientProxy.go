@@ -94,8 +94,11 @@ func (client *Milvusclient) Disconnect(ctx context.Context) error {
 }
 
 func (client *Milvusclient) CreateCollection(ctx context.Context, collectionParam CollectionParam) (Status, error) {
-	grpcCollectionSchema := pb.CollectionSchema{nil, collectionParam.CollectionName, collectionParam.Dimension,
-		collectionParam.IndexFileSize, int32(collectionParam.MetricType), nil, struct{}{}, nil, 0}
+	grpcCollectionSchema := pb.CollectionSchema{
+		CollectionName: collectionParam.CollectionName,
+		Dimension:      collectionParam.Dimension,
+		IndexFileSize:  collectionParam.IndexFileSize,
+	}
 	grpcStatus, err := client.Instance.CreateCollection(ctx, grpcCollectionSchema)
 	if err != nil {
 		return nil, err
@@ -105,7 +108,9 @@ func (client *Milvusclient) CreateCollection(ctx context.Context, collectionPara
 }
 
 func (client *Milvusclient) HasCollection(ctx context.Context, collectionName string) (bool, Status, error) {
-	grpcCollectionName := pb.CollectionName{collectionName, struct{}{}, nil, 0}
+	grpcCollectionName := pb.CollectionName{
+		CollectionName: collectionName,
+	}
 	boolReply, err := client.Instance.HasCollection(ctx, grpcCollectionName)
 	if err != nil {
 		return false, nil, err
@@ -114,7 +119,9 @@ func (client *Milvusclient) HasCollection(ctx context.Context, collectionName st
 }
 
 func (client *Milvusclient) DropCollection(ctx context.Context, collectionName string) (Status, error) {
-	grpcCollectionName := pb.CollectionName{collectionName, struct{}{}, nil, 0}
+	grpcCollectionName := pb.CollectionName{
+		CollectionName: collectionName,
+	}
 	grpcStatus, err := client.Instance.DropCollection(ctx, grpcCollectionName)
 	if err != nil {
 		return nil, err
@@ -125,10 +132,16 @@ func (client *Milvusclient) DropCollection(ctx context.Context, collectionName s
 
 func (client *Milvusclient) CreateIndex(ctx context.Context, indexParam *IndexParam) (Status, error) {
 	keyValuePair := make([]*pb.KeyValuePair, 1)
-	pair := pb.KeyValuePair{"params", indexParam.ExtraParams, struct{}{}, nil, 0}
+	pair := pb.KeyValuePair{
+		Key:   "params",
+		Value: indexParam.ExtraParams,
+	}
 	keyValuePair[0] = &pair
-	grpcIndexParam := pb.IndexParam{nil, indexParam.CollectionName, int32(indexParam.IndexType), keyValuePair,
-		struct{}{}, nil, 0}
+	grpcIndexParam := pb.IndexParam{
+		CollectionName: indexParam.CollectionName,
+		IndexType:      int32(indexParam.IndexType),
+		ExtraParams:    keyValuePair,
+	}
 	grpcStatus, err := client.Instance.CreateIndex(ctx, grpcIndexParam)
 	if err != nil {
 		return nil, err
@@ -142,12 +155,19 @@ func (client *Milvusclient) Insert(ctx context.Context, insertParam *InsertParam
 	var i int
 	var rowRecordArray = make([]*pb.RowRecord, len(insertParam.RecordArray))
 	for i = 0; i < len(insertParam.RecordArray); i++ {
-		rowRecord := pb.RowRecord{insertParam.RecordArray[i].FloatData, insertParam.RecordArray[i].BinaryData, struct{}{}, nil, 0}
+		rowRecord := pb.RowRecord{
+			FloatData:  insertParam.RecordArray[i].FloatData,
+			BinaryData: insertParam.RecordArray[i].BinaryData,
+		}
 		rowRecordArray[i] = &rowRecord
 	}
 
-	grpcInsertParam := pb.InsertParam{insertParam.CollectionName, rowRecordArray, insertParam.IDArray,
-		insertParam.PartitionTag, nil, struct{}{}, nil, 0}
+	grpcInsertParam := pb.InsertParam{
+		CollectionName: insertParam.CollectionName,
+		RowRecordArray: rowRecordArray,
+		RowIdArray:     insertParam.IDArray,
+		PartitionTag:   insertParam.PartitionTag,
+	}
 	vectorIds, err := client.Instance.Insert(ctx, grpcInsertParam)
 	if err != nil {
 		return nil, nil, err
@@ -161,8 +181,12 @@ func (client *Milvusclient) Insert(ctx context.Context, insertParam *InsertParam
 
 ////////////////////////////////////////////////////////////////////////////
 
-func (client *Milvusclient) GetEntityByID(ctx context.Context, collectionName string, vector_id []int64) ([]Entity, Status, error) {
-	grpcIdentity := pb.VectorsIdentity{collectionName, vector_id, struct{}{}, nil, 0}
+func (client *Milvusclient) GetEntityByID(ctx context.Context, collectionName string, partitionTag string, vector_id []int64) ([]Entity, Status, error) {
+	grpcIdentity := pb.VectorsIdentity{
+		CollectionName: collectionName,
+		PartitionTag:   partitionTag,
+		IdArray:        vector_id,
+	}
 	grpcVectorData, err := client.Instance.GetVectorsByID(ctx, grpcIdentity)
 	if err != nil {
 		return nil, nil, err
@@ -183,7 +207,10 @@ func (client *Milvusclient) GetEntityByID(ctx context.Context, collectionName st
 ////////////////////////////////////////////////////////////////////////////
 
 func (client *Milvusclient) ListIDInSegment(ctx context.Context, listIDInSegmentParam ListIDInSegmentParam) ([]int64, Status, error) {
-	grpcParam := pb.GetVectorIDsParam{listIDInSegmentParam.CollectionName, listIDInSegmentParam.SegmentName, struct{}{}, nil, 0}
+	grpcParam := pb.GetVectorIDsParam{
+		CollectionName: listIDInSegmentParam.CollectionName,
+		SegmentName:    listIDInSegmentParam.SegmentName,
+	}
 	vectorIDs, err := client.Instance.GetVectorIDs(ctx, grpcParam)
 	if err != nil {
 		return nil, nil, err
@@ -197,16 +224,27 @@ func (client *Milvusclient) Search(ctx context.Context, searchParam SearchParam)
 	var queryRecordArray = make([]*pb.RowRecord, len(searchParam.QueryEntities))
 	var i, j int64
 	for i = 0; i < int64(len(searchParam.QueryEntities)); i++ {
-		rowRecord := pb.RowRecord{searchParam.QueryEntities[i].FloatData, searchParam.QueryEntities[i].BinaryData, struct{}{}, nil, 0}
+		rowRecord := pb.RowRecord{
+			FloatData:  searchParam.QueryEntities[i].FloatData,
+			BinaryData: searchParam.QueryEntities[i].BinaryData,
+		}
 		queryRecordArray[i] = &rowRecord
 	}
 
 	keyValuePair := make([]*pb.KeyValuePair, 1)
-	pair := pb.KeyValuePair{"params", searchParam.ExtraParams, struct{}{}, nil, 0}
+	pair := pb.KeyValuePair{
+		Key:   "params",
+		Value: searchParam.ExtraParams,
+	}
 	keyValuePair[0] = &pair
 
-	grpcSearchParam := pb.SearchParam{searchParam.CollectionName, searchParam.PartitionTag, queryRecordArray,
-		searchParam.Topk, keyValuePair, struct{}{}, nil, 0}
+	grpcSearchParam := pb.SearchParam{
+		CollectionName:    searchParam.CollectionName,
+		PartitionTagArray: searchParam.PartitionTag,
+		QueryRecordArray:  queryRecordArray,
+		Topk:              searchParam.Topk,
+		ExtraParams:       keyValuePair,
+	}
 	topkQueryResult, err := client.Instance.Search(ctx, grpcSearchParam)
 	if err != nil {
 		return TopkQueryResult{nil}, nil, err
@@ -232,8 +270,12 @@ func (client *Milvusclient) Search(ctx context.Context, searchParam SearchParam)
 
 ////////////////////////////////////////////////////////////////////////////
 
-func (client *Milvusclient) DeleteEntityByID(ctx context.Context, collectionName string, id_array []int64) (Status, error) {
-	grpcParam := pb.DeleteByIDParam{collectionName, id_array, struct{}{}, nil, 0}
+func (client *Milvusclient) DeleteEntityByID(ctx context.Context, collectionName string, partitionTag string, id_array []int64) (Status, error) {
+	grpcParam := pb.DeleteByIDParam{
+		CollectionName: collectionName,
+		PartitionTag:   partitionTag,
+		IdArray:        id_array,
+	}
 	grpcStatus, err := client.Instance.DeleteByID(ctx, grpcParam)
 	if err != nil {
 		return nil, err
@@ -244,7 +286,9 @@ func (client *Milvusclient) DeleteEntityByID(ctx context.Context, collectionName
 ////////////////////////////////////////////////////////////////////////////
 
 func (client *Milvusclient) GetCollectionInfo(ctx context.Context, collectionName string) (CollectionParam, Status, error) {
-	grpcCollectionName := pb.CollectionName{collectionName, struct{}{}, nil, 0}
+	grpcCollectionName := pb.CollectionName{
+		CollectionName: collectionName,
+	}
 	collectionSchema, err := client.Instance.DescribeCollection(ctx, grpcCollectionName)
 	if err != nil {
 		return CollectionParam{"", 0, 0, 0}, nil, err
@@ -256,7 +300,9 @@ func (client *Milvusclient) GetCollectionInfo(ctx context.Context, collectionNam
 ////////////////////////////////////////////////////////////////////////////
 
 func (client *Milvusclient) CountEntities(ctx context.Context, collectionName string) (int64, Status, error) {
-	grpcCollectionName := pb.CollectionName{collectionName, struct{}{}, nil, 0}
+	grpcCollectionName := pb.CollectionName{
+		CollectionName: collectionName,
+	}
 	rowCount, err := client.Instance.CountCollection(ctx, grpcCollectionName)
 	if err != nil {
 		return 0, nil, err
@@ -278,7 +324,9 @@ func (client *Milvusclient) ListCollections(ctx context.Context) ([]string, Stat
 ////////////////////////////////////////////////////////////////////////////
 
 func (client *Milvusclient) GetCollectionStats(ctx context.Context, collectionName string) (string, Status, error) {
-	grpcCollectionName := pb.CollectionName{collectionName, struct{}{}, nil, 0}
+	grpcCollectionName := pb.CollectionName{
+		CollectionName: collectionName,
+	}
 	grpcCollectionInfo, err := client.Instance.ShowCollectionInfo(ctx, grpcCollectionName)
 	if err != nil {
 		return "", nil, err
@@ -289,7 +337,9 @@ func (client *Milvusclient) GetCollectionStats(ctx context.Context, collectionNa
 ////////////////////////////////////////////////////////////////////////////
 
 func (client *Milvusclient) ServerVersion(ctx context.Context) (string, Status, error) {
-	command := pb.Command{"version", struct{}{}, nil, 0}
+	command := pb.Command{
+		Cmd: "version",
+	}
 	serverVersion, err := client.Instance.Cmd(ctx, command)
 	if err != nil {
 		return "", nil, err
@@ -303,7 +353,7 @@ func (client *Milvusclient) ServerStatus(ctx context.Context) (string, Status, e
 	if client.Instance == nil {
 		return "not connect to server", status{int64(0), ""}, nil
 	}
-	command := pb.Command{"", struct{}{}, nil, 0}
+	command := pb.Command{Cmd: ""}
 	serverStatus, err := client.Instance.Cmd(ctx, command)
 	if err != nil {
 		return "connection lost", nil, err
@@ -314,7 +364,10 @@ func (client *Milvusclient) ServerStatus(ctx context.Context) (string, Status, e
 ////////////////////////////////////////////////////////////////////////////
 
 func (client *Milvusclient) LoadCollection(ctx context.Context, param LoadCollectionParam) (Status, error) {
-	grpcParam := pb.PreloadCollectionParam{param.CollectionName, param.PartitionTagList, struct{}{}, nil, 0}
+	grpcParam := pb.PreloadCollectionParam{
+		CollectionName:    param.CollectionName,
+		PartitionTagArray: param.PartitionTagList,
+	}
 	grpcStatus, err := client.Instance.PreloadCollection(ctx, grpcParam)
 	if err != nil {
 		return nil, err
@@ -324,8 +377,22 @@ func (client *Milvusclient) LoadCollection(ctx context.Context, param LoadCollec
 
 ////////////////////////////////////////////////////////////////////////////
 
+func (client *Milvusclient) ReleaseCollection(ctx context.Context, param LoadCollectionParam) (Status, error) {
+	grpcParam := pb.PreloadCollectionParam{
+		CollectionName:    param.CollectionName,
+		PartitionTagArray: param.PartitionTagList,
+	}
+	grpcStatus, err := client.Instance.ReleaseCollection(ctx, grpcParam)
+	if err != nil {
+		return nil, err
+	}
+	return status{int64(grpcStatus.GetErrorCode()), grpcStatus.GetReason()}, err
+}
+
+////////////////////////////////////////////////////////////////////////////
+
 func (client *Milvusclient) GetIndexInfo(ctx context.Context, collectionName string) (IndexParam, Status, error) {
-	grpcCollectionName := pb.CollectionName{collectionName, struct{}{}, nil, 0}
+	grpcCollectionName := pb.CollectionName{CollectionName: collectionName}
 	indexParam, err := client.Instance.DescribeIndex(ctx, grpcCollectionName)
 	if err != nil {
 		return IndexParam{"", 0, ""}, nil, err
@@ -344,7 +411,9 @@ func (client *Milvusclient) GetIndexInfo(ctx context.Context, collectionName str
 ////////////////////////////////////////////////////////////////////////////
 
 func (client *Milvusclient) DropIndex(ctx context.Context, collectionName string) (Status, error) {
-	grpcCollectionName := pb.CollectionName{collectionName, struct{}{}, nil, 0}
+	grpcCollectionName := pb.CollectionName{
+		CollectionName: collectionName,
+	}
 	grpcStatus, err := client.Instance.DropIndex(ctx, grpcCollectionName)
 	if err != nil {
 		return nil, err
@@ -355,8 +424,10 @@ func (client *Milvusclient) DropIndex(ctx context.Context, collectionName string
 ////////////////////////////////////////////////////////////////////////////
 
 func (client *Milvusclient) CreatePartition(ctx context.Context, partitionParam PartitionParam) (Status, error) {
-	grpcPartitionParam := pb.PartitionParam{partitionParam.CollectionName,
-		partitionParam.PartitionTag, struct{}{}, nil, 0}
+	grpcPartitionParam := pb.PartitionParam{
+		CollectionName: partitionParam.CollectionName,
+		Tag:            partitionParam.PartitionTag,
+	}
 	grpcStatus, err := client.Instance.CreatePartition(ctx, grpcPartitionParam)
 	if err != nil {
 		return nil, err
@@ -367,7 +438,7 @@ func (client *Milvusclient) CreatePartition(ctx context.Context, partitionParam 
 ////////////////////////////////////////////////////////////////////////////
 
 func (client *Milvusclient) ListPartitions(ctx context.Context, collectionName string) ([]PartitionParam, Status, error) {
-	grpcCollectionName := pb.CollectionName{collectionName, struct{}{}, nil, 0}
+	grpcCollectionName := pb.CollectionName{CollectionName: collectionName}
 	grpcPartitionList, err := client.Instance.ShowPartitions(ctx, grpcCollectionName)
 	if err != nil {
 		return nil, status{int64(RPCFailed), err.Error()}, err
@@ -384,8 +455,10 @@ func (client *Milvusclient) ListPartitions(ctx context.Context, collectionName s
 ////////////////////////////////////////////////////////////////////////////
 
 func (client *Milvusclient) DropPartition(ctx context.Context, partitionParam PartitionParam) (Status, error) {
-	grpcPartitionParam := pb.PartitionParam{partitionParam.CollectionName,
-		partitionParam.PartitionTag, struct{}{}, nil, 0}
+	grpcPartitionParam := pb.PartitionParam{
+		CollectionName: partitionParam.CollectionName,
+		Tag:            partitionParam.PartitionTag,
+	}
 	grpcStatus, err := client.Instance.DropPartition(ctx, grpcPartitionParam)
 	if err != nil {
 		return nil, err
@@ -396,7 +469,7 @@ func (client *Milvusclient) DropPartition(ctx context.Context, partitionParam Pa
 ////////////////////////////////////////////////////////////////////////////
 
 func (client *Milvusclient) GetConfig(ctx context.Context, nodeName string) (string, Status, error) {
-	command := pb.Command{"get_config " + nodeName, struct{}{}, nil, 0}
+	command := pb.Command{Cmd: "get_config " + nodeName}
 	configInfo, err := client.Instance.Cmd(ctx, command)
 	if err != nil {
 		return "", nil, err
@@ -407,7 +480,7 @@ func (client *Milvusclient) GetConfig(ctx context.Context, nodeName string) (str
 ////////////////////////////////////////////////////////////////////////////
 
 func (client *Milvusclient) SetConfig(ctx context.Context, nodeName string, value string) (Status, error) {
-	command := pb.Command{"set_config " + nodeName + " " + value, struct{}{}, nil, 0}
+	command := pb.Command{Cmd: "set_config " + nodeName + " " + value}
 	reply, err := client.Instance.Cmd(ctx, command)
 	if err != nil {
 		return nil, err
@@ -418,7 +491,7 @@ func (client *Milvusclient) SetConfig(ctx context.Context, nodeName string, valu
 ////////////////////////////////////////////////////////////////////////////
 
 func (client *Milvusclient) Flush(ctx context.Context, collectionNameArray []string) (Status, error) {
-	grpcParam := pb.FlushParam{collectionNameArray, struct{}{}, nil, 0}
+	grpcParam := pb.FlushParam{CollectionNameArray: collectionNameArray}
 	grpcStatus, err := client.Instance.Flush(ctx, grpcParam)
 	if err != nil {
 		return nil, err
@@ -429,7 +502,7 @@ func (client *Milvusclient) Flush(ctx context.Context, collectionNameArray []str
 ////////////////////////////////////////////////////////////////////////////
 
 func (client *Milvusclient) Compact(ctx context.Context, collectionName string) (Status, error) {
-	grpcParam := pb.CollectionName{collectionName, struct{}{}, nil, 0}
+	grpcParam := pb.CollectionName{CollectionName: collectionName}
 	grpcStatus, err := client.Instance.Compact(ctx, grpcParam)
 	if err != nil {
 		return nil, err
