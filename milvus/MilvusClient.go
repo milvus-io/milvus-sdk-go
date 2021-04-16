@@ -273,7 +273,7 @@ type MilvusClient interface {
 	// GetEntityByID method
 	// This method is used to get entity by entity id
 	// return entity data
-	GetEntityByID(ctx context.Context, collectionName string, entity_id []int64) ([]Entity, Status, error)
+	GetEntityByID(ctx context.Context, collectionName string, partitionTag string, entity_id []int64) ([]Entity, Status, error)
 
 	// ListIDInSegment method
 	// This method is used to get entity ids
@@ -288,7 +288,7 @@ type MilvusClient interface {
 	// DeleteEntityByID method
 	// This method is used to delete entities by ids
 	// return indicate if delete is successful
-	DeleteEntityByID(ctx context.Context, collectionName string, id_array []int64) (Status, error)
+	DeleteEntityByID(ctx context.Context, collectionName string, partitionTag string, id_array []int64) (Status, error)
 
 	// GetCollectionInfo method
 	// This method is used to show collection information.
@@ -324,6 +324,11 @@ type MilvusClient interface {
 	// This method is used to preload collection
 	// return indicate if this operation is successful.
 	LoadCollection(ctx context.Context, param LoadCollectionParam) (Status, error)
+
+	// ReleaseCollection method
+	// This method is used to release collection
+	// return indicate if this operation is successful.
+	ReleaseCollection(ctx context.Context, param LoadCollectionParam) (Status, error)
 
 	// GetIndexInfo method
 	// This method is used to describe index

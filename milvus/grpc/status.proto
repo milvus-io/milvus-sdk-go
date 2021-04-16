@@ -1,6 +1,7 @@
 syntax = "proto3";
 
 package milvus.grpc;
+option go_package="github.com/milvus-io/milvus-sdk-go/milvus/grpc/gen";
 
 enum ErrorCode {
     SUCCESS = 0;

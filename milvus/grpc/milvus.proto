@@ -3,6 +3,7 @@ syntax = "proto3";
 import "status.proto";
 
 package milvus.grpc;
+option go_package="github.com/milvus-io/milvus-sdk-go/milvus/grpc/gen";
 
 /**
  * @brief general usage
@@ -193,6 +194,7 @@ message FlushParam {
  */
 message DeleteByIDParam {
     string collection_name = 1;
+    string partition_tag = 3;
     repeated int64 id_array = 2;
 }
 
@@ -209,6 +211,7 @@ message CollectionInfo {
  */
 message VectorsIdentity {
     string collection_name = 1;
+    string partition_tag = 3;
     repeated int64 id_array = 2;
 }
 
@@ -639,6 +642,15 @@ service MilvusService {
      * @return Status
      */
     rpc PreloadCollection(PreloadCollectionParam) returns (Status) {}
+
+    /**
+     * @brief This method is used to release collection/partitions
+     *
+     * @param PreloadCollectionParam, target collection/partitions.
+     *
+     * @return Status
+     */
+     rpc ReleaseCollection(PreloadCollectionParam) returns (Status) {}
 
     /**
      * @brief This method is used to reload collection segments
