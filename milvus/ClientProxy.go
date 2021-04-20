@@ -74,10 +74,10 @@ func (client *Milvusclient) Connect(ctx context.Context, connectParam ConnectPar
 		println("Get server version status: " + status.GetMessage())
 		return err
 	}
-	if serverVersion[0:3] != "1.0" {
+	if serverVersion[0:3] != "1.1" {
 		println("Server version check failed, this client supposed to connect milvus-1.0.x")
 		client.Instance = nil
-		err = errors.New("Connecto server failed, please check server version.")
+		err = errors.New("Connect to server failed, please check server version.")
 		return err
 	}
 
