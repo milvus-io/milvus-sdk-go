@@ -24,7 +24,7 @@ import (
 	"context"
 )
 
-var clientVersion string = "1.0.0"
+var clientVersion string = "1.1.0"
 
 // MetricType metric type
 type MetricType int64
