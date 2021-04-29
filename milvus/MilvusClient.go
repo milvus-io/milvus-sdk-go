@@ -113,7 +113,7 @@ type CollectionParam struct {
 	// IndexFileSize Index file size, must be a positive value
 	IndexFileSize int64
 	// MetricType Index metric type
-	MetricType int64
+	MetricType int32
 }
 
 // IndexParam index parameters

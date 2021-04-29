@@ -22,6 +22,7 @@ package main
 import (
 	"context"
 	"log"
+	"math/rand"
 	"strconv"
 	"time"
 
@@ -31,7 +32,7 @@ import (
 var collectionName string = "test_go2"
 var dimension int64 = 128
 var indexFileSize int64 = 1024
-var metricType int64 = int64(milvus.L2)
+var metricType int32 = int32(milvus.L2)
 var nq int64 = 100
 var nprobe int64 = 64
 var nb int64 = 100000
@@ -164,7 +165,7 @@ func example(address string, port string) {
 	for i = 0; i < nq; i++ {
 		queryVectors[i] = make([]float32, dimension)
 		for j = 0; j < dimension; j++ {
-			queryVectors[i][j] = float32(i % (j + 1))
+			queryVectors[i][j] = float32(rand.Float64())
 		}
 		queryRecords[i].FloatData = queryVectors[i]
 	}
