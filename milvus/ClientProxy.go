@@ -74,7 +74,7 @@ func (client *Milvusclient) Connect(ctx context.Context, connectParam ConnectPar
 		println("Get server version status: " + status.GetMessage())
 		return err
 	}
-	if serverVersion[0:3] != "1.0" {
+	if serverVersion[0:3] != "1.1" {
 		println("Server version check failed, this client supposed to connect milvus-1.0.x")
 		client.Instance = nil
 		err = errors.New("Connecto server failed, please check server version.")
@@ -98,6 +98,7 @@ func (client *Milvusclient) CreateCollection(ctx context.Context, collectionPara
 		CollectionName: collectionParam.CollectionName,
 		Dimension:      collectionParam.Dimension,
 		IndexFileSize:  collectionParam.IndexFileSize,
+		MetricType:     collectionParam.MetricType,
 	}
 	grpcStatus, err := client.Instance.CreateCollection(ctx, grpcCollectionSchema)
 	if err != nil {
@@ -293,7 +294,7 @@ func (client *Milvusclient) GetCollectionInfo(ctx context.Context, collectionNam
 	if err != nil {
 		return CollectionParam{"", 0, 0, 0}, nil, err
 	}
-	return CollectionParam{collectionSchema.GetCollectionName(), collectionSchema.GetDimension(), collectionSchema.GetIndexFileSize(), int64(collectionSchema.GetMetricType())},
+	return CollectionParam{collectionSchema.GetCollectionName(), collectionSchema.GetDimension(), collectionSchema.GetIndexFileSize(), collectionSchema.GetMetricType()},
 		status{int64(collectionSchema.GetStatus().GetErrorCode()), collectionSchema.Status.Reason}, err
 }
 
