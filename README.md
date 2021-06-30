@@ -2,9 +2,12 @@
 
 Go SDK for [Milvus](https://github.com/milvus-io/milvus). To contribute code to this project, please read our [contribution guidelines](https://github.com/milvus-io/milvus/blob/master/CONTRIBUTING.md) first.
 
+
+### [1.0 Legacy SDK](https://github.com/milvus-io/milvus-sdk-go/tree/v1.1.0)
 |Milvus version| Recommended Go SDK version |
 |:-----:|:-----:|
 | 1.0.x | 1.0.0 |
+| 1.1.x | 1.1.0 |
 
 ### Getting started
 
@@ -22,16 +25,9 @@ Go 1.12 or higher
 
 2. Include the Milvus Go SDK in your application:
 
-   ```shell
+   ```go
    import "github.com/milvus-io/milvus-sdk-go/milvus"
    ```
-
-#### Try an example
-
-```shell
-cd [milvus-sdk-go root path]/examples
-go run MilvusClientExample.go
-```
 
 ### API Documentation
 

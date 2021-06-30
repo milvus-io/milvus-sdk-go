@@ -1,0 +1,8 @@
+filters:
+  ".*":
+    reviewers:
+      - sunby
+      - congqixia
+    approvers:
+      - sunby
+      - congqixia
