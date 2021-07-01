@@ -1,7 +1,7 @@
 syntax = "proto3";
-package milvus.proto.milvus;
+package milvus.proto.server;
 
-option go_package = "github.com/milvus-io/milvus-sdk-go/proto/milvus";
+option go_package = "github.com/milvus-io/milvus-sdk-go/proto/server";
 
 import "common.proto";
 import "schema.proto";
