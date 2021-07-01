@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 package milvus.proto.common;
-option go_package="github.com/milvus-io/milvus-sdk-go/proto/common";
+option go_package="github.com/milvus-io/milvus-sdk-go/internal/proto/common";
 
 
 enum ErrorCode {
