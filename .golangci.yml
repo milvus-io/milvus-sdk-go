@@ -1,0 +1,38 @@
+run:
+  skip-dirs:
+    - build
+    - configs
+    - deployments
+    - docs
+    - scripts
+    - internal/core
+
+linters-settings:
+  golint:
+    min-confidence: 0.8
+
+  misspell:
+    locale: US
+
+linters:
+  disable-all: true
+  enable:
+    - typecheck
+    - goimports
+    - misspell
+    - govet
+    - golint
+    - ineffassign
+    - gosimple
+
+issues:
+  exclude-use-default: false
+  exclude:
+    - should have a package comment
+    - should have comment
+    - should be of the form
+    - should not use dot imports
+    - which can be annoying to use
+service:
+  golangci-lint-version: 1.27.0 # use the fixed version to not introduce new linters unexpectedly
+

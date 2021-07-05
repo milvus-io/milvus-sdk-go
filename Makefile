@@ -31,5 +31,13 @@ generate-proto: check-protoc-version
 	@which protoc-gen-go 1>/dev/null || (echo "Installing protoc-gen-go" && go get github.com/golang/protobuf/protoc-gen-go@v1.3.2)
 	@(env bash $(PWD)/scripts/proto_gen_go.sh)
 
+static-check:
+	@echo "Running $@ check:"
+	@golangci-lint cache clean
+	@golangci-lint run --timeout=30m --config ./.golangci.yml ./entity/...
+	@golangci-lint run --timeout=30m --config ./.golangci.yml ./client/...
+	@golangci-lint run --timeout=30m --config ./.golangci.yml ./internal/...
+	@golangci-lint run --timeout=30m --config ./.golangci.yml ./tests/...
+
 clean: 
 	@echo "Cleaning up all generated file"
