@@ -68,7 +68,13 @@ func TestDescribeCollection(t *testing.T) {
 		defer c.Close()
 	}
 	//TODO merge describe and create
-	c.DescribeCollection(context.Background(), "test_go_sdk")
+	schema, err := c.DescribeCollection(context.Background(), "test_go_sdk")
+	if assert.Nil(t, err) {
+		t.Logf("schema -- name: %s\n", schema.Name)
+		for _, field := range schema.Schema.Fields {
+			t.Logf("schema -- field: %s data type: %v, is primary: %v\n", field.Name, field.DataType, field.PrimaryKey)
+		}
+	}
 }
 
 func TestDropCollection(t *testing.T) {

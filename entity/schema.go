@@ -9,7 +9,7 @@
 // is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied. See the License for the specific language governing permissions and limitations under the License.
 
-// pakcage entity defines entities used in sdk
+// package entity defines entities used in sdk
 package entity
 
 import (
@@ -106,7 +106,94 @@ func KvPairsMap(kvps []*common.KeyValuePair) map[string]string {
 }
 
 // FieldType field data type alias type
+// used in go:generate trick, DO NOT modify names & string
 type FieldType int32
+
+// Name returns field type name
+func (t FieldType) Name() string {
+	switch t {
+	case FieldTypeBool:
+		return "Bool"
+	case FieldTypeInt8:
+		return "Int8"
+	case FieldTypeInt16:
+		return "Int16"
+	case FieldTypeInt32:
+		return "Int32"
+	case FieldTypeInt64:
+		return "Int64"
+	case FieldTypeFloat:
+		return "Float"
+	case FieldTypeDouble:
+		return "Double"
+	case FieldTypeString:
+		return "String"
+	case FieldTypeBinaryVector:
+		return "BinaryVector"
+	case FieldTypeFloatVector:
+		return "FloatVector"
+	default:
+		return "undefined"
+	}
+}
+
+// String returns field type
+func (t FieldType) String() string {
+	switch t {
+	case FieldTypeBool:
+		return "bool"
+	case FieldTypeInt8:
+		return "int8"
+	case FieldTypeInt16:
+		return "int16"
+	case FieldTypeInt32:
+		return "int32"
+	case FieldTypeInt64:
+		return "int64"
+	case FieldTypeFloat:
+		return "float32"
+	case FieldTypeDouble:
+		return "float64"
+	case FieldTypeString:
+		return "string"
+	case FieldTypeBinaryVector:
+		return "[]byte"
+	case FieldTypeFloatVector:
+		return "[]float32"
+	default:
+		return "undefined"
+	}
+}
+
+// PbFieldType represents FieldType corresponding schema pb type
+func (t FieldType) PbFieldType() (string, string) {
+	switch t {
+	case FieldTypeBool:
+		return "Bool", "bool"
+	case FieldTypeInt8:
+		fallthrough
+	case FieldTypeInt16:
+		fallthrough
+	case FieldTypeInt32:
+		return "Int", "int32"
+	case FieldTypeInt64:
+		return "Long", "int64"
+	case FieldTypeFloat:
+		return "Float", "float32"
+	case FieldTypeDouble:
+		return "Double", "float64"
+	case FieldTypeString:
+		return "String", "string"
+	case FieldTypeBinaryVector:
+		return "[]byte", ""
+	case FieldTypeFloatVector:
+		return "[]float32", ""
+	default:
+		return "undefined", ""
+
+	}
+
+}
 
 // Match schema definition
 const (
