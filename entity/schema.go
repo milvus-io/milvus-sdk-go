@@ -69,7 +69,7 @@ func (f *Field) ProtoMessage() *schema.FieldSchema {
 		Description:  f.Description,
 		IsPrimaryKey: f.PrimaryKey,
 		DataType:     schema.DataType(f.DataType),
-		TypeParams:   mapKvPairs(f.TypeParams),
+		TypeParams:   MapKvPairs(f.TypeParams),
 	}
 }
 
@@ -85,7 +85,8 @@ func (f *Field) ReadProto(p *schema.FieldSchema) *Field {
 	return f
 }
 
-func mapKvPairs(m map[string]string) []*common.KeyValuePair {
+// MapKvPairs converts map into common.KeyValuePair slice
+func MapKvPairs(m map[string]string) []*common.KeyValuePair {
 	pairs := make([]*common.KeyValuePair, 0, len(m))
 	for k, v := range m {
 		pairs = append(pairs, &common.KeyValuePair{

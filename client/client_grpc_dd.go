@@ -310,24 +310,111 @@ func (c *grpcClient) ShowPartitions(ctx context.Context, collName string) ([]*en
 	return partitions, nil
 }
 
-func (c *grpcClient) Insert(ctx context.Context, collName string, partitionName string, columns []entity.Column) error {
+// CreateIndex create index for collection
+func (c *grpcClient) CreateIndex(ctx context.Context, collName string, fieldName string, idx entity.Index) error {
 	if c.service == nil {
 		return ErrClientNotReady
 	}
-	req := &server.InsertRequest{
+	req := &server.CreateIndexRequest{
 		DbName:         "", // reserved
 		CollectionName: collName,
-		PartitionName:  partitionName,
+		FieldName:      fieldName,
+		ExtraParams:    entity.MapKvPairs(idx.Params()),
 	}
-	if req.PartitionName == "" {
-		req.PartitionName = "_default" // use default partition
-	}
-	for _, column := range columns {
-		req.FieldsData = append(req.FieldsData, column.FieldData())
-	}
-	resp, err := c.service.Insert(ctx, req)
+	resp, err := c.service.CreateIndex(ctx, req)
 	if err != nil {
 		return err
 	}
-	return handleRespStatus(resp.GetStatus())
+	return handleRespStatus(resp)
+}
+
+// DescribeIndex describe index
+func (c *grpcClient) DescribeIndex(ctx context.Context, collName string) ([]entity.Index, error) {
+	if c.service == nil {
+		return []entity.Index{}, ErrClientNotReady
+	}
+	req := &server.DescribeIndexRequest{
+		CollectionName: collName,
+		IndexName:      "", // empty string stands for all index on collection
+	}
+	resp, err := c.service.DescribeIndex(ctx, req)
+	if err != nil {
+		return []entity.Index{}, err
+	}
+	if err := handleRespStatus(resp.GetStatus()); err != nil {
+		return []entity.Index{}, err
+	}
+	indexes := make([]entity.Index, 0, len(resp.GetIndexDescriptions()))
+	for _, info := range resp.GetIndexDescriptions() {
+		params := entity.KvPairsMap(info.Params)
+		it := params["index_type"]
+		idx := entity.NewGenericIndex(
+			info.IndexName,
+			entity.IndexType(it),
+			params,
+		)
+		indexes = append(indexes, idx)
+	}
+	return indexes, nil
+}
+
+// DropIndex drop index from collection
+func (c *grpcClient) DropIndex(ctx context.Context, collName string, fieldName string) error {
+	if c.service == nil {
+		return ErrClientNotReady
+	}
+	req := &server.DropIndexRequest{
+		DbName:         "", //reserved,
+		CollectionName: collName,
+		FieldName:      fieldName,
+		IndexName:      "", //reserved
+	}
+	resp, err := c.service.DropIndex(ctx, req)
+	if err != nil {
+		return err
+	}
+	return handleRespStatus(resp)
+}
+
+// GetIndexState get index state
+func (c *grpcClient) GetIndexState(ctx context.Context, collName string, fieldName string) (entity.IndexState, error) {
+	if c.service == nil {
+		return entity.IndexState(common.IndexState_Failed), ErrClientNotReady
+	}
+	req := &server.GetIndexStateRequest{
+		DbName:         "",
+		CollectionName: collName,
+		FieldName:      fieldName,
+		IndexName:      "",
+	}
+	resp, err := c.service.GetIndexState(ctx, req)
+	if err != nil {
+		return entity.IndexState(common.IndexState_Failed), err
+	}
+	if err := handleRespStatus(resp.GetStatus()); err != nil {
+		return entity.IndexState(common.IndexState_Failed), err
+	}
+
+	return entity.IndexState(resp.GetState()), nil
+}
+
+// GetIndexBuildProgress get index building progress
+func (c *grpcClient) GetIndexBuildProgress(ctx context.Context, collName string, fieldName string) (total, indexed int64, err error) {
+	if c.service == nil {
+		return 0, 0, ErrClientNotReady
+	}
+	req := &server.GetIndexBuildProgressRequest{
+		DbName:         "",
+		CollectionName: collName,
+		FieldName:      fieldName,
+		IndexName:      "",
+	}
+	resp, err := c.service.GetIndexBuildProgress(ctx, req)
+	if err != nil {
+		return 0, 0, err
+	}
+	if err = handleRespStatus(resp.GetStatus()); err != nil {
+		return 0, 0, err
+	}
+	return resp.GetTotalRows(), resp.GetIndexedRows(), nil
 }

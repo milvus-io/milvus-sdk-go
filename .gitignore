@@ -8,6 +8,12 @@
 #GoLand generated files
 .idea/
 
+# vscode
+.vscode
+
+# vim
+.swp
+
 # Test binary, built with `go test -c`
 *.test
 
