@@ -12,17 +12,13 @@
 // package entity defines entities used in sdk
 package entity
 
-// Collection represent collection meta in Milvus
-type Collection struct {
-	ID               int64   // collection id
-	Name             string  // collection name
-	Schema           *Schema // collection schema, with fields schema and primary key definition
-	PhysicalChannels []string
-	VirtualChannels  []string
-}
+import "github.com/milvus-io/milvus-sdk-go/internal/proto/schema"
 
-// Partition represent partition meta in Milvus
-type Partition struct {
-	ID   int64  // paritition id
-	Name string // parition name
+//go:generate go run gen/gen.go
+
+// Column interface field type for column-based data frame
+type Column interface {
+	Name() string
+	Type() FieldType
+	FieldData() *schema.FieldData
 }

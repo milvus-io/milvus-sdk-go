@@ -309,3 +309,25 @@ func (c *grpcClient) ShowPartitions(ctx context.Context, collName string) ([]*en
 	}
 	return partitions, nil
 }
+
+func (c *grpcClient) Insert(ctx context.Context, collName string, partitionName string, columns []entity.Column) error {
+	if c.service == nil {
+		return ErrClientNotReady
+	}
+	req := &server.InsertRequest{
+		DbName:         "", // reserved
+		CollectionName: collName,
+		PartitionName:  partitionName,
+	}
+	if req.PartitionName == "" {
+		req.PartitionName = "_default" // use default partition
+	}
+	for _, column := range columns {
+		req.FieldsData = append(req.FieldsData, column.FieldData())
+	}
+	resp, err := c.service.Insert(ctx, req)
+	if err != nil {
+		return err
+	}
+	return handleRespStatus(resp.GetStatus())
+}
