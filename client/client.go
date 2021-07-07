@@ -53,8 +53,24 @@ type Client interface {
 	// HasPartition check whether partition exists in collection
 	HasPartition(ctx context.Context, collName string, partitionName string) (bool, error)
 
+	// -- index --
+
+	// CreateIndex create index for field of specified collection
+	// currently index naming is not supported, so only one index on vector field is supported
+	CreateIndex(ctx context.Context, collName string, fieldName string, idx entity.Index) error
+	// DescribeIndex describe index on collection
+	// currently index naming is not supported, so only one index on vector field is supported
+	DescribeIndex(ctx context.Context, collName string) ([]entity.Index, error)
+	// DropINdex drop index from collection with specified field name
+	DropIndex(ctx context.Context, collName string, fieldName string) error
+	// GetIndexState get index state with specified collection and field name
+	// index naming is not supported yet
+	GetIndexState(ctx context.Context, collName string, fieldName string) (entity.IndexState, error)
+
 	// -- basic operation --
-	Insert(ctx context.Context, collName string, partitionName string, columns []entity.Column) error
+
+	// Insert column-based data into collection, returns id column values
+	Insert(ctx context.Context, collName string, partitionName string, columns []entity.Column) (entity.Column, error)
 }
 
 // NewGrpcClient create client with grpc addr
