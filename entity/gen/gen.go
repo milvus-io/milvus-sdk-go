@@ -32,22 +32,31 @@ package entity
 
 import "github.com/milvus-io/milvus-sdk-go/internal/proto/schema"
 
-// column{{.TypeName}} generated columns type for {{.TypeName}}
-type column{{.TypeName}} struct {
+// Column{{.TypeName}} generated columns type for {{.TypeName}}
+type Column{{.TypeName}} struct {
 	name   string
 	values []{{.TypeDef}}
 }
 
-func (c *column{{.TypeName}}) Name() string {
+// Name returns column name
+func (c *Column{{.TypeName}}) Name() string {
 	return c.name
 }
 
-func (c *column{{.TypeName}}) Type() FieldType {
+// Type returns column FieldType
+func (c *Column{{.TypeName}}) Type() FieldType {
 	return FieldType{{.TypeName}}
 }
 
-func (c *column{{.TypeName}}) FieldData() *schema.FieldData {
+// Len returns column values length
+func (c *Column{{.TypeName}}) Len() int {
+	return len(c.values)
+}
+
+// FieldData return column data mapped to schema.FieldData
+func (c *Column{{.TypeName}}) FieldData() *schema.FieldData {
 	fd := &schema.FieldData{
+		Type: schema.DataType_{{.TypeName}},
 		FieldName: c.name,
 	}
 	fd.Field = &schema.FieldData_Scalars{
@@ -62,8 +71,9 @@ func (c *column{{.TypeName}}) FieldData() *schema.FieldData {
 	return fd
 }
 
-func NewColumn{{.TypeName}}(name string, values []{{.TypeDef}}) Column {
-	return &column{{.TypeName}} {
+// NewColumn{{.TypeName}} auto generated constructor
+func NewColumn{{.TypeName}}(name string, values []{{.TypeDef}}) *Column{{.TypeName}} {
+	return &Column{{.TypeName}} {
 		name: name,
 		values: values,
 	}
@@ -78,23 +88,37 @@ package entity
 import "github.com/milvus-io/milvus-sdk-go/internal/proto/schema"
 
 
-// column{{.TypeName}} generated columns type for {{.TypeName}}
-type column{{.TypeName}} struct {
+// Column{{.TypeName}} generated columns type for {{.TypeName}}
+type Column{{.TypeName}} struct {
 	name   string
 	dim    int
 	values []{{.TypeDef}}
 }
 
-func (c *column{{.TypeName}}) Name() string {
+// Name returns column name
+func (c *Column{{.TypeName}}) Name() string {
 	return c.name
 }
 
-func (c *column{{.TypeName}}) Type() FieldType {
+// Type returns column FieldType
+func (c *Column{{.TypeName}}) Type() FieldType {
 	return FieldType{{.TypeName}}
 }
 
-func (c *column{{.TypeName}}) FieldData() *schema.FieldData {
+// Len returns column data length
+func (c * Column{{.TypeName}}) Len() int {
+	return len(c.values)
+}
+
+// Dim returns vector dimension
+func (c *Column{{.TypeName}}) Dim() int {
+	return c.dim
+}
+
+// FieldData return column data mapped to schema.FieldData
+func (c *Column{{.TypeName}}) FieldData() *schema.FieldData {
 	fd := &schema.FieldData{
+		Type: schema.DataType_{{.TypeName}},
 		FieldName: c.name,
 	}
 
@@ -123,8 +147,9 @@ func (c *column{{.TypeName}}) FieldData() *schema.FieldData {
 	return fd
 }
 
-func NewColumn{{.TypeName}}(name string,dim int, values []{{.TypeDef}}) Column {
-	return &column{{.TypeName}} {
+// NewColumn{{.TypeName}} auto generated constructor
+func NewColumn{{.TypeName}}(name string, dim int, values []{{.TypeDef}}) *Column{{.TypeName}} {
+	return &Column{{.TypeName}} {
 		name:   name,
 		dim:    dim,
 		values: values,

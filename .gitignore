@@ -12,7 +12,7 @@
 .vscode
 
 # vim
-.swp
+*.swp
 
 # Test binary, built with `go test -c`
 *.test

@@ -12,6 +12,8 @@
 // pakcage entity defines entities used in sdk
 package entity
 
+import "github.com/milvus-io/milvus-sdk-go/internal/proto/common"
+
 // Segment represent segment in milvus
 type Segment struct {
 	ID           int64
@@ -20,4 +22,10 @@ type Segment struct {
 	IndexID      int64
 
 	NumRows int64
+	State   common.SegmentState
+}
+
+// Flushed indicates segment is flushed
+func (s Segment) Flushed() bool {
+	return s.State == common.SegmentState_Flushed
 }

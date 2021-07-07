@@ -96,5 +96,10 @@ func TestGetCollectionStatistics(t *testing.T) {
 		defer c.Close()
 	}
 
-	c.GetCollectionStatistics(context.Background(), "test_go_sdk")
+	m, err := c.GetCollectionStatistics(context.Background(), testCollectionName)
+	if assert.Nil(t, err) {
+		for k, v := range m {
+			t.Log(k, v)
+		}
+	}
 }
