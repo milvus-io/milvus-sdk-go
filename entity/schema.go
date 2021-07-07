@@ -56,6 +56,7 @@ type Field struct {
 	ID          int64  // field id, generated when collection is created, input value is ignored
 	Name        string // field name
 	PrimaryKey  bool   // is primary key
+	AutoID      bool   // is auto id
 	Description string
 	DataType    FieldType
 	TypeParams  map[string]string
@@ -68,6 +69,7 @@ func (f *Field) ProtoMessage() *schema.FieldSchema {
 		Name:         f.Name,
 		Description:  f.Description,
 		IsPrimaryKey: f.PrimaryKey,
+		AutoID:       f.AutoID,
 		DataType:     schema.DataType(f.DataType),
 		TypeParams:   MapKvPairs(f.TypeParams),
 	}
@@ -78,6 +80,7 @@ func (f *Field) ReadProto(p *schema.FieldSchema) *Field {
 	f.ID = p.GetFieldID()
 	f.Name = p.GetName()
 	f.PrimaryKey = p.GetIsPrimaryKey()
+	f.AutoID = p.GetAutoID()
 	f.Description = p.GetDescription()
 	f.DataType = FieldType(p.GetDataType())
 	f.TypeParams = KvPairsMap(p.GetTypeParams())

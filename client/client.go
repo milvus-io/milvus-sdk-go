@@ -38,7 +38,7 @@ type Client interface {
 	// GetCollectionStatistics get collection statistics
 	GetCollectionStatistics(ctx context.Context, collName string) (map[string]string, error)
 	// LoadCollection load collection into memory
-	LoadCollection(ctx context.Context, collName string) error
+	LoadCollection(ctx context.Context, collName string, async bool) error
 	// HasCollection check whether collection exists
 	HasCollection(ctx context.Context, collName string) (bool, error)
 
@@ -70,7 +70,21 @@ type Client interface {
 	// -- basic operation --
 
 	// Insert column-based data into collection, returns id column values
-	Insert(ctx context.Context, collName string, partitionName string, columns []entity.Column) (entity.Column, error)
+	Insert(ctx context.Context, collName string, partitionName string, columns ...entity.Column) (entity.Column, error)
+	// Flush flush collection, specified
+	Flush(ctx context.Context, collName string, async bool) error
+	// Search search with bool expression
+	Search(ctx context.Context, collName string, partitions []string,
+		expr string, outputFields []string, vectors []entity.Vector, vectorField string, metricType entity.MetricType, topK int, params map[string]string) ([]SearchResult, error)
+}
+
+// SearchResult search result
+type SearchResult struct {
+	ResultCount int
+	IDs         entity.Column
+	Fields      []entity.Column
+	Scores      []float32
+	Err         error
 }
 
 // NewGrpcClient create client with grpc addr

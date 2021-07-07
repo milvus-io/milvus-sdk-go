@@ -222,7 +222,7 @@ func (c *grpcClient) GetCollectionStatistics(ctx context.Context, collName strin
 }
 
 // LoadCollection load collection into memory
-func (c *grpcClient) LoadCollection(ctx context.Context, collName string) error {
+func (c *grpcClient) LoadCollection(ctx context.Context, collName string, async bool) error {
 	if c.service == nil {
 		return ErrClientNotReady
 	}
@@ -232,6 +232,31 @@ func (c *grpcClient) LoadCollection(ctx context.Context, collName string) error 
 	resp, err := c.service.LoadCollection(ctx, req)
 	if err != nil {
 		return err
+	}
+	if !async {
+		segments, _ := c.GetPersistentSegmentInfo(ctx, collName)
+		target := make(map[int64]*entity.Segment)
+		for _, segment := range segments {
+			if segment.NumRows == 0 {
+				continue
+			}
+			target[segment.ID] = segment
+			for len(target) > 0 {
+				current, err := c.GetQuerySegmentInfo(ctx, collName)
+				if err == nil {
+					for _, segment := range current {
+						ts, has := target[segment.ID]
+						if has {
+							if segment.NumRows >= ts.NumRows {
+								delete(target, segment.ID)
+							}
+						}
+					}
+				}
+				time.Sleep(time.Millisecond * 100)
+			}
+		}
+
 	}
 	return handleRespStatus(resp)
 }
