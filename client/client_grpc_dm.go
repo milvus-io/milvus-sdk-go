@@ -1,3 +1,15 @@
+// Copyright (C) 2019-2021 Zilliz. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance
+// with the License. You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software distributed under the License
+// is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+// or implied. See the License for the specific language governing permissions and limitations under the License.
+
+// Package client provides milvus client functions
 package client
 
 import (
@@ -67,6 +79,7 @@ func (c *grpcClient) Flush(ctx context.Context, collName string, async bool) err
 	if err := handleRespStatus(resp.GetStatus()); err != nil {
 		return err
 	}
+	//TODO silverxia, add context done respect logic while waiting
 	if !async {
 		segmentIDs, has := resp.GetCollSegIDs()[collName]
 		if has {
@@ -78,8 +91,9 @@ func (c *grpcClient) Flush(ctx context.Context, collName string, async bool) err
 			flushed := func() bool {
 				segments, err := c.GetPersistentSegmentInfo(context.Background(), collName)
 				if err != nil {
-
+					//TODO handles grpc failure, maybe need reconnect?
 				}
+				flushed := 0
 				for _, segment := range segments {
 					if _, has := waitingSet[segment.ID]; !has {
 						continue
@@ -87,8 +101,9 @@ func (c *grpcClient) Flush(ctx context.Context, collName string, async bool) err
 					if !segment.Flushed() {
 						return false
 					}
+					flushed++
 				}
-				return true
+				return len(waitingSet) == flushed
 			}
 			for !flushed() {
 				time.Sleep(500 * time.Millisecond)
