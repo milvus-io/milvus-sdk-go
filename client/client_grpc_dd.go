@@ -300,20 +300,21 @@ func (c *grpcClient) LoadCollection(ctx context.Context, collName string, async 
 				continue
 			}
 			target[segment.ID] = segment
-			for len(target) > 0 {
-				current, err := c.GetQuerySegmentInfo(ctx, collName)
-				if err == nil {
-					for _, segment := range current {
-						ts, has := target[segment.ID]
-						if has {
-							if segment.NumRows >= ts.NumRows {
-								delete(target, segment.ID)
-							}
+
+		}
+		for len(target) > 0 {
+			current, err := c.GetQuerySegmentInfo(ctx, collName)
+			if err == nil {
+				for _, segment := range current {
+					ts, has := target[segment.ID]
+					if has {
+						if segment.NumRows >= ts.NumRows {
+							delete(target, segment.ID)
 						}
 					}
 				}
-				time.Sleep(time.Millisecond * 100)
 			}
+			time.Sleep(time.Millisecond * 100)
 		}
 
 	}
