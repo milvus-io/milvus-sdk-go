@@ -9,7 +9,7 @@
 // is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied. See the License for the specific language governing permissions and limitations under the License.
 
-// package entity defines entities used in sdk
+// Package entity defines entities used in sdk
 package entity
 
 import (
@@ -59,7 +59,7 @@ func (fv FloatVector) Serialize() []byte {
 // BinaryVector []byte vector wrapper
 type BinaryVector []byte
 
-// Dim return vector dimention, note that binary vector is bits count
+// Dim return vector dimension, note that binary vector is bits count
 func (bv BinaryVector) Dim() int {
 	return 8 * len(bv)
 }
@@ -97,7 +97,7 @@ func IDColumns(idField *schema.IDs, begin, end int) (Column, error) {
 	return idColumn, nil
 }
 
-// FieldDataColumn converts schema.FieldData to Column, used int search result convertion logic
+// FieldDataColumn converts schema.FieldData to Column, used int search result conversion logic
 // begin, end specifies the start and end positions
 func FieldDataColumn(fd *schema.FieldData, begin, end int) (Column, error) {
 	switch fd.GetType() {

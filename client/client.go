@@ -9,13 +9,14 @@
 // is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied. See the License for the specific language governing permissions and limitations under the License.
 
-// package client provides milvus client functions
+// Package client provides milvus client functions
 package client
 
 import (
 	"context"
 
 	"github.com/milvus-io/milvus-sdk-go/entity"
+	"google.golang.org/grpc"
 )
 
 // Client is the interface used to communicate with Milvus
@@ -39,6 +40,8 @@ type Client interface {
 	GetCollectionStatistics(ctx context.Context, collName string) (map[string]string, error)
 	// LoadCollection load collection into memory
 	LoadCollection(ctx context.Context, collName string, async bool) error
+	// ReleaseCollection release loaded collection
+	ReleaseCollection(ctx context.Context, collName string) error
 	// HasCollection check whether collection exists
 	HasCollection(ctx context.Context, collName string) (bool, error)
 
@@ -87,9 +90,19 @@ type SearchResult struct {
 	Err         error
 }
 
+// alias type for context field key
+type grpcKey int
+
+const (
+	dialOption grpcKey = 1
+)
+
 // NewGrpcClient create client with grpc addr
-func NewGrpcClient(ctx context.Context, addr string) (Client, error) {
+func NewGrpcClient(ctx context.Context, addr string, dialOptions ...grpc.DialOption) (Client, error) {
 	c := &grpcClient{}
+	// since different client may have different type of connect option(s), it's hard to put concrete type in Connect method def
+	// interface{} is ugly, so use context value may be a solution
+	ctx = context.WithValue(ctx, dialOption, dialOptions)
 	err := c.Connect(ctx, addr)
 	if err != nil {
 		return nil, err

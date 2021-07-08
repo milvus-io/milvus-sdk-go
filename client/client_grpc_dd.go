@@ -9,13 +9,12 @@
 // is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied. See the License for the specific language governing permissions and limitations under the License.
 
-// package client provides milvus client functions
+// Package client provides milvus client functions
 package client
 
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -42,11 +41,25 @@ type grpcClient struct {
 
 // Connect connect to service
 func (c *grpcClient) Connect(ctx context.Context, addr string) error {
-	conn, err := grpc.DialContext(ctx, addr,
-		grpc.WithInsecure(),
-		grpc.WithBlock(),                //block connect until healthy or timeout
-		grpc.WithTimeout(2*time.Second), // set connect timeout to 2 Second
-	)
+	opts := make([]grpc.DialOption, 0, 10)
+
+	// try parse DialOptions
+	cOptsRaw := ctx.Value(dialOption)
+	if cOptsRaw != nil {
+		cOpts, ok := cOptsRaw.([]grpc.DialOption)
+		if ok {
+			opts = append(opts, cOpts...)
+		}
+	}
+
+	// if not options detected, use default
+	if len(opts) == 0 {
+		opts = append(opts, grpc.WithInsecure(),
+			grpc.WithBlock(),                //block connect until healthy or timeout
+			grpc.WithTimeout(2*time.Second)) // set connect timeout to 2 Second
+	}
+
+	conn, err := grpc.DialContext(ctx, addr, opts...)
 	if err != nil {
 		return err
 	}
@@ -58,7 +71,9 @@ func (c *grpcClient) Connect(ctx context.Context, addr string) error {
 // Close close the connection
 func (c *grpcClient) Close() error {
 	if c.conn != nil {
-		return c.conn.Close()
+		err := c.conn.Close()
+		c.conn = nil
+		return err
 	}
 	return nil
 }
@@ -115,10 +130,13 @@ func (c *grpcClient) CreateCollection(ctx context.Context, collSchema entity.Sch
 	if c.service == nil {
 		return ErrClientNotReady
 	}
+	if err := validateSchema(collSchema); err != nil {
+		return err
+	}
 	sch := collSchema.ProtoMessage()
 	bs, err := proto.Marshal(sch)
 	if err != nil {
-		fmt.Println(err.Error())
+		return err
 	}
 	req := &server.CreateCollectionRequest{
 		DbName:         "", // reserved fields, not used for now
@@ -133,6 +151,43 @@ func (c *grpcClient) CreateCollection(ctx context.Context, collSchema entity.Sch
 	err = handleRespStatus(resp)
 	if err != nil {
 		return nil
+	}
+	return nil
+}
+
+func validateSchema(sch entity.Schema) error {
+	if sch.CollectionName == "" {
+		return errors.New("collection name cannot be empty")
+	}
+
+	primaryKey := false
+	autoID := false
+	vectors := 0
+	for _, field := range sch.Fields {
+		if field.PrimaryKey {
+			if primaryKey { // another primary key found, only one primary key field for now
+				return errors.New("only one primary key only")
+			}
+			if field.DataType != entity.FieldTypeInt64 { // string key not supported yet
+				return errors.New("only int64 column can be primary key for now")
+			}
+			primaryKey = true
+		}
+		if field.AutoID {
+			if autoID {
+				return errors.New("only one auto id is available")
+			}
+			if field.DataType != entity.FieldTypeInt64 {
+				return errors.New("only int64 column can be auto generated id")
+			}
+			autoID = true
+		}
+		if field.DataType == entity.FieldTypeFloatVector || field.DataType == entity.FieldTypeBinaryVector {
+			vectors++
+		}
+	}
+	if vectors <= 0 {
+		return errors.New("vector field not set!")
 	}
 	return nil
 }
@@ -233,6 +288,10 @@ func (c *grpcClient) LoadCollection(ctx context.Context, collName string, async 
 	if err != nil {
 		return err
 	}
+	if err := handleRespStatus(resp); err != nil {
+		return err
+	}
+
 	if !async {
 		segments, _ := c.GetPersistentSegmentInfo(ctx, collName)
 		target := make(map[int64]*entity.Segment)
@@ -257,6 +316,22 @@ func (c *grpcClient) LoadCollection(ctx context.Context, collName string, async 
 			}
 		}
 
+	}
+	return nil
+}
+
+// ReleaseCollection release loaded collection
+func (c *grpcClient) ReleaseCollection(ctx context.Context, collName string) error {
+	if c.service == nil {
+		return ErrClientNotReady
+	}
+	req := &server.ReleaseCollectionRequest{
+		DbName:         "", //reserved
+		CollectionName: collName,
+	}
+	resp, err := c.service.ReleaseCollection(ctx, req)
+	if err != nil {
+		return err
 	}
 	return handleRespStatus(resp)
 }
