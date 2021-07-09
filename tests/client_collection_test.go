@@ -2,7 +2,10 @@ package tests
 
 import (
 	"context"
+	"fmt"
+	"math/rand"
 	"testing"
+	"time"
 
 	"github.com/milvus-io/milvus-sdk-go/client"
 	"github.com/milvus-io/milvus-sdk-go/entity"
@@ -31,6 +34,7 @@ func TestListCollections(t *testing.T) {
 }
 
 func TestCreateCollection(t *testing.T) {
+	rand.Seed(time.Now().UnixNano())
 	c, err := client.NewGrpcClient(context.Background(), "localhost:19530")
 	assert.Nil(t, err)
 	assert.NotNil(t, c)
@@ -43,7 +47,7 @@ func TestCreateCollection(t *testing.T) {
 		AutoID:         false,
 		Fields: []*entity.Field{
 			{
-				Name:       "int64",
+				Name:       fmt.Sprintf("int64_%v", rand.Intn(10)),
 				DataType:   entity.FieldTypeInt64,
 				PrimaryKey: true,
 			},
@@ -56,7 +60,8 @@ func TestCreateCollection(t *testing.T) {
 			},
 		},
 	}
-	err = c.CreateCollection(context.Background(), schema, 1)
+	shards := rand.Int31n(3)
+	err = c.CreateCollection(context.Background(), schema, shards)
 	assert.Nil(t, err)
 }
 

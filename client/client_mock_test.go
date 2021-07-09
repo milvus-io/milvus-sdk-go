@@ -54,7 +54,7 @@ func bufDialer(context.Context, string) (net.Conn, error) {
 	return lis.Dial()
 }
 
-func testClient(t *testing.T, ctx context.Context) Client {
+func testClient(ctx context.Context, t *testing.T) Client {
 	c, err := NewGrpcClient(ctx, "bufnet", grpc.WithBlock(),
 		grpc.WithInsecure(), grpc.WithContextDialer(bufDialer))
 

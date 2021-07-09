@@ -55,6 +55,10 @@ type Client interface {
 	ShowPartitions(ctx context.Context, collName string) ([]*entity.Partition, error)
 	// HasPartition check whether partition exists in collection
 	HasPartition(ctx context.Context, collName string, partitionName string) (bool, error)
+	// LoadPartitions load partitions into memory
+	LoadPartitions(ctx context.Context, collName string, partitionNames []string, async bool) error
+	// ReleasePartitions release partitions
+	ReleasePartitions(ctx context.Context, collName string, partitionNames []string) error
 
 	// -- index --
 
