@@ -101,13 +101,31 @@ var (
 type serviceMethod int
 
 const (
-	mCreateCollection   serviceMethod = 1
-	mDropCollection     serviceMethod = 2
-	mHasCollection      serviceMethod = 3
-	mLoadCollection     serviceMethod = 4
-	mReleaseCollection  serviceMethod = 5
-	mDescribeCollection serviceMethod = 6
-	mListCollection     serviceMethod = 7
+	mCreateCollection        serviceMethod = 1
+	mDropCollection          serviceMethod = 2
+	mHasCollection           serviceMethod = 3
+	mLoadCollection          serviceMethod = 4
+	mReleaseCollection       serviceMethod = 5
+	mDescribeCollection      serviceMethod = 6
+	mListCollection          serviceMethod = 7
+	mGetCollectionStatistics serviceMethod = 8
+
+	mCreatePartition   serviceMethod = 9
+	mDropPartition     serviceMethod = 10
+	mHasPartition      serviceMethod = 11
+	mLoadPartitions    serviceMethod = 12
+	mReleasePartitions serviceMethod = 13
+	mShowPartitions    serviceMethod = 14
+
+	mCreateIndex           serviceMethod = 20
+	mDropIndex             serviceMethod = 21
+	mDescribeIndex         serviceMethod = 22
+	mGetIndexState         serviceMethod = 23
+	mGetIndexBuildProgress serviceMethod = 24
+
+	mInsert serviceMethod = 30
+	mFlush  serviceMethod = 31
+	mSearch serviceMethod = 32
 
 	mGetPersistentSegmentInfo serviceMethod = 98
 	mGetQuerySegmentInfo      serviceMethod = 99
@@ -193,15 +211,30 @@ func (m *mockServer) ReleaseCollection(ctx context.Context, req *server.ReleaseC
 		return r.(*common.Status), err
 	}
 	return successStatus()
-
 }
 
-func (m *mockServer) DescribeCollection(_ context.Context, _ *server.DescribeCollectionRequest) (*server.DescribeCollectionResponse, error) {
-	panic("not implemented") // TODO: Implement
+func (m *mockServer) DescribeCollection(ctx context.Context, req *server.DescribeCollectionRequest) (*server.DescribeCollectionResponse, error) {
+	f := m.getInjection(mDescribeCollection)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*server.DescribeCollectionResponse), err
+	}
+	r := &server.DescribeCollectionResponse{}
+	s, err := successStatus()
+	r.Status = s
+	return r, err
 }
 
-func (m *mockServer) GetCollectionStatistics(_ context.Context, _ *server.GetCollectionStatisticsRequest) (*server.GetCollectionStatisticsResponse, error) {
-	panic("not implemented") // TODO: Implement
+func (m *mockServer) GetCollectionStatistics(ctx context.Context, req *server.GetCollectionStatisticsRequest) (*server.GetCollectionStatisticsResponse, error) {
+	f := m.getInjection(mGetCollectionStatistics)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*server.GetCollectionStatisticsResponse), err
+	}
+	r := &server.GetCollectionStatisticsResponse{}
+	s, err := successStatus()
+	r.Status = s
+	return r, err
 }
 
 func (m *mockServer) ShowCollections(ctx context.Context, req *server.ShowCollectionsRequest) (*server.ShowCollectionsResponse, error) {
@@ -214,68 +247,149 @@ func (m *mockServer) ShowCollections(ctx context.Context, req *server.ShowCollec
 	return &server.ShowCollectionsResponse{Status: s}, err
 }
 
-func (m *mockServer) CreatePartition(_ context.Context, _ *server.CreatePartitionRequest) (*common.Status, error) {
-	panic("not implemented") // TODO: Implement
+func (m *mockServer) CreatePartition(ctx context.Context, req *server.CreatePartitionRequest) (*common.Status, error) {
+	f := m.getInjection(mCreatePartition)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*common.Status), err
+	}
+	return successStatus()
+
 }
 
-func (m *mockServer) DropPartition(_ context.Context, _ *server.DropPartitionRequest) (*common.Status, error) {
-	panic("not implemented") // TODO: Implement
+func (m *mockServer) DropPartition(ctx context.Context, req *server.DropPartitionRequest) (*common.Status, error) {
+	f := m.getInjection(mDropPartition)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*common.Status), err
+	}
+	return successStatus()
 }
 
-func (m *mockServer) HasPartition(_ context.Context, _ *server.HasPartitionRequest) (*server.BoolResponse, error) {
-	panic("not implemented") // TODO: Implement
+func (m *mockServer) HasPartition(ctx context.Context, req *server.HasPartitionRequest) (*server.BoolResponse, error) {
+	f := m.getInjection(mHasPartition)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*server.BoolResponse), err
+	}
+	s, err := successStatus()
+	return &server.BoolResponse{Status: s, Value: false}, err
 }
 
-func (m *mockServer) LoadPartitions(_ context.Context, _ *server.LoadPartitionsRequest) (*common.Status, error) {
-	panic("not implemented") // TODO: Implement
+func (m *mockServer) LoadPartitions(ctx context.Context, req *server.LoadPartitionsRequest) (*common.Status, error) {
+	f := m.getInjection(mLoadPartitions)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*common.Status), err
+	}
+	return successStatus()
 }
 
-func (m *mockServer) ReleasePartitions(_ context.Context, _ *server.ReleasePartitionsRequest) (*common.Status, error) {
-	panic("not implemented") // TODO: Implement
+func (m *mockServer) ReleasePartitions(ctx context.Context, req *server.ReleasePartitionsRequest) (*common.Status, error) {
+	f := m.getInjection(mReleasePartitions)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*common.Status), err
+	}
+	return successStatus()
 }
 
 func (m *mockServer) GetPartitionStatistics(_ context.Context, _ *server.GetPartitionStatisticsRequest) (*server.GetPartitionStatisticsResponse, error) {
 	panic("not implemented") // TODO: Implement
 }
 
-func (m *mockServer) ShowPartitions(_ context.Context, _ *server.ShowPartitionsRequest) (*server.ShowPartitionsResponse, error) {
-	panic("not implemented") // TODO: Implement
+func (m *mockServer) ShowPartitions(ctx context.Context, req *server.ShowPartitionsRequest) (*server.ShowPartitionsResponse, error) {
+	f := m.getInjection(mShowPartitions)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*server.ShowPartitionsResponse), err
+	}
+	s, err := successStatus()
+	return &server.ShowPartitionsResponse{Status: s}, err
 }
 
-func (m *mockServer) CreateIndex(_ context.Context, _ *server.CreateIndexRequest) (*common.Status, error) {
-	panic("not implemented") // TODO: Implement
+func (m *mockServer) CreateIndex(ctx context.Context, req *server.CreateIndexRequest) (*common.Status, error) {
+	f := m.getInjection(mCreateIndex)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*common.Status), err
+	}
+	return successStatus()
 }
 
-func (m *mockServer) DescribeIndex(_ context.Context, _ *server.DescribeIndexRequest) (*server.DescribeIndexResponse, error) {
-	panic("not implemented") // TODO: Implement
+func (m *mockServer) DescribeIndex(ctx context.Context, req *server.DescribeIndexRequest) (*server.DescribeIndexResponse, error) {
+	f := m.getInjection(mDescribeIndex)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*server.DescribeIndexResponse), err
+	}
+	s, err := successStatus()
+	return &server.DescribeIndexResponse{Status: s}, err
 }
 
-func (m *mockServer) GetIndexState(_ context.Context, _ *server.GetIndexStateRequest) (*server.GetIndexStateResponse, error) {
-	panic("not implemented") // TODO: Implement
+func (m *mockServer) GetIndexState(ctx context.Context, req *server.GetIndexStateRequest) (*server.GetIndexStateResponse, error) {
+	f := m.getInjection(mGetIndexState)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*server.GetIndexStateResponse), err
+	}
+	s, err := successStatus()
+	return &server.GetIndexStateResponse{Status: s}, err
+
 }
 
-func (m *mockServer) GetIndexBuildProgress(_ context.Context, _ *server.GetIndexBuildProgressRequest) (*server.GetIndexBuildProgressResponse, error) {
-	panic("not implemented") // TODO: Implement
+func (m *mockServer) GetIndexBuildProgress(ctx context.Context, req *server.GetIndexBuildProgressRequest) (*server.GetIndexBuildProgressResponse, error) {
+	f := m.getInjection(mGetIndexBuildProgress)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*server.GetIndexBuildProgressResponse), err
+	}
+	s, err := successStatus()
+	return &server.GetIndexBuildProgressResponse{Status: s}, err
+
 }
 
-func (m *mockServer) DropIndex(_ context.Context, _ *server.DropIndexRequest) (*common.Status, error) {
-	panic("not implemented") // TODO: Implement
+func (m *mockServer) DropIndex(ctx context.Context, req *server.DropIndexRequest) (*common.Status, error) {
+	f := m.getInjection(mDropIndex)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*common.Status), err
+	}
+	return successStatus()
 }
 
-func (m *mockServer) Insert(_ context.Context, _ *server.InsertRequest) (*server.MutationResult, error) {
-	panic("not implemented") // TODO: Implement
+func (m *mockServer) Insert(ctx context.Context, req *server.InsertRequest) (*server.MutationResult, error) {
+	f := m.getInjection(mInsert)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*server.MutationResult), err
+	}
+	s, err := successStatus()
+	return &server.MutationResult{Status: s}, err
 }
 
-func (m *mockServer) Search(_ context.Context, _ *server.SearchRequest) (*server.SearchResults, error) {
-	panic("not implemented") // TODO: Implement
+func (m *mockServer) Search(ctx context.Context, req *server.SearchRequest) (*server.SearchResults, error) {
+	f := m.getInjection(mSearch)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*server.SearchResults), err
+	}
+	s, err := successStatus()
+	return &server.SearchResults{Status: s}, err
 }
 
 func (m *mockServer) Retrieve(_ context.Context, _ *server.RetrieveRequest) (*server.RetrieveResults, error) {
 	panic("not implemented") // TODO: Implement
 }
 
-func (m *mockServer) Flush(_ context.Context, _ *server.FlushRequest) (*server.FlushResponse, error) {
-	panic("not implemented") // TODO: Implement
+func (m *mockServer) Flush(ctx context.Context, req *server.FlushRequest) (*server.FlushResponse, error) {
+	f := m.getInjection(mFlush)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*server.FlushResponse), err
+	}
+	s, err := successStatus()
+	return &server.FlushResponse{Status: s}, err
 }
 
 func (m *mockServer) Query(_ context.Context, _ *server.QueryRequest) (*server.QueryResults, error) {
