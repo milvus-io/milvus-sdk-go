@@ -22,6 +22,9 @@ func TestGrpcClientNil(t *testing.T) {
 	tp := reflect.TypeOf(c)
 	v := reflect.ValueOf(c)
 	ctx := context.Background()
+	ctxDone, cancel := context.WithCancel(context.Background())
+	cancel() // cancel here, so the ctx is done already
+
 	for i := 0; i < tp.NumMethod(); i++ {
 		m := tp.Method(i)
 		mt := m.Type                                   // type of function
@@ -52,11 +55,17 @@ func TestGrpcClientNil(t *testing.T) {
 				ins = append(ins, reflect.Zero(inT))
 			}
 		}
-		t.Log(m.Name)
-		t.Log(mt.NumIn(), len(ins))
 		outs := v.MethodByName(m.Name).Call(ins)
 		assert.True(t, len(outs) > 0)
 		assert.EqualValues(t, ErrClientNotReady, outs[len(outs)-1].Interface())
+
+		// ctx done
+		if len(ins) > 0 { // with context param
+			ins[0] = reflect.ValueOf(ctxDone)
+			outs := v.MethodByName(m.Name).Call(ins)
+			assert.True(t, len(outs) > 0)
+			assert.False(t, outs[len(outs)-1].IsNil())
+		}
 	}
 }
 
@@ -240,7 +249,7 @@ func TestGrpcClientLoadCollection(t *testing.T) {
 				Status: s,
 				Infos:  make([]*server.PersistentSegmentInfo, 0, segmentCount),
 			}
-			for i := 0; i < segmentCount+1; i++ {
+			for i := 0; i < segmentCount; i++ {
 				r.Infos = append(r.Infos, &server.PersistentSegmentInfo{
 					SegmentID: int64(i),
 					NumRows:   int64(rowCounts),
