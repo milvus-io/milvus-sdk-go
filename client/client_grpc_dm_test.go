@@ -15,7 +15,7 @@ import (
 func TestGrpcClientInsert(t *testing.T) {
 	ctx := context.Background()
 
-	c := testClient(t, ctx)
+	c := testClient(ctx, t)
 
 	vector := generateFloatVector(4096, testVectorDim)
 	mock.setInjection(mInsert, func(_ context.Context, raw proto.Message) (proto.Message, error) {
@@ -50,7 +50,7 @@ func TestGrpcClientFlush(t *testing.T) {
 
 	ctx := context.Background()
 
-	c := testClient(t, ctx)
+	c := testClient(ctx, t)
 
 	assert.Nil(t, c.Flush(ctx, testCollectionName, false))
 	assert.Nil(t, c.Flush(ctx, testCollectionName, true))
@@ -60,7 +60,7 @@ func TestGrpcSearch(t *testing.T) {
 
 	ctx := context.Background()
 
-	c := testClient(t, ctx)
+	c := testClient(ctx, t)
 
 	vectors := generateFloatVector(4096, testVectorDim)
 

@@ -23,7 +23,7 @@ func TestCreateIndex(t *testing.T) {
 	})
 	err = c.CreateIndex(context.Background(), "test_go_sdk", "vector", idx)
 	assert.Nil(t, err)
-	indexes, err := c.DescribeIndex(context.Background(), "test_go_sdk")
+	indexes, err := c.DescribeIndex(context.Background(), "test_go_sdk", "vector")
 	if assert.Nil(t, err) {
 		for _, idx := range indexes {
 			t.Log(idx.IndexType())

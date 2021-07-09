@@ -23,7 +23,7 @@ func TestGrpcClientNil(t *testing.T) {
 	tp := reflect.TypeOf(c)
 	v := reflect.ValueOf(c)
 	ctx := context.Background()
-	c2 := testClient(t, ctx)
+	c2 := testClient(ctx, t)
 	v2 := reflect.ValueOf(c2)
 
 	ctxDone, cancel := context.WithCancel(context.Background())
@@ -38,7 +38,7 @@ func TestGrpcClientNil(t *testing.T) {
 			continue
 		}
 		ins := make([]reflect.Value, 0, mt.NumIn())
-		for j := 1; j < mt.NumIn(); j++ { // idx == 0, is the reciever v
+		for j := 1; j < mt.NumIn(); j++ { // idx == 0, is the receiver v
 			if j == 1 {
 				//non-general solution, hard code context!
 				ins = append(ins, reflect.ValueOf(ctx))
@@ -97,12 +97,12 @@ func TestGrpcClientClose(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("normal close", func(t *testing.T) {
-		c := testClient(t, ctx)
+		c := testClient(ctx, t)
 		assert.Nil(t, c.Close())
 	})
 
 	t.Run("double close", func(t *testing.T) {
-		c := testClient(t, ctx)
+		c := testClient(ctx, t)
 		assert.Nil(t, c.Close())
 		assert.Nil(t, c.Close())
 	})
@@ -110,7 +110,7 @@ func TestGrpcClientClose(t *testing.T) {
 
 func TestGrpcClientListCollections(t *testing.T) {
 	ctx := context.Background()
-	c := testClient(t, ctx)
+	c := testClient(ctx, t)
 
 	type testCase struct {
 		ids     []int64
@@ -171,7 +171,7 @@ func TestGrpcClientListCollections(t *testing.T) {
 
 func TestGrpcClientCreateCollection(t *testing.T) {
 	ctx := context.Background()
-	c := testClient(t, ctx)
+	c := testClient(ctx, t)
 	t.Run("Test normal creation", func(t *testing.T) {
 		ds := defaultSchema()
 		shardsNum := int32(1)
@@ -260,7 +260,7 @@ func TestGrpcClientCreateCollection(t *testing.T) {
 
 func TestGrpcClientDropCollection(t *testing.T) {
 	ctx := context.Background()
-	c := testClient(t, ctx)
+	c := testClient(ctx, t)
 
 	mock.setInjection(mDropCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 		req, ok := (raw).(*server.DropCollectionRequest)
@@ -284,7 +284,7 @@ func TestGrpcClientDropCollection(t *testing.T) {
 
 func TestGrpcClientLoadCollection(t *testing.T) {
 	ctx := context.Background()
-	c := testClient(t, ctx)
+	c := testClient(ctx, t)
 	// injection check collection name equals
 	mock.setInjection(mLoadCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 		req, ok := raw.(*server.LoadCollectionRequest)
@@ -355,7 +355,7 @@ func TestGrpcClientLoadCollection(t *testing.T) {
 func TestReleaseCollection(t *testing.T) {
 	ctx := context.Background()
 
-	c := testClient(t, ctx)
+	c := testClient(ctx, t)
 
 	mock.setInjection(mReleaseCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 		req, ok := raw.(*server.ReleaseCollectionRequest)
@@ -372,7 +372,7 @@ func TestReleaseCollection(t *testing.T) {
 func TestGrpcClientHasCollection(t *testing.T) {
 	ctx := context.Background()
 
-	c := testClient(t, ctx)
+	c := testClient(ctx, t)
 
 	mock.setInjection(mHasCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 		req, ok := raw.(*server.HasCollectionRequest)
@@ -398,7 +398,7 @@ func TestGrpcClientHasCollection(t *testing.T) {
 func TestGrpcClientDescribeCollection(t *testing.T) {
 	ctx := context.Background()
 
-	c := testClient(t, ctx)
+	c := testClient(ctx, t)
 
 	collectionID := rand.Int63()
 
@@ -433,7 +433,7 @@ func TestGrpcClientDescribeCollection(t *testing.T) {
 func TestGrpcClientGetCollectionStatistics(t *testing.T) {
 	ctx := context.Background()
 
-	c := testClient(t, ctx)
+	c := testClient(ctx, t)
 
 	stat := make(map[string]string)
 	stat["row_count"] = "0"
@@ -466,48 +466,229 @@ func TestGrpcClientGetCollectionStatistics(t *testing.T) {
 func TestGrpcClientCreatePartition(t *testing.T) {
 	//TODO add detail asserts
 	ctx := context.Background()
-	c := testClient(t, ctx)
+	c := testClient(ctx, t)
 	assert.Nil(t, c.CreatePartition(ctx, testCollectionName, "_default_part"))
 }
 
 func TestGrpcClientDropPartition(t *testing.T) {
 	//TODO add detail asserts
 	ctx := context.Background()
-	c := testClient(t, ctx)
+	c := testClient(ctx, t)
 	assert.Nil(t, c.DropPartition(ctx, testCollectionName, "_default_part"))
 }
 
 func TestGrpcClientHasPartition(t *testing.T) {
 	//TODO add detail asserts
 	ctx := context.Background()
-	c := testClient(t, ctx)
+	c := testClient(ctx, t)
 	r, err := c.HasPartition(ctx, testCollectionName, "_default_part")
 	assert.Nil(t, err)
 	assert.False(t, r)
 }
 
+// default partition intercetion for ShowPartitions, generates testCollection related paritition data
+func getPartitionsInterception(t *testing.T, collName string, partitions ...*entity.Partition) func(ctx context.Context, raw proto.Message) (proto.Message, error) {
+	return func(ctx context.Context, raw proto.Message) (proto.Message, error) {
+		req, ok := raw.(*server.ShowPartitionsRequest)
+		resp := &server.ShowPartitionsResponse{}
+		if !ok {
+			s, err := badRequestStatus()
+			resp.Status = s
+			return resp, err
+		}
+		assert.Equal(t, collName, req.GetCollectionName())
+		resp.PartitionIDs = make([]int64, 0, len(partitions))
+		resp.PartitionNames = make([]string, 0, len(partitions))
+		for _, part := range partitions {
+			resp.PartitionIDs = append(resp.PartitionIDs, part.ID)
+			resp.PartitionNames = append(resp.PartitionNames, part.Name)
+		}
+		s, err := successStatus()
+		resp.Status = s
+		return resp, err
+	}
+}
+
 func TestGrpcClientShowPartitions(t *testing.T) {
+
 	ctx := context.Background()
-	c := testClient(t, ctx)
-	r, err := c.ShowPartitions(ctx, testCollectionName)
-	assert.Nil(t, err)
-	assert.NotNil(t, r)
+	c := testClient(ctx, t)
+
+	type testCase struct {
+		collName      string
+		partitions    []*entity.Partition
+		shouldSuccess bool
+	}
+	cases := []testCase{
+		{
+			collName: testCollectionName,
+			partitions: []*entity.Partition{
+				{
+					ID:   1,
+					Name: "_part1",
+				},
+				{
+					ID:   2,
+					Name: "_part2",
+				},
+				{
+					ID:   3,
+					Name: "_part3",
+				},
+			},
+			shouldSuccess: true,
+		},
+	}
+	for _, tc := range cases {
+		mock.setInjection(mShowPartitions, getPartitionsInterception(t, tc.collName, tc.partitions...))
+		r, err := c.ShowPartitions(ctx, tc.collName)
+		if tc.shouldSuccess {
+			assert.Nil(t, err)
+			assert.NotNil(t, r)
+			if assert.Equal(t, len(tc.partitions), len(r)) {
+				for idx, part := range tc.partitions {
+					assert.Equal(t, part.ID, r[idx].ID)
+					assert.Equal(t, part.Name, r[idx].Name)
+				}
+			}
+		} else {
+			assert.NotNil(t, err)
+		}
+	}
 }
 
 func TestGrpcClientLoadPartitions(t *testing.T) {
-	//TODO add implementation
-	//ctx := context.Background()
-	//c := testClient(t, ctx)
-	//assert.Nil(t, c.LoadParitions(ctx, testCollectionName, "_default_part"))
+	ctx := context.Background()
+	c := testClient(ctx, t)
+
+	type testCase struct {
+		collName      string
+		partitions    []*entity.Partition
+		shouldSuccess bool
+		loadNames     []string
+	}
+	cases := []testCase{
+		{
+			collName: testCollectionName,
+			partitions: []*entity.Partition{
+				{
+					ID:   1,
+					Name: "_part1",
+				},
+				{
+					ID:   2,
+					Name: "_part2",
+				},
+				{
+					ID:   3,
+					Name: "_part3",
+				},
+			},
+			loadNames:     []string{"_part1", "_part2"},
+			shouldSuccess: true,
+		},
+		{
+			collName: testCollectionName,
+			partitions: []*entity.Partition{
+				{
+					ID:   1,
+					Name: "_part1",
+				},
+				{
+					ID:   2,
+					Name: "_part2",
+				},
+				{
+					ID:   3,
+					Name: "_part3",
+				},
+			},
+			loadNames:     []string{"_part4", "_part1"},
+			shouldSuccess: false,
+		},
+	}
+	for _, tc := range cases {
+		// one segment per paritions
+		segmentCount := len(tc.partitions)
+		start := time.Now()
+		loadTime := rand.Intn(1500) + 100
+		rowCounts := rand.Intn(1000) + 100
+		ok := false
+		mock.setInjection(mGetPersistentSegmentInfo, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+			s, err := successStatus()
+			r := &server.GetPersistentSegmentInfoResponse{
+				Status: s,
+				Infos:  make([]*server.PersistentSegmentInfo, 0, segmentCount),
+			}
+			for i := 0; i < segmentCount; i++ {
+				r.Infos = append(r.Infos, &server.PersistentSegmentInfo{
+					SegmentID:   int64(i),
+					NumRows:     int64(rowCounts),
+					PartitionID: tc.partitions[i].ID,
+				})
+			}
+			r.Infos = append(r.Infos, &server.PersistentSegmentInfo{
+				SegmentID: int64(segmentCount),
+				NumRows:   0, // handcrafted empty segment
+			})
+			return r, err
+		})
+		mock.setInjection(mGetQuerySegmentInfo, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+			s, err := successStatus()
+			r := &server.GetQuerySegmentInfoResponse{
+				Status: s,
+				Infos:  make([]*server.QuerySegmentInfo, 0, segmentCount),
+			}
+			rc := 0
+			if time.Since(start) > time.Duration(loadTime)*time.Millisecond {
+				rc = rowCounts // after load time, row counts set to full amount
+				ok = true
+			}
+			for i := 0; i < segmentCount; i++ {
+				r.Infos = append(r.Infos, &server.QuerySegmentInfo{
+					SegmentID:   int64(i),
+					NumRows:     int64(rc),
+					PartitionID: tc.partitions[i].ID,
+				})
+			}
+			return r, err
+		})
+
+		mock.setInjection(mShowPartitions, getPartitionsInterception(t, tc.collName, tc.partitions...))
+		err := c.LoadPartitions(ctx, tc.collName, tc.loadNames, false)
+		if tc.shouldSuccess {
+			assert.Nil(t, err)
+			assert.True(t, ok)
+		} else {
+			assert.NotNil(t, err)
+		}
+	}
 }
 
 func TestGrpcClientReleasePartitions(t *testing.T) {
-	//TODO add implementation
+	ctx := context.Background()
+
+	c := testClient(ctx, t)
+
+	parts := []string{"_part1", "_part2"}
+
+	mock.setInjection(mReleasePartitions, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		req, ok := raw.(*server.ReleasePartitionsRequest)
+		if !ok {
+			return badRequestStatus()
+		}
+		assert.Equal(t, testCollectionName, req.GetCollectionName())
+		assert.ElementsMatch(t, parts, req.GetPartitionNames())
+
+		return successStatus()
+	})
+
+	assert.Nil(t, c.ReleasePartitions(ctx, testCollectionName, parts))
 }
 
 func TestGrpcClientCreateIndex(t *testing.T) {
 	ctx := context.Background()
-	c := testClient(t, ctx)
+	c := testClient(ctx, t)
 	idx := entity.NewGenericIndex("", entity.Flat, map[string]string{
 		"nlist":       "1024",
 		"metric_type": "IP",
@@ -518,7 +699,7 @@ func TestGrpcClientCreateIndex(t *testing.T) {
 
 func TestGrpcClientDropIndex(t *testing.T) {
 	ctx := context.Background()
-	c := testClient(t, ctx)
+	c := testClient(ctx, t)
 
 	assert.Nil(t, c.DropIndex(ctx, testCollectionName, "vector"))
 }
@@ -526,7 +707,7 @@ func TestGrpcClientDropIndex(t *testing.T) {
 func TestGrpcClientDescribeIndex(t *testing.T) {
 	ctx := context.Background()
 
-	c := testClient(t, ctx)
+	c := testClient(ctx, t)
 
 	fieldName := "vector"
 

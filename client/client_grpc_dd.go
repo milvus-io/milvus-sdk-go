@@ -15,6 +15,7 @@ package client
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -187,7 +188,7 @@ func validateSchema(sch entity.Schema) error {
 		}
 	}
 	if vectors <= 0 {
-		return errors.New("vector field not set!")
+		return errors.New("vector field not set")
 	}
 	return nil
 }
@@ -409,6 +410,96 @@ func (c *grpcClient) ShowPartitions(ctx context.Context, collName string) ([]*en
 		partitions = append(partitions, &entity.Partition{ID: partitionID, Name: resp.GetPartitionNames()[idx]})
 	}
 	return partitions, nil
+}
+
+// LoadPartitions load collection paritions into memory
+func (c *grpcClient) LoadPartitions(ctx context.Context, collName string, partitionNames []string, async bool) error {
+	if c.service == nil {
+		return ErrClientNotReady
+	}
+
+	partitions, err := c.ShowPartitions(ctx, collName)
+	if err != nil {
+		return err
+	}
+	m := make(map[string]int64)
+	for _, partition := range partitions {
+		m[partition.Name] = partition.ID
+	}
+	// load partitions ids
+	ids := make(map[int64]struct{})
+	for _, partitionName := range partitionNames {
+		id, has := m[partitionName]
+		if !has {
+			return fmt.Errorf("Collection %s does not has partitions %s", collName, partitionName)
+		}
+		ids[id] = struct{}{}
+	}
+
+	req := &server.LoadPartitionsRequest{
+		DbName:         "", // reserved
+		CollectionName: collName,
+		PartitionNames: partitionNames,
+	}
+	resp, err := c.service.LoadPartitions(ctx, req)
+	if err != nil {
+		return err
+	}
+	if err := handleRespStatus(resp); err != nil {
+		return err
+	}
+
+	if !async {
+		segments, _ := c.GetPersistentSegmentInfo(ctx, collName)
+		target := make(map[int64]*entity.Segment)
+		for _, segment := range segments {
+			if segment.NumRows == 0 {
+				continue
+			}
+			if _, has := ids[segment.ParititionID]; !has {
+				// segment not belongs to partition
+				continue
+			}
+			target[segment.ID] = segment
+		}
+		for len(target) > 0 {
+			current, err := c.GetQuerySegmentInfo(ctx, collName)
+			if err == nil {
+				for _, segment := range current {
+					ts, has := target[segment.ID]
+					if has {
+						if segment.NumRows >= ts.NumRows {
+							delete(target, segment.ID)
+						}
+					}
+				}
+			}
+			time.Sleep(time.Millisecond * 100)
+		}
+	}
+
+	return nil
+}
+
+// ReleasePartitions release partitions
+func (c *grpcClient) ReleasePartitions(ctx context.Context, collName string, partitionNames []string) error {
+	if c.service == nil {
+		return ErrClientNotReady
+	}
+	req := &server.ReleasePartitionsRequest{
+		DbName:         "", // reserved
+		CollectionName: collName,
+		PartitionNames: partitionNames,
+	}
+	resp, err := c.service.ReleasePartitions(ctx, req)
+	if err != nil {
+		return err
+	}
+	if err := handleRespStatus(resp); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // CreateIndex create index for collection
