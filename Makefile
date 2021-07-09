@@ -39,5 +39,9 @@ static-check:
 	@golangci-lint run --timeout=30m --config ./.golangci.yml ./internal/...
 	@golangci-lint run --timeout=30m --config ./.golangci.yml ./tests/...
 
+test-go:
+	@echo "Running unit tests:"
+	@(env bash $(PWD)/scripts/run_go_unittest.sh)
+
 clean: 
 	@echo "Cleaning up all generated file"
