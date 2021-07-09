@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"errors"
+	"fmt"
 	"math/rand"
 	"reflect"
 	"testing"
@@ -22,6 +23,9 @@ func TestGrpcClientNil(t *testing.T) {
 	tp := reflect.TypeOf(c)
 	v := reflect.ValueOf(c)
 	ctx := context.Background()
+	c2 := testClient(t, ctx)
+	v2 := reflect.ValueOf(c2)
+
 	ctxDone, cancel := context.WithCancel(context.Background())
 	cancel() // cancel here, so the ctx is done already
 
@@ -38,11 +42,9 @@ func TestGrpcClientNil(t *testing.T) {
 			if j == 1 {
 				//non-general solution, hard code context!
 				ins = append(ins, reflect.ValueOf(ctx))
-				t.Log("skip ctx")
 				continue
 			}
 			inT := mt.In(j)
-			t.Log(inT.String())
 
 			switch inT.Kind() {
 			case reflect.String: // pass empty
@@ -51,6 +53,11 @@ func TestGrpcClientNil(t *testing.T) {
 				ins = append(ins, reflect.ValueOf(0))
 			case reflect.Bool:
 				ins = append(ins, reflect.ValueOf(false))
+			case reflect.Interface:
+				idxType := reflect.TypeOf((*entity.Index)(nil)).Elem()
+				if inT.Implements(idxType) {
+					ins = append(ins, reflect.ValueOf(entity.NewFlatIndex(entity.L2)))
+				}
 			default:
 				ins = append(ins, reflect.Zero(inT))
 			}
@@ -60,9 +67,10 @@ func TestGrpcClientNil(t *testing.T) {
 		assert.EqualValues(t, ErrClientNotReady, outs[len(outs)-1].Interface())
 
 		// ctx done
+
 		if len(ins) > 0 { // with context param
 			ins[0] = reflect.ValueOf(ctxDone)
-			outs := v.MethodByName(m.Name).Call(ins)
+			outs := v2.MethodByName(m.Name).Call(ins)
 			assert.True(t, len(outs) > 0)
 			assert.False(t, outs[len(outs)-1].IsNil())
 		}
@@ -93,7 +101,7 @@ func TestGrpcClientClose(t *testing.T) {
 		assert.Nil(t, c.Close())
 	})
 
-	t.Run("dboule close", func(t *testing.T) {
+	t.Run("double close", func(t *testing.T) {
 		c := testClient(t, ctx)
 		assert.Nil(t, c.Close())
 		assert.Nil(t, c.Close())
@@ -104,7 +112,61 @@ func TestGrpcClientListCollections(t *testing.T) {
 	ctx := context.Background()
 	c := testClient(t, ctx)
 
-	c.ListCollections(ctx)
+	type testCase struct {
+		ids     []int64
+		names   []string
+		collNum int
+	}
+	caseLen := 5
+	cases := make([]testCase, 0, caseLen)
+	for i := 0; i < caseLen; i++ {
+		collNum := rand.Intn(5) + 2
+		tc := testCase{
+			ids:     make([]int64, 0, collNum),
+			names:   make([]string, 0, collNum),
+			collNum: collNum,
+		}
+		base := rand.Intn(1000)
+		for j := 0; j < collNum; j++ {
+			base += rand.Intn(1000)
+			tc.ids = append(tc.ids, int64(base))
+			base += rand.Intn(500)
+			tc.names = append(tc.names, fmt.Sprintf("coll_%d", base))
+		}
+		cases = append(cases, tc)
+	}
+
+	for _, tc := range cases {
+		mock.setInjection(mListCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+			s, err := successStatus()
+			resp := &server.ShowCollectionsResponse{
+				Status:          s,
+				CollectionIds:   tc.ids,
+				CollectionNames: tc.names,
+			}
+			return resp, err
+		})
+		collections, err := c.ListCollections(ctx)
+		if assert.Nil(t, err) && assert.Equal(t, tc.collNum, len(collections)) {
+			// assert element match
+			rids := make([]int64, 0, len(collections))
+			rnames := make([]string, 0, len(collections))
+			for _, collection := range collections {
+				rids = append(rids, collection.ID)
+				rnames = append(rnames, collection.Name)
+			}
+			assert.ElementsMatch(t, tc.ids, rids)
+			assert.ElementsMatch(t, tc.names, rnames)
+			// assert id & name match
+			for idx, rid := range rids {
+				for jdx, id := range tc.ids {
+					if rid == id {
+						assert.Equal(t, tc.names[jdx], rnames[idx])
+					}
+				}
+			}
+		}
+	}
 }
 
 func TestGrpcClientCreateCollection(t *testing.T) {
@@ -288,6 +350,215 @@ func TestGrpcClientLoadCollection(t *testing.T) {
 		mock.delInjection(mGetPersistentSegmentInfo)
 		mock.delInjection(mGetQuerySegmentInfo)
 	})
+}
+
+func TestReleaseCollection(t *testing.T) {
+	ctx := context.Background()
+
+	c := testClient(t, ctx)
+
+	mock.setInjection(mReleaseCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		req, ok := raw.(*server.ReleaseCollectionRequest)
+		if !ok {
+			return badRequestStatus()
+		}
+		assert.Equal(t, testCollectionName, req.GetCollectionName())
+		return successStatus()
+	})
+
+	c.ReleaseCollection(ctx, testCollectionName)
+}
+
+func TestGrpcClientHasCollection(t *testing.T) {
+	ctx := context.Background()
+
+	c := testClient(t, ctx)
+
+	mock.setInjection(mHasCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		req, ok := raw.(*server.HasCollectionRequest)
+		resp := &server.BoolResponse{}
+		if !ok {
+			s, err := badRequestStatus()
+			assert.Fail(t, err.Error())
+			resp.Status = s
+			return resp, err
+		}
+		assert.Equal(t, req.CollectionName, testCollectionName)
+
+		s, err := successStatus()
+		resp.Status, resp.Value = s, true
+		return resp, err
+	})
+
+	has, err := c.HasCollection(ctx, testCollectionName)
+	assert.Nil(t, err)
+	assert.True(t, has)
+}
+
+func TestGrpcClientDescribeCollection(t *testing.T) {
+	ctx := context.Background()
+
+	c := testClient(t, ctx)
+
+	collectionID := rand.Int63()
+
+	mock.setInjection(mDescribeCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		req, ok := raw.(*server.DescribeCollectionRequest)
+		resp := &server.DescribeCollectionResponse{}
+		if !ok {
+			s, err := badRequestStatus()
+			resp.Status = s
+			return resp, err
+		}
+
+		assert.Equal(t, testCollectionName, req.GetCollectionName())
+
+		sch := defaultSchema()
+		resp.Schema = sch.ProtoMessage()
+		resp.CollectionID = collectionID
+
+		s, err := successStatus()
+		resp.Status = s
+
+		return resp, err
+	})
+
+	collection, err := c.DescribeCollection(ctx, testCollectionName)
+	assert.Nil(t, err)
+	if assert.NotNil(t, collection) {
+		assert.Equal(t, collectionID, collection.ID)
+	}
+}
+
+func TestGrpcClientGetCollectionStatistics(t *testing.T) {
+	ctx := context.Background()
+
+	c := testClient(t, ctx)
+
+	stat := make(map[string]string)
+	stat["row_count"] = "0"
+
+	mock.setInjection(mGetCollectionStatistics, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		req, ok := raw.(*server.GetCollectionStatisticsRequest)
+		resp := &server.GetCollectionStatisticsResponse{}
+		if !ok {
+			s, err := badRequestStatus()
+			resp.Status = s
+			return resp, err
+		}
+		assert.Equal(t, testCollectionName, req.GetCollectionName())
+		s, err := successStatus()
+		resp.Status, resp.Stats = s, entity.MapKvPairs(stat)
+		return resp, err
+	})
+
+	rStat, err := c.GetCollectionStatistics(ctx, testCollectionName)
+	assert.Nil(t, err)
+	if assert.NotNil(t, rStat) {
+		for k, v := range stat {
+			rv, has := rStat[k]
+			assert.True(t, has)
+			assert.Equal(t, v, rv)
+		}
+	}
+}
+
+func TestGrpcClientCreatePartition(t *testing.T) {
+	//TODO add detail asserts
+	ctx := context.Background()
+	c := testClient(t, ctx)
+	assert.Nil(t, c.CreatePartition(ctx, testCollectionName, "_default_part"))
+}
+
+func TestGrpcClientDropPartition(t *testing.T) {
+	//TODO add detail asserts
+	ctx := context.Background()
+	c := testClient(t, ctx)
+	assert.Nil(t, c.DropPartition(ctx, testCollectionName, "_default_part"))
+}
+
+func TestGrpcClientHasPartition(t *testing.T) {
+	//TODO add detail asserts
+	ctx := context.Background()
+	c := testClient(t, ctx)
+	r, err := c.HasPartition(ctx, testCollectionName, "_default_part")
+	assert.Nil(t, err)
+	assert.False(t, r)
+}
+
+func TestGrpcClientShowPartitions(t *testing.T) {
+	ctx := context.Background()
+	c := testClient(t, ctx)
+	r, err := c.ShowPartitions(ctx, testCollectionName)
+	assert.Nil(t, err)
+	assert.NotNil(t, r)
+}
+
+func TestGrpcClientLoadPartitions(t *testing.T) {
+	//TODO add implementation
+	//ctx := context.Background()
+	//c := testClient(t, ctx)
+	//assert.Nil(t, c.LoadParitions(ctx, testCollectionName, "_default_part"))
+}
+
+func TestGrpcClientReleasePartitions(t *testing.T) {
+	//TODO add implementation
+}
+
+func TestGrpcClientCreateIndex(t *testing.T) {
+	ctx := context.Background()
+	c := testClient(t, ctx)
+	idx := entity.NewGenericIndex("", entity.Flat, map[string]string{
+		"nlist":       "1024",
+		"metric_type": "IP",
+	})
+
+	assert.Nil(t, c.CreateIndex(ctx, testCollectionName, "vector", idx))
+}
+
+func TestGrpcClientDropIndex(t *testing.T) {
+	ctx := context.Background()
+	c := testClient(t, ctx)
+
+	assert.Nil(t, c.DropIndex(ctx, testCollectionName, "vector"))
+}
+
+func TestGrpcClientDescribeIndex(t *testing.T) {
+	ctx := context.Background()
+
+	c := testClient(t, ctx)
+
+	fieldName := "vector"
+
+	mock.setInjection(mDescribeIndex, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		req, ok := raw.(*server.DescribeIndexRequest)
+		resp := &server.DescribeIndexResponse{}
+		if !ok {
+			s, err := badRequestStatus()
+			resp.Status = s
+			return resp, err
+		}
+		assert.Equal(t, fieldName, req.GetFieldName())
+		assert.Equal(t, testCollectionName, req.GetCollectionName())
+		resp.IndexDescriptions = []*server.IndexDescription{
+			{
+				IndexName: "_default",
+				IndexID:   1,
+				FieldName: req.GetFieldName(),
+				Params: entity.MapKvPairs(map[string]string{
+					"nlist":       "1024",
+					"metric_type": "IP",
+				}),
+			},
+		}
+		s, err := successStatus()
+		resp.Status = s
+		return resp, err
+	})
+
+	idxes, err := c.DescribeIndex(ctx, testCollectionName, fieldName)
+	assert.Nil(t, err)
+	assert.NotNil(t, idxes)
 }
 
 func successStatus() (*common.Status, error) {

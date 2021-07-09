@@ -430,12 +430,13 @@ func (c *grpcClient) CreateIndex(ctx context.Context, collName string, fieldName
 }
 
 // DescribeIndex describe index
-func (c *grpcClient) DescribeIndex(ctx context.Context, collName string) ([]entity.Index, error) {
+func (c *grpcClient) DescribeIndex(ctx context.Context, collName string, fieldName string) ([]entity.Index, error) {
 	if c.service == nil {
 		return []entity.Index{}, ErrClientNotReady
 	}
 	req := &server.DescribeIndexRequest{
 		CollectionName: collName,
+		FieldName:      fieldName,
 		IndexName:      "", // empty string stands for all index on collection
 	}
 	resp, err := c.service.DescribeIndex(ctx, req)
