@@ -244,6 +244,29 @@ func TestGrpcClientCreateCollection(t *testing.T) {
 					},
 				},
 			},
+			// multiple auto id
+			{
+				CollectionName: testCollectionName,
+				Fields: []*entity.Field{
+					{
+						Name:       "int64",
+						DataType:   entity.FieldTypeInt64,
+						PrimaryKey: true,
+						AutoID:     true,
+					},
+					{
+						Name:       "int64_2",
+						DataType:   entity.FieldTypeInt64,
+						PrimaryKey: false,
+						AutoID:     true,
+					},
+					{
+						Name:       "vector",
+						DataType:   entity.FieldTypeFloatVector,
+						TypeParams: map[string]string{"dim": "128"},
+					},
+				},
+			},
 		}
 		shardsNum := int32(1) // <= 0 will used default shards num 2, skip check
 		mock.setInjection(mCreateCollection, func(_ context.Context, _ proto.Message) (proto.Message, error) {
