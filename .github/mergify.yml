@@ -1,0 +1,38 @@
+pull_request_rules:
+  - name: Test passed for code changed
+    conditions:
+      - base=master
+      - "status-success=Unittest AMD64 Ubuntu 18.04"
+    actions:
+      label:
+        add:
+          - ci-passed
+
+  - name: Test passed for document changed
+    conditions:
+      - base=master
+      - -files~=^[^\.]+$
+      - -files~=\.(?!md|png)
+    actions:
+      label:
+        add:
+          - ci-passed
+
+  - name: Test passed for mergify changed
+    conditions:
+      - base=master
+      - -files~=^(?!\.github\/mergify\.yml).*$
+    actions:
+      label:
+        add:
+          - ci-passed
+
+  - name: Remove ci-passed when unittest failed
+    conditions:
+      - base=master
+      - "check-failure=Unittest AMD64 Ubuntu 18.04"
+    actions:
+      label:
+        remove:
+          - ci-passed
+
