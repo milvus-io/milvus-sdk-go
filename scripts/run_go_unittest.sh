@@ -14,3 +14,4 @@ MILVUS_SDK_DIR="${ROOT_DIR}"
 echo $MILVUS_SDK_DIR
 
 go test -race -cover "${MILVUS_SDK_DIR}/client/..." -failfast -v
+go test -race -cover "${MILVUS_SDK_DIR}/entity/..." -failfast -v

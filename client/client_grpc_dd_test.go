@@ -56,7 +56,7 @@ func TestGrpcClientNil(t *testing.T) {
 			case reflect.Interface:
 				idxType := reflect.TypeOf((*entity.Index)(nil)).Elem()
 				if inT.Implements(idxType) {
-					ins = append(ins, reflect.ValueOf(entity.NewFlatIndex(entity.L2)))
+					ins = append(ins, reflect.ValueOf(entity.NewFlatIndex("flat_index", entity.L2)))
 				}
 			default:
 				ins = append(ins, reflect.Zero(inT))
