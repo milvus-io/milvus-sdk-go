@@ -201,7 +201,7 @@ func TestGrpcClientCreateCollection(t *testing.T) {
 	})
 
 	t.Run("Test invalid schemas", func(t *testing.T) {
-		cases := []entity.Schema{
+		cases := []*entity.Schema{
 			// empty fields
 			{
 				CollectionName: testCollectionName,
