@@ -71,8 +71,8 @@ const (
 	testVectorDim      = 128
 )
 
-func defaultSchema() entity.Schema {
-	return entity.Schema{
+func defaultSchema() *entity.Schema {
+	return &entity.Schema{
 		CollectionName: testCollectionName,
 		AutoID:         false,
 		Fields: []*entity.Field{

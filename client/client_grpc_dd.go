@@ -127,7 +127,7 @@ func (c *grpcClient) ListCollections(ctx context.Context) ([]*entity.Collection,
 }
 
 // CreateCollection create collection with specified schema
-func (c *grpcClient) CreateCollection(ctx context.Context, collSchema entity.Schema, shardNum int32) error {
+func (c *grpcClient) CreateCollection(ctx context.Context, collSchema *entity.Schema, shardNum int32) error {
 	if c.service == nil {
 		return ErrClientNotReady
 	}
@@ -156,7 +156,10 @@ func (c *grpcClient) CreateCollection(ctx context.Context, collSchema entity.Sch
 	return nil
 }
 
-func validateSchema(sch entity.Schema) error {
+func validateSchema(sch *entity.Schema) error {
+	if sch == nil {
+		return errors.New("nil schema")
+	}
 	if sch.CollectionName == "" {
 		return errors.New("collection name cannot be empty")
 	}
