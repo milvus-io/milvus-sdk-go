@@ -93,9 +93,9 @@ func (f flatIndex) Params() map[string]string {
 	}
 }
 
-func NewFlatIndex(m MetricType) Index {
+func NewFlatIndex(name string, m MetricType) Index {
 	return flatIndex{
-		baseIndex: baseIndex{it: Flat},
+		baseIndex: baseIndex{it: Flat, name: name},
 		m:         m,
 	}
 }
