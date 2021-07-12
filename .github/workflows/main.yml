@@ -12,6 +12,7 @@ on:
 jobs:
   # This workflow contains a single job called "build"
   build:
+    name: Unittest AMD64 Ubuntu ${{ matrix.ubuntu }}
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -26,5 +27,5 @@ jobs:
       - uses: actions/checkout@v2
 
       # Runs a single command using the runners shell
-      - name: Run a one-line script
+      - name: Run Unittest
         run: make test-go
