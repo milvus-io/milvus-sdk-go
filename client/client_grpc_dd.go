@@ -134,6 +134,14 @@ func (c *grpcClient) CreateCollection(ctx context.Context, collSchema *entity.Sc
 	if err := validateSchema(collSchema); err != nil {
 		return err
 	}
+
+	has, err := c.HasCollection(ctx, collSchema.CollectionName)
+	if err != nil {
+		return err
+	}
+	if has {
+		return fmt.Errorf("collection %s already exist", collSchema.CollectionName)
+	}
 	sch := collSchema.ProtoMessage()
 	bs, err := proto.Marshal(sch)
 	if err != nil {
@@ -202,6 +210,14 @@ func (c *grpcClient) DescribeCollection(ctx context.Context, collName string) (*
 		return nil, ErrClientNotReady
 	}
 
+	has, err := c.HasCollection(ctx, collName)
+	if err != nil {
+		return nil, err
+	}
+	if !has {
+		return nil, collNotExistsErr(collName)
+	}
+
 	req := &server.DescribeCollectionRequest{
 		CollectionName: collName,
 	}
@@ -227,6 +243,14 @@ func (c *grpcClient) DescribeCollection(ctx context.Context, collName string) (*
 func (c *grpcClient) DropCollection(ctx context.Context, collName string) error {
 	if c.service == nil {
 		return ErrClientNotReady
+	}
+
+	has, err := c.HasCollection(ctx, collName)
+	if err != nil {
+		return err
+	}
+	if !has {
+		return collNotExistsErr(collName)
 	}
 
 	req := &server.DropCollectionRequest{
@@ -267,6 +291,14 @@ func (c *grpcClient) GetCollectionStatistics(ctx context.Context, collName strin
 		return nil, ErrClientNotReady
 	}
 
+	has, err := c.HasCollection(ctx, collName)
+	if err != nil {
+		return nil, err
+	}
+	if !has {
+		return nil, collNotExistsErr(collName)
+	}
+
 	req := &server.GetCollectionStatisticsRequest{
 		CollectionName: collName,
 	}
@@ -304,7 +336,6 @@ func (c *grpcClient) LoadCollection(ctx context.Context, collName string, async 
 				continue
 			}
 			target[segment.ID] = segment
-
 		}
 		for len(target) > 0 {
 			current, err := c.GetQuerySegmentInfo(ctx, collName)
@@ -320,7 +351,6 @@ func (c *grpcClient) LoadCollection(ctx context.Context, collName string, async 
 			}
 			time.Sleep(time.Millisecond * 100)
 		}
-
 	}
 	return nil
 }
