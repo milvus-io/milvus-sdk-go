@@ -16,9 +16,9 @@ package main
 
 import (
 	"fmt"
-	"html/template"
 	"os"
 	"strings"
+	"text/template"
 	"time"
 
 	"github.com/milvus-io/milvus-sdk-go/entity"
@@ -30,7 +30,11 @@ var scalarColumnTemplate = template.Must(template.New("").Parse(`// Code generat
 //Package entity defines entities used in sdk
 package entity 
 
-import "github.com/milvus-io/milvus-sdk-go/internal/proto/schema"
+import (
+	"errors"
+
+	"github.com/milvus-io/milvus-sdk-go/internal/proto/schema"
+)
 
 // Column{{.TypeName}} generated columns type for {{.TypeName}}
 type Column{{.TypeName}} struct {
@@ -59,16 +63,30 @@ func (c *Column{{.TypeName}}) FieldData() *schema.FieldData {
 		Type: schema.DataType_{{.TypeName}},
 		FieldName: c.name,
 	}
+	data := make([]{{.PbType}}, 0, c.Len())
+	for i := 0 ;i < c.Len(); i++ {
+		data = append(data, {{.PbType}}(c.values[i]))
+	}
 	fd.Field = &schema.FieldData_Scalars{
 		Scalars: &schema.ScalarField{
 			Data: &schema.ScalarField_{{.PbName}}Data{
 				{{.PbName}}Data: &schema.{{.PbName}}Array{
-					Data: []{{.PbType}}{},
+					Data: data,
 				},
 			},
 		},
 	}
 	return fd
+}
+
+// ValueByIdx returns value of the provided index
+// error occurs when index out of range
+func (c *Column{{.TypeName}}) ValueByIdx(idx int) ({{.TypeDef}}, error) {
+	var r {{.TypeDef}} // use default value
+	if idx < 0 || idx >= c.Len() {
+		return r, errors.New("index out of range")
+	}
+	return c.values[idx], nil
 }
 
 // NewColumn{{.TypeName}} auto generated constructor
@@ -201,6 +219,18 @@ func TestColumn{{.TypeName}}(t *testing.T) {
 		assert.NotNil(t, fd)
 		assert.Equal(t, fd.GetFieldName(), columnName)
 	})
+
+	t.Run("test column value by idx", func(t *testing.T) {
+		_, err := column.ValueByIdx(-1)
+		assert.NotNil(t, err)
+		_, err = column.ValueByIdx(columnLen)
+		assert.NotNil(t, err)
+		for i := 0; i < columnLen; i++ {
+			v, err := column.ValueByIdx(i)
+			assert.Nil(t, err)
+			assert.Equal(t, column.values[i], v)
+		}
+	})
 }
 
 func TestFieldData{{.TypeName}}Column(t *testing.T) {
@@ -230,6 +260,7 @@ func TestFieldData{{.TypeName}}Column(t *testing.T) {
 		assert.Equal(t, FieldType{{.TypeName}}, column.Type())
 	})
 
+	
 	t.Run("nil data", func(t *testing.T) {
 		fd.Field = nil
 		_, err := FieldDataColumn(fd, 0, len)
@@ -282,6 +313,7 @@ func TestColumn{{.TypeName}}(t *testing.T) {
 		assert.NotNil(t, fd)
 		assert.Equal(t, fd.GetFieldName(), columnName)
 	})
+
 }
 `))
 
