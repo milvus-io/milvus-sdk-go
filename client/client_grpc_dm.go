@@ -85,7 +85,6 @@ func (c *grpcClient) Flush(ctx context.Context, collName string, async bool) err
 		if has {
 			waitingSet := make(map[int64]struct{})
 			for _, segmentID := range segmentIDs.GetData() {
-				fmt.Println("wait", segmentID)
 				waitingSet[segmentID] = struct{}{}
 			}
 			flushed := func() bool {

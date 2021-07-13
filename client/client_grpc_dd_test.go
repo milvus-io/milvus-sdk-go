@@ -172,6 +172,8 @@ func TestGrpcClientListCollections(t *testing.T) {
 func TestGrpcClientCreateCollection(t *testing.T) {
 	ctx := context.Background()
 	c := testClient(ctx, t)
+	// default, all collection name returns false
+	mock.delInjection(mHasCollection)
 	t.Run("Test normal creation", func(t *testing.T) {
 		ds := defaultSchema()
 		shardsNum := int32(1)
@@ -279,12 +281,57 @@ func TestGrpcClientCreateCollection(t *testing.T) {
 			mock.delInjection(mCreateCollection)
 		}
 	})
+
+	t.Run("test duplicated collection", func(t *testing.T) {
+		m := make(map[string]struct{})
+		mock.setInjection(mCreateCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+			req, ok := raw.(*server.CreateCollectionRequest)
+			if !ok {
+				return badRequestStatus()
+			}
+			m[req.GetCollectionName()] = struct{}{}
+
+			return successStatus()
+		})
+		mock.setInjection(mHasCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+			req, ok := raw.(*server.HasCollectionRequest)
+			resp := &server.BoolResponse{}
+			if !ok {
+				return badRequestStatus()
+			}
+
+			_, has := m[req.GetCollectionName()]
+			resp.Value = has
+			s, err := successStatus()
+			resp.Status = s
+			return resp, err
+		})
+
+		assert.Nil(t, c.CreateCollection(ctx, defaultSchema(), 1))
+		assert.NotNil(t, c.CreateCollection(ctx, defaultSchema(), 1))
+	})
+}
+
+// default HasCollection injection, returns true only when collection name is `testCollectionName`
+var hasCollectionDefault = func(_ context.Context, raw proto.Message) (proto.Message, error) {
+	req, ok := raw.(*server.HasCollectionRequest)
+	resp := &server.BoolResponse{}
+	if !ok {
+		s, err := badRequestStatus()
+		resp.Status = s
+		return s, err
+	}
+	resp.Value = req.GetCollectionName() == testCollectionName
+	s, err := successStatus()
+	resp.Status = s
+	return resp, err
 }
 
 func TestGrpcClientDropCollection(t *testing.T) {
 	ctx := context.Background()
 	c := testClient(ctx, t)
 
+	mock.setInjection(mHasCollection, hasCollectionDefault)
 	mock.setInjection(mDropCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 		req, ok := (raw).(*server.DropCollectionRequest)
 		if !ok {

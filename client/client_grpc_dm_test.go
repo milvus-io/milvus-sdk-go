@@ -4,9 +4,11 @@ import (
 	"context"
 	"math/rand"
 	"testing"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/milvus-io/milvus-sdk-go/entity"
+	"github.com/milvus-io/milvus-sdk-go/internal/proto/common"
 	"github.com/milvus-io/milvus-sdk-go/internal/proto/schema"
 	"github.com/milvus-io/milvus-sdk-go/internal/proto/server"
 	"github.com/stretchr/testify/assert"
@@ -52,8 +54,70 @@ func TestGrpcClientFlush(t *testing.T) {
 
 	c := testClient(ctx, t)
 
-	assert.Nil(t, c.Flush(ctx, testCollectionName, false))
-	assert.Nil(t, c.Flush(ctx, testCollectionName, true))
+	t.Run("test async flush", func(t *testing.T) {
+		assert.Nil(t, c.Flush(ctx, testCollectionName, true))
+	})
+
+	t.Run("test sync flush", func(t *testing.T) {
+		// 1~10 segments
+		segCount := rand.Intn(10) + 1
+		segments := make([]int64, 0, segCount)
+		for i := 0; i < segCount; i++ {
+			segments = append(segments, rand.Int63())
+		}
+		// 500ms ~ 2s
+		flushTime := 500 + rand.Intn(1500)
+		start := time.Now()
+		flag := false
+		mock.setInjection(mFlush, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+			req, ok := raw.(*server.FlushRequest)
+			resp := &server.FlushResponse{}
+			if !ok {
+				s, err := badRequestStatus()
+				resp.Status = s
+				return resp, err
+			}
+			assert.ElementsMatch(t, []string{testCollectionName}, req.GetCollectionNames())
+
+			resp.CollSegIDs = make(map[string]*schema.LongArray)
+			resp.CollSegIDs[testCollectionName] = &schema.LongArray{
+				Data: segments,
+			}
+
+			s, err := successStatus()
+			resp.Status = s
+			return resp, err
+		})
+		mock.setInjection(mGetPersistentSegmentInfo, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+			req, ok := raw.(*server.GetPersistentSegmentInfoRequest)
+			resp := &server.GetPersistentSegmentInfoResponse{}
+			if !ok {
+				s, err := badRequestStatus()
+				resp.Status = s
+				return resp, err
+			}
+			assert.Equal(t, testCollectionName, req.GetCollectionName())
+
+			state := common.SegmentState_Flushing
+			if time.Since(start) > time.Duration(flushTime)*time.Millisecond {
+				state = common.SegmentState_Flushed
+				flag = true
+			}
+
+			for _, segID := range segments {
+				resp.Infos = append(resp.Infos, &server.PersistentSegmentInfo{
+					SegmentID: segID,
+					State:     state,
+				})
+			}
+
+			s, err := successStatus()
+			resp.Status = s
+			return resp, err
+		})
+		assert.Nil(t, c.Flush(ctx, testCollectionName, false))
+		assert.True(t, flag)
+	})
 }
 
 func TestGrpcSearch(t *testing.T) {
@@ -64,7 +128,7 @@ func TestGrpcSearch(t *testing.T) {
 
 	vectors := generateFloatVector(4096, testVectorDim)
 
-	results, err := c.Search(context.Background(), testCollectionName, []string{}, "int64 > 0", []string{"int64"}, []entity.Vector{entity.FloatVector(vectors[0])},
+	results, err := c.Search(ctx, testCollectionName, []string{}, "int64 > 0", []string{"int64"}, []entity.Vector{entity.FloatVector(vectors[0])},
 		testVectorField, entity.L2, 10, map[string]string{
 			"nprobe": "10",
 		})
