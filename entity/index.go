@@ -14,6 +14,8 @@ package entity
 
 import "github.com/milvus-io/milvus-sdk-go/internal/proto/common"
 
+//go:generate go run genidx/genidx.go
+
 // IndexState export index state
 type IndexState common.IndexState
 
@@ -25,21 +27,22 @@ type MetricType string
 
 // Index Constants
 const (
-	Flat                 IndexType = "FLAT"     //faiss
-	IvfFlat              IndexType = "IVF_FLAT" //faiss
-	IvfPQ                IndexType = "IVF_PQ"   //faiss
-	IndexFaissIvfSQ8     IndexType = "IVF_SQ8"
-	IndexFaissIvfSQ8H    IndexType = "IVF_SQ8_HYBRID"
-	IndexFaissBinIDMap   IndexType = "BIN_FLAT"
-	IndexFaissBinIvfFlat IndexType = "BIN_IVF_FLAT"
-	IndexNSG             IndexType = "NSG"
-	IndexHNSW            IndexType = "HNSW"
-	IndexRHNSWFlat       IndexType = "RHNSW_FLAT"
-	IndexRHNSWPQ         IndexType = "RHNSW_PQ"
-	IndexRHNSWSQ         IndexType = "RHNSW_SQ"
-	IndexANNOY           IndexType = "ANNOY"
-	IndexNGTPANNG        IndexType = "NGT_PANNG"
-	IndexNGTONNG         IndexType = "NGT_ONNG"
+	Flat       IndexType = "FLAT" //faiss
+	BinFlat    IndexType = "BIN_FLAT"
+	IvfFlat    IndexType = "IVF_FLAT" //faiss
+	BinIvfFlat IndexType = "BIN_IVF_FLAT"
+	IvfPQ      IndexType = "IVF_PQ" //faiss
+	IvfSQ8     IndexType = "IVF_SQ8"
+	IvfSQ8H    IndexType = "IVF_SQ8_HYBRID"
+	NSG        IndexType = "NSG"
+	HNSW       IndexType = "HNSW"
+	RHNSWFlat  IndexType = "RHNSW_FLAT"
+	RHNSWPQ    IndexType = "RHNSW_PQ"
+	RHNSWSQ    IndexType = "RHNSW_SQ"
+	IvfHNSW    IndexType = "IVF_HNSW"
+	ANNOY      IndexType = "ANNOY"
+	NGTPANNG   IndexType = "NGT_PANNG"
+	NGTONNG    IndexType = "NGT_ONNG"
 )
 
 // Metric Constants
