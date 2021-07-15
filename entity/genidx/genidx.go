@@ -42,6 +42,7 @@ var _ Index = &Index{{.IdxName}}{}
 // Index{{.IdxName}} idx type for {{.IdxType}}
 type Index{{.IdxName}} struct { //auto generated fields{{range .ConstructParams}}{{with .}}
 	{{.Name}} {{.ParamType}}{{end}}{{end}}
+	metricType MetricType
 }
 
 // Name returns index type name, implementing Index interface
@@ -63,11 +64,13 @@ func(i *Index{{.IdxName}}) SupportBinary() bool {
 func(i *Index{{.IdxName}}) Params() map[string]string {
 	return map[string]string {//auto generated mapping {{range .ConstructParams}}{{with .}}
 		"{{.Name}}": fmt.Sprintf("%v",i.{{.Name}}),{{end}}{{end}}
+		"index_type": string(i.IndexType()),
+		"metric_type": string(i.metricType),
 	}
 }
 
 // NewIndex{{.IdxName}} create index with contruction parameters
-func NewIndex{{.IdxName}}({{range .ConstructParams}}{{with .}}
+func NewIndex{{.IdxName}}(metricType MetricType, {{range .ConstructParams}}{{with .}}
 	{{.Name}} {{.ParamType}},
 {{end}}{{end}}) (*Index{{.IdxName}}, error) {
 	// auto generate parameters validation code, if any{{range .ConstructParams}}{{with .}}
@@ -76,6 +79,7 @@ func NewIndex{{.IdxName}}({{range .ConstructParams}}{{with .}}
 	return &Index{{.IdxName}}{ {{range .ConstructParams}}{{with .}}
 	//auto generated setting
 	{{.Name}}: {{.Name}},{{end}}{{end}}
+	metricType: metricType,
 	}, nil
 }
 {{end}}{{end}}
@@ -100,10 +104,13 @@ func TestIndex{{.IdxName}}(t *testing.T){
 	{{range .ConstructParams}}{{with.}}
 	var {{.Name}} {{.ParamType}}{{end}}{{end}}
 
+	{{if SContains $idx.IdxName "Bin" }}mt := HAMMING{{else}}mt := L2{{end}}
+	
+
 	t.Run("valid usage case", func(t *testing.T){
 		{{range $i, $example := .ValidExamples}}
 		{{$example}}
-		idx{{$i}}, err := NewIndex{{$idx.IdxName}}({{range $idx.ConstructParams}}{{with.}}
+		idx{{$i}}, err := NewIndex{{$idx.IdxName}}(mt, {{range $idx.ConstructParams}}{{with.}}
 			{{.Name}},{{end}}{{end}}
 		)
 		assert.Nil(t, err)
@@ -118,7 +125,7 @@ func TestIndex{{.IdxName}}(t *testing.T){
 	t.Run("invalid usage case", func(t *testing.T){
 		{{range $i, $example := .InvalidExamples}}
 		{{$example}}
-		idx{{$i}}, err := NewIndex{{$idx.IdxName}}({{range $idx.ConstructParams}}{{with.}}
+		idx{{$i}}, err := NewIndex{{$idx.IdxName}}(mt, {{range $idx.ConstructParams}}{{with.}}
 			{{.Name}},{{end}}{{end}}
 		)
 		assert.NotNil(t, err)
