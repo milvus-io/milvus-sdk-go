@@ -114,11 +114,11 @@ func (c *grpcClient) Flush(ctx context.Context, collName string, async bool) err
 
 //BoolExprSearch search with bool expression
 func (c *grpcClient) Search(ctx context.Context, collName string, partitions []string,
-	expr string, outputFields []string, vectors []entity.Vector, vectorField string, metricType entity.MetricType, topK int, params map[string]string) ([]SearchResult, error) {
+	expr string, outputFields []string, vectors []entity.Vector, vectorField string, metricType entity.MetricType, topK int, sp entity.SearchParam) ([]SearchResult, error) {
 	if c.service == nil {
 		return []SearchResult{}, ErrClientNotReady
 	}
-	bs, _ := json.Marshal(params)
+	bs, _ := json.Marshal(sp.Params())
 	searchParams := entity.MapKvPairs(map[string]string{
 		"anns_field":  vectorField,
 		"topk":        fmt.Sprintf("%d", topK),

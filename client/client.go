@@ -82,7 +82,7 @@ type Client interface {
 	Flush(ctx context.Context, collName string, async bool) error
 	// Search search with bool expression
 	Search(ctx context.Context, collName string, partitions []string,
-		expr string, outputFields []string, vectors []entity.Vector, vectorField string, metricType entity.MetricType, topK int, params map[string]string) ([]SearchResult, error)
+		expr string, outputFields []string, vectors []entity.Vector, vectorField string, metricType entity.MetricType, topK int, sp entity.SearchParam) ([]SearchResult, error)
 }
 
 // SearchResult search result
