@@ -13,8 +13,8 @@
 package entity
 
 import (
-	"github.com/milvus-io/milvus-sdk-go/internal/proto/common"
-	"github.com/milvus-io/milvus-sdk-go/internal/proto/schema"
+	"github.com/milvus-io/milvus-sdk-go/v2/internal/proto/common"
+	"github.com/milvus-io/milvus-sdk-go/v2/internal/proto/schema"
 )
 
 // Schema represents schema info of collection in milvus

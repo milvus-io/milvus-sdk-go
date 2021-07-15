@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/milvus-io/milvus-sdk-go/client"
+	"github.com/milvus-io/milvus-sdk-go/v2/client"
 	"github.com/stretchr/testify/assert"
 )
 
