@@ -3,7 +3,7 @@ package entity
 import (
 	"testing"
 
-	"github.com/milvus-io/milvus-sdk-go/internal/proto/common"
+	"github.com/milvus-io/milvus-sdk-go/v2/internal/proto/common"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -15,7 +15,7 @@ package client
 import (
 	"context"
 
-	"github.com/milvus-io/milvus-sdk-go/entity"
+	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 	"google.golang.org/grpc"
 )
 

@@ -33,7 +33,7 @@ package entity
 import (
 	"errors"
 
-	"github.com/milvus-io/milvus-sdk-go/internal/proto/schema"
+	"github.com/milvus-io/milvus-sdk-go/v2/internal/proto/schema"
 )
 
 // Column{{.TypeName}} generated columns type for {{.TypeName}}
@@ -103,7 +103,7 @@ var vectorColumnTemplate = template.Must(template.New("").Parse(`// Code generat
 //Package entity defines entities used in sdk
 package entity 
 
-import "github.com/milvus-io/milvus-sdk-go/internal/proto/schema"
+import "github.com/milvus-io/milvus-sdk-go/v2/internal/proto/schema"
 
 
 // Column{{.TypeName}} generated columns type for {{.TypeName}}
@@ -188,7 +188,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/milvus-io/milvus-sdk-go/internal/proto/schema"
+	"github.com/milvus-io/milvus-sdk-go/v2/internal/proto/schema"
 )
 
 func TestColumn{{.TypeName}}(t *testing.T) {

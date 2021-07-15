@@ -20,9 +20,9 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/milvus-io/milvus-sdk-go/entity"
-	"github.com/milvus-io/milvus-sdk-go/internal/proto/common"
-	"github.com/milvus-io/milvus-sdk-go/internal/proto/server"
+	"github.com/milvus-io/milvus-sdk-go/v2/entity"
+	"github.com/milvus-io/milvus-sdk-go/v2/internal/proto/common"
+	"github.com/milvus-io/milvus-sdk-go/v2/internal/proto/server"
 )
 
 // Index insert into collection with column-based format

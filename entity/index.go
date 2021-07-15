@@ -12,7 +12,7 @@
 // Package entity defines entities used in sdk
 package entity
 
-import "github.com/milvus-io/milvus-sdk-go/internal/proto/common"
+import "github.com/milvus-io/milvus-sdk-go/v2/internal/proto/common"
 
 //go:generate go run genidx/genidx.go
 
