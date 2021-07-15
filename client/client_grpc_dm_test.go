@@ -127,11 +127,11 @@ func TestGrpcSearch(t *testing.T) {
 	c := testClient(ctx, t)
 
 	vectors := generateFloatVector(4096, testVectorDim)
-
+	sp, err := entity.NewIndexFlatSearchParam(10)
+	assert.Nil(t, err)
+	assert.NotNil(t, sp)
 	results, err := c.Search(ctx, testCollectionName, []string{}, "int64 > 0", []string{"int64"}, []entity.Vector{entity.FloatVector(vectors[0])},
-		testVectorField, entity.L2, 10, map[string]string{
-			"nprobe": "10",
-		})
+		testVectorField, entity.L2, 10, sp)
 
 	assert.Nil(t, err)
 	assert.NotNil(t, results)

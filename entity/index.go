@@ -69,6 +69,12 @@ type Index interface {
 	Params() map[string]string
 }
 
+// SearchParam interface for index related search param
+type SearchParam interface {
+	// returns parameters for search/query
+	Params() map[string]string
+}
+
 type baseIndex struct {
 	it   IndexType
 	name string
