@@ -64,7 +64,7 @@ type Client interface {
 
 	// CreateIndex create index for field of specified collection
 	// currently index naming is not supported, so only one index on vector field is supported
-	CreateIndex(ctx context.Context, collName string, fieldName string, idx entity.Index) error
+	CreateIndex(ctx context.Context, collName string, fieldName string, idx entity.Index, async bool) error
 	// DescribeIndex describe index on collection
 	// currently index naming is not supported, so only one index on vector field is supported
 	DescribeIndex(ctx context.Context, collName string, fieldName string) ([]entity.Index, error)

@@ -536,7 +536,8 @@ func (c *grpcClient) ReleasePartitions(ctx context.Context, collName string, par
 }
 
 // CreateIndex create index for collection
-func (c *grpcClient) CreateIndex(ctx context.Context, collName string, fieldName string, idx entity.Index) error {
+func (c *grpcClient) CreateIndex(ctx context.Context, collName string, fieldName string,
+	idx entity.Index, async bool) error {
 	if c.service == nil {
 		return ErrClientNotReady
 	}
@@ -550,7 +551,26 @@ func (c *grpcClient) CreateIndex(ctx context.Context, collName string, fieldName
 	if err != nil {
 		return err
 	}
-	return handleRespStatus(resp)
+	if err = handleRespStatus(resp); err != nil {
+		return err
+	}
+	if !async { // sync mode, wait index building result
+		for {
+			is, err := c.GetIndexState(ctx, collName, fieldName)
+			if err != nil {
+				return err
+			}
+			switch is {
+			case entity.IndexState(common.IndexState_Failed):
+				return errors.New("index build failed")
+			case entity.IndexState(common.IndexState_Finished):
+				return nil
+			default:
+			}
+			time.Sleep(100 * time.Millisecond) // wait 100ms
+		}
+	}
+	return nil
 }
 
 // DescribeIndex describe index
@@ -615,10 +635,10 @@ func (c *grpcClient) GetIndexState(ctx context.Context, collName string, fieldNa
 	}
 	resp, err := c.service.GetIndexState(ctx, req)
 	if err != nil {
-		return entity.IndexState(common.IndexState_Failed), err
+		return entity.IndexState(common.IndexState_IndexStateNone), err
 	}
 	if err := handleRespStatus(resp.GetStatus()); err != nil {
-		return entity.IndexState(common.IndexState_Failed), err
+		return entity.IndexState(common.IndexState_IndexStateNone), err
 	}
 
 	return entity.IndexState(resp.GetState()), nil

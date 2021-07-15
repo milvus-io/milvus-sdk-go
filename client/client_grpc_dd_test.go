@@ -764,7 +764,7 @@ func TestGrpcClientCreateIndex(t *testing.T) {
 		"metric_type": "IP",
 	})
 
-	assert.Nil(t, c.CreateIndex(ctx, testCollectionName, "vector", idx))
+	assert.Nil(t, c.CreateIndex(ctx, testCollectionName, "vector", idx, true))
 }
 
 func TestGrpcClientDropIndex(t *testing.T) {
