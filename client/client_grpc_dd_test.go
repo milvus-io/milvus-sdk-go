@@ -34,6 +34,7 @@ func TestGrpcClientNil(t *testing.T) {
 		mt := m.Type                                   // type of function
 		if m.Name == "Close" || m.Name == "Connect" || // skip connect & close
 			m.Name == "Search" || // type alias MetricType treated as string
+			m.Name == "CalcDistanceWithIDs" ||
 			m.Name == "Insert" { // complex methods with ...
 			continue
 		}
