@@ -137,6 +137,197 @@ func TestGrpcSearch(t *testing.T) {
 	assert.NotNil(t, results)
 }
 
+func TestGrpcCalcDistanceWithIDs(t *testing.T) {
+	ctx := context.Background()
+	t.Run("bad client calls CalcDistance", func(t *testing.T) {
+		c := &grpcClient{}
+		r, err := c.CalcDistanceWithIDs(ctx, testCollectionName, []string{}, "vector", entity.L2, nil, nil)
+		assert.Nil(t, r)
+		assert.NotNil(t, err)
+		assert.EqualValues(t, ErrClientNotReady, err)
+	})
+
+	c := testClient(ctx, t)
+	mock.setInjection(mDescribeCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		req, ok := raw.(*server.DescribeCollectionRequest)
+		resp := &server.DescribeCollectionResponse{}
+		if !ok {
+			s, err := badRequestStatus()
+			resp.Status = s
+			return resp, err
+		}
+		assert.Equal(t, testCollectionName, req.GetCollectionName())
+
+		sch := defaultSchema()
+		resp.Schema = sch.ProtoMessage()
+
+		s, err := successStatus()
+		resp.Status = s
+		return resp, err
+	})
+	t.Run("call with ctx done", func(t *testing.T) {
+		ctxDone, cancel := context.WithCancel(context.Background())
+		cancel()
+
+		r, err := c.CalcDistanceWithIDs(ctxDone, testCollectionName, []string{}, "vector", entity.L2,
+			entity.NewColumnInt64("int64", []int64{1}), entity.NewColumnInt64("int64", []int64{1}))
+		assert.Nil(t, r)
+		assert.NotNil(t, err)
+	})
+
+	t.Run("invalid ids call", func(t *testing.T) {
+		r, err := c.CalcDistanceWithIDs(ctx, testCollectionName, []string{}, "vector", entity.L2,
+			nil, nil)
+		assert.Nil(t, r)
+		assert.NotNil(t, err)
+
+		r, err = c.CalcDistanceWithIDs(ctx, testCollectionName, []string{}, "vector", entity.L2,
+			entity.NewColumnInt64("non-exists", []int64{1}), entity.NewColumnInt64("non-exists", []int64{1}))
+		assert.Nil(t, r)
+		assert.NotNil(t, err)
+
+		r, err = c.CalcDistanceWithIDs(ctx, testCollectionName, []string{}, "vector", entity.L2,
+			entity.NewColumnInt64("non-exists", []int64{1}), entity.NewColumnInt64("non-exists", []int64{1}))
+	})
+
+	t.Run("valid calls", func(t *testing.T) {
+		mock.setInjection(mCalcDistanceIDs, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+			req, ok := raw.(*server.CalcDistanceRequest)
+			resp := &server.CalcDistanceResults{}
+			if !ok {
+				s, err := badRequestStatus()
+				resp.Status = s
+				return resp, err
+			}
+			idsLeft := req.GetOpLeft().GetIdArray()
+			idsRight := req.GetOpRight().GetIdArray()
+			assert.NotNil(t, idsLeft)
+			assert.NotNil(t, idsRight)
+
+			assert.Equal(t, testCollectionName, idsLeft.CollectionName)
+			assert.Equal(t, testCollectionName, idsRight.CollectionName)
+
+			// only int ids supported for now TODO update string test cases
+			assert.NotNil(t, idsLeft.IdArray.GetIntId())
+			assert.NotNil(t, idsRight.IdArray.GetIntId())
+
+			// this injection returns float distance
+			dl := len(idsLeft.IdArray.GetIntId().Data)
+
+			resp.Array = &server.CalcDistanceResults_FloatDist{
+				FloatDist: &schema.FloatArray{
+					Data: make([]float32, dl),
+				},
+			}
+
+			s, err := successStatus()
+			resp.Status = s
+			return resp, err
+		})
+		r, err := c.CalcDistanceWithIDs(ctx, testCollectionName, []string{}, "vector", entity.L2,
+			entity.NewColumnInt64("int64", []int64{1}), entity.NewColumnInt64("int64", []int64{1}))
+		assert.Nil(t, err)
+		assert.NotNil(t, r)
+
+		// test IntDistance,
+		mock.setInjection(mCalcDistanceIDs, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+			req, ok := raw.(*server.CalcDistanceRequest)
+			resp := &server.CalcDistanceResults{}
+			if !ok {
+				s, err := badRequestStatus()
+				resp.Status = s
+				return resp, err
+			}
+			idsLeft := req.GetOpLeft().GetIdArray()
+			idsRight := req.GetOpRight().GetIdArray()
+			assert.NotNil(t, idsLeft)
+			assert.NotNil(t, idsRight)
+
+			assert.Equal(t, testCollectionName, idsLeft.CollectionName)
+			assert.Equal(t, testCollectionName, idsRight.CollectionName)
+
+			// only int ids supported for now TODO update string test cases
+			assert.NotNil(t, idsLeft.IdArray.GetIntId())
+			assert.NotNil(t, idsRight.IdArray.GetIntId())
+
+			// this injection returns float distance
+			dl := len(idsLeft.IdArray.GetIntId().Data)
+
+			resp.Array = &server.CalcDistanceResults_IntDist{
+				IntDist: &schema.IntArray{
+					Data: make([]int32, dl),
+				},
+			}
+
+			s, err := successStatus()
+			resp.Status = s
+			return resp, err
+		})
+		r, err = c.CalcDistanceWithIDs(ctx, testCollectionName, []string{}, "vector", entity.HAMMING,
+			entity.NewColumnInt64("int64", []int64{1}), entity.NewColumnInt64("int64", []int64{1}))
+		assert.Nil(t, err)
+		assert.NotNil(t, r)
+
+		// test str id
+		mock.setInjection(mDescribeCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+			req, ok := raw.(*server.DescribeCollectionRequest)
+			resp := &server.DescribeCollectionResponse{}
+			if !ok {
+				s, err := badRequestStatus()
+				resp.Status = s
+				return resp, err
+			}
+			assert.Equal(t, testCollectionName, req.GetCollectionName())
+
+			sch := defaultSchema()
+			sch.Fields[0].DataType = entity.FieldTypeString
+			sch.Fields[0].Name = "str"
+			resp.Schema = sch.ProtoMessage()
+
+			s, err := successStatus()
+			resp.Status = s
+			return resp, err
+		})
+		mock.setInjection(mCalcDistanceIDs, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+			req, ok := raw.(*server.CalcDistanceRequest)
+			resp := &server.CalcDistanceResults{}
+			if !ok {
+				s, err := badRequestStatus()
+				resp.Status = s
+				return resp, err
+			}
+			idsLeft := req.GetOpLeft().GetIdArray()
+			idsRight := req.GetOpRight().GetIdArray()
+			assert.NotNil(t, idsLeft)
+			assert.NotNil(t, idsRight)
+
+			assert.Equal(t, testCollectionName, idsLeft.CollectionName)
+			assert.Equal(t, testCollectionName, idsRight.CollectionName)
+
+			// only int ids supported for now TODO update string test cases
+			assert.NotNil(t, idsLeft.IdArray.GetStrId())
+			assert.NotNil(t, idsRight.IdArray.GetStrId())
+
+			// this injection returns float distance
+			dl := len(idsLeft.IdArray.GetStrId().Data)
+
+			resp.Array = &server.CalcDistanceResults_FloatDist{
+				FloatDist: &schema.FloatArray{
+					Data: make([]float32, dl),
+				},
+			}
+
+			s, err := successStatus()
+			resp.Status = s
+			return resp, err
+		})
+		r, err = c.CalcDistanceWithIDs(ctx, testCollectionName, []string{}, "vector", entity.L2,
+			entity.NewColumnString("str", []string{"1"}), entity.NewColumnString("str", []string{"1"}))
+		assert.Nil(t, err)
+		assert.NotNil(t, r)
+	})
+}
+
 func generateFloatVector(num, dim int) [][]float32 {
 	r := make([][]float32, 0, num)
 	for i := 0; i < num; i++ {

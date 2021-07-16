@@ -22,6 +22,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 	"github.com/milvus-io/milvus-sdk-go/v2/internal/proto/common"
+	"github.com/milvus-io/milvus-sdk-go/v2/internal/proto/schema"
 	"github.com/milvus-io/milvus-sdk-go/v2/internal/proto/server"
 )
 
@@ -235,6 +236,109 @@ func (c *grpcClient) GetQuerySegmentInfo(ctx context.Context, collName string) (
 	return segments, nil
 }
 
+// CalcDistanceWithIDs calculate distance between vectors
+func (c *grpcClient) CalcDistanceWithIDs(ctx context.Context, collName string, partitions []string, fieldName string,
+	metricType entity.MetricType, idsl, idsr entity.Column) (entity.Column, error) {
+	if c.service == nil {
+		return nil, ErrClientNotReady
+	}
+
+	if idsl == nil || idsr == nil {
+		return nil, errors.New("ids cannot be nil")
+	}
+
+	if idsl.Len() != idsl.Len() {
+		return nil, errors.New("ids length not match")
+	}
+	if idsl.Type() != idsl.Type() {
+		return nil, errors.New("ids type not match")
+	}
+
+	// describe collection to check id provided is primary key
+	coll, err := c.DescribeCollection(ctx, collName)
+	if err != nil {
+		return nil, err
+	}
+
+	if !(isCollectionPrimaryKey(coll, idsl) && isCollectionPrimaryKey(coll, idsr)) {
+		return nil, errors.New("column(s) passed is no the primary key of the collection")
+	}
+
+	colToIDs := func(col entity.Column) *server.VectorIDs {
+		switch col.Type() {
+		case entity.FieldTypeInt64:
+			int64Column, ok := col.(*entity.ColumnInt64)
+			if !ok {
+				return nil // server shall report error
+			}
+			return &server.VectorIDs{
+				CollectionName: collName,
+				PartitionNames: partitions,
+				FieldName:      fieldName,
+				IdArray: &schema.IDs{
+					IdField: &schema.IDs_IntId{
+						IntId: &schema.LongArray{
+							Data: int64Column.Data(),
+						},
+					},
+				},
+			}
+		case entity.FieldTypeString:
+			//NOT supported yet
+			stringColumn, ok := col.(*entity.ColumnString)
+			if !ok {
+				return nil // server shall report error
+			}
+			return &server.VectorIDs{
+				CollectionName: collName,
+				PartitionNames: partitions,
+				FieldName:      fieldName,
+				IdArray: &schema.IDs{
+					IdField: &schema.IDs_StrId{
+						StrId: &schema.StringArray{
+							Data: stringColumn.Data(),
+						},
+					},
+				},
+			}
+
+		}
+		return nil
+	}
+
+	req := &server.CalcDistanceRequest{
+		OpLeft: &server.VectorsArray{
+			Array: &server.VectorsArray_IdArray{
+				IdArray: colToIDs(idsl),
+			},
+		},
+		OpRight: &server.VectorsArray{
+			Array: &server.VectorsArray_IdArray{
+				IdArray: colToIDs(idsr),
+			},
+		},
+		Params: entity.MapKvPairs(map[string]string{
+			"metric": string(metricType),
+		}),
+	}
+	resp, err := c.service.CalcDistance(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	if err := handleRespStatus(resp.GetStatus()); err != nil {
+		return nil, err
+	}
+
+	if fd := resp.GetFloatDist(); fd != nil {
+		return entity.NewColumnFloat("distance", fd.GetData()), nil
+	}
+	if id := resp.GetIntDist(); id != nil {
+		return entity.NewColumnInt32("distance", id.GetData()), nil
+	}
+
+	return nil, errors.New("distance field not supported")
+}
+
 func vector2PlaceholderGroupBytes(vectors []entity.Vector) []byte {
 	phg := &server.PlaceholderGroup{
 		Placeholders: []*server.PlaceholderValue{
@@ -256,4 +360,21 @@ func vector2Placeholder(vectors []entity.Vector) *server.PlaceholderValue {
 		ph.Values = append(ph.Values, vector.Serialize())
 	}
 	return ph
+}
+
+func isCollectionPrimaryKey(coll *entity.Collection, column entity.Column) bool {
+	if coll == nil || coll.Schema == nil || column == nil {
+		return false
+	}
+
+	// temporary check logic, since only one primary field is supported
+	for _, field := range coll.Schema.Fields {
+		if field.PrimaryKey {
+			if field.Name == column.Name() && field.DataType == column.Type() {
+				return true
+			}
+			return false
+		}
+	}
+	return false
 }

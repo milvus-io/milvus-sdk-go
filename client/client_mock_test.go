@@ -123,9 +123,10 @@ const (
 	mGetIndexState         serviceMethod = 23
 	mGetIndexBuildProgress serviceMethod = 24
 
-	mInsert serviceMethod = 30
-	mFlush  serviceMethod = 31
-	mSearch serviceMethod = 32
+	mInsert          serviceMethod = 30
+	mFlush           serviceMethod = 31
+	mSearch          serviceMethod = 32
+	mCalcDistanceIDs serviceMethod = 33
 
 	mGetPersistentSegmentInfo serviceMethod = 98
 	mGetQuerySegmentInfo      serviceMethod = 99
@@ -425,7 +426,12 @@ func (m *mockServer) RegisterLink(_ context.Context, _ *server.RegisterLinkReque
 	panic("not implemented") // TODO: Implement
 }
 
-func (m *mockServer) CalcDistance(_ context.Context, req *server.CalcDistanceRequest) (*server.CalcDistanceResults, error) {
+func (m *mockServer) CalcDistance(ctx context.Context, req *server.CalcDistanceRequest) (*server.CalcDistanceResults, error) {
+	f := m.getInjection(mCalcDistanceIDs)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*server.CalcDistanceResults), err
+	}
 	resp := &server.CalcDistanceResults{}
 	s, err := successStatus()
 	resp.Status = s
