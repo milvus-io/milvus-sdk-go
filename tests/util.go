@@ -57,8 +57,8 @@ func generateTestCollection(t *testing.T, c client.Client) [][]float32 {
 	return vector
 }
 
-func defaultSchema() entity.Schema {
-	return entity.Schema{
+func defaultSchema() *entity.Schema {
+	return &entity.Schema{
 		CollectionName: testCollectionName,
 		AutoID:         false,
 		Fields: []*entity.Field{

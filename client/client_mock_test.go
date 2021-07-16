@@ -424,3 +424,10 @@ func (m *mockServer) Dummy(_ context.Context, _ *server.DummyRequest) (*server.D
 func (m *mockServer) RegisterLink(_ context.Context, _ *server.RegisterLinkRequest) (*server.RegisterLinkResponse, error) {
 	panic("not implemented") // TODO: Implement
 }
+
+func (m *mockServer) CalcDistance(_ context.Context, req *server.CalcDistanceRequest) (*server.CalcDistanceResults, error) {
+	resp := &server.CalcDistanceResults{}
+	s, err := successStatus()
+	resp.Status = s
+	return resp, err
+}

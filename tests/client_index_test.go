@@ -21,7 +21,7 @@ func TestCreateIndex(t *testing.T) {
 		"nlist":       "1024",
 		"metric_type": "IP",
 	})
-	err = c.CreateIndex(context.Background(), "test_go_sdk", "vector", idx)
+	err = c.CreateIndex(context.Background(), "test_go_sdk", "vector", idx, false)
 	assert.Nil(t, err)
 	indexes, err := c.DescribeIndex(context.Background(), "test_go_sdk", "vector")
 	if assert.Nil(t, err) {
