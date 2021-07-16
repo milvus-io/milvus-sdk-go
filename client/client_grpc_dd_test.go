@@ -270,6 +270,22 @@ func TestGrpcClientCreateCollection(t *testing.T) {
 					},
 				},
 			},
+			// Bad primary key type
+			{
+				CollectionName: testCollectionName,
+				Fields: []*entity.Field{
+					{
+						Name:       "float_pk",
+						DataType:   entity.FieldTypeFloat,
+						PrimaryKey: true,
+					},
+					{
+						Name:       "vector",
+						DataType:   entity.FieldTypeFloatVector,
+						TypeParams: map[string]string{"dim": "128"},
+					},
+				},
+			},
 		}
 		shardsNum := int32(1) // <= 0 will used default shards num 2, skip check
 		mock.setInjection(mCreateCollection, func(_ context.Context, _ proto.Message) (proto.Message, error) {
