@@ -42,7 +42,7 @@ func TestCreateCollection(t *testing.T) {
 		defer c.Close()
 	}
 
-	schema := entity.Schema{
+	schema := &entity.Schema{
 		CollectionName: "test_go_sdk",
 		AutoID:         false,
 		Fields: []*entity.Field{

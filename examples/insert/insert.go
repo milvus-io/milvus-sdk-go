@@ -120,8 +120,10 @@ func main() {
 
 	searchFilm := films[0] // use first fim to search
 	vector := entity.FloatVector(searchFilm.Vector[:])
+	// Use flat search param
+	sp, _ := entity.NewIndexFlatSearchParam(10)
 	sr, err := c.Search(ctx, collectionName, []string{}, "Year > 1990", []string{"ID"}, []entity.Vector{vector}, "Vector",
-		entity.L2, 10, map[string]string{"nprobe": "10"})
+		entity.L2, 10, sp)
 	if err != nil {
 		log.Fatal("fail to search collection:", err.Error())
 	}

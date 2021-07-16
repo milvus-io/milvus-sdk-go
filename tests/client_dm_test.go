@@ -20,10 +20,9 @@ func TestSearch(t *testing.T) {
 
 	waitRowCountChanged(t, c)
 	c.LoadCollection(context.Background(), testCollectionName, false)
+	sp, _ := entity.NewIndexFlatSearchParam(10)
 	results, err := c.Search(context.Background(), testCollectionName, []string{}, "int64 > 0", []string{"int64"}, []entity.Vector{entity.FloatVector(vectors[0])},
-		testVectorField, entity.L2, 10, map[string]string{
-			"nprobe": "10",
-		})
+		testVectorField, entity.L2, 10, sp)
 
 	assert.Nil(t, err)
 	for _, result := range results {
