@@ -9,7 +9,6 @@
 // is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied. See the License for the specific language governing permissions and limitations under the License.
 
-// Package client provides milvus client functions
 package client
 
 import (
@@ -24,15 +23,6 @@ import (
 	"github.com/milvus-io/milvus-sdk-go/v2/internal/proto/server"
 	"google.golang.org/grpc"
 )
-
-var (
-	//ErrClientNotReady error indicates client not ready
-	ErrClientNotReady = errors.New("client not ready")
-	//ErrStatusNil error indicates response has nil status
-	ErrStatusNil = errors.New("response status is nil")
-)
-
-type ErrServiceFailed error
 
 // grpcClient, uses default grpc service definition to connect with Milvus2.0
 type grpcClient struct {
@@ -204,18 +194,25 @@ func validateSchema(sch *entity.Schema) error {
 	return nil
 }
 
+func (c *grpcClient) checkCollectionExists(ctx context.Context, collName string) error {
+	has, err := c.HasCollection(ctx, collName)
+	if err != nil {
+		return err
+	}
+	if !has {
+		return collNotExistsErr(collName)
+	}
+	return nil
+}
+
 // DescribeCollection describe the collection by name
 func (c *grpcClient) DescribeCollection(ctx context.Context, collName string) (*entity.Collection, error) {
 	if c.service == nil {
 		return nil, ErrClientNotReady
 	}
 
-	has, err := c.HasCollection(ctx, collName)
-	if err != nil {
+	if err := c.checkCollectionExists(ctx, collName); err != nil {
 		return nil, err
-	}
-	if !has {
-		return nil, collNotExistsErr(collName)
 	}
 
 	req := &server.DescribeCollectionRequest{
@@ -244,13 +241,8 @@ func (c *grpcClient) DropCollection(ctx context.Context, collName string) error 
 	if c.service == nil {
 		return ErrClientNotReady
 	}
-
-	has, err := c.HasCollection(ctx, collName)
-	if err != nil {
+	if err := c.checkCollectionExists(ctx, collName); err != nil {
 		return err
-	}
-	if !has {
-		return collNotExistsErr(collName)
 	}
 
 	req := &server.DropCollectionRequest{
@@ -291,12 +283,8 @@ func (c *grpcClient) GetCollectionStatistics(ctx context.Context, collName strin
 		return nil, ErrClientNotReady
 	}
 
-	has, err := c.HasCollection(ctx, collName)
-	if err != nil {
+	if err := c.checkCollectionExists(ctx, collName); err != nil {
 		return nil, err
-	}
-	if !has {
-		return nil, collNotExistsErr(collName)
 	}
 
 	req := &server.GetCollectionStatisticsRequest{
@@ -317,6 +305,11 @@ func (c *grpcClient) LoadCollection(ctx context.Context, collName string, async 
 	if c.service == nil {
 		return ErrClientNotReady
 	}
+
+	if err := c.checkCollectionExists(ctx, collName); err != nil {
+		return err
+	}
+
 	req := &server.LoadCollectionRequest{
 		CollectionName: collName,
 	}
@@ -360,6 +353,10 @@ func (c *grpcClient) ReleaseCollection(ctx context.Context, collName string) err
 	if c.service == nil {
 		return ErrClientNotReady
 	}
+	if err := c.checkCollectionExists(ctx, collName); err != nil {
+		return err
+	}
+
 	req := &server.ReleaseCollectionRequest{
 		DbName:         "", //reserved
 		CollectionName: collName,
@@ -369,298 +366,4 @@ func (c *grpcClient) ReleaseCollection(ctx context.Context, collName string) err
 		return err
 	}
 	return handleRespStatus(resp)
-}
-
-// CreatePartition create partition for collection
-func (c *grpcClient) CreatePartition(ctx context.Context, collName string, partitionName string) error {
-	if c.service == nil {
-		return ErrClientNotReady
-	}
-	req := &server.CreatePartitionRequest{
-		DbName:         "", //reserved
-		CollectionName: collName,
-		PartitionName:  partitionName,
-	}
-	resp, err := c.service.CreatePartition(ctx, req)
-	if err != nil {
-		return err
-	}
-	return handleRespStatus(resp)
-}
-
-// DropPartition drop partition from collection
-func (c *grpcClient) DropPartition(ctx context.Context, collName string, partitionName string) error {
-	if c.service == nil {
-		return ErrClientNotReady
-	}
-	req := &server.DropPartitionRequest{
-		DbName:         "",
-		CollectionName: collName,
-		PartitionName:  partitionName,
-	}
-	resp, err := c.service.DropPartition(ctx, req)
-	if err != nil {
-		return err
-	}
-	return handleRespStatus(resp)
-}
-
-// HasPartition check whether specified partition exists
-func (c *grpcClient) HasPartition(ctx context.Context, collName string, partitionName string) (bool, error) {
-	if c.service == nil {
-		return false, ErrClientNotReady
-	}
-	req := &server.HasPartitionRequest{
-		DbName:         "", // reserved
-		CollectionName: collName,
-		PartitionName:  partitionName,
-	}
-	resp, err := c.service.HasPartition(ctx, req)
-	if err != nil {
-		return false, err
-	}
-	if resp.GetStatus().GetErrorCode() != common.ErrorCode_Success {
-		return false, errors.New("request failed")
-	}
-	return resp.GetValue(), nil
-}
-
-// ShowPartitions list all paritions from collection
-func (c *grpcClient) ShowPartitions(ctx context.Context, collName string) ([]*entity.Partition, error) {
-	if c.service == nil {
-		return []*entity.Partition{}, ErrClientNotReady
-	}
-	req := &server.ShowPartitionsRequest{
-		DbName:         "", // reserved
-		CollectionName: collName,
-	}
-	resp, err := c.service.ShowPartitions(ctx, req)
-	if err != nil {
-		return []*entity.Partition{}, err
-	}
-	partitions := make([]*entity.Partition, 0, len(resp.GetPartitionIDs()))
-	for idx, partitionID := range resp.GetPartitionIDs() {
-		partitions = append(partitions, &entity.Partition{ID: partitionID, Name: resp.GetPartitionNames()[idx]})
-	}
-	return partitions, nil
-}
-
-// LoadPartitions load collection paritions into memory
-func (c *grpcClient) LoadPartitions(ctx context.Context, collName string, partitionNames []string, async bool) error {
-	if c.service == nil {
-		return ErrClientNotReady
-	}
-
-	partitions, err := c.ShowPartitions(ctx, collName)
-	if err != nil {
-		return err
-	}
-	m := make(map[string]int64)
-	for _, partition := range partitions {
-		m[partition.Name] = partition.ID
-	}
-	// load partitions ids
-	ids := make(map[int64]struct{})
-	for _, partitionName := range partitionNames {
-		id, has := m[partitionName]
-		if !has {
-			return fmt.Errorf("Collection %s does not has partitions %s", collName, partitionName)
-		}
-		ids[id] = struct{}{}
-	}
-
-	req := &server.LoadPartitionsRequest{
-		DbName:         "", // reserved
-		CollectionName: collName,
-		PartitionNames: partitionNames,
-	}
-	resp, err := c.service.LoadPartitions(ctx, req)
-	if err != nil {
-		return err
-	}
-	if err := handleRespStatus(resp); err != nil {
-		return err
-	}
-
-	if !async {
-		segments, _ := c.GetPersistentSegmentInfo(ctx, collName)
-		target := make(map[int64]*entity.Segment)
-		for _, segment := range segments {
-			if segment.NumRows == 0 {
-				continue
-			}
-			if _, has := ids[segment.ParititionID]; !has {
-				// segment not belongs to partition
-				continue
-			}
-			target[segment.ID] = segment
-		}
-		for len(target) > 0 {
-			current, err := c.GetQuerySegmentInfo(ctx, collName)
-			if err == nil {
-				for _, segment := range current {
-					ts, has := target[segment.ID]
-					if has {
-						if segment.NumRows >= ts.NumRows {
-							delete(target, segment.ID)
-						}
-					}
-				}
-			}
-			time.Sleep(time.Millisecond * 100)
-		}
-	}
-
-	return nil
-}
-
-// ReleasePartitions release partitions
-func (c *grpcClient) ReleasePartitions(ctx context.Context, collName string, partitionNames []string) error {
-	if c.service == nil {
-		return ErrClientNotReady
-	}
-	req := &server.ReleasePartitionsRequest{
-		DbName:         "", // reserved
-		CollectionName: collName,
-		PartitionNames: partitionNames,
-	}
-	resp, err := c.service.ReleasePartitions(ctx, req)
-	if err != nil {
-		return err
-	}
-	if err := handleRespStatus(resp); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// CreateIndex create index for collection
-func (c *grpcClient) CreateIndex(ctx context.Context, collName string, fieldName string,
-	idx entity.Index, async bool) error {
-	if c.service == nil {
-		return ErrClientNotReady
-	}
-	req := &server.CreateIndexRequest{
-		DbName:         "", // reserved
-		CollectionName: collName,
-		FieldName:      fieldName,
-		ExtraParams:    entity.MapKvPairs(idx.Params()),
-	}
-	resp, err := c.service.CreateIndex(ctx, req)
-	if err != nil {
-		return err
-	}
-	if err = handleRespStatus(resp); err != nil {
-		return err
-	}
-	if !async { // sync mode, wait index building result
-		for {
-			is, err := c.GetIndexState(ctx, collName, fieldName)
-			if err != nil {
-				return err
-			}
-			switch is {
-			case entity.IndexState(common.IndexState_Failed):
-				return errors.New("index build failed")
-			case entity.IndexState(common.IndexState_Finished):
-				return nil
-			default:
-			}
-			time.Sleep(100 * time.Millisecond) // wait 100ms
-		}
-	}
-	return nil
-}
-
-// DescribeIndex describe index
-func (c *grpcClient) DescribeIndex(ctx context.Context, collName string, fieldName string) ([]entity.Index, error) {
-	if c.service == nil {
-		return []entity.Index{}, ErrClientNotReady
-	}
-	req := &server.DescribeIndexRequest{
-		CollectionName: collName,
-		FieldName:      fieldName,
-		IndexName:      "", // empty string stands for all index on collection
-	}
-	resp, err := c.service.DescribeIndex(ctx, req)
-	if err != nil {
-		return []entity.Index{}, err
-	}
-	if err := handleRespStatus(resp.GetStatus()); err != nil {
-		return []entity.Index{}, err
-	}
-	indexes := make([]entity.Index, 0, len(resp.GetIndexDescriptions()))
-	for _, info := range resp.GetIndexDescriptions() {
-		params := entity.KvPairsMap(info.Params)
-		it := params["index_type"]
-		idx := entity.NewGenericIndex(
-			info.IndexName,
-			entity.IndexType(it),
-			params,
-		)
-		indexes = append(indexes, idx)
-	}
-	return indexes, nil
-}
-
-// DropIndex drop index from collection
-func (c *grpcClient) DropIndex(ctx context.Context, collName string, fieldName string) error {
-	if c.service == nil {
-		return ErrClientNotReady
-	}
-	req := &server.DropIndexRequest{
-		DbName:         "", //reserved,
-		CollectionName: collName,
-		FieldName:      fieldName,
-		IndexName:      "", //reserved
-	}
-	resp, err := c.service.DropIndex(ctx, req)
-	if err != nil {
-		return err
-	}
-	return handleRespStatus(resp)
-}
-
-// GetIndexState get index state
-func (c *grpcClient) GetIndexState(ctx context.Context, collName string, fieldName string) (entity.IndexState, error) {
-	if c.service == nil {
-		return entity.IndexState(common.IndexState_Failed), ErrClientNotReady
-	}
-	req := &server.GetIndexStateRequest{
-		DbName:         "",
-		CollectionName: collName,
-		FieldName:      fieldName,
-		IndexName:      "",
-	}
-	resp, err := c.service.GetIndexState(ctx, req)
-	if err != nil {
-		return entity.IndexState(common.IndexState_IndexStateNone), err
-	}
-	if err := handleRespStatus(resp.GetStatus()); err != nil {
-		return entity.IndexState(common.IndexState_IndexStateNone), err
-	}
-
-	return entity.IndexState(resp.GetState()), nil
-}
-
-// GetIndexBuildProgress get index building progress
-func (c *grpcClient) GetIndexBuildProgress(ctx context.Context, collName string, fieldName string) (total, indexed int64, err error) {
-	if c.service == nil {
-		return 0, 0, ErrClientNotReady
-	}
-	req := &server.GetIndexBuildProgressRequest{
-		DbName:         "",
-		CollectionName: collName,
-		FieldName:      fieldName,
-		IndexName:      "",
-	}
-	resp, err := c.service.GetIndexBuildProgress(ctx, req)
-	if err != nil {
-		return 0, 0, err
-	}
-	if err = handleRespStatus(resp.GetStatus()); err != nil {
-		return 0, 0, err
-	}
-	return resp.GetTotalRows(), resp.GetIndexedRows(), nil
 }

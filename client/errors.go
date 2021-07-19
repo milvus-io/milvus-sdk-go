@@ -9,11 +9,33 @@
 // is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied. See the License for the specific language governing permissions and limitations under the License.
 
-// Package client provides milvus client functions
 package client
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
-func collNotExistsErr(collName string) error {
-	return fmt.Errorf("collection %s does not exist", collName)
+// ErrServiceFailed indicates error returns from milvus service
+type ErrServiceFailed error
+
+var (
+	//ErrClientNotReady error indicates client not ready
+	ErrClientNotReady = errors.New("client not ready")
+	//ErrStatusNil error indicates response has nil status
+	ErrStatusNil = errors.New("response status is nil")
+)
+
+// ErrCollectionNotExists indicates the collection with specified collection name does not exist
+type ErrCollectionNotExists struct {
+	collName string
+}
+
+// Error implement error
+func (e ErrCollectionNotExists) Error() string {
+	return fmt.Sprintf("collection %s does not exist", e.collName)
+}
+
+func collNotExistsErr(collName string) ErrCollectionNotExists {
+	return ErrCollectionNotExists{collName: collName}
 }

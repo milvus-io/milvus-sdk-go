@@ -39,7 +39,7 @@ Go 1.15 or higher
 
 ### API Documentation
 
-Refer to [https://godoc.org/github.com/milvus-io/milvus-sdk-go/milvus/v2](https://godoc.org/github.com/milvus-io/milvus-sdk-go/milvus/v2) for the GO SDK API documentation.
+Refer to [https://godoc.org/github.com/milvus-io/milvus-sdk-go/v2](https://godoc.org/github.com/milvus-io/milvus-sdk-go/v2) for the GO SDK API documentation.
 
 ### Examples
    
