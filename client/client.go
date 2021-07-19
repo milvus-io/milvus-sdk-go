@@ -20,6 +20,12 @@ import (
 )
 
 // Client is the interface used to communicate with Milvus
+// The common usage is like follow
+//		c, err := client.NewGrpcClient(context.Background, "address-to-milvus") // or other creation func maybe added later
+//		if err != nil {
+//		//handle err
+//		}
+//		// start doing things with client instance, note that there is no need to call Connect since NewXXXClient will do that for you
 type Client interface {
 	// Connect connect to the address provided
 	Connect(ctx context.Context, addr string) error
@@ -89,13 +95,16 @@ type Client interface {
 		metricType entity.MetricType, idsl, idsr entity.Column) (entity.Column, error)
 }
 
-// SearchResult search result
+// SearchResult contains the result from Search api of client
+// IDs is the auto generated id values for the entities
+// Fields contains the data of `outputFieleds` specified or all columns if non
+// Scores is actually the distance between the vector current record contains and the search target vector
 type SearchResult struct {
-	ResultCount int
-	IDs         entity.Column
-	Fields      []entity.Column
-	Scores      []float32
-	Err         error
+	ResultCount int             // the returning entry count
+	IDs         entity.Column   // auto generated id, can be mapped to the columns from `Insert` API
+	Fields      []entity.Column // output field data
+	Scores      []float32       // distance to the target vector
+	Err         error           // search error if any
 }
 
 // alias type for context field key
@@ -106,6 +115,8 @@ const (
 )
 
 // NewGrpcClient create client with grpc addr
+// the `Connect` API will be called for you
+// dialOptions contains the dial option(s) that control the grpc dialing process
 func NewGrpcClient(ctx context.Context, addr string, dialOptions ...grpc.DialOption) (Client, error) {
 	c := &grpcClient{}
 	// since different client may have different type of connect option(s), it's hard to put concrete type in Connect method def
