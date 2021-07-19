@@ -201,10 +201,10 @@ func (c *grpcClient) Search(ctx context.Context, collName string, partitions []s
 		}
 	}
 	vfDef, has := mNameField[vectorField]
-	dimStr := vfDef.TypeParams["dim"]
 	if !has {
 		return nil, fmt.Errorf("vector field %s does not exist in collection %s", vectorField, collName)
 	}
+	dimStr := vfDef.TypeParams["dim"]
 	for _, vector := range vectors {
 		if fmt.Sprintf("%d", vector.Dim()) != dimStr {
 			return nil, fmt.Errorf("vector %s has dim of %s while found search vector with dim %d", vectorField,
