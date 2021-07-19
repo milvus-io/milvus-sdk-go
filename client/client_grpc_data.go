@@ -175,6 +175,54 @@ func (c *grpcClient) Search(ctx context.Context, collName string, partitions []s
 	if c.service == nil {
 		return []SearchResult{}, ErrClientNotReady
 	}
+	// 1. check all input params
+	if err := c.checkCollectionExists(ctx, collName); err != nil {
+		return nil, err
+	}
+	for _, partition := range partitions {
+		err := c.checkPartitionExists(ctx, collName, partition)
+		if err != nil {
+			return nil, err
+		}
+	}
+	// TODO maybe add expr analysis?
+	coll, err := c.DescribeCollection(ctx, collName)
+	if err != nil {
+		return nil, err
+	}
+	mNameField := make(map[string]*entity.Field)
+	for _, field := range coll.Schema.Fields {
+		mNameField[field.Name] = field
+	}
+	for _, outField := range outputFields {
+		_, has := mNameField[outField]
+		if !has {
+			return nil, fmt.Errorf("field %s does not exist in collection %s", outField, collName)
+		}
+	}
+	vfDef, has := mNameField[vectorField]
+	if !has {
+		return nil, fmt.Errorf("vector field %s does not exist in collection %s", vectorField, collName)
+	}
+	dimStr := vfDef.TypeParams["dim"]
+	for _, vector := range vectors {
+		if fmt.Sprintf("%d", vector.Dim()) != dimStr {
+			return nil, fmt.Errorf("vector %s has dim of %s while found search vector with dim %d", vectorField,
+				dimStr, vector.Dim())
+		}
+	}
+	switch vfDef.DataType {
+	case entity.FieldTypeFloatVector:
+		if metricType != entity.IP && metricType != entity.L2 {
+			return nil, fmt.Errorf("Float vector does not support metric type %s", metricType)
+		}
+	case entity.FieldTypeBinaryVector:
+		if metricType == entity.IP || metricType == entity.L2 {
+			return nil, fmt.Errorf("Binary vector does not support metric type %s", metricType)
+		}
+	}
+
+	// 2. Request milvus service
 	bs, _ := json.Marshal(sp.Params())
 	searchParams := entity.MapKvPairs(map[string]string{
 		"anns_field":  vectorField,
@@ -200,6 +248,7 @@ func (c *grpcClient) Search(ctx context.Context, collName string, partitions []s
 	if err := handleRespStatus(resp.GetStatus()); err != nil {
 		return []SearchResult{}, err
 	}
+	// 3. parse result into result
 	results := resp.GetResults()
 	offset := 0
 	sr := make([]SearchResult, 0, results.GetNumQueries())
