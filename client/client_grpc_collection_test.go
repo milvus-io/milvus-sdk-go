@@ -18,6 +18,16 @@ import (
 	"google.golang.org/grpc"
 )
 
+func TestHandleRespStatus(t *testing.T) {
+	assert.NotNil(t, handleRespStatus(nil))
+	assert.Nil(t, handleRespStatus(&common.Status{
+		ErrorCode: common.ErrorCode_Success,
+	}))
+	assert.NotNil(t, handleRespStatus(&common.Status{
+		ErrorCode: common.ErrorCode_UnexpectedError,
+	}))
+}
+
 func TestGrpcClientNil(t *testing.T) {
 	c := &grpcClient{}
 	tp := reflect.TypeOf(c)
@@ -482,14 +492,8 @@ func TestGrpcClientHasCollection(t *testing.T) {
 	assert.True(t, has)
 }
 
-func TestGrpcClientDescribeCollection(t *testing.T) {
-	ctx := context.Background()
-
-	c := testClient(ctx, t)
-
-	collectionID := rand.Int63()
-
-	mock.setInjection(mDescribeCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+func describeCollectionInjection(t *testing.T, collID int64, collName string, sch *entity.Schema) func(_ context.Context, raw proto.Message) (proto.Message, error) {
+	return func(_ context.Context, raw proto.Message) (proto.Message, error) {
 		req, ok := raw.(*server.DescribeCollectionRequest)
 		resp := &server.DescribeCollectionResponse{}
 		if !ok {
@@ -502,13 +506,23 @@ func TestGrpcClientDescribeCollection(t *testing.T) {
 
 		sch := defaultSchema()
 		resp.Schema = sch.ProtoMessage()
-		resp.CollectionID = collectionID
+		resp.CollectionID = collID
 
 		s, err := successStatus()
 		resp.Status = s
 
 		return resp, err
-	})
+	}
+}
+
+func TestGrpcClientDescribeCollection(t *testing.T) {
+	ctx := context.Background()
+
+	c := testClient(ctx, t)
+
+	collectionID := rand.Int63()
+
+	mock.setInjection(mDescribeCollection, describeCollectionInjection(t, collectionID, testCollectionName, defaultSchema()))
 
 	collection, err := c.DescribeCollection(ctx, testCollectionName)
 	assert.Nil(t, err)

@@ -19,6 +19,60 @@ func TestGrpcClientInsert(t *testing.T) {
 
 	c := testClient(ctx, t)
 
+	t.Run("test create failure due to meta", func(t *testing.T) {
+		mock.delInjection(mHasCollection) // collection does not exist
+		ids, err := c.Insert(ctx, testCollectionName, "")
+		assert.Nil(t, ids)
+		assert.NotNil(t, err)
+
+		// partition not exists
+		mock.setInjection(mHasCollection, hasCollectionDefault)
+		ids, err = c.Insert(ctx, testCollectionName, "_part_not_exists")
+		assert.Nil(t, ids)
+		assert.NotNil(t, err)
+
+		// field not in collection
+		mock.setInjection(mDescribeCollection, describeCollectionInjection(t, 0, testCollectionName, defaultSchema()))
+		vectors := generateFloatVector(10, testVectorDim)
+		ids, err = c.Insert(ctx, testCollectionName, "",
+			entity.NewColumnInt64("extra_field", []int64{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}), entity.NewColumnFloatVector(testVectorField, testVectorDim, vectors))
+		assert.Nil(t, ids)
+		assert.NotNil(t, err)
+
+		// field type not match
+		mock.setInjection(mDescribeCollection, describeCollectionInjection(t, 0, testCollectionName, defaultSchema()))
+		ids, err = c.Insert(ctx, testCollectionName, "",
+			entity.NewColumnInt32("int64", []int32{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}), entity.NewColumnFloatVector(testVectorField, testVectorDim, vectors))
+		assert.Nil(t, ids)
+		assert.NotNil(t, err)
+
+		// missing field
+		ids, err = c.Insert(ctx, testCollectionName, "")
+		assert.Nil(t, ids)
+		assert.NotNil(t, err)
+
+		// column len not match
+		ids, err = c.Insert(ctx, testCollectionName, "", entity.NewColumnInt64("int64", []int64{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}),
+			entity.NewColumnFloatVector(testVectorField, testVectorDim, vectors))
+		assert.Nil(t, ids)
+		assert.NotNil(t, err)
+
+		// column len not match
+		ids, err = c.Insert(ctx, testCollectionName, "", entity.NewColumnInt64("int64", []int64{1, 2, 3}),
+			entity.NewColumnFloatVector(testVectorField, testVectorDim, vectors))
+		assert.Nil(t, ids)
+		assert.NotNil(t, err)
+
+		// dim not match
+		ids, err = c.Insert(ctx, testCollectionName, "", entity.NewColumnInt64("int64", []int64{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}),
+			entity.NewColumnFloatVector(testVectorField, testVectorDim*2, vectors))
+		assert.Nil(t, ids)
+		assert.NotNil(t, err)
+	})
+
+	mock.setInjection(mHasCollection, hasCollectionDefault)
+	mock.setInjection(mDescribeCollection, describeCollectionInjection(t, 0, testCollectionName, defaultSchema()))
+
 	vector := generateFloatVector(4096, testVectorDim)
 	mock.setInjection(mInsert, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 		req, ok := raw.(*server.InsertRequest)
@@ -187,7 +241,10 @@ func TestGrpcCalcDistanceWithIDs(t *testing.T) {
 		assert.NotNil(t, err)
 
 		r, err = c.CalcDistanceWithIDs(ctx, testCollectionName, []string{}, "vector", entity.L2,
-			entity.NewColumnInt64("non-exists", []int64{1}), entity.NewColumnInt64("non-exists", []int64{1}))
+			entity.NewColumnInt64("non-exists", []int64{1}), entity.NewColumnInt64("int64", []int64{1}))
+		assert.Nil(t, r)
+		assert.NotNil(t, err)
+
 	})
 
 	t.Run("valid calls", func(t *testing.T) {

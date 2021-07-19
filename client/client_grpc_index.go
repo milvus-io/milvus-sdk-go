@@ -14,6 +14,7 @@ package client
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
@@ -21,12 +22,40 @@ import (
 	"github.com/milvus-io/milvus-sdk-go/v2/internal/proto/server"
 )
 
+func (c *grpcClient) checkCollField(ctx context.Context, collName string, fieldName string) error {
+	if err := c.checkCollectionExists(ctx, collName); err != nil {
+		return err
+	}
+	coll, err := c.DescribeCollection(ctx, collName)
+	if err != nil {
+		return err
+	}
+	var f *entity.Field
+	for _, field := range coll.Schema.Fields {
+		if field.Name == fieldName {
+			f = field
+			if f.DataType != entity.FieldTypeFloatVector && f.DataType != entity.FieldTypeBinaryVector {
+				return fmt.Errorf("field %s of collection %s is not vector field", fieldName, collName)
+			}
+			break
+		}
+	}
+	if f == nil {
+		return fmt.Errorf("field %s of collection %s does not exist", fieldName, collName)
+	}
+	return nil
+}
+
 // CreateIndex create index for collection
 func (c *grpcClient) CreateIndex(ctx context.Context, collName string, fieldName string,
 	idx entity.Index, async bool) error {
 	if c.service == nil {
 		return ErrClientNotReady
 	}
+	if err := c.checkCollField(ctx, collName, fieldName); err != nil {
+		return err
+	}
+
 	req := &server.CreateIndexRequest{
 		DbName:         "", // reserved
 		CollectionName: collName,
@@ -64,6 +93,9 @@ func (c *grpcClient) DescribeIndex(ctx context.Context, collName string, fieldNa
 	if c.service == nil {
 		return []entity.Index{}, ErrClientNotReady
 	}
+	if err := c.checkCollField(ctx, collName, fieldName); err != nil {
+		return []entity.Index{}, err
+	}
 	req := &server.DescribeIndexRequest{
 		CollectionName: collName,
 		FieldName:      fieldName,
@@ -79,7 +111,7 @@ func (c *grpcClient) DescribeIndex(ctx context.Context, collName string, fieldNa
 	indexes := make([]entity.Index, 0, len(resp.GetIndexDescriptions()))
 	for _, info := range resp.GetIndexDescriptions() {
 		params := entity.KvPairsMap(info.Params)
-		it := params["index_type"]
+		it := params["index_type"] // TODO change to const
 		idx := entity.NewGenericIndex(
 			info.IndexName,
 			entity.IndexType(it),
@@ -94,6 +126,9 @@ func (c *grpcClient) DescribeIndex(ctx context.Context, collName string, fieldNa
 func (c *grpcClient) DropIndex(ctx context.Context, collName string, fieldName string) error {
 	if c.service == nil {
 		return ErrClientNotReady
+	}
+	if err := c.checkCollField(ctx, collName, fieldName); err != nil {
+		return err
 	}
 	req := &server.DropIndexRequest{
 		DbName:         "", //reserved,
@@ -112,6 +147,9 @@ func (c *grpcClient) DropIndex(ctx context.Context, collName string, fieldName s
 func (c *grpcClient) GetIndexState(ctx context.Context, collName string, fieldName string) (entity.IndexState, error) {
 	if c.service == nil {
 		return entity.IndexState(common.IndexState_Failed), ErrClientNotReady
+	}
+	if err := c.checkCollField(ctx, collName, fieldName); err != nil {
+		return entity.IndexState(common.IndexState_IndexStateNone), err
 	}
 	req := &server.GetIndexStateRequest{
 		DbName:         "",
@@ -134,6 +172,9 @@ func (c *grpcClient) GetIndexState(ctx context.Context, collName string, fieldNa
 func (c *grpcClient) GetIndexBuildProgress(ctx context.Context, collName string, fieldName string) (total, indexed int64, err error) {
 	if c.service == nil {
 		return 0, 0, ErrClientNotReady
+	}
+	if err := c.checkCollField(ctx, collName, fieldName); err != nil {
+		return 0, 0, err
 	}
 	req := &server.GetIndexBuildProgressRequest{
 		DbName:         "",

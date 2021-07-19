@@ -50,10 +50,29 @@ func (c *grpcClient) CreatePartition(ctx context.Context, collName string, parti
 	return handleRespStatus(resp)
 }
 
+func (c *grpcClient) checkPartitionExists(ctx context.Context, collName string, partitionName string) error {
+	err := c.checkCollectionExists(ctx, collName)
+	if err != nil {
+		return err
+	}
+
+	has, err := c.HasPartition(ctx, collName, partitionName)
+	if err != nil {
+		return err
+	}
+	if !has {
+		return partNotExistsErr(collName, partitionName)
+	}
+	return nil
+}
+
 // DropPartition drop partition from collection
 func (c *grpcClient) DropPartition(ctx context.Context, collName string, partitionName string) error {
 	if c.service == nil {
 		return ErrClientNotReady
+	}
+	if err := c.checkPartitionExists(ctx, collName, partitionName); err != nil {
+		return err
 	}
 	req := &server.DropPartitionRequest{
 		DbName:         "",
@@ -112,7 +131,11 @@ func (c *grpcClient) LoadPartitions(ctx context.Context, collName string, partit
 	if c.service == nil {
 		return ErrClientNotReady
 	}
-
+	for _, partitionName := range partitionNames {
+		if err := c.checkPartitionExists(ctx, collName, partitionName); err != nil {
+			return err
+		}
+	}
 	partitions, err := c.ShowPartitions(ctx, collName)
 	if err != nil {
 		return err
@@ -180,6 +203,11 @@ func (c *grpcClient) LoadPartitions(ctx context.Context, collName string, partit
 func (c *grpcClient) ReleasePartitions(ctx context.Context, collName string, partitionNames []string) error {
 	if c.service == nil {
 		return ErrClientNotReady
+	}
+	for _, partitionName := range partitionNames {
+		if err := c.checkPartitionExists(ctx, collName, partitionName); err != nil {
+			return err
+		}
 	}
 	req := &server.ReleasePartitionsRequest{
 		DbName:         "", // reserved
