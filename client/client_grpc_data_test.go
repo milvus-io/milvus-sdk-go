@@ -179,16 +179,117 @@ func TestGrpcSearch(t *testing.T) {
 	ctx := context.Background()
 
 	c := testClient(ctx, t)
-
 	vectors := generateFloatVector(4096, testVectorDim)
-	sp, err := entity.NewIndexFlatSearchParam(10)
-	assert.Nil(t, err)
-	assert.NotNil(t, sp)
-	results, err := c.Search(ctx, testCollectionName, []string{}, "int64 > 0", []string{"int64"}, []entity.Vector{entity.FloatVector(vectors[0])},
-		testVectorField, entity.L2, 10, sp)
 
-	assert.Nil(t, err)
-	assert.NotNil(t, results)
+	t.Run("search fail due to meta error", func(t *testing.T) {
+		sp, err := entity.NewIndexFlatSearchParam(10)
+		assert.Nil(t, err)
+
+		// collection name
+		mock.delInjection(mHasCollection)
+		r, err := c.Search(ctx, testCollectionName, []string{}, "", []string{}, []entity.Vector{}, "vector",
+			entity.L2, 5, sp)
+		assert.Nil(t, r)
+		assert.NotNil(t, err)
+
+		// partition
+		mock.setInjection(mHasCollection, hasCollectionDefault)
+		r, err = c.Search(ctx, testCollectionName, []string{"_non_exist"}, "", []string{}, []entity.Vector{}, "vector",
+			entity.L2, 5, sp)
+		assert.Nil(t, r)
+		assert.NotNil(t, err)
+
+		// output field
+		mock.setInjection(mDescribeCollection, describeCollectionInjection(t, 0, testCollectionName, defaultSchema()))
+		r, err = c.Search(ctx, testCollectionName, []string{}, "", []string{"extra"}, []entity.Vector{}, "vector",
+			entity.L2, 5, sp)
+		assert.Nil(t, r)
+		assert.NotNil(t, err)
+
+		// vector field
+		mock.setInjection(mDescribeCollection, describeCollectionInjection(t, 0, testCollectionName, defaultSchema()))
+		r, err = c.Search(ctx, testCollectionName, []string{}, "", []string{"int64"}, []entity.Vector{}, "no_vector",
+			entity.L2, 5, sp)
+		assert.Nil(t, r)
+		assert.NotNil(t, err)
+
+		// vector dim
+		badVectors := generateFloatVector(1, testVectorDim*2)
+		r, err = c.Search(ctx, testCollectionName, []string{}, "", []string{"int64"}, []entity.Vector{entity.FloatVector(badVectors[0])}, "vector",
+			entity.L2, 5, sp)
+		assert.Nil(t, r)
+		assert.NotNil(t, err)
+
+		// metric type
+		r, err = c.Search(ctx, testCollectionName, []string{}, "", []string{"int64"}, []entity.Vector{entity.FloatVector(vectors[0])}, "vector",
+			entity.HAMMING, 5, sp)
+		assert.Nil(t, r)
+		assert.NotNil(t, err)
+
+	})
+
+	t.Run("ok search", func(t *testing.T) {
+		mock.setInjection(mHasCollection, hasCollectionDefault)
+		mock.setInjection(mDescribeCollection, describeCollectionInjection(t, 0, testCollectionName, defaultSchema()))
+
+		expr := `int64 > 0`
+
+		mock.setInjection(mSearch, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+			req, ok := raw.(*server.SearchRequest)
+			resp := &server.SearchResults{}
+			if !ok {
+				s, err := badRequestStatus()
+				resp.Status = s
+				return resp, err
+			}
+			assert.Equal(t, testCollectionName, req.GetCollectionName())
+			assert.Equal(t, expr, req.GetDsl())
+			assert.Equal(t, common.DslType_BoolExprV1, req.GetDslType())
+			assert.ElementsMatch(t, []string{"int64"}, req.GetOutputFields())
+
+			resp.Results = &schema.SearchResultData{
+				NumQueries: 1,
+				TopK:       10,
+				FieldsData: []*schema.FieldData{
+					{
+						Type:      schema.DataType_Int64,
+						FieldName: "int64",
+						Field: &schema.FieldData_Scalars{
+							Scalars: &schema.ScalarField{
+								Data: &schema.ScalarField_LongData{
+									LongData: &schema.LongArray{
+										Data: []int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+									},
+								},
+							},
+						},
+					},
+				},
+				Ids: &schema.IDs{
+					IdField: &schema.IDs_IntId{
+						IntId: &schema.LongArray{
+							Data: []int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+						},
+					},
+				},
+				Scores: make([]float32, 10),
+				Topks:  []int64{10},
+			}
+
+			s, err := successStatus()
+			resp.Status = s
+			return resp, err
+		})
+
+		sp, err := entity.NewIndexFlatSearchParam(10)
+		assert.Nil(t, err)
+		assert.NotNil(t, sp)
+		results, err := c.Search(ctx, testCollectionName, []string{}, expr, []string{"int64"}, []entity.Vector{entity.FloatVector(vectors[0])},
+			testVectorField, entity.L2, 10, sp)
+
+		assert.Nil(t, err)
+		assert.NotNil(t, results)
+	})
 }
 
 func TestGrpcCalcDistanceWithIDs(t *testing.T) {
@@ -392,6 +493,16 @@ func generateFloatVector(num, dim int) [][]float32 {
 		for j := 0; j < dim; j++ {
 			v = append(v, rand.Float32())
 		}
+		r = append(r, v)
+	}
+	return r
+}
+
+func generateBinaryVector(num, dim int) [][]byte {
+	r := make([][]byte, 0, num)
+	for i := 0; i < num; i++ {
+		v := make([]byte, 0, dim/8)
+		rand.Read(v)
 		r = append(r, v)
 	}
 	return r
