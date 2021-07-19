@@ -16,6 +16,8 @@ import (
 func TestGrpcClientCreateIndex(t *testing.T) {
 	ctx := context.Background()
 	c := testClient(ctx, t)
+	mock.setInjection(mHasCollection, hasCollectionDefault)
+	mock.setInjection(mDescribeCollection, describeCollectionInjection(t, 0, testCollectionName, defaultSchema()))
 
 	fieldName := `vector`
 	idx, err := entity.NewIndexFlat(entity.IP, 1024)
@@ -72,12 +74,15 @@ func TestGrpcClientCreateIndex(t *testing.T) {
 func TestGrpcClientDropIndex(t *testing.T) {
 	ctx := context.Background()
 	c := testClient(ctx, t)
-
+	mock.setInjection(mHasCollection, hasCollectionDefault)
+	mock.setInjection(mDescribeCollection, describeCollectionInjection(t, 0, testCollectionName, defaultSchema()))
 	assert.Nil(t, c.DropIndex(ctx, testCollectionName, "vector"))
 }
 
 func TestGrpcClientDescribeIndex(t *testing.T) {
 	ctx := context.Background()
+	mock.setInjection(mHasCollection, hasCollectionDefault)
+	mock.setInjection(mDescribeCollection, describeCollectionInjection(t, 0, testCollectionName, defaultSchema()))
 
 	c := testClient(ctx, t)
 

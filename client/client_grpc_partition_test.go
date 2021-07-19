@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"fmt"
 	"math/rand"
 	"testing"
 	"time"
@@ -12,27 +13,83 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// return injection asserts collection name matchs
+// parition name request in partitionNames if flag is true
+func hasPartitionInjection(t *testing.T, collName string, mustIn bool, partitionNames ...string) func(context.Context, proto.Message) (proto.Message, error) {
+	return func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		req, ok := raw.(*server.HasPartitionRequest)
+		resp := &server.BoolResponse{}
+		if !ok {
+			s, err := badRequestStatus()
+			resp.Status = s
+			return resp, err
+		}
+		assert.Equal(t, collName, req.GetCollectionName())
+		if mustIn {
+			resp.Value = assert.Contains(t, partitionNames, req.GetPartitionName())
+		} else {
+			for _, pn := range partitionNames {
+				if pn == req.GetPartitionName() {
+					resp.Value = true
+				}
+			}
+		}
+		s, err := successStatus()
+		resp.Status = s
+		return resp, err
+	}
+}
+
 func TestGrpcClientCreatePartition(t *testing.T) {
-	//TODO add detail asserts
+
 	ctx := context.Background()
 	c := testClient(ctx, t)
-	assert.Nil(t, c.CreatePartition(ctx, testCollectionName, "_default_part"))
+
+	partitionName := fmt.Sprintf("_part_%d", rand.Int())
+
+	mock.setInjection(mHasCollection, hasCollectionDefault)
+	mock.setInjection(mHasPartition, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		req, ok := raw.(*server.HasPartitionRequest)
+		resp := &server.BoolResponse{}
+		if !ok {
+			s, err := badRequestStatus()
+			resp.Status = s
+			return resp, err
+		}
+		assert.Equal(t, testCollectionName, req.GetCollectionName())
+		assert.Equal(t, partitionName, req.GetPartitionName())
+		resp.Value = false
+		s, err := successStatus()
+		resp.Status = s
+		return resp, err
+	})
+
+	assert.Nil(t, c.CreatePartition(ctx, testCollectionName, partitionName))
 }
 
 func TestGrpcClientDropPartition(t *testing.T) {
-	//TODO add detail asserts
+	partitionName := fmt.Sprintf("_part_%d", rand.Int())
 	ctx := context.Background()
 	c := testClient(ctx, t)
-	assert.Nil(t, c.DropPartition(ctx, testCollectionName, "_default_part"))
+	mock.setInjection(mHasCollection, hasCollectionDefault)
+	mock.setInjection(mHasPartition, hasPartitionInjection(t, testCollectionName, true, partitionName)) // injection has assertion of collName & parition name
+	assert.Nil(t, c.DropPartition(ctx, testCollectionName, partitionName))
 }
 
 func TestGrpcClientHasPartition(t *testing.T) {
-	//TODO add detail asserts
+	partitionName := fmt.Sprintf("_part_%d", rand.Int())
 	ctx := context.Background()
 	c := testClient(ctx, t)
+	mock.setInjection(mHasCollection, hasCollectionDefault)
+	mock.setInjection(mHasPartition, hasPartitionInjection(t, testCollectionName, false, partitionName)) // injection has assertion of collName & parition name
+
 	r, err := c.HasPartition(ctx, testCollectionName, "_default_part")
 	assert.Nil(t, err)
 	assert.False(t, r)
+
+	r, err = c.HasPartition(ctx, testCollectionName, partitionName)
+	assert.Nil(t, err)
+	assert.True(t, r)
 }
 
 // default partition intercetion for ShowPartitions, generates testCollection related paritition data
@@ -109,6 +166,9 @@ func TestGrpcClientShowPartitions(t *testing.T) {
 func TestGrpcClientLoadPartitions(t *testing.T) {
 	ctx := context.Background()
 	c := testClient(ctx, t)
+
+	mock.setInjection(mHasCollection, hasCollectionDefault)
+	mock.setInjection(mHasPartition, hasPartitionInjection(t, testCollectionName, true, "_part1", "_part2", "_part3", "_part4"))
 
 	type testCase struct {
 		collName      string
@@ -220,7 +280,7 @@ func TestGrpcClientReleasePartitions(t *testing.T) {
 	c := testClient(ctx, t)
 
 	parts := []string{"_part1", "_part2"}
-
+	mock.setInjection(mHasCollection, hasCollectionDefault)
 	mock.setInjection(mReleasePartitions, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 		req, ok := raw.(*server.ReleasePartitionsRequest)
 		if !ok {

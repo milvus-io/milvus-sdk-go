@@ -36,6 +36,21 @@ func (e ErrCollectionNotExists) Error() string {
 	return fmt.Sprintf("collection %s does not exist", e.collName)
 }
 
+// ErrPartitionNotExists indicates the partition of collection does not exist
+type ErrPartitionNotExists struct {
+	collName     string
+	paritionName string
+}
+
+// Error implement error
+func (e ErrPartitionNotExists) Error() string {
+	return fmt.Sprintf("partition %s of collection %s does not exist", e.paritionName, e.collName)
+}
+
 func collNotExistsErr(collName string) ErrCollectionNotExists {
 	return ErrCollectionNotExists{collName: collName}
+}
+
+func partNotExistsErr(collName, partitionName string) ErrPartitionNotExists {
+	return ErrPartitionNotExists{collName: collName, paritionName: partitionName}
 }

@@ -33,6 +33,66 @@ func (c *grpcClient) Insert(ctx context.Context, collName string, partitionName 
 	if c.service == nil {
 		return nil, ErrClientNotReady
 	}
+	// 1. validation for all input params
+	// collection
+	if err := c.checkCollectionExists(ctx, collName); err != nil {
+		return nil, err
+	}
+	if partitionName != "" {
+		err := c.checkPartitionExists(ctx, collName, partitionName)
+		if err != nil {
+			return nil, err
+		}
+	}
+	// fields
+	var rowSize int
+	coll, err := c.DescribeCollection(ctx, collName)
+	if err != nil {
+		return nil, err
+	}
+	mNameField := make(map[string]*entity.Field)
+	for _, field := range coll.Schema.Fields {
+		mNameField[field.Name] = field
+	}
+	mNameColumn := make(map[string]entity.Column)
+	for _, column := range columns {
+		mNameColumn[column.Name()] = column
+		l := column.Len()
+		if rowSize == 0 {
+			rowSize = l
+		} else {
+			if rowSize != l {
+				return nil, errors.New("column size not match")
+			}
+		}
+		field, has := mNameField[column.Name()]
+		if !has {
+			return nil, fmt.Errorf("field %s does not exist in collection %s", column.Name(), collName)
+		}
+		if column.Type() != field.DataType {
+			return nil, fmt.Errorf("param column %s has type %v but collection field definition is %v", column.Name(), column.FieldData(), field.DataType)
+		}
+		if field.DataType == entity.FieldTypeFloatVector || field.DataType == entity.FieldTypeBinaryVector {
+			dim := 0
+			switch column := column.(type) {
+			case *entity.ColumnFloatVector:
+				dim = column.Dim()
+			case *entity.ColumnBinaryVector:
+				dim = column.Dim()
+			}
+			if fmt.Sprintf("%d", dim) != field.TypeParams["dim"] {
+				return nil, fmt.Errorf("params column %s vector dim %d not match collection definition, which has dim of %s", field.Name, dim, field.TypeParams["dim"])
+			}
+		}
+	}
+	for _, field := range coll.Schema.Fields {
+		_, has := mNameColumn[field.Name]
+		if !has && !field.AutoID {
+			return nil, fmt.Errorf("field %s not passed", field.Name)
+		}
+	}
+
+	// 2. do insert request
 	req := &server.InsertRequest{
 		DbName:         "", // reserved
 		CollectionName: collName,
@@ -41,14 +101,8 @@ func (c *grpcClient) Insert(ctx context.Context, collName string, partitionName 
 	if req.PartitionName == "" {
 		req.PartitionName = "_default" // use default partition
 	}
-	if len(columns) == 0 {
-		return nil, errors.New("no column provided")
-	}
-	req.NumRows = uint32(columns[0].Len())
+	req.NumRows = uint32(rowSize)
 	for _, column := range columns {
-		if uint32(column.Len()) != req.NumRows {
-			return nil, errors.New("column number not matched")
-		}
 		req.FieldsData = append(req.FieldsData, column.FieldData())
 	}
 	resp, err := c.service.Insert(ctx, req)
@@ -58,7 +112,7 @@ func (c *grpcClient) Insert(ctx context.Context, collName string, partitionName 
 	if err := handleRespStatus(resp.GetStatus()); err != nil {
 		return nil, err
 	}
-
+	// 3. parse id column
 	return entity.IDColumns(resp.GetIDs(), 0, -1)
 }
 
@@ -67,6 +121,9 @@ func (c *grpcClient) Insert(ctx context.Context, collName string, partitionName 
 func (c *grpcClient) Flush(ctx context.Context, collName string, async bool) error {
 	if c.service == nil {
 		return ErrClientNotReady
+	}
+	if err := c.checkCollectionExists(ctx, collName); err != nil {
+		return err
 	}
 	req := &server.FlushRequest{
 		DbName:          "", //reserved,
