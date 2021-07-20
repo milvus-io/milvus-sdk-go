@@ -11,11 +11,15 @@
 Go SDK for [Milvus](https://github.com/milvus-io/milvus). To contribute code to this project, please read our [contribution guidelines](https://github.com/milvus-io/milvus/blob/master/CONTRIBUTING.md) first.
 
 
-## [1.0 Legacy SDK](https://github.com/milvus-io/milvus-sdk-go/tree/v1.1.0)
+## SDK versions
+
 |Milvus version| Recommended Go SDK version |
 |:-----:|:-----:|
-| 1.0.x | 1.0.0 |
-| 1.1.x | 1.1.0 |
+| 2.0.0-rc | 2.0.0-rc |
+| 1.1.x | [1.1.0](https://github.com/milvus-io/milvus-sdk-go/tree/v1.1.0) |
+| 1.0.x | [1.0.0](https://github.com/milvus-io/milvus-sdk-go/tree/v1.0.0) |
+
+Note: Major versions is NOT compatible between Milvus and SDK
 
 ## Getting started
 
@@ -35,6 +39,13 @@ Go 1.15 or higher
 
    ```go
    import "github.com/milvus-io/milvus-sdk-go/milvus/v2/client"
+
+   //...other snippet ...
+   client, err := client.NewGrpcClient(context.Background(), "address_of_milvus")
+   if err != nil {
+       // handle error
+   }
+   client.HasCollection(context.Background(), "YOUR_COLLECTION_NAME")
    ```
 
 ### API Documentation
