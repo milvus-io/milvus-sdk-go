@@ -119,6 +119,9 @@ func (c *grpcClient) ShowPartitions(ctx context.Context, collName string) ([]*en
 	if err != nil {
 		return []*entity.Partition{}, err
 	}
+	if err := handleRespStatus(resp.GetStatus()); err != nil {
+		return []*entity.Partition{}, err
+	}
 	partitions := make([]*entity.Partition, 0, len(resp.GetPartitionIDs()))
 	for idx, partitionID := range resp.GetPartitionIDs() {
 		partitions = append(partitions, &entity.Partition{ID: partitionID, Name: resp.GetPartitionNames()[idx]})

@@ -90,9 +90,9 @@ type Client interface {
 	Search(ctx context.Context, collName string, partitions []string,
 		expr string, outputFields []string, vectors []entity.Vector, vectorField string, metricType entity.MetricType, topK int, sp entity.SearchParam) ([]SearchResult, error)
 
-	// CalcDistanceWithIDs calculate the distance between vectors specified by ids provided
-	CalcDistanceWithIDs(ctx context.Context, collName string, partitions []string, fieldName string,
-		metricType entity.MetricType, idsl, idsr entity.Column) (entity.Column, error)
+	// CalcDistance calculate the distance between vectors specified by ids or provided
+	CalcDistance(ctx context.Context, collName string, partitions []string,
+		metricType entity.MetricType, opLeft, opRight entity.Column) (entity.Column, error)
 }
 
 // SearchResult contains the result from Search api of client

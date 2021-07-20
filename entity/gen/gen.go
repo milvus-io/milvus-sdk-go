@@ -136,6 +136,11 @@ func (c *Column{{.TypeName}}) Dim() int {
 	return c.dim
 }
 
+// Data returns column data
+func (c *Column{{.TypeName}}) Data() []{{.TypeDef}} {
+	return c.values
+}
+
 // FieldData return column data mapped to schema.FieldData
 func (c *Column{{.TypeName}}) FieldData() *schema.FieldData {
 	fd := &schema.FieldData{
@@ -308,6 +313,7 @@ func TestColumn{{.TypeName}}(t *testing.T) {
 		assert.Equal(t, FieldType{{.TypeName}}, column.Type())
 		assert.Equal(t, columnLen, column.Len())
 		assert.Equal(t, dim, column.Dim())
+		assert.Equal(t ,v, column.Data())
 	})
 
 	t.Run("test column field data", func(t *testing.T) {
