@@ -341,91 +341,42 @@ func (c *grpcClient) GetQuerySegmentInfo(ctx context.Context, collName string) (
 	return segments, nil
 }
 
-// CalcDistanceWithIDs calculate distance between vectors
-func (c *grpcClient) CalcDistanceWithIDs(ctx context.Context, collName string, partitions []string, fieldName string,
-	metricType entity.MetricType, idsl, idsr entity.Column) (entity.Column, error) {
+func (c *grpcClient) CalcDistance(ctx context.Context, collName string, partitions []string,
+	metricType entity.MetricType, opLeft, opRight entity.Column) (entity.Column, error) {
 	if c.service == nil {
 		return nil, ErrClientNotReady
 	}
-
-	if idsl == nil || idsr == nil {
-		return nil, errors.New("ids cannot be nil")
+	if opLeft == nil || opRight == nil {
+		return nil, errors.New("operators cannot be nil")
 	}
 
-	if idsl.Len() != idsl.Len() {
-		return nil, errors.New("ids length not match")
+	// check meta
+	if err := c.checkCollectionExists(ctx, collName); err != nil {
+		return nil, err
 	}
-	if idsl.Type() != idsl.Type() {
-		return nil, errors.New("ids type not match")
+	for _, partition := range partitions {
+		if err := c.checkPartitionExists(ctx, collName, partition); err != nil {
+			return nil, err
+		}
 	}
-
-	// describe collection to check id provided is primary key
-	coll, err := c.DescribeCollection(ctx, collName)
-	if err != nil {
+	if err := c.checkCollField(ctx, collName, opLeft.Name()); err != nil {
+		return nil, err
+	}
+	if err := c.checkCollField(ctx, collName, opRight.Name()); err != nil {
 		return nil, err
 	}
 
-	if !(isCollectionPrimaryKey(coll, idsl) && isCollectionPrimaryKey(coll, idsr)) {
-		return nil, errors.New("column(s) passed is no the primary key of the collection")
-	}
-
-	colToIDs := func(col entity.Column) *server.VectorIDs {
-		switch col.Type() {
-		case entity.FieldTypeInt64:
-			int64Column, ok := col.(*entity.ColumnInt64)
-			if !ok {
-				return nil // server shall report error
-			}
-			return &server.VectorIDs{
-				CollectionName: collName,
-				PartitionNames: partitions,
-				FieldName:      fieldName,
-				IdArray: &schema.IDs{
-					IdField: &schema.IDs_IntId{
-						IntId: &schema.LongArray{
-							Data: int64Column.Data(),
-						},
-					},
-				},
-			}
-		case entity.FieldTypeString:
-			//NOT supported yet
-			stringColumn, ok := col.(*entity.ColumnString)
-			if !ok {
-				return nil // server shall report error
-			}
-			return &server.VectorIDs{
-				CollectionName: collName,
-				PartitionNames: partitions,
-				FieldName:      fieldName,
-				IdArray: &schema.IDs{
-					IdField: &schema.IDs_StrId{
-						StrId: &schema.StringArray{
-							Data: stringColumn.Data(),
-						},
-					},
-				},
-			}
-
-		}
-		return nil
-	}
-
 	req := &server.CalcDistanceRequest{
-		OpLeft: &server.VectorsArray{
-			Array: &server.VectorsArray_IdArray{
-				IdArray: colToIDs(idsl),
-			},
-		},
-		OpRight: &server.VectorsArray{
-			Array: &server.VectorsArray_IdArray{
-				IdArray: colToIDs(idsr),
-			},
-		},
+		OpLeft:  columnToVectorsArray(collName, partitions, opLeft),
+		OpRight: columnToVectorsArray(collName, partitions, opRight),
 		Params: entity.MapKvPairs(map[string]string{
 			"metric": string(metricType),
 		}),
 	}
+	if req.OpLeft == nil || req.OpRight == nil {
+		return nil, errors.New("invalid operator passed")
+	}
+
 	resp, err := c.service.CalcDistance(ctx, req)
 	if err != nil {
 		return nil, err
@@ -442,6 +393,85 @@ func (c *grpcClient) CalcDistanceWithIDs(ctx context.Context, collName string, p
 	}
 
 	return nil, errors.New("distance field not supported")
+}
+
+func columnToVectorsArray(collName string, partitions []string, column entity.Column) *server.VectorsArray {
+	result := &server.VectorsArray{}
+	switch column.Type() {
+	case entity.FieldTypeInt64: // int64 id
+		int64Column, ok := column.(*entity.ColumnInt64)
+		if !ok {
+			return nil // server shall report error
+		}
+		ids := &server.VectorIDs{
+			CollectionName: collName,
+			PartitionNames: partitions,
+			FieldName:      column.Name(), //TODO use field name or column name?
+			IdArray: &schema.IDs{
+				IdField: &schema.IDs_IntId{
+					IntId: &schema.LongArray{
+						Data: int64Column.Data(),
+					},
+				},
+			},
+		}
+		result.Array = &server.VectorsArray_IdArray{IdArray: ids}
+	case entity.FieldTypeString: // string id
+		stringColumn, ok := column.(*entity.ColumnString)
+		if !ok {
+			return nil
+		}
+		ids := &server.VectorIDs{
+			CollectionName: collName,
+			PartitionNames: partitions,
+			FieldName:      column.Name(),
+			IdArray: &schema.IDs{
+				IdField: &schema.IDs_StrId{
+					StrId: &schema.StringArray{
+						Data: stringColumn.Data(),
+					},
+				},
+			},
+		}
+		result.Array = &server.VectorsArray_IdArray{IdArray: ids}
+	case entity.FieldTypeFloatVector:
+		fvColumn, ok := column.(*entity.ColumnFloatVector)
+		if !ok {
+			return nil
+		}
+		fvdata := fvColumn.Data()
+		data := make([]float32, 0, fvColumn.Len()*fvColumn.Dim())
+		for _, row := range fvdata {
+			data = append(data, row...)
+		}
+		result.Array = &server.VectorsArray_DataArray{DataArray: &schema.VectorField{
+			Dim: int64(fvColumn.Dim()),
+			Data: &schema.VectorField_FloatVector{
+				FloatVector: &schema.FloatArray{
+					Data: data,
+				},
+			},
+		}}
+	case entity.FieldTypeBinaryVector:
+		bvColumn, ok := column.(*entity.ColumnBinaryVector)
+		if !ok {
+			return nil
+		}
+		bvdata := bvColumn.Data()
+		data := make([]byte, 0, bvColumn.Dim()*bvColumn.Len()/8)
+		for _, row := range bvdata {
+			data = append(data, row...)
+		}
+		result.Array = &server.VectorsArray_DataArray{DataArray: &schema.VectorField{
+			Dim: int64(bvColumn.Dim()),
+			Data: &schema.VectorField_BinaryVector{
+				BinaryVector: data,
+			},
+		}}
+	default:
+		return nil
+	}
+	return result
 }
 
 func vector2PlaceholderGroupBytes(vectors []entity.Vector) []byte {

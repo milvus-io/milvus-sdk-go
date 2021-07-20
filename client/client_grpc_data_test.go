@@ -296,7 +296,7 @@ func TestGrpcCalcDistanceWithIDs(t *testing.T) {
 	ctx := context.Background()
 	t.Run("bad client calls CalcDistance", func(t *testing.T) {
 		c := &grpcClient{}
-		r, err := c.CalcDistanceWithIDs(ctx, testCollectionName, []string{}, "vector", entity.L2, nil, nil)
+		r, err := c.CalcDistance(ctx, testCollectionName, []string{}, entity.L2, nil, nil)
 		assert.Nil(t, r)
 		assert.NotNil(t, err)
 		assert.EqualValues(t, ErrClientNotReady, err)
@@ -324,24 +324,24 @@ func TestGrpcCalcDistanceWithIDs(t *testing.T) {
 		ctxDone, cancel := context.WithCancel(context.Background())
 		cancel()
 
-		r, err := c.CalcDistanceWithIDs(ctxDone, testCollectionName, []string{}, "vector", entity.L2,
+		r, err := c.CalcDistance(ctxDone, testCollectionName, []string{}, entity.L2,
 			entity.NewColumnInt64("int64", []int64{1}), entity.NewColumnInt64("int64", []int64{1}))
 		assert.Nil(t, r)
 		assert.NotNil(t, err)
 	})
 
 	t.Run("invalid ids call", func(t *testing.T) {
-		r, err := c.CalcDistanceWithIDs(ctx, testCollectionName, []string{}, "vector", entity.L2,
+		r, err := c.CalcDistance(ctx, testCollectionName, []string{}, entity.L2,
 			nil, nil)
 		assert.Nil(t, r)
 		assert.NotNil(t, err)
 
-		r, err = c.CalcDistanceWithIDs(ctx, testCollectionName, []string{}, "vector", entity.L2,
+		r, err = c.CalcDistance(ctx, testCollectionName, []string{}, entity.L2,
 			entity.NewColumnInt64("non-exists", []int64{1}), entity.NewColumnInt64("non-exists", []int64{1}))
 		assert.Nil(t, r)
 		assert.NotNil(t, err)
 
-		r, err = c.CalcDistanceWithIDs(ctx, testCollectionName, []string{}, "vector", entity.L2,
+		r, err = c.CalcDistance(ctx, testCollectionName, []string{}, entity.L2,
 			entity.NewColumnInt64("non-exists", []int64{1}), entity.NewColumnInt64("int64", []int64{1}))
 		assert.Nil(t, r)
 		assert.NotNil(t, err)
@@ -349,7 +349,7 @@ func TestGrpcCalcDistanceWithIDs(t *testing.T) {
 	})
 
 	t.Run("valid calls", func(t *testing.T) {
-		mock.setInjection(mCalcDistanceIDs, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		mock.setInjection(mCalcDistance, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			req, ok := raw.(*server.CalcDistanceRequest)
 			resp := &server.CalcDistanceResults{}
 			if !ok {
@@ -358,23 +358,38 @@ func TestGrpcCalcDistanceWithIDs(t *testing.T) {
 				return resp, err
 			}
 			idsLeft := req.GetOpLeft().GetIdArray()
+			valuesLeft := req.GetOpLeft().GetDataArray()
 			idsRight := req.GetOpRight().GetIdArray()
-			assert.NotNil(t, idsLeft)
-			assert.NotNil(t, idsRight)
+			valuesRight := req.GetOpRight().GetDataArray()
+			assert.True(t, idsLeft != nil || valuesLeft != nil)
+			assert.True(t, idsRight != nil || valuesRight != nil)
 
-			assert.Equal(t, testCollectionName, idsLeft.CollectionName)
-			assert.Equal(t, testCollectionName, idsRight.CollectionName)
-
-			// only int ids supported for now TODO update string test cases
-			assert.NotNil(t, idsLeft.IdArray.GetIntId())
-			assert.NotNil(t, idsRight.IdArray.GetIntId())
+			if idsLeft != nil {
+				assert.Equal(t, testCollectionName, idsLeft.CollectionName)
+			}
+			if idsRight != nil {
+				assert.Equal(t, testCollectionName, idsRight.CollectionName)
+			}
 
 			// this injection returns float distance
-			dl := len(idsLeft.IdArray.GetIntId().Data)
+			dl := 0
+			if idsLeft != nil {
+				dl = len(idsLeft.IdArray.GetIntId().Data)
+			}
+			if valuesLeft != nil {
+				dl = len(valuesLeft.GetFloatVector().GetData()) / int(valuesLeft.Dim)
+			}
+			dr := 0
+			if idsRight != nil {
+				dr = len(idsRight.IdArray.GetIntId().Data)
+			}
+			if valuesRight != nil {
+				dr = len(valuesRight.GetFloatVector().GetData()) / int(valuesRight.Dim)
+			}
 
 			resp.Array = &server.CalcDistanceResults_FloatDist{
 				FloatDist: &schema.FloatArray{
-					Data: make([]float32, dl),
+					Data: make([]float32, dl*dr),
 				},
 			}
 
@@ -382,13 +397,24 @@ func TestGrpcCalcDistanceWithIDs(t *testing.T) {
 			resp.Status = s
 			return resp, err
 		})
-		r, err := c.CalcDistanceWithIDs(ctx, testCollectionName, []string{}, "vector", entity.L2,
-			entity.NewColumnInt64("int64", []int64{1}), entity.NewColumnInt64("int64", []int64{1}))
+		r, err := c.CalcDistance(ctx, testCollectionName, []string{}, entity.L2,
+			entity.NewColumnInt64("vector", []int64{1}), entity.NewColumnInt64("vector", []int64{1}))
+		assert.Nil(t, err)
+		assert.NotNil(t, r)
+
+		vectors := generateFloatVector(5, testVectorDim)
+		r, err = c.CalcDistance(ctx, testCollectionName, []string{}, entity.L2,
+			entity.NewColumnInt64("vector", []int64{1}), entity.NewColumnFloatVector("vector", testVectorDim, vectors))
+		assert.Nil(t, err)
+		assert.NotNil(t, r)
+
+		r, err = c.CalcDistance(ctx, testCollectionName, []string{}, entity.L2,
+			entity.NewColumnFloatVector("vector", testVectorDim, vectors), entity.NewColumnInt64("vector", []int64{1}))
 		assert.Nil(t, err)
 		assert.NotNil(t, r)
 
 		// test IntDistance,
-		mock.setInjection(mCalcDistanceIDs, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		mock.setInjection(mCalcDistance, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			req, ok := raw.(*server.CalcDistanceRequest)
 			resp := &server.CalcDistanceResults{}
 			if !ok {
@@ -397,23 +423,38 @@ func TestGrpcCalcDistanceWithIDs(t *testing.T) {
 				return resp, err
 			}
 			idsLeft := req.GetOpLeft().GetIdArray()
+			valuesLeft := req.GetOpLeft().GetDataArray()
 			idsRight := req.GetOpRight().GetIdArray()
-			assert.NotNil(t, idsLeft)
-			assert.NotNil(t, idsRight)
+			valuesRight := req.GetOpRight().GetDataArray()
+			assert.True(t, idsLeft != nil || valuesLeft != nil)
+			assert.True(t, idsRight != nil || valuesRight != nil)
 
-			assert.Equal(t, testCollectionName, idsLeft.CollectionName)
-			assert.Equal(t, testCollectionName, idsRight.CollectionName)
-
-			// only int ids supported for now TODO update string test cases
-			assert.NotNil(t, idsLeft.IdArray.GetIntId())
-			assert.NotNil(t, idsRight.IdArray.GetIntId())
+			if idsLeft != nil {
+				assert.Equal(t, testCollectionName, idsLeft.CollectionName)
+			}
+			if idsRight != nil {
+				assert.Equal(t, testCollectionName, idsRight.CollectionName)
+			}
 
 			// this injection returns float distance
-			dl := len(idsLeft.IdArray.GetIntId().Data)
+			dl := 0
+			if idsLeft != nil {
+				dl = len(idsLeft.IdArray.GetIntId().Data)
+			}
+			if valuesLeft != nil {
+				dl = len(valuesLeft.GetFloatVector().GetData()) / int(valuesLeft.Dim)
+			}
+			dr := 0
+			if idsRight != nil {
+				dr = len(idsRight.IdArray.GetIntId().Data)
+			}
+			if valuesRight != nil {
+				dr = len(valuesRight.GetFloatVector().GetData()) / int(valuesRight.Dim)
+			}
 
 			resp.Array = &server.CalcDistanceResults_IntDist{
 				IntDist: &schema.IntArray{
-					Data: make([]int32, dl),
+					Data: make([]int32, dl*dr),
 				},
 			}
 
@@ -421,8 +462,8 @@ func TestGrpcCalcDistanceWithIDs(t *testing.T) {
 			resp.Status = s
 			return resp, err
 		})
-		r, err = c.CalcDistanceWithIDs(ctx, testCollectionName, []string{}, "vector", entity.HAMMING,
-			entity.NewColumnInt64("int64", []int64{1}), entity.NewColumnInt64("int64", []int64{1}))
+		r, err = c.CalcDistance(ctx, testCollectionName, []string{}, entity.HAMMING,
+			entity.NewColumnInt64("vector", []int64{1}), entity.NewColumnInt64("vector", []int64{1}))
 		assert.Nil(t, err)
 		assert.NotNil(t, r)
 
@@ -446,7 +487,7 @@ func TestGrpcCalcDistanceWithIDs(t *testing.T) {
 			resp.Status = s
 			return resp, err
 		})
-		mock.setInjection(mCalcDistanceIDs, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		mock.setInjection(mCalcDistance, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			req, ok := raw.(*server.CalcDistanceRequest)
 			resp := &server.CalcDistanceResults{}
 			if !ok {
@@ -479,10 +520,30 @@ func TestGrpcCalcDistanceWithIDs(t *testing.T) {
 			resp.Status = s
 			return resp, err
 		})
-		r, err = c.CalcDistanceWithIDs(ctx, testCollectionName, []string{}, "vector", entity.L2,
-			entity.NewColumnString("str", []string{"1"}), entity.NewColumnString("str", []string{"1"}))
+		r, err = c.CalcDistance(ctx, testCollectionName, []string{}, entity.L2,
+			entity.NewColumnString("vector", []string{"1"}), entity.NewColumnString("vector", []string{"1"}))
 		assert.Nil(t, err)
 		assert.NotNil(t, r)
+	})
+}
+
+func TestIsCollectionPrimaryKey(t *testing.T) {
+	t.Run("nil cases", func(t *testing.T) {
+		assert.False(t, isCollectionPrimaryKey(nil, nil))
+		assert.False(t, isCollectionPrimaryKey(&entity.Collection{}, entity.NewColumnInt64("id", []int64{})))
+	})
+
+	t.Run("check cases", func(t *testing.T) {
+		assert.False(t, isCollectionPrimaryKey(&entity.Collection{
+			Schema: defaultSchema(),
+		}, entity.NewColumnInt64("id", []int64{})))
+		assert.False(t, isCollectionPrimaryKey(&entity.Collection{
+			Schema: defaultSchema(),
+		}, entity.NewColumnInt32("int64", []int32{})))
+		assert.True(t, isCollectionPrimaryKey(&entity.Collection{
+			Schema: defaultSchema(),
+		}, entity.NewColumnInt64("int64", []int64{})))
+
 	})
 }
 
