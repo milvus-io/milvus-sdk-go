@@ -223,7 +223,8 @@ func (c *grpcClient) Search(ctx context.Context, collName string, partitions []s
 	}
 
 	// 2. Request milvus service
-	bs, _ := json.Marshal(sp.Params())
+	params := sp.Params()
+	bs, _ := json.Marshal(params)
 	searchParams := entity.MapKvPairs(map[string]string{
 		"anns_field":  vectorField,
 		"topk":        fmt.Sprintf("%d", topK),
@@ -234,7 +235,7 @@ func (c *grpcClient) Search(ctx context.Context, collName string, partitions []s
 	req := &server.SearchRequest{
 		DbName:           "",
 		CollectionName:   collName,
-		PartitionNames:   []string{},
+		PartitionNames:   partitions,
 		SearchParams:     searchParams,
 		Dsl:              expr,
 		DslType:          common.DslType_BoolExprV1,

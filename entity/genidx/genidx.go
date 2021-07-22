@@ -31,6 +31,7 @@ package entity
 
 import (
 	"errors"
+	"encoding/json"
 	"fmt"
 )
 
@@ -61,8 +62,12 @@ func(i *Index{{.IdxName}}) SupportBinary() bool {
 
 // Params returns index construction params, implementing Index interface
 func(i *Index{{.IdxName}}) Params() map[string]string {
-	return map[string]string {//auto generated mapping {{range .ConstructParams}}{{with .}}
+	params := map[string]string {//auto generated mapping {{range .ConstructParams}}{{with .}}
 		"{{.Name}}": fmt.Sprintf("%v",i.{{.Name}}),{{end}}{{end}}
+	}
+	bs, _ := json.Marshal(params)
+	return map[string]string {
+		"params": string(bs),
 		"index_type": string(i.IndexType()),
 		"metric_type": string(i.metricType),
 	}
@@ -141,7 +146,6 @@ package entity
 
 import (
 	"errors"
-	"fmt"
 )
 
 {{ range .Indexes }}{{with.}}
@@ -153,9 +157,9 @@ type Index{{.IdxName}}SearchParam struct { //auto generated fields{{range .Searc
 }
 
 // Params returns index construction params, implementing Index interface
-func(i *Index{{.IdxName}}SearchParam) Params() map[string]string {
-	return map[string]string {//auto generated mapping {{range .SearchParams}}{{with .}}
-		"{{.Name}}": fmt.Sprintf("%v",i.{{.Name}}),{{end}}{{end}}
+func(i *Index{{.IdxName}}SearchParam) Params() map[string]interface{} {
+	return map[string]interface{} {//auto generated mapping {{range .SearchParams}}{{with .}}
+		"{{.Name}}": i.{{.Name}},{{end}}{{end}}
 	}
 }
 

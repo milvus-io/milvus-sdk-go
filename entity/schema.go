@@ -59,6 +59,7 @@ type Field struct {
 	Description string
 	DataType    FieldType
 	TypeParams  map[string]string
+	IndexParams map[string]string
 }
 
 // ProtoMessage generetes corresponding FieldSchema
@@ -71,6 +72,7 @@ func (f *Field) ProtoMessage() *schema.FieldSchema {
 		AutoID:       f.AutoID,
 		DataType:     schema.DataType(f.DataType),
 		TypeParams:   MapKvPairs(f.TypeParams),
+		IndexParams:  MapKvPairs(f.IndexParams),
 	}
 }
 
@@ -83,6 +85,7 @@ func (f *Field) ReadProto(p *schema.FieldSchema) *Field {
 	f.Description = p.GetDescription()
 	f.DataType = FieldType(p.GetDataType())
 	f.TypeParams = KvPairsMap(p.GetTypeParams())
+	f.IndexParams = KvPairsMap(p.GetIndexParams())
 
 	return f
 }
