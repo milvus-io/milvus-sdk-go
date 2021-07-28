@@ -170,3 +170,44 @@ func TestParseSchema(t *testing.T) {
 		}
 	})
 }
+
+type ValidStruct struct {
+	RowBase
+	ID      int64 `milvus:"primary_key"`
+	Attr1   int8
+	Attr2   int16
+	Attr3   int32
+	Attr4   float32
+	Attr5   float64
+	Attr6   string
+	Attr7   bool
+	Vector  []float32 `milvus:"dim:16"`
+	Vector2 []byte    `milvus:"dim:32"`
+}
+type ValidStruct2 struct {
+	RowBase
+	ID      int64 `milvus:"primary_key"`
+	Vector  [16]float32
+	Vector2 [4]byte
+}
+
+func TestRowsToColumns(t *testing.T) {
+	t.Run("valid cases", func(t *testing.T) {
+
+		columns, err := RowsToColumns([]Row{&ValidStruct{}})
+		assert.Nil(t, err)
+		assert.Equal(t, 10, len(columns))
+
+		columns, err = RowsToColumns([]Row{&ValidStruct2{}})
+		assert.Nil(t, err)
+		assert.Equal(t, 3, len(columns))
+	})
+
+	t.Run("invalid cases", func(t *testing.T) {
+		_, err := RowsToColumns([]Row{})
+		assert.NotNil(t, err)
+
+		_, err = RowsToColumns([]Row{&ValidStruct{}, &ValidStruct2{}})
+		assert.NotNil(t, err)
+	})
+}
