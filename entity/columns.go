@@ -27,6 +27,7 @@ type Column interface {
 	Type() FieldType
 	Len() int
 	FieldData() *schema.FieldData
+	AppendValue(interface{}) error
 }
 
 // Vector interface vector used int search

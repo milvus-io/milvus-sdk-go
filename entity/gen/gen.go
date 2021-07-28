@@ -30,6 +30,7 @@ package entity
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/milvus-io/milvus-sdk-go/v2/internal/proto/schema"
 )
@@ -87,6 +88,17 @@ func (c *Column{{.TypeName}}) ValueByIdx(idx int) ({{.TypeDef}}, error) {
 	return c.values[idx], nil
 }
 
+// AppendValue append value into column
+func(c *Column{{.TypeName}}) AppendValue(i interface{}) error {
+	v, ok := i.({{.TypeDef}})
+	if !ok {
+		return fmt.Errorf("invalid type, expected {{.TypeDef}}, got %T", i)
+	}
+	c.values = append(c.values, v)
+
+	return nil
+}
+
 // Data returns column data
 func (c *Column{{.TypeName}}) Data() []{{.TypeDef}} {
 	return c.values
@@ -106,7 +118,11 @@ var vectorColumnTemplate = template.Must(template.New("").Parse(`// Code generat
 
 package entity 
 
-import "github.com/milvus-io/milvus-sdk-go/v2/internal/proto/schema"
+import (
+	"fmt"
+
+	"github.com/milvus-io/milvus-sdk-go/v2/internal/proto/schema"
+)
 
 {{ range .Types }}{{with.}}
 // Column{{.TypeName}} generated columns type for {{.TypeName}}
@@ -134,6 +150,17 @@ func (c * Column{{.TypeName}}) Len() int {
 // Dim returns vector dimension
 func (c *Column{{.TypeName}}) Dim() int {
 	return c.dim
+}
+
+// AppendValue append value into column
+func(c *Column{{.TypeName}}) AppendValue(i interface{}) error {
+	v, ok := i.({{.TypeDef}})
+	if !ok {
+		return fmt.Errorf("invalid type, expected {{.TypeDef}}, got %T", i)
+	}
+	c.values = append(c.values, v)
+
+	return nil
 }
 
 // Data returns column data
@@ -260,13 +287,22 @@ func TestFieldData{{.TypeName}}Column(t *testing.T) {
 				},
 			},
 		}
-		column, err:= FieldDataColumn(fd, 0, len)
+		column, err := FieldDataColumn(fd, 0, len)
 		assert.Nil(t, err)
 		assert.NotNil(t, column)
  
 		assert.Equal(t, name, column.Name())
 		assert.Equal(t, len, column.Len())
 		assert.Equal(t, FieldType{{.TypeName}}, column.Type())
+
+		var ev {{.TypeDef}}
+		err = column.AppendValue(ev)
+		assert.Equal(t, len+1, column.Len())
+		assert.Nil(t, err)
+
+		err = column.AppendValue(struct{}{})
+		assert.Equal(t, len+1, column.Len())
+		assert.NotNil(t, err)
 	})
 
 	
@@ -316,6 +352,15 @@ func TestColumn{{.TypeName}}(t *testing.T) {
 		assert.Equal(t, columnLen, column.Len())
 		assert.Equal(t, dim, column.Dim())
 		assert.Equal(t ,v, column.Data())
+		
+		var ev {{.TypeDef}}
+		err := column.AppendValue(ev)
+		assert.Equal(t, columnLen+1, column.Len())
+		assert.Nil(t, err)
+		
+		err = column.AppendValue(struct{}{})
+		assert.Equal(t, columnLen+1, column.Len())
+		assert.NotNil(t, err)
 	})
 
 	t.Run("test column field data", func(t *testing.T) {

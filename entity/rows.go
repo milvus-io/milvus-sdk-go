@@ -106,6 +106,8 @@ func ParseSchema(r Row) (*Schema, error) {
 			field.AutoID = true
 		}
 		switch reflect.Indirect(fv).Kind() {
+		case reflect.Bool:
+			field.DataType = FieldTypeBool
 		case reflect.Int8:
 			field.DataType = FieldTypeInt8
 		case reflect.Int16:
@@ -201,4 +203,113 @@ func ParseTagSetting(str string, sep string) map[string]string {
 	}
 
 	return settings
+}
+
+// RowsToColumns rows to columns
+func RowsToColumns(rows []Row) ([]Column, error) {
+	rowsLen := len(rows)
+	if rowsLen == 0 {
+		return []Column{}, errors.New("0 length column")
+	}
+	sch, err := ParseSchema(rows[0])
+	if err != nil {
+		return []Column{}, err
+	}
+	nameColumns := make(map[string]Column)
+	for _, field := range sch.Fields {
+		switch field.DataType {
+		case FieldTypeBool:
+			data := make([]bool, 0, rowsLen)
+			col := NewColumnBool(field.Name, data)
+			nameColumns[field.Name] = col
+		case FieldTypeInt8:
+			data := make([]int8, 0, rowsLen)
+			col := NewColumnInt8(field.Name, data)
+			nameColumns[field.Name] = col
+		case FieldTypeInt16:
+			data := make([]int16, 0, rowsLen)
+			col := NewColumnInt16(field.Name, data)
+			nameColumns[field.Name] = col
+		case FieldTypeInt32:
+			data := make([]int32, 0, rowsLen)
+			col := NewColumnInt32(field.Name, data)
+			nameColumns[field.Name] = col
+		case FieldTypeInt64:
+			data := make([]int64, 0, rowsLen)
+			col := NewColumnInt64(field.Name, data)
+			nameColumns[field.Name] = col
+		case FieldTypeFloat:
+			data := make([]float32, 0, rowsLen)
+			col := NewColumnFloat(field.Name, data)
+			nameColumns[field.Name] = col
+		case FieldTypeDouble:
+			data := make([]float64, 0, rowsLen)
+			col := NewColumnDouble(field.Name, data)
+			nameColumns[field.Name] = col
+		case FieldTypeString:
+			data := make([]string, 0, rowsLen)
+			col := NewColumnString(field.Name, data)
+			nameColumns[field.Name] = col
+		case FieldTypeFloatVector:
+			data := make([][]float32, 0, rowsLen)
+			dimStr, has := field.TypeParams["dim"]
+			if !has {
+				return []Column{}, errors.New("vector field with no dim")
+			}
+			dim, err := strconv.ParseInt(dimStr, 10, 64)
+			if err != nil {
+				return []Column{}, fmt.Errorf("vector field with bad format dim: %s", err.Error())
+			}
+			col := NewColumnFloatVector(field.Name, int(dim), data)
+			nameColumns[field.Name] = col
+		case FieldTypeBinaryVector:
+			data := make([][]byte, 0, rowsLen)
+			dimStr, has := field.TypeParams["dim"]
+			if !has {
+				return []Column{}, errors.New("vector field with no dim")
+			}
+			dim, err := strconv.ParseInt(dimStr, 10, 64)
+			if err != nil {
+				return []Column{}, fmt.Errorf("vector field with bad format dim: %s", err.Error())
+			}
+			col := NewColumnBinaryVector(field.Name, int(dim), data)
+			nameColumns[field.Name] = col
+		}
+	}
+	for _, row := range rows {
+		s, err := ParseSchema(row)
+		if err != nil {
+			return []Column{}, err
+		}
+
+		if sch.CollectionName != s.CollectionName {
+			return []Column{}, errors.New("rows of diferent type is not valid")
+		}
+		v := reflect.ValueOf(row)
+		if v.Kind() == reflect.Ptr {
+			v = v.Elem()
+		}
+
+		for _, field := range sch.Fields {
+			column, has := nameColumns[field.Name]
+			if has {
+
+			}
+
+			fv := v.FieldByName(field.Name)
+			if fv.Kind() == reflect.Array { // change to slice
+				fv = fv.Slice(0, fv.Len()-1)
+			}
+			err := column.AppendValue(fv.Interface())
+			if err != nil {
+				return []Column{}, err
+			}
+		}
+
+	}
+	columns := make([]Column, 0, len(nameColumns))
+	for _, column := range nameColumns {
+		columns = append(columns, column)
+	}
+	return columns, nil
 }
