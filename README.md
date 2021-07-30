@@ -32,13 +32,13 @@ Go 1.15 or higher
 1. Use `go get` to install the latest version of the Milvus Go SDK and dependencies:
 
    ```shell
-   go get -u github.com/milvus-io/milvus-sdk-go/milvus/v2
+   go get -u github.com/milvus-io/milvus-sdk-go/v2
    ```
 
 2. Include the Milvus Go SDK in your application:
 
    ```go
-   import "github.com/milvus-io/milvus-sdk-go/milvus/v2/client"
+   import "github.com/milvus-io/milvus-sdk-go/v2/client"
 
    //...other snippet ...
    client, err := client.NewGrpcClient(context.Background(), "address_of_milvus")
