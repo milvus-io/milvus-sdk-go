@@ -16,6 +16,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
+	"strconv"
+	"sync"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -190,6 +193,9 @@ func (c *grpcClient) Search(ctx context.Context, collName string, partitions []s
 	if err != nil {
 		return nil, err
 	}
+	if coll.Schema.CollectionName == "" {
+		coll.Schema.CollectionName = collName
+	}
 	mNameField := make(map[string]*entity.Field)
 	for _, field := range coll.Schema.Fields {
 		mNameField[field.Name] = field
@@ -223,6 +229,69 @@ func (c *grpcClient) Search(ctx context.Context, collName string, partitions []s
 	}
 
 	// 2. Request milvus service
+	reqs := splitSearchRequest(coll.Schema, partitions, expr, outputFields, vectors, vectorField, metricType, topK, sp)
+	if len(reqs) == 0 {
+		return nil, errors.New("empty request generated")
+	}
+	wg := &sync.WaitGroup{}
+	wg.Add(len(reqs))
+	var batchErr error
+	sr := make([]SearchResult, 0, len(vectors))
+	mut := sync.Mutex{}
+	for _, req := range reqs {
+		go func(req *server.SearchRequest) {
+			defer wg.Done()
+			resp, err := c.service.Search(ctx, req)
+			if err != nil {
+				batchErr = err
+				return
+			}
+			if err := handleRespStatus(resp.GetStatus()); err != nil {
+				batchErr = err
+				return
+			}
+			// 3. parse result into result
+			results := resp.GetResults()
+			offset := 0
+			fieldDataList := results.GetFieldsData()
+			for i := 0; i < int(results.GetNumQueries()); i++ {
+
+				rc := int(results.GetTopks()[i]) // result entry count for current query
+				entry := SearchResult{
+					ResultCount: rc,
+					Scores:      results.GetScores()[offset:rc],
+				}
+				entry.IDs, entry.Err = entity.IDColumns(results.GetIds(), offset, offset+rc)
+				if entry.Err != nil {
+					offset += rc
+					continue
+				}
+				entry.Fields = make([]entity.Column, 0, len(fieldDataList))
+				for _, fieldData := range fieldDataList {
+					column, err := entity.FieldDataColumn(fieldData, offset, offset+rc)
+					if err != nil {
+						entry.Err = err
+						continue
+					}
+					entry.Fields = append(entry.Fields, column)
+				}
+				mut.Lock()
+				sr = append(sr, entry)
+				mut.Unlock()
+				offset += rc
+			}
+		}(req)
+	}
+	wg.Wait()
+	if batchErr != nil {
+		return []SearchResult{}, batchErr
+	}
+	return sr, nil
+}
+
+func splitSearchRequest(sch *entity.Schema, partitions []string,
+	expr string, outputFields []string, vectors []entity.Vector, vectorField string,
+	metricType entity.MetricType, topK int, sp entity.SearchParam) []*server.SearchRequest {
 	params := sp.Params()
 	bs, _ := json.Marshal(params)
 	searchParams := entity.MapKvPairs(map[string]string{
@@ -232,53 +301,29 @@ func (c *grpcClient) Search(ctx context.Context, collName string, partitions []s
 		"metric_type": string(metricType),
 	})
 
-	req := &server.SearchRequest{
-		DbName:           "",
-		CollectionName:   collName,
-		PartitionNames:   partitions,
-		SearchParams:     searchParams,
-		Dsl:              expr,
-		DslType:          common.DslType_BoolExprV1,
-		OutputFields:     outputFields,
-		PlaceholderGroup: vector2PlaceholderGroupBytes(vectors),
-	}
-	resp, err := c.service.Search(ctx, req)
-	if err != nil {
-		return []SearchResult{}, err
-	}
-	if err := handleRespStatus(resp.GetStatus()); err != nil {
-		return []SearchResult{}, err
-	}
-	// 3. parse result into result
-	results := resp.GetResults()
-	offset := 0
-	sr := make([]SearchResult, 0, results.GetNumQueries())
-	fieldDataList := results.GetFieldsData()
-	for i := 0; i < int(results.GetNumQueries()); i++ {
-
-		rc := int(results.GetTopks()[i]) // result entry count for current query
-		entry := SearchResult{
-			ResultCount: rc,
-			Scores:      results.GetScores()[offset:rc],
+	ers := estRowSize(sch, outputFields)
+	maxBatch := int(math.Ceil(float64(5*1024*1024) / float64(ers*int64(topK))))
+	result := []*server.SearchRequest{}
+	for i := 0; i*maxBatch < len(vectors); i++ {
+		start := i * maxBatch
+		end := (i + 1) * maxBatch
+		if end > len(vectors) {
+			end = len(vectors)
 		}
-		entry.IDs, entry.Err = entity.IDColumns(results.GetIds(), offset, offset+rc)
-		if entry.Err != nil {
-			offset += rc
-			continue
+		batchVectors := vectors[start:end]
+		req := &server.SearchRequest{
+			DbName:           "",
+			CollectionName:   sch.CollectionName,
+			PartitionNames:   partitions,
+			SearchParams:     searchParams,
+			Dsl:              expr,
+			DslType:          common.DslType_BoolExprV1,
+			OutputFields:     outputFields,
+			PlaceholderGroup: vector2PlaceholderGroupBytes(batchVectors),
 		}
-		entry.Fields = make([]entity.Column, 0, len(fieldDataList))
-		for _, fieldData := range fieldDataList {
-			column, err := entity.FieldDataColumn(fieldData, offset, offset+rc)
-			if err != nil {
-				entry.Err = err
-				continue
-			}
-			entry.Fields = append(entry.Fields, column)
-		}
-		sr = append(sr, entry)
-		offset += rc
+		result = append(result, req)
 	}
-	return sr, nil
+	return result
 }
 
 // GetPersistentSegmentInfo get persistent segment info
@@ -513,4 +558,50 @@ func isCollectionPrimaryKey(coll *entity.Collection, column entity.Column) bool 
 		}
 	}
 	return false
+}
+
+// estRowSize estimate size per row for the specified schema
+func estRowSize(sch *entity.Schema, selected []string) int64 {
+	var total int64
+	for _, field := range sch.Fields {
+		if len(selected) > 0 {
+			found := false
+			for _, sel := range selected {
+				if field.Name == sel {
+					found = true
+					break
+				}
+			}
+			if !found {
+				continue
+			}
+		}
+		switch field.DataType {
+		case entity.FieldTypeBool:
+			total += 1
+		case entity.FieldTypeInt8:
+			total += 1
+		case entity.FieldTypeInt16:
+			total += 2
+		case entity.FieldTypeInt32:
+			total += 4
+		case entity.FieldTypeInt64:
+			total += 8
+		case entity.FieldTypeFloat:
+			total += 4
+		case entity.FieldTypeDouble:
+			total += 8
+		case entity.FieldTypeString:
+			//TODO string need varchar[max] syntax like limitation
+		case entity.FieldTypeFloatVector:
+			dimStr := field.TypeParams["dim"]
+			dim, _ := strconv.ParseInt(dimStr, 10, 64)
+			total += 4 * dim
+		case entity.FieldTypeBinaryVector:
+			dimStr := field.TypeParams["dim"]
+			dim, _ := strconv.ParseInt(dimStr, 10, 64)
+			total += 4 * dim / 8
+		}
+	}
+	return total
 }
