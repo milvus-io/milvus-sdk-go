@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"fmt"
 	"math/rand"
 	"testing"
 	"time"
@@ -545,6 +546,125 @@ func TestIsCollectionPrimaryKey(t *testing.T) {
 		}, entity.NewColumnInt64("int64", []int64{})))
 
 	})
+}
+
+func TestEstRowSize(t *testing.T) {
+	// a schema contains all supported vector
+	sch := &entity.Schema{
+		CollectionName: testCollectionName,
+		AutoID:         false,
+		Fields: []*entity.Field{
+			{
+				Name:       testPrimaryField,
+				DataType:   entity.FieldTypeInt64,
+				PrimaryKey: true,
+				AutoID:     true,
+			},
+			{
+				Name:     "attr1",
+				DataType: entity.FieldTypeInt8,
+			},
+			{
+				Name:     "attr2",
+				DataType: entity.FieldTypeInt16,
+			},
+			{
+				Name:     "attr3",
+				DataType: entity.FieldTypeInt32,
+			},
+			{
+				Name:     "attr4",
+				DataType: entity.FieldTypeFloat,
+			},
+			{
+				Name:     "attr5",
+				DataType: entity.FieldTypeDouble,
+			},
+			{
+				Name:     "attr6",
+				DataType: entity.FieldTypeBool,
+			},
+			{
+				Name:     testVectorField,
+				DataType: entity.FieldTypeFloatVector,
+				TypeParams: map[string]string{
+					"dim": fmt.Sprintf("%d", testVectorDim),
+				},
+			},
+			{
+				Name:     "binary_vector",
+				DataType: entity.FieldTypeBinaryVector,
+				TypeParams: map[string]string{
+					"dim": fmt.Sprintf("%d", testVectorDim),
+				},
+			},
+		},
+	}
+
+	// one row
+	columnID := entity.NewColumnInt64(testPrimaryField, []int64{0})
+	columnAttr1 := entity.NewColumnInt8("attr1", []int8{0})
+	columnAttr2 := entity.NewColumnInt16("attr2", []int16{0})
+	columnAttr3 := entity.NewColumnInt32("attr3", []int32{0})
+	columnAttr4 := entity.NewColumnFloat("attr4", []float32{0})
+	columnAttr5 := entity.NewColumnDouble("attr5", []float64{0})
+	columnAttr6 := entity.NewColumnBool("attr6", []bool{true})
+	columnFv := entity.NewColumnFloatVector(testVectorField, testVectorDim, generateFloatVector(1, testVectorDim))
+	columnBv := entity.NewColumnBinaryVector("binary_vector", testVectorDim, generateBinaryVector(1, testVectorDim))
+
+	sr := &server.SearchResults{
+		Results: &schema.SearchResultData{
+			FieldsData: []*schema.FieldData{
+				columnID.FieldData(),
+				columnAttr1.FieldData(),
+				columnAttr2.FieldData(),
+				columnAttr3.FieldData(),
+				columnAttr4.FieldData(),
+				columnAttr5.FieldData(),
+				columnAttr6.FieldData(),
+				columnFv.FieldData(),
+				columnBv.FieldData(),
+			},
+		},
+	}
+	bs, err := proto.Marshal(sr)
+	assert.Nil(t, err)
+	sr1l := len(bs)
+	// 2Row
+	columnID = entity.NewColumnInt64(testPrimaryField, []int64{0, 1})
+	columnAttr1 = entity.NewColumnInt8("attr1", []int8{0, 1})
+	columnAttr2 = entity.NewColumnInt16("attr2", []int16{0, 1})
+	columnAttr3 = entity.NewColumnInt32("attr3", []int32{0, 1})
+	columnAttr4 = entity.NewColumnFloat("attr4", []float32{0, 1})
+	columnAttr5 = entity.NewColumnDouble("attr5", []float64{0, 1})
+	columnAttr6 = entity.NewColumnBool("attr6", []bool{true, true})
+	columnFv = entity.NewColumnFloatVector(testVectorField, testVectorDim, generateFloatVector(2, testVectorDim))
+	columnBv = entity.NewColumnBinaryVector("binary_vector", testVectorDim, generateBinaryVector(2, testVectorDim))
+
+	sr = &server.SearchResults{
+		Results: &schema.SearchResultData{
+			FieldsData: []*schema.FieldData{
+				columnID.FieldData(),
+				columnAttr1.FieldData(),
+				columnAttr2.FieldData(),
+				columnAttr3.FieldData(),
+				columnAttr4.FieldData(),
+				columnAttr5.FieldData(),
+				columnAttr6.FieldData(),
+				columnFv.FieldData(),
+				columnBv.FieldData(),
+			},
+		},
+	}
+	bs, err = proto.Marshal(sr)
+	assert.Nil(t, err)
+	sr2l := len(bs)
+
+	t.Log(sr1l, sr2l, sr2l-sr1l)
+	est := estRowSize(sch, []string{})
+	t.Log(est)
+
+	assert.Greater(t, est, int64(sr2l-sr1l))
 }
 
 func generateFloatVector(num, dim int) [][]float32 {
