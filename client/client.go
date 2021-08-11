@@ -93,6 +93,9 @@ type Client interface {
 	// CalcDistance calculate the distance between vectors specified by ids or provided
 	CalcDistance(ctx context.Context, collName string, partitions []string,
 		metricType entity.MetricType, opLeft, opRight entity.Column) (entity.Column, error)
+
+	// -- row basd apis --
+	CreateCollectionByRow(ctx context.Context, row entity.Row, shardNum int32) error
 }
 
 // SearchResult contains the result from Search api of client

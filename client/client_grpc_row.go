@@ -1,14 +1,63 @@
 package client
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"reflect"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 	"github.com/milvus-io/milvus-sdk-go/v2/internal/proto/schema"
+	"github.com/milvus-io/milvus-sdk-go/v2/internal/proto/server"
 )
 
+// CreateCollectionByRow create collection by row
+func (c *grpcClient) CreateCollectionByRow(ctx context.Context, row entity.Row, shardNum int32) error {
+	if c.service == nil {
+		return ErrClientNotReady
+	}
+	// parse schema from row definition
+	sch, err := entity.ParseSchema(row)
+	if err != nil {
+		return err
+	}
+
+	// check collection already exists
+	has, err := c.HasCollection(ctx, sch.CollectionName)
+	if err != nil {
+		return err
+	}
+	// already exists collection with same name, return error
+	if has {
+		return fmt.Errorf("collection %s already exist", sch.CollectionName)
+	}
+	// marshal schema to bytes for message transfer
+	p := sch.ProtoMessage()
+	bs, err := proto.Marshal(p)
+	if err != nil {
+		return err
+	}
+	// compose request and invoke service
+	req := &server.CreateCollectionRequest{
+		DbName:         "", // reserved fields, not used for now
+		CollectionName: sch.CollectionName,
+		Schema:         bs,
+		ShardsNum:      shardNum,
+	}
+	resp, err := c.service.CreateCollection(ctx, req)
+	// handles response
+	if err != nil {
+		return err
+	}
+	err = handleRespStatus(resp)
+	if err != nil {
+		return nil
+	}
+	return nil
+}
+
+// SearchResultByRows search result for row-based Search
 type SearchResultByRows struct {
 	ResultCount int
 	Scores      []float32
@@ -16,8 +65,14 @@ type SearchResultByRows struct {
 	Err         error
 }
 
-func SearchResultToRows(sch *entity.Schema, results *schema.SearchResultData, t reflect.Type) {
+// SearchResultToRows converts search result proto to rows
+func SearchResultToRows(sch *entity.Schema, results *schema.SearchResultData, t reflect.Type, output map[string]struct{}) ([]SearchResultByRows, error) {
+	var err error
 	offset := 0
+	// new will have a pointer, so de-reference first if type is pointer to struct
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
 	sr := make([]SearchResultByRows, 0, results.GetNumQueries())
 	fieldDataList := results.GetFieldsData()
 	nameFieldData := make(map[string]*schema.FieldData)
@@ -38,11 +93,14 @@ func SearchResultToRows(sch *entity.Schema, results *schema.SearchResultData, t 
 
 			//extract primary field logic
 			for _, field := range sch.Fields {
-				f := v.FieldByName(field.Name)
-				if f.IsNil() {
-					//TODO check field in output list
+				f := v.FieldByName(field.Name) // TODO silverxia field may be annotated by tags, which means the field name will not be the same
+				if !f.IsValid() {
+					if _, has := output[field.Name]; has {
+						// TODO silverxia in output field list but not defined in rows
+					}
 					continue
 				}
+				// Primary key has different field from search result
 				if field.PrimaryKey {
 					switch f.Kind() {
 					case reflect.Int64:
@@ -69,25 +127,45 @@ func SearchResultToRows(sch *entity.Schema, results *schema.SearchResultData, t 
 				//fieldDataList
 				fieldData, has := nameFieldData[field.Name]
 				if !has || fieldData == nil {
-					//TODO if check field in output list
+					if _, has := output[field.Name]; has {
+						// TODO silverxia in output field list but not defined in rows
+					}
+
 					continue
 				}
 
-				offset += rc
-				sr = append(sr, entry)
-			}
+				// Set field value with offset+j-th item
+				err = SetFieldValue(field, f, fieldData, offset+j)
+				if err != nil {
+					entry.Err = err
+					break
+				}
 
+			}
+			r := p.Interface()
+			row, ok := r.(entity.Row)
+			if ok {
+				entry.Rows = append(entry.Rows, row)
+			}
 		}
+		sr = append(sr, entry)
+		// set offset after processed one result
+		offset += rc
 	}
+	return sr, nil
 }
 
 var (
+	// ErrFieldTypeNotMatch error for field type not match
 	ErrFieldTypeNotMatch = errors.New("field type not matched")
 )
 
+// SetFieldValue set row field value with reflection
 func SetFieldValue(field *entity.Field, f reflect.Value, fieldData *schema.FieldData, idx int) error {
 	scalars := fieldData.GetScalars()
 	vectors := fieldData.GetVectors()
+	// This switch part is messy
+	// Maybe this can be refactored later
 	switch field.DataType {
 	case entity.FieldTypeBool:
 		if f.Kind() != reflect.Bool {
@@ -121,6 +199,9 @@ func SetFieldValue(field *entity.Field, f reflect.Value, fieldData *schema.Field
 			return ErrFieldTypeNotMatch
 		}
 		data := scalars.GetIntData()
+		if data == nil {
+			return ErrFieldTypeNotMatch
+		}
 		f.SetInt(int64(data.Data[idx]))
 	case entity.FieldTypeInt32:
 		if f.Kind() != reflect.Int32 {
@@ -130,6 +211,9 @@ func SetFieldValue(field *entity.Field, f reflect.Value, fieldData *schema.Field
 			return ErrFieldTypeNotMatch
 		}
 		data := scalars.GetIntData()
+		if data == nil {
+			return ErrFieldTypeNotMatch
+		}
 		f.SetInt(int64(data.Data[idx]))
 	case entity.FieldTypeInt64:
 		if f.Kind() != reflect.Int64 {
@@ -138,9 +222,11 @@ func SetFieldValue(field *entity.Field, f reflect.Value, fieldData *schema.Field
 		if scalars == nil {
 			return ErrFieldTypeNotMatch
 		}
-		data := scalars.GetIntData()
-		f.SetInt(int64(data.Data[idx]))
-
+		data := scalars.GetLongData()
+		if data == nil {
+			return ErrFieldTypeNotMatch
+		}
+		f.SetInt(data.Data[idx])
 	case entity.FieldTypeFloat:
 		if f.Kind() != reflect.Float32 {
 			return ErrFieldTypeNotMatch
@@ -149,6 +235,10 @@ func SetFieldValue(field *entity.Field, f reflect.Value, fieldData *schema.Field
 			return ErrFieldTypeNotMatch
 		}
 		data := scalars.GetFloatData()
+		if data == nil {
+			return ErrFieldTypeNotMatch
+		}
+
 		f.SetFloat(float64(data.Data[idx]))
 	case entity.FieldTypeDouble:
 		if f.Kind() != reflect.Float64 {
@@ -158,6 +248,10 @@ func SetFieldValue(field *entity.Field, f reflect.Value, fieldData *schema.Field
 			return ErrFieldTypeNotMatch
 		}
 		data := scalars.GetDoubleData()
+		if data == nil {
+			return ErrFieldTypeNotMatch
+		}
+
 		f.SetFloat(data.Data[idx])
 	case entity.FieldTypeString:
 		if f.Kind() != reflect.String {
@@ -167,6 +261,10 @@ func SetFieldValue(field *entity.Field, f reflect.Value, fieldData *schema.Field
 			return ErrFieldTypeNotMatch
 		}
 		data := scalars.GetStringData()
+		if data == nil {
+			return ErrFieldTypeNotMatch
+		}
+
 		f.SetString(data.Data[idx])
 
 	case entity.FieldTypeFloatVector:
@@ -205,7 +303,7 @@ func SetFieldValue(field *entity.Field, f reflect.Value, fieldData *schema.Field
 		case reflect.Slice:
 			f.Set(reflect.ValueOf(vector))
 		case reflect.Array:
-			arrType := reflect.ArrayOf(int(vectors.Dim), reflect.TypeOf(byte(0)))
+			arrType := reflect.ArrayOf(int(vectors.Dim/8), reflect.TypeOf(byte(0)))
 			arr := reflect.New(arrType).Elem()
 			for i := 0; i < int(vectors.Dim/8); i++ {
 				arr.Index(i).Set(reflect.ValueOf(vector[i]))
@@ -214,6 +312,8 @@ func SetFieldValue(field *entity.Field, f reflect.Value, fieldData *schema.Field
 		default:
 			return ErrFieldTypeNotMatch
 		}
+	default:
+		return ErrFieldTypeNotMatch
 	}
 	return nil
 }
