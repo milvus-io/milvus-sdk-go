@@ -27,9 +27,7 @@ import (
 //		}
 //		// start doing things with client instance, note that there is no need to call Connect since NewXXXClient will do that for you
 type Client interface {
-	// Connect connect to the address provided
-	Connect(ctx context.Context, addr string) error
-	// Close close the remaining connection
+	// Close close the remaining connection resources
 	Close() error
 
 	// -- collection --
@@ -122,10 +120,7 @@ const (
 // dialOptions contains the dial option(s) that control the grpc dialing process
 func NewGrpcClient(ctx context.Context, addr string, dialOptions ...grpc.DialOption) (Client, error) {
 	c := &grpcClient{}
-	// since different client may have different type of connect option(s), it's hard to put concrete type in Connect method def
-	// interface{} is ugly, so use context value may be a solution
-	ctx = context.WithValue(ctx, dialOption, dialOptions)
-	err := c.Connect(ctx, addr)
+	err := c.connect(ctx, addr, dialOptions...)
 	if err != nil {
 		return nil, err
 	}
