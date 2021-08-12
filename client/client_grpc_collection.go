@@ -30,20 +30,10 @@ type grpcClient struct {
 	service server.MilvusServiceClient // service client stub
 }
 
-// Connect connect to service
-func (c *grpcClient) Connect(ctx context.Context, addr string) error {
-	opts := make([]grpc.DialOption, 0, 10)
+// connect connect to service
+func (c *grpcClient) connect(ctx context.Context, addr string, opts ...grpc.DialOption) error {
 
-	// try parse DialOptions
-	cOptsRaw := ctx.Value(dialOption)
-	if cOptsRaw != nil {
-		cOpts, ok := cOptsRaw.([]grpc.DialOption)
-		if ok {
-			opts = append(opts, cOpts...)
-		}
-	}
-
-	// if not options detected, use default
+	// if not options provided, use default settings
 	if len(opts) == 0 {
 		opts = append(opts, grpc.WithInsecure(),
 			grpc.WithBlock(),                //block connect until healthy or timeout
