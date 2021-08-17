@@ -1,16 +1,18 @@
 # New Client
 
-This is the "Constructor" method set (there is only one for now) to obtain `Client` instance.
+This is the "Constructor" method set (only one for current release) to obtain `Client` instance.
 
 ## Common Params
 
-- ctx context.Context is the context to control connection process. 
+- `ctx` context.Context is the context to control connection process. 
 
-- addr string is the addr of the Milvus instance
+- `addr` string is the address of the Milvus instance.
 
 ## Response
 
-- err contains the connection error (if any) 
+- `err` contains the connection error (if any).
+
+## Example
 
 ```go
 ctx := context.Background()
