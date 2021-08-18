@@ -7,7 +7,7 @@ API to drop collection by name.
 | Parameter    | Description                                                  | Type                     |
 | ------------ | ------------------------------------------------------------ | ------------------------ |
 | `ctx`        | Context to control API invocation process                    | context.Context          |
-| `name`       | Collection name to release                                   | String                   |
+| `name`       | Name of the collection to release                            | String                   |
 
 ## Response
 
