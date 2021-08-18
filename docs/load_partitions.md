@@ -1,6 +1,6 @@
 # Load Partitions
 
-API to load partitions by name
+API to load partitions by name.
 
 ## Params
 
@@ -12,15 +12,22 @@ API to load partitions by name
 
 - `async` bool, switch value of the sync/async behavior, note that the deadline of context is not applied in sync load
 
+| Parameter    | Description                                                  | Type                     |
+| ------------ | ------------------------------------------------------------ | ------------------------ |
+| `ctx`        | Context to control API invocation process                    | context.Context          |
+| `collName`   | Name of the collection to load partition from                | String                   |
+| `partitionNames` | Name of the Partition to load                            | Slice of string          |
+| `async`      | Switch value of the sync/async behavior. </br>Note: the deadline of context is not applied in sync load. | Boolean |
+
 ## Response
 
-- `err` error of the creation process (if any), possible error list:
+`err`: error in the process (if any). Possible errors are listed below:
 
-    - ErrClientNotReady, error stands for the client is not connected
+  - `ErrClientNotReady`, error that the client is not connected.
 
-    - ErrCollectionNotExists, error stands for collection of the specified name does not exist
+  - `ErrCollectionNotExists`, error that the collection with the specified name does not exist.
 
-    - error fo API invocation failed 
+  - error that API invocation failed.
 
 ## Example
 
