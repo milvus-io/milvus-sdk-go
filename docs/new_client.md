@@ -4,13 +4,15 @@ This is the "Constructor" method set (only one for current release) to obtain `C
 
 ## Common Params
 
-- `ctx` context.Context is the context to control connection process. 
+| Parameter    | Description                                                  | Type                     |
+| ------------ | ------------------------------------------------------------ | ------------------------ |
+| `ctx`        | Context to control API invocation process                    | context.Context          |
+| `addr`       | Address of the Milvus instance                               | String                   |
 
-- `addr` string is the address of the Milvus instance.
 
 ## Response
 
-- `err` contains the connection error (if any).
+`err`: connection error (if any).
 
 ## Example
 
