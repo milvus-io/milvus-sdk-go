@@ -1,24 +1,25 @@
 # Has Partition
 
-API to check whether partition from collection with specified name exists
+API to check if partition from a collection with specified name exists.
 
 ## Params
 
-- `ctx` context.Context, context to control API invocation process;
+| Parameter    | Description                                                  | Type                     |
+| ------------ | ------------------------------------------------------------ | ------------------------ |
+| `ctx`        | Context to control API invocation process                    | context.Context          |
+| `collName`   | Name of the collection with the partition to check           | String                   |
+| `partitionName` | Name of the partition to check                            | String                   |
 
-- `collName` string, collection name of the partition;
-
-- `partitionName` string, partition name to check;
 
 ## Response
 
-- `result` bool, stands for whether the partition exists
+- `result`: boolean value that stands for whether the partition exists or not.
 
-- `err` error of the creation process (if any), possible error list:
+- `err`: error in the process (if any). Possible errors are listed below:
 
-    - ErrClientNotReady, error stands for the client is not connected
+    - `ErrClientNotReady`, error that the client is not connected.
 
-    - error fo API invocation failed 
+    - error that API invocation failed.
 
 ## Example
 
