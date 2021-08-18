@@ -1,30 +1,31 @@
 # Insert 
 
-API to index data into collection 
+API to insert data into collection.
 
 ## Params
 
-- `ctx` context.Context, context to control API invocation process;
+| Parameter    | Description                                                  | Type                     |
+| ------------ | ------------------------------------------------------------ | ------------------------ |
+| `ctx`        | Context to control API invocation process                    | context.Context          |
+| `collName`   | Name of the collection to indert into                        | String                   |
+| `partitionName` | Name of the collection to indert into. </br>If empty, default partition will be used. | String |
+| `columns`    | Columnar data to insert                                      | Variadic slice of entity.Column |
 
-- `collName` string, the collection name to insert into;
 
-- `partitionName` string, the partition name to insert into, if empty, default partition will be used;
-
-- `columns` variadic slice of entity.Column, columnar data to insert 
 
 ## Response
 
-- `ids` entity.Column, the inserted ids of the data
+- `ids`: entity.Column that represents the IDs of the inserted data
 
-- `err` error of the creation process (if any), possible error list:
+- `err`: error in the process (if any). Possible errors are listed below:
 
-    - ErrClientNotReady, is the client is not connected
+    - `ErrClientNotReady`, error that the client is not connected.
 
-    - ErrCollectionNotExists, error stands for collection of the specified name does not exist
+    - `ErrCollectionNotExists`, error that the collection with the specified name does not exist.
 
-    - error for field specified is not valid 
+    - error that the specified field is not valid.
     
-    - error fo API invocation failed 
+    - error that API invocation failed.
 
 ## Example
 
