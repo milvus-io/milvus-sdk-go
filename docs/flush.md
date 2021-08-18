@@ -4,21 +4,21 @@ API to flush data inserted
 
 ## Params
 
-- `ctx` context.Context, context to control API invocation process;
-
-- `collName` string, the collection name to flush;
-
-- `async` bool, switch value of the sync/async behavior, note that the deadline of context is not applied in sync flush
+| Parameter    | Description                                                  | Type                     |
+| ------------ | ------------------------------------------------------------ | ------------------------ |
+| `ctx`        | Context to control API invocation process                    | context.Context          |
+| `collName`   | Name of the collection to flush                              | String                   |
+| `async`      | Switch value of the sync/async behavior. </br>Note: the deadline of context is not applied in sync flush. | Boolean |
 
 ## Response
 
-- `err` error of the creation process (if any), possible error list:
+- `err`: error in the process (if any). Possible errors are listed below:
 
-    - ErrClientNotReady, is the client is not connected
+    - `ErrClientNotReady`, error that the client is not connected.
 
-    - ErrCollectionNotExists, error stands for collection of the specified name does not exist
+    - `ErrCollectionNotExists`, error that collection with the specified name does not exist.
     
-    - error fo API invocation failed 
+    - error that API invocation failed.
 
 ## Example
 
