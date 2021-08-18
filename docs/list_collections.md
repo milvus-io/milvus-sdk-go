@@ -13,9 +13,9 @@ API to list all the collections in the connected Milvus instance.
 
 - `err`: error in the listing process (if any). Possible errors are listed below:
 
-    - `ErrClientNotReady`: error for that the client is not connected.
+    - `ErrClientNotReady`: error that the client is not connected.
 
-    - Error for API invocation failed.
+    - Error that API invocation failed.
 
 ## Example
 
