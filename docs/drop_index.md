@@ -1,6 +1,6 @@
 # Drop Index 
 
-API to drop index from vector field of a collection
+API to drop index from vector field of a collection.
 
 ## Params
 
@@ -10,17 +10,25 @@ API to drop index from vector field of a collection
 
 - `fieldName` string, the field name to drop index from
 
+| Parameter    | Description                                                  | Type                     |
+| ------------ | ------------------------------------------------------------ | ------------------------ |
+| `ctx`        | Context to control API invocation process                    | context.Context          |
+| `collName`   | Name of the collection to drop index from                    | String                   |
+| `fieldName`  | Name of the field to drop index from                         | String                   |
+
+
 ## Response
 
-- `err` error of the drop process (if any), possible error list:
+`err`: error in the process (if any). Possible errors are listed below:
 
-    - ErrClientNotReady, is the client is not connected
+  - `ErrClientNotReady`, error that the client is not connected.
 
-    - ErrCollectionNotExists, error stands for collection of the specified name does not exist
+  - `ErrCollectionNotExists`, error that collection with the specified name does not exist.
 
-    - error for field specified is not valid 
+  - error that the specified field is not valid.
     
-    - error fo API invocation failed 
+  - error that API invocation failed.
+
 
 ## Example
 
