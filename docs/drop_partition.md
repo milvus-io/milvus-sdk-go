@@ -14,11 +14,11 @@ API to drop partition from collection by name.
 
 `err`: error in the process (if any). Possible errors are listed below:
 
-  - ErrClientNotReady, error stands for the client is not connected
+  - `ErrClientNotReady`, error stands for the client is not connected
 
-  - ErrCollectionNotExists, error stands for collection of the specified name does not exist
+  - `ErrCollectionNotExists`, error stands for collection of the specified name does not exist
 
-  - error fo API invocation failed 
+  - error that API invocation failed.
 
 ## Example
 
