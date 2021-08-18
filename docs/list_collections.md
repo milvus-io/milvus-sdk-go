@@ -1,20 +1,21 @@
 # List Collections
 
-API to list all the collections in the connected Milvus instance 
+API to list all the collections in the connected Milvus instance.
 
 ## Params
-
-- `ctx` context.Context, context to control API invocation process;
+| Parameter    | Description                                                  | Type                     |
+| ------------ | ------------------------------------------------------------ | ------------------------ |
+| `ctx`        | Context to control API invocation process                    | context.Context          |
 
 ## Response
 
-- `collections` array of entity.Collection, represents the collections in the Milvus instance
+- `collections`: array of entity.Collection that represents the collections in the Milvus instance.
 
-- `err` error of the creation process (if any), possible error list:
+- `err`: error in the listing process (if any). Possible errors are listed below:
 
-    - ErrClientNotReady, error stands for the client is not connected
+    - `ErrClientNotReady`: error that the client is not connected.
 
-    - error fo API invocation failed 
+    - Error that API invocation failed.
 
 ## Example
 

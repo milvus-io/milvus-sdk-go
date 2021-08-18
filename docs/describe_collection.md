@@ -1,24 +1,28 @@
 # Describe Collection
 
-API to describe collection information 
+API to describe collection information.
 
 ## Params
 
-- `ctx` context.Context, context to control API invocation process;
+| Parameter    | Description                                                  | Type                     |
+| ------------ | ------------------------------------------------------------ | ------------------------ |
+| `ctx`        | Context to control API invocation process                    | context.Context          |
+| `name`       | Name of the collection to describe                           | String                   |
 
-- `name` string, collection name to describe
+
+
 
 ## Response
 
-- `collection` pointer of entity.Collection, represents the collection to describe
+- `collection`: pointer of entity.Collection that represents the collection to describe.
 
-- `err` error of the creation process (if any), possible error list:
+- `err`: error in the process (if any), possible errors are listed:
 
-    - ErrClientNotReady, error stands for the client is not connected
+    - `ErrClientNotReady`, error that the client is not connected.
 
-    - ErrCollectionNotExists, error stands for collection of the specified name does not exist
+    - `ErrCollectionNotExists`, error that the collection with the specified name does not exist.
 
-    - error fo API invocation failed 
+    - error that API invocation failed.
 
 ## Example
 

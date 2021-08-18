@@ -1,26 +1,28 @@
 # Create Partition 
 
-API to create partition in a collection 
+API to create partition in a collection.
 
 ## Params
 
-- `ctx` context.Context, context to control API invocation process;
+| Parameter    | Description                                                  | Type                     |
+| ------------ | ------------------------------------------------------------ | ------------------------ |
+| `ctx`        | Context to control API invocation process                    | context.Context          |
+| `collName`   | Name of the collection to create partition in                | String                   |
+| `partitionName` | Name of the partition to create                           | String                   |
 
-- `collName` string, the collection name;
 
-- `partitionName` string, the partition name to create; 
 
 ## Response
 
-- `err` error of the creation process (if any), possible error list:
+`err`: error in the process (if any). Possible errors are listed below:
 
-    - ErrClientNotReady, is the client is not connected
+  - `ErrClientNotReady`, error that the client is not connected.
 
-    - ErrCollectionNotExists, error stands for collection of the specified name does not exist
+  - `ErrCollectionNotExists`, error that the collection with the specified name does not exist.
 
-    - error for partition with same name already exists
-    
-    - error fo API invocation failed 
+  - error that partition with the same name already exists.
+
+  - error that API invocation failed.
 
 ## Example
 

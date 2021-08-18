@@ -1,24 +1,26 @@
 # Show Partitions 
 
-API to list all the partitions in the specified collections 
+API to list all the partitions in the specified collections.
 
 ## Params
 
-- `ctx` context.Context, context to control API invocation process;
+| Parameter    | Description                                                  | Type                     |
+| ------------ | ------------------------------------------------------------ | ------------------------ |
+| `ctx`        | Context to control API invocation process                    | context.Context          |
+| `collName`   | Name of the collection to list all partitions                | String                   |
 
-- `collName` string, collection name to show;
 
 ## Response
 
-- `partitions` array of entity.Partition, represents the partitions of the collection; 
+- `partitions`: array of entity.Partition that represents the partitions in the collection.
 
-- `err` error of the creation process (if any), possible error list:
+- `err`: error in the process (if any). Possible errors are listed below:
 
-    - ErrClientNotReady, error stands for the client is not connected
+    - `ErrClientNotReady`, error that the client is not connected.
 
-    - ErrCollectionNotExists, error stands for collection of the specified name does not exist
+    - `ErrCollectionNotExists`, error that collection with the specified name does not exist.
 
-    - error fo API invocation failed 
+    - error that API invocation failed.
 
 ## Example
 

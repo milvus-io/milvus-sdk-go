@@ -1,28 +1,28 @@
 # Describe Index 
 
-API to describe index on vector field of a collection
+API to describe index on vector field of a collection.
 
 ## Params
 
-- `ctx` context.Context, context to control API invocation process;
-
-- `collName` string, the collection name to describe index on
-
-- `fieldName` string, the field name to describe index on 
+| Parameter    | Description                                                  | Type                     |
+| ------------ | ------------------------------------------------------------ | ------------------------ |
+| `ctx`        | Context to control API invocation process                    | context.Context          |
+| `collName`   | Name of the collection to describe index on                  | String                   |
+| `fieldName`  | Name of the field to describe index     on                   | String                   |
 
 ## Response
 
-- `indexes` slice of entity.Index, the indexes on the vector field specified
+- `indexes`: slice of entity.Index that specifies the indexes on the vector field.
 
-- `err` error of the creation process (if any), possible error list:
+- `err`: error in the process (if any). Possible errors are listed below:
 
-    - ErrClientNotReady, is the client is not connected
+    - `ErrClientNotReady`, error that the client is not connected.
 
-    - ErrCollectionNotExists, error stands for collection of the specified name does not exist
+    - `ErrCollectionNotExists`, error that collection with the specified name does not exist.
 
-    - error for field specified is not valid 
+    - error that the specified field is not valid.
     
-    - error fo API invocation failed 
+    - error that API invocation failed.
 
 ## Example
 
