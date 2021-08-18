@@ -4,14 +4,6 @@ API to load partitions by name.
 
 ## Params
 
-- `ctx` context.Context, context to control API invocation process;
-
-- `collName` string, collection name to load;
-
-- `paritionNames` slice of string, partition names to load;
-
-- `async` bool, switch value of the sync/async behavior, note that the deadline of context is not applied in sync load
-
 | Parameter    | Description                                                  | Type                     |
 | ------------ | ------------------------------------------------------------ | ------------------------ |
 | `ctx`        | Context to control API invocation process                    | context.Context          |
