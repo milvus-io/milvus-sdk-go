@@ -1,30 +1,31 @@
 # Get Index Build Progress 
 
-API to describe index building progress 
+API to describe index building progress.
 
 ## Params
 
-- `ctx` context.Context, context to control API invocation process;
+| Parameter    | Description                                                  | Type                     |
+| ------------ | ------------------------------------------------------------ | ------------------------ |
+| `ctx`        | Context to control API invocation process                    | context.Context          |
+| `collName`   | Name of the collection to describe index building progress   | String                   |
+| `fieldName`  | Name of the field to describe index building progress        | String                   |
 
-- `collName` string, the collection name to show
-
-- `fieldName` string, the field name to check index building progress
 
 ## Response
 
-- `total` int64, total records count to build index on
+- `total`: INT64 number that describes the total records count to build index on.
 
-- `index` int64, indexed records count
+- `index`: INT64 number that describe the indexed records count.
 
-- `err` error of the creation process (if any), possible error list:
+- `err`: error in the process (if any). Possible errors are listed below:
 
-    - ErrClientNotReady, is the client is not connected
+    - `ErrClientNotReady`, error that the client is not connected.
 
-    - ErrCollectionNotExists, error stands for collection of the specified name does not exist
+    - `ErrCollectionNotExists`, error that collection with the specified name does not exist.
 
-    - error for field specified is not valid 
+    - error that the specified field is not valid.
     
-    - error fo API invocation failed 
+    - error that API invocation failed.
 
 ## Example
 
