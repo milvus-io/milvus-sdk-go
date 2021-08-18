@@ -1,24 +1,24 @@
 # Drop Partition
 
-API to drop partition from collection by name
+API to drop partition from collection by name.
 
 ## Params
 
-- `ctx` context.Context, context to control API invocation process;
-
-- `collName` string, collection name of the partition
-
-- `partitionName` string, partition name to drop;
+| Parameter    | Description                                                  | Type                     |
+| ------------ | ------------------------------------------------------------ | ------------------------ |
+| `ctx`        | Context to control API invocation process                    | context.Context          |
+| `collName`   | Collection name to drop partition from                       | String                   |
+| `partitionName` | Name of the Partition to drop                             | String                   |
 
 ## Response
 
-- `err` error of the creation process (if any), possible error list:
+`err`: error in the process (if any). Possible errors are listed below:
 
-    - ErrClientNotReady, error stands for the client is not connected
+  - ErrClientNotReady, error stands for the client is not connected
 
-    - ErrCollectionNotExists, error stands for collection of the specified name does not exist
+  - ErrCollectionNotExists, error stands for collection of the specified name does not exist
 
-    - error fo API invocation failed 
+  - error fo API invocation failed 
 
 ## Example
 
