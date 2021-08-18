@@ -12,7 +12,7 @@ API to create collection according to the specified schema.
 
 ## Response
 
-`err` error in the creation process (if any). Possible errors are listed below:
+`err`: error in the creation process (if any). Possible errors are listed below:
 
   - `ErrClientNotReady`: error that the client is not connected.
 
