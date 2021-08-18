@@ -1,38 +1,34 @@
 # Search 
 
-API to search data with criteria provided
+API to search data with criteria provided.
 
 ## Params
 
-- `ctx` context.Context, context to control API invocation process;
+| Parameter    | Description                               | Type            |
+| ------------ | ----------------------------------------- | --------------- |
+| `ctx`        | Context to control API invocation process | context.Context |
+| `collName`   | Name of the collection to search          | String          |
+| `partitions` | Name of the collection to search. </br>If empty, all partition will be serched. | Slice of string |
+| `expr`       | Boolean expression to filter the data     | String          |
+| `outputFields` | The output fields                       | Slice of string |
+| `vectors`    | Vectors to search with                    | Slice of entity.Vector |
+| `metricType` | Metric type to calculate distance with    | entity.MetricType |
+| `topK`       | Number of nearest record to return        | INT             |
+| `sp`         | Specified search param that is related to the index type a vector field has | entity.SearchParam |
 
-- `collName` string, the collection name to search;
 
-- `partitions` slice of string, the partition names to search with, if empty, all partition will be used;
-
-- `expr` string, the bool expression to filter the data
-
-- `outputFields` slice of string, the output fields
-
-- `vectors` slice of entity.Vector, the vectors to search with
-
-- `metricType` entity.MetricType, the metric type to calculate distance with
-
-- `topK` int, the number of nearest record to return
-
-- `sp` entity.SearchParam, the specified search param, which is related to the index type vector field has
 
 ## Response
 
-- `results` slice of SearchResult, one record per vector, contains the search result; 
+- `results`: slice of SearchResult that contains the search result, one record per vector.
 
-- `err` error of the creation process (if any), possible error list:
+- `err`: error in the process (if any). Possible errors are listed below:
 
-    - ErrClientNotReady, is the client is not connected
+    - `ErrClientNotReady`, error that the client is not connected.
 
-    - ErrCollectionNotExists, error stands for collection of the specified name does not exist
+    - `ErrCollectionNotExists`, error that collection with the specified name does not exist.
 
-    - error fo API invocation failed 
+    - error that API invocation failed.
 
 ## Example
 
