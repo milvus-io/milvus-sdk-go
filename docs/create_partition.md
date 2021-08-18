@@ -8,7 +8,7 @@ API to create partition in a collection.
 | ------------ | ------------------------------------------------------------ | ------------------------ |
 | `ctx`        | Context to control API invocation process                    | context.Context          |
 | `collName`   | Collection name to create partition in                       | String                   |
-| `partitionName` | Partition name to create                                  | String                   |
+| `partitionName` | Name of the partition to create                           | String                   |
 
 
 
