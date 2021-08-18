@@ -4,12 +4,6 @@ API to drop index from vector field of a collection.
 
 ## Params
 
-- `ctx` context.Context, context to control API invocation process;
-
-- `collName` string, the collection name to drop index from
-
-- `fieldName` string, the field name to drop index from
-
 | Parameter    | Description                                                  | Type                     |
 | ------------ | ------------------------------------------------------------ | ------------------------ |
 | `ctx`        | Context to control API invocation process                    | context.Context          |
