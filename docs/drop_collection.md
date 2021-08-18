@@ -1,22 +1,23 @@
 # Drop Collection
 
-API to drop collection by name
+API to drop collection by name.
 
 ## Params
 
-- `ctx` context.Context, context to control API invocation process;
-
-- `name` string, collection name to drop;
+| Parameter    | Description                                                  | Type                     |
+| ------------ | ------------------------------------------------------------ | ------------------------ |
+| `ctx`        | Context to control API invocation process                    | context.Context          |
+| `name`       | Collection name to drop                                      | String                   |
 
 ## Response
 
-- `err` error of the creation process (if any), possible error list:
+`err`: error in the process (if any), possible errors are listed below:
 
-    - ErrClientNotReady, error stands for the client is not connected
+  - `ErrClientNotReady`, error that the client is not connected.
 
-    - ErrCollectionNotExists, error stands for collection of the specified name does not exist
+  - `ErrCollectionNotExists`, error that the collection with the specified name does not exist.
 
-    - error fo API invocation failed 
+  - error that API invocation failed.
 
 ## Example
 
