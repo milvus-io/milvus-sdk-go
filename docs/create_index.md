@@ -1,28 +1,29 @@
 # Create Index 
 
-API to create index on vector field of a collection
+API to create index on vector field of a collection.
 
 ## Params
 
-- `ctx` context.Context, context to control API invocation process;
+| Parameter    | Description                                                  | Type                     |
+| ------------ | ------------------------------------------------------------ | ------------------------ |
+| `ctx`        | Context to control API invocation process                    | context.Context          |
+| `collName`   | Name of the collection to build index on                     | String                   |
+| `fieldName`  | Name of the field to build index on                          | String                   |
+| `idx`        | Index definition structure                                   | entity.Index             |
+| `async`      | Switch value of the sync/async behavior. </br>Note: the deadline of context is not applied in sync creation precess. | Boolean |
 
-- `collName` string, the collection name to build index on 
 
-- `fieldName` string, the field name to build index on 
 
-- `idx` entity.Index, the index definition struct
-
-- `async` bool, switch value of the sync/async behavior, note that the deadline of context is not applied in sync create process
 
 ## Response
 
-- `err` error of the creation process (if any), possible error list:
+`err`: error in the process (if any). Possible errors are listed below:
 
-    - ErrClientNotReady, is the client is not connected
+  - `ErrClientNotReady`, error that the client is not connected.
 
-    - error for field specified is not valid 
+  - error that the specified field is not valid.
     
-    - error fo API invocation failed 
+  - error that API invocation failed.
 
 ## Example
 
