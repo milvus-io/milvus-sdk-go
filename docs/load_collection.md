@@ -1,24 +1,26 @@
 # Load Collection
 
-API to load collection by name
+API to load collection by name.
 
 ## Params
 
-- `ctx` context.Context, context to control API invocation process;
+| Parameter    | Description                                                  | Type                     |
+| ------------ | ------------------------------------------------------------ | ------------------------ |
+| `ctx`        | Context to control API invocation process                    | context.Context          |
+| `name`       | Name of the collection to load                               | String                   |
+| `async`      | Switch value of the sync/async behavior. </br>Note: the deadline of context is not applied in sync load. | Boolean |
 
-- `name` string, collection name to load;
 
-- `async` bool, switch value of the sync/async behavior, note that the deadline of context is not applied in sync load
 
 ## Response
 
-- `err` error of the creation process (if any), possible error list:
+`err`: error in the process (if any). Possible errors are listed below:
 
-    - ErrClientNotReady, error stands for the client is not connected
+  - `ErrClientNotReady`, error that the client is not connected.
 
-    - ErrCollectionNotExists, error stands for collection of the specified name does not exist
+  - `ErrCollectionNotExists`, error that the collection with the specified name does not exist.
 
-    - error fo API invocation failed 
+  - error that API invocation failed.
 
 ## Example
 
