@@ -14,7 +14,7 @@ API to describe index on vector field of a collection.
 
 - `indexes`: slice of entity.Index that specifies the indexes on the vector field.
 
-- `err` error in the process (if any). Possible errors are listed below:
+- `err`: error in the process (if any). Possible errors are listed below:
 
     - `ErrClientNotReady`, error that the client is not connected.
 
