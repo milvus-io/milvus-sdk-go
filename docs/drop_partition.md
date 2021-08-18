@@ -7,7 +7,7 @@ API to drop partition from collection by name.
 | Parameter    | Description                                                  | Type                     |
 | ------------ | ------------------------------------------------------------ | ------------------------ |
 | `ctx`        | Context to control API invocation process                    | context.Context          |
-| `collName`   | Collection name to drop partition from                       | String                   |
+| `collName`   | Name of the collection to drop partition from                | String                   |
 | `partitionName` | Name of the Partition to drop                             | String                   |
 
 ## Response
