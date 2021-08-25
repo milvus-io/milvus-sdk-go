@@ -54,7 +54,7 @@ Refer to [https://godoc.org/github.com/milvus-io/milvus-sdk-go/v2](https://godoc
 
 ### Examples
    
-See [examples](example/README.md) about how to use this package to communicate with Milvus
+See [examples](examples/README.md) about how to use this package to communicate with Milvus
 
 ## Code format
 
