@@ -45,7 +45,7 @@ func TestGrpcClientListCollections(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		mock.setInjection(mListCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		mock.setInjection(mShowCollections, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			s, err := successStatus()
 			resp := &server.ShowCollectionsResponse{
 				Status:          s,
@@ -293,56 +293,76 @@ func TestGrpcClientLoadCollection(t *testing.T) {
 	})
 	t.Run("Load collection sync", func(t *testing.T) {
 
-		segmentCount := rand.Intn(10) + 1
-		rowCounts := rand.Intn(20000) + 1
 		loadTime := rand.Intn(900) + 100 // in milli seconds, 100~1000 milliseconds
-		ok := false                      //### flag variable
+		passed := false                  //### flag variable
 		start := time.Now()
-
-		mock.setInjection(mGetPersistentSegmentInfo, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			s, err := successStatus()
-			r := &server.GetPersistentSegmentInfoResponse{
-				Status: s,
-				Infos:  make([]*server.PersistentSegmentInfo, 0, segmentCount),
-			}
-			for i := 0; i < segmentCount; i++ {
+		/*
+			mock.setInjection(mGetPersistentSegmentInfo, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+				s, err := successStatus()
+				r := &server.GetPersistentSegmentInfoResponse{
+					Status: s,
+					Infos:  make([]*server.PersistentSegmentInfo, 0, segmentCount),
+				}
+				for i := 0; i < segmentCount; i++ {
+					r.Infos = append(r.Infos, &server.PersistentSegmentInfo{
+						SegmentID: int64(i),
+						NumRows:   int64(rowCounts),
+					})
+				}
 				r.Infos = append(r.Infos, &server.PersistentSegmentInfo{
-					SegmentID: int64(i),
-					NumRows:   int64(rowCounts),
+					SegmentID: int64(segmentCount),
+					NumRows:   0, // handcrafted empty segment
 				})
-			}
-			r.Infos = append(r.Infos, &server.PersistentSegmentInfo{
-				SegmentID: int64(segmentCount),
-				NumRows:   0, // handcrafted empty segment
+				return r, err
 			})
-			return r, err
-		})
-		mock.setInjection(mGetQuerySegmentInfo, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			s, err := successStatus()
-			r := &server.GetQuerySegmentInfoResponse{
-				Status: s,
-				Infos:  make([]*server.QuerySegmentInfo, 0, segmentCount),
-			}
-			rc := 0
-			if time.Since(start) > time.Duration(loadTime)*time.Millisecond {
-				rc = rowCounts // after load time, row counts set to full amount
-				ok = true
-			}
-			for i := 0; i < segmentCount; i++ {
-				r.Infos = append(r.Infos, &server.QuerySegmentInfo{
-					SegmentID: int64(i),
-					NumRows:   int64(rc),
-				})
-			}
-			return r, err
-		})
+			mock.setInjection(mGetQuerySegmentInfo, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+				s, err := successStatus()
+				r := &server.GetQuerySegmentInfoResponse{
+					Status: s,
+					Infos:  make([]*server.QuerySegmentInfo, 0, segmentCount),
+				}
+				rc := 0
+				if time.Since(start) > time.Duration(loadTime)*time.Millisecond {
+					rc = rowCounts // after load time, row counts set to full amount
+					ok = true
+				}
+				for i := 0; i < segmentCount; i++ {
+					r.Infos = append(r.Infos, &server.QuerySegmentInfo{
+						SegmentID: int64(i),
+						NumRows:   int64(rc),
+					})
+				}
+				return r, err
+			})*/
 
+		mock.setInjection(mShowCollections, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+			req, ok := raw.(*server.ShowCollectionsRequest)
+			r := &server.ShowCollectionsResponse{}
+			if !ok || req == nil {
+				s, err := badRequestStatus()
+				r.Status = s
+				return r, err
+			}
+			s, err := successStatus()
+			r.Status = s
+			r.CollectionIds = []int64{1}
+			var perc int64 = 0
+			if time.Since(start) > time.Duration(loadTime)*time.Millisecond {
+				perc = 100
+				passed = true
+			}
+			r.InMemoryPercentages = []int64{perc}
+			return r, err
+		})
 		assert.Nil(t, c.LoadCollection(ctx, testCollectionName, false))
-		assert.True(t, ok)
+		assert.True(t, passed)
 
 		// remove injection
-		mock.delInjection(mGetPersistentSegmentInfo)
-		mock.delInjection(mGetQuerySegmentInfo)
+		/*
+			mock.delInjection(mGetPersistentSegmentInfo)
+			mock.delInjection(mGetQuerySegmentInfo)
+		*/
+		mock.delInjection(mShowCollections)
 	})
 }
 

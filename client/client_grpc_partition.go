@@ -124,7 +124,8 @@ func (c *grpcClient) ShowPartitions(ctx context.Context, collName string) ([]*en
 	}
 	partitions := make([]*entity.Partition, 0, len(resp.GetPartitionIDs()))
 	for idx, partitionID := range resp.GetPartitionIDs() {
-		partitions = append(partitions, &entity.Partition{ID: partitionID, Name: resp.GetPartitionNames()[idx]})
+		partitions = append(partitions, &entity.Partition{ID: partitionID, Name: resp.GetPartitionNames()[idx],
+			Loaded: resp.GetInMemoryPercentages()[idx] == 100})
 	}
 	return partitions, nil
 }
@@ -171,31 +172,29 @@ func (c *grpcClient) LoadPartitions(ctx context.Context, collName string, partit
 	}
 
 	if !async {
-		segments, _ := c.GetPersistentSegmentInfo(ctx, collName)
-		target := make(map[int64]*entity.Segment)
-		for _, segment := range segments {
-			if segment.NumRows == 0 {
-				continue
+		for {
+			partitions, err := c.ShowPartitions(ctx, collName)
+			if err != nil {
+				return err
 			}
-			if _, has := ids[segment.ParititionID]; !has {
-				// segment not belongs to partition
-				continue
-			}
-			target[segment.ID] = segment
-		}
-		for len(target) > 0 {
-			current, err := c.GetQuerySegmentInfo(ctx, collName)
-			if err == nil {
-				for _, segment := range current {
-					ts, has := target[segment.ID]
-					if has {
-						if segment.NumRows >= ts.NumRows {
-							delete(target, segment.ID)
-						}
-					}
+			foundLoading := false
+			loaded := 0
+			for _, partition := range partitions {
+				if _, has := ids[partition.ID]; !has {
+					continue
 				}
+				if !partition.Loaded {
+					//Not loaded
+					foundLoading = true
+					break
+				}
+				loaded++
 			}
-			time.Sleep(time.Millisecond * 100)
+			if foundLoading || loaded < len(partitionNames) {
+				time.Sleep(time.Millisecond * 100)
+				continue
+			}
+			break
 		}
 	}
 

@@ -53,7 +53,7 @@ func TestGrpcClientInsert(t *testing.T) {
 		assert.NotNil(t, err)
 
 		// column len not match
-		ids, err = c.Insert(ctx, testCollectionName, "", entity.NewColumnInt64("int64", []int64{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}),
+		ids, err = c.Insert(ctx, testCollectionName, "", entity.NewColumnInt64("int64", []int64{1, 2, 3, 4, 5, 6, 7, 8, 9}),
 			entity.NewColumnFloatVector(testVectorField, testVectorDim, vectors))
 		assert.Nil(t, ids)
 		assert.NotNil(t, err)
@@ -99,8 +99,8 @@ func TestGrpcClientInsert(t *testing.T) {
 	})
 	_, err := c.Insert(ctx, testCollectionName, "", // use default partition
 		entity.NewColumnFloatVector(testVectorField, testVectorDim, vector))
-
 	assert.Nil(t, err)
+	mock.delInjection(mInsert)
 }
 
 func TestGrpcClientFlush(t *testing.T) {

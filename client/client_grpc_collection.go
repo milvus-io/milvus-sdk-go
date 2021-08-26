@@ -290,6 +290,36 @@ func (c *grpcClient) GetCollectionStatistics(ctx context.Context, collName strin
 	return entity.KvPairsMap(resp.GetStats()), nil
 }
 
+// ShowCollection show collection status, used to check whether it is loaded or not
+func (c *grpcClient) ShowCollection(ctx context.Context, collName string) (*entity.Collection, error) {
+	if c.service == nil {
+		return nil, ErrClientNotReady
+	}
+	if err := c.checkCollectionExists(ctx, collName); err != nil {
+		return nil, err
+	}
+
+	req := &server.ShowCollectionsRequest{
+		Type:            server.ShowType_InMemory,
+		CollectionNames: []string{collName},
+	}
+
+	resp, err := c.service.ShowCollections(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	if err := handleRespStatus(resp.GetStatus()); err != nil {
+		return nil, err
+	}
+
+	if len(resp.CollectionIds) != 1 || len(resp.InMemoryPercentages) != 1 {
+		return nil, errors.New("response len not valid")
+	}
+	return &entity.Collection{
+		Loaded: resp.InMemoryPercentages[0] == 100, // TODO silverxia, the percentage can be either 0 or 100
+	}, nil
+}
+
 // LoadCollection load collection into memory
 func (c *grpcClient) LoadCollection(ctx context.Context, collName string, async bool) error {
 	if c.service == nil {
@@ -312,27 +342,15 @@ func (c *grpcClient) LoadCollection(ctx context.Context, collName string, async 
 	}
 
 	if !async {
-		segments, _ := c.GetPersistentSegmentInfo(ctx, collName)
-		target := make(map[int64]*entity.Segment)
-		for _, segment := range segments {
-			if segment.NumRows == 0 {
-				continue
+		for {
+			coll, err := c.ShowCollection(ctx, collName)
+			if err != nil {
+				return err
 			}
-			target[segment.ID] = segment
-		}
-		for len(target) > 0 {
-			current, err := c.GetQuerySegmentInfo(ctx, collName)
-			if err == nil {
-				for _, segment := range current {
-					ts, has := target[segment.ID]
-					if has {
-						if segment.NumRows >= ts.NumRows {
-							delete(target, segment.ID)
-						}
-					}
-				}
+			if coll.Loaded {
+				break
 			}
-			time.Sleep(time.Millisecond * 100)
+			time.Sleep(100 * time.Millisecond) // TODO change to configuration
 		}
 	}
 	return nil
