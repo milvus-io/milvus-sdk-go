@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/rand"
 	"testing"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
+	"github.com/milvus-io/milvus-sdk-go/v2/internal/proto/common"
 	"github.com/milvus-io/milvus-sdk-go/v2/internal/proto/server"
 	"github.com/stretchr/testify/assert"
 )
@@ -108,6 +110,7 @@ func getPartitionsInterception(t *testing.T, collName string, partitions ...*ent
 		for _, part := range partitions {
 			resp.PartitionIDs = append(resp.PartitionIDs, part.ID)
 			resp.PartitionNames = append(resp.PartitionNames, part.Name)
+			resp.InMemoryPercentages = append(resp.InMemoryPercentages, 100)
 		}
 		s, err := successStatus()
 		resp.Status = s
@@ -218,60 +221,83 @@ func TestGrpcClientLoadPartitions(t *testing.T) {
 	}
 	for _, tc := range cases {
 		// one segment per paritions
-		segmentCount := len(tc.partitions)
 		start := time.Now()
 		loadTime := rand.Intn(1500) + 100
-		rowCounts := rand.Intn(1000) + 100
-		ok := false
-		mock.setInjection(mGetPersistentSegmentInfo, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		loaded := false
+		mock.setInjection(mShowPartitions, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
+			req, ok := raw.(*server.ShowPartitionsRequest)
+			resp := &server.ShowPartitionsResponse{}
+			if !ok {
+				s, err := badRequestStatus()
+				resp.Status = s
+				return resp, err
+			}
+			assert.Equal(t, testCollectionName, req.GetCollectionName())
+			resp.PartitionIDs = make([]int64, 0, len(tc.loadNames))
+			resp.PartitionNames = make([]string, 0, len(tc.loadNames))
+			var perc int64 = 0
+			if time.Since(start) > time.Duration(loadTime*int(time.Millisecond)) {
+				perc = 100
+				loaded = true
+			}
+			for _, part := range tc.partitions {
+				resp.PartitionIDs = append(resp.PartitionIDs, part.ID)
+				resp.PartitionNames = append(resp.PartitionNames, part.Name)
+				resp.InMemoryPercentages = append(resp.InMemoryPercentages, perc)
+			}
 			s, err := successStatus()
-			r := &server.GetPersistentSegmentInfoResponse{
-				Status: s,
-				Infos:  make([]*server.PersistentSegmentInfo, 0, segmentCount),
-			}
-			for i := 0; i < segmentCount; i++ {
-				r.Infos = append(r.Infos, &server.PersistentSegmentInfo{
-					SegmentID:   int64(i),
-					NumRows:     int64(rowCounts),
-					PartitionID: tc.partitions[i].ID,
-				})
-			}
-			r.Infos = append(r.Infos, &server.PersistentSegmentInfo{
-				SegmentID: int64(segmentCount),
-				NumRows:   0, // handcrafted empty segment
-			})
-			return r, err
-		})
-		mock.setInjection(mGetQuerySegmentInfo, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			s, err := successStatus()
-			r := &server.GetQuerySegmentInfoResponse{
-				Status: s,
-				Infos:  make([]*server.QuerySegmentInfo, 0, segmentCount),
-			}
-			rc := 0
-			if time.Since(start) > time.Duration(loadTime)*time.Millisecond {
-				rc = rowCounts // after load time, row counts set to full amount
-				ok = true
-			}
-			for i := 0; i < segmentCount; i++ {
-				r.Infos = append(r.Infos, &server.QuerySegmentInfo{
-					SegmentID:   int64(i),
-					NumRows:     int64(rc),
-					PartitionID: tc.partitions[i].ID,
-				})
-			}
-			return r, err
+			resp.Status = s
+			return resp, err
 		})
 
-		mock.setInjection(mShowPartitions, getPartitionsInterception(t, tc.collName, tc.partitions...))
 		err := c.LoadPartitions(ctx, tc.collName, tc.loadNames, false)
 		if tc.shouldSuccess {
 			assert.Nil(t, err)
-			assert.True(t, ok)
+			assert.True(t, loaded)
 		} else {
 			assert.NotNil(t, err)
 		}
 	}
+
+	t.Run("some service failed", func(t *testing.T) {
+		tc := &testCase{
+			collName: testCollectionName,
+			partitions: []*entity.Partition{
+				{
+					ID:   1,
+					Name: "_part1",
+				},
+				{
+					ID:   2,
+					Name: "_part2",
+				},
+				{
+					ID:   3,
+					Name: "_part3",
+				},
+			},
+			loadNames: []string{"_part1", "_part2"},
+		}
+		mock.setInjection(mShowPartitions, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+			return &server.ShowPartitionsResponse{}, errors.New("always fail")
+		})
+
+		err := c.LoadPartitions(ctx, tc.collName, tc.loadNames, false)
+		assert.NotNil(t, err)
+
+		mock.setInjection(mLoadPartitions, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+			return &common.Status{}, errors.New("has partition failed")
+		})
+		err = c.LoadPartitions(ctx, tc.collName, tc.loadNames, false)
+		assert.NotNil(t, err)
+
+		mock.setInjection(mHasPartition, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+			return &server.BoolResponse{}, errors.New("has partition failed")
+		})
+		err = c.LoadPartitions(ctx, tc.collName, tc.loadNames, false)
+		assert.NotNil(t, err)
+
+	})
 }
 
 func TestGrpcClientReleasePartitions(t *testing.T) {
@@ -281,6 +307,7 @@ func TestGrpcClientReleasePartitions(t *testing.T) {
 
 	parts := []string{"_part1", "_part2"}
 	mock.setInjection(mHasCollection, hasCollectionDefault)
+	mock.setInjection(mHasPartition, hasPartitionInjection(t, testCollectionName, true, "_part1", "_part2", "_part3", "_part4"))
 	mock.setInjection(mReleasePartitions, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 		req, ok := raw.(*server.ReleasePartitionsRequest)
 		if !ok {

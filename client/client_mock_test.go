@@ -109,6 +109,7 @@ const (
 	mDescribeCollection      serviceMethod = 6
 	mListCollection          serviceMethod = 7
 	mGetCollectionStatistics serviceMethod = 8
+	mShowCollections         serviceMethod = 15
 
 	mCreatePartition   serviceMethod = 9
 	mDropPartition     serviceMethod = 10
@@ -239,7 +240,7 @@ func (m *mockServer) GetCollectionStatistics(ctx context.Context, req *server.Ge
 }
 
 func (m *mockServer) ShowCollections(ctx context.Context, req *server.ShowCollectionsRequest) (*server.ShowCollectionsResponse, error) {
-	f := m.getInjection(mListCollection)
+	f := m.getInjection(mShowCollections)
 	if f != nil {
 		r, err := f(ctx, req)
 		return r.(*server.ShowCollectionsResponse), err

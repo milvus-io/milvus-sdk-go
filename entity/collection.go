@@ -19,10 +19,12 @@ type Collection struct {
 	Schema           *Schema // collection schema, with fields schema and primary key definition
 	PhysicalChannels []string
 	VirtualChannels  []string
+	Loaded           bool
 }
 
 // Partition represent partition meta in Milvus
 type Partition struct {
-	ID   int64  // paritition id
-	Name string // parition name
+	ID     int64  // paritition id
+	Name   string // parition name
+	Loaded bool   // partition loaded
 }
