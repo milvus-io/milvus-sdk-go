@@ -2,16 +2,20 @@
 
 set -e
 
-SOURCE="${BASH_SOURCE[0]}"
-while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
-  DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
-  SOURCE="$(readlink "$SOURCE")"
-  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
+echo "" > coverage.project.out
+
+for d in $(go list ./... | grep -v vendor/examples/tests); do
+    if [[ "$d" == *examples*  ]]; then
+        continue
+    fi
+    if [[ "$d" == *tests* ]]; then
+        continue
+    fi
+    echo $d
+    go test -race -coverprofile=coverage.out -covermode=atomic "$d"
+    if [[ -f coverage.out ]]; then
+        cat coverage.out >> coverage.project.out
+        rm coverage.out
+    fi
 done
-ROOT_DIR="$( cd -P "$( dirname "$SOURCE" )/.." && pwd )"
 
-MILVUS_SDK_DIR="${ROOT_DIR}"
-echo $MILVUS_SDK_DIR
-
-go test -race -cover "${MILVUS_SDK_DIR}/client/..." -failfast -v
-go test -race -cover "${MILVUS_SDK_DIR}/entity/..." -failfast -v
