@@ -25,7 +25,14 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
-
       # Runs a single command using the runners shell
       - name: Run Unittest
         run: make test-go
+      - name: Upload coverage to Codecov
+        if: github.repository == 'milvus-io/milvus-sdk-go'
+        uses: codecov/codecov-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }} 
+          file: ./coverage.project.out
+          name: ubuntu-${{ matrix.ubuntu }}-unittests
+
