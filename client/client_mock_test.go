@@ -379,10 +379,6 @@ func (m *mockServer) Search(ctx context.Context, req *server.SearchRequest) (*se
 	return &server.SearchResults{Status: s}, err
 }
 
-func (m *mockServer) Retrieve(_ context.Context, _ *server.RetrieveRequest) (*server.RetrieveResults, error) {
-	panic("not implemented") // TODO: Implement
-}
-
 func (m *mockServer) Flush(ctx context.Context, req *server.FlushRequest) (*server.FlushResponse, error) {
 	f := m.getInjection(mFlush)
 	if f != nil {
@@ -436,4 +432,13 @@ func (m *mockServer) CalcDistance(ctx context.Context, req *server.CalcDistanceR
 	s, err := successStatus()
 	resp.Status = s
 	return resp, err
+}
+
+func (m *mockServer) Delete(_ context.Context, _ *server.DeleteRequest) (*server.MutationResult, error) {
+	panic("not implemented") // TODO: Implement
+}
+
+// https://wiki.lfaidata.foundation/display/MIL/MEP+8+--+Add+metrics+for+proxy
+func (m *mockServer) GetMetrics(_ context.Context, _ *server.GetMetricsRequest) (*server.GetMetricsResponse, error) {
+	panic("not implemented") // TODO: Implement
 }
