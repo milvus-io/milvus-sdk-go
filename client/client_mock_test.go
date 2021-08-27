@@ -93,6 +93,18 @@ func defaultSchema() *entity.Schema {
 	}
 }
 
+var _ entity.Row = &defaultRow{}
+
+type defaultRow struct {
+	entity.RowBase
+	int64  int64     `milvus:"primary_key"`
+	Vector []float32 `milvus:"dim:128"`
+}
+
+func (r defaultRow) Collection() string {
+	return testCollectionName
+}
+
 var (
 	errNotImplemented = errors.New("not implemented")
 )

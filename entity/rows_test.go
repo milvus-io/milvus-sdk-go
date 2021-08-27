@@ -125,9 +125,6 @@ func TestParseSchema(t *testing.T) {
 		assert.Nil(t, err)
 		assert.NotNil(t, sch)
 		assert.Equal(t, "ValidStruct", sch.CollectionName)
-		for _, f := range sch.Fields {
-			t.Logf("%#v", f)
-		}
 
 		type ValidByteStruct struct {
 			RowBase
@@ -138,9 +135,6 @@ func TestParseSchema(t *testing.T) {
 		sch, err = ParseSchema(vs2)
 		assert.Nil(t, err)
 		assert.NotNil(t, sch)
-		for _, f := range sch.Fields {
-			t.Logf("%#v", f)
-		}
 
 		type ValidArrayStruct struct {
 			RowBase
@@ -151,9 +145,6 @@ func TestParseSchema(t *testing.T) {
 		sch, err = ParseSchema(vs3)
 		assert.Nil(t, err)
 		assert.NotNil(t, sch)
-		for _, f := range sch.Fields {
-			t.Logf("%#v", f)
-		}
 
 		type ValidArrayStructByte struct {
 			RowBase
@@ -165,9 +156,23 @@ func TestParseSchema(t *testing.T) {
 		sch, err = ParseSchema(vs4)
 		assert.Nil(t, err)
 		assert.NotNil(t, sch)
-		for _, f := range sch.Fields {
-			t.Logf("%#v", f)
+
+		vs5 := &ValidStructWithNamedTag{}
+		sch, err = ParseSchema(vs5)
+		assert.Nil(t, err)
+		assert.NotNil(t, sch)
+		i64f, vecf := false, false
+		for _, field := range sch.Fields {
+			if field.Name == "id" {
+				i64f = true
+			}
+			if field.Name == "vector" {
+				vecf = true
+			}
 		}
+
+		assert.True(t, i64f)
+		assert.True(t, vecf)
 	})
 }
 
@@ -190,6 +195,11 @@ type ValidStruct2 struct {
 	Vector  [16]float32
 	Vector2 [4]byte
 }
+type ValidStructWithNamedTag struct {
+	RowBase
+	ID     int64       `milvus:"primary_key;name:id"`
+	Vector [16]float32 `milvus:"name:vector"`
+}
 
 func TestRowsToColumns(t *testing.T) {
 	t.Run("valid cases", func(t *testing.T) {
@@ -201,13 +211,27 @@ func TestRowsToColumns(t *testing.T) {
 		columns, err = RowsToColumns([]Row{&ValidStruct2{}})
 		assert.Nil(t, err)
 		assert.Equal(t, 3, len(columns))
+
 	})
 
 	t.Run("invalid cases", func(t *testing.T) {
+		// empty input
 		_, err := RowsToColumns([]Row{})
 		assert.NotNil(t, err)
 
+		// incompatible rows
 		_, err = RowsToColumns([]Row{&ValidStruct{}, &ValidStruct2{}})
+		assert.NotNil(t, err)
+
+		// schema & row not compatible
+		_, err = RowsToColumns([]Row{&ValidStruct{}}, &Schema{
+			Fields: []*Field{
+				{
+					Name:     "int64",
+					DataType: FieldTypeInt64,
+				},
+			},
+		})
 		assert.NotNil(t, err)
 	})
 }
