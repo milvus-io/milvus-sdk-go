@@ -85,6 +85,109 @@ func TestCreateCollectionByRow(t *testing.T) {
 	})
 }
 
+func TestInsertByRows(t *testing.T) {
+	ctx := context.Background()
+
+	c := testClient(ctx, t)
+
+	t.Run("test create failure due to meta", func(t *testing.T) {
+		mock.delInjection(mHasCollection) // collection does not exist
+		ids, err := c.InsertByRows(ctx, testCollectionName, "", []entity.Row{})
+		assert.Nil(t, ids)
+		assert.NotNil(t, err)
+
+		// partition not exists
+		mock.setInjection(mHasCollection, hasCollectionDefault)
+		ids, err = c.InsertByRows(ctx, testCollectionName, "_part_not_exists", []entity.Row{})
+		assert.Nil(t, ids)
+		assert.NotNil(t, err)
+
+		// field not in collection
+		mock.setInjection(mDescribeCollection, describeCollectionInjection(t, 0, testCollectionName, defaultSchema()))
+		type ExtraFieldRow struct {
+			entity.RowBase
+			Int64      int64 `milvus:"primary_key"`
+			ExtraField float64
+			Vector     []float32 `milvus:"dim:128"`
+		}
+		ids, err = c.InsertByRows(ctx, testCollectionName, "", []entity.Row{&ExtraFieldRow{}})
+		assert.Nil(t, ids)
+		assert.NotNil(t, err)
+
+		// field type not match
+		mock.setInjection(mDescribeCollection, describeCollectionInjection(t, 0, testCollectionName, defaultSchema()))
+		type OtherFieldRow struct {
+			entity.RowBase
+			Int64  int32     `milvus:"primary_key;name:int64"`
+			Vector []float32 `milvus:"dim:128;name:vector"`
+		}
+		ids, err = c.InsertByRows(ctx, testCollectionName, "", []entity.Row{
+			&OtherFieldRow{},
+		})
+		assert.Nil(t, ids)
+		assert.NotNil(t, err)
+
+		// missing field
+		type MissingFieldRow struct {
+			entity.RowBase
+			Vector []float32 `milvus:"dim:128;name:vector"`
+		}
+		ids, err = c.InsertByRows(ctx, testCollectionName, "", []entity.Row{
+			&MissingFieldRow{},
+		})
+		assert.Nil(t, ids)
+		assert.NotNil(t, err)
+		t.Log(err.Error())
+
+		// column len not match, not equvilant case in row based api
+
+		// dim not match
+		type Dim2Row struct {
+			entity.RowBase
+			Int64  int64     `milvus:"primary_key;name:int64"`
+			Vector []float32 `milvus:"dim:16;name:vector"`
+		}
+		ids, err = c.InsertByRows(ctx, testCollectionName, "", []entity.Row{
+			&Dim2Row{},
+		})
+		assert.Nil(t, ids)
+		assert.NotNil(t, err)
+		t.Log(err.Error())
+	})
+
+	mock.setInjection(mHasCollection, hasCollectionDefault)
+	mock.setInjection(mDescribeCollection, describeCollectionInjection(t, 0, testCollectionName, defaultSchema()))
+
+	vector := generateFloatVector(4096, testVectorDim)
+	mock.setInjection(mInsert, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		req, ok := raw.(*server.InsertRequest)
+		resp := &server.MutationResult{}
+		if !ok {
+			s, err := badRequestStatus()
+			resp.Status = s
+			return resp, err
+		}
+		assert.EqualValues(t, 4096, req.GetNumRows())
+		assert.Equal(t, testCollectionName, req.GetCollectionName())
+		intIds := &schema.IDs_IntId{
+			IntId: &schema.LongArray{
+				Data: make([]int64, 4096),
+			},
+		}
+		resp.IDs = &schema.IDs{
+			IdField: intIds,
+		}
+		s, err := successStatus()
+		resp.Status = s
+		return resp, err
+	})
+	_, err := c.Insert(ctx, testCollectionName, "", // use default partition
+		entity.NewColumnFloatVector(testVectorField, testVectorDim, vector))
+
+	assert.Nil(t, err)
+
+}
+
 func TestSearchResultToRows(t *testing.T) {
 	t.Run("successful test cases", func(t *testing.T) {
 		sr := &schema.SearchResultData{

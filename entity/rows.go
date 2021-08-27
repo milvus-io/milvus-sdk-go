@@ -27,8 +27,17 @@ const (
 	// MilvusTagSep struct tag const for attribute separator
 	MilvusTagSep = `;`
 
+	//MilvusTagName struct tag const for field name
+	MilvusTagName = `NAME`
+
 	// VectorDimTag struct tag const for vector dimension
 	VectorDimTag = `DIM`
+
+	// MilvusPrimaryKey struct tag const for primary key indicator
+	MilvusPrimaryKey = `PRIMARY_KEY`
+
+	// MilvusAutoID struct tag const for auto id indicator
+	MilvusAutoID = `AUTO_ID`
 
 	// DimMax dimension max value
 	DimMax = 65535
@@ -99,11 +108,14 @@ func ParseSchema(r Row) (*Schema, error) {
 		}
 		fv := reflect.New(ft)
 		tagSettings := ParseTagSetting(f.Tag.Get(MilvusTag), MilvusTagSep)
-		if _, has := tagSettings["PRIMARY_KEY"]; has {
+		if _, has := tagSettings[MilvusPrimaryKey]; has {
 			field.PrimaryKey = true
 		}
-		if _, has := tagSettings["AUTO_ID"]; has {
+		if _, has := tagSettings[MilvusAutoID]; has {
 			field.AutoID = true
+		}
+		if name, has := tagSettings[MilvusTagName]; has {
+			field.Name = name
 		}
 		switch reflect.Indirect(fv).Kind() {
 		case reflect.Bool:
@@ -206,12 +218,21 @@ func ParseTagSetting(str string, sep string) map[string]string {
 }
 
 // RowsToColumns rows to columns
-func RowsToColumns(rows []Row) ([]Column, error) {
+func RowsToColumns(rows []Row, schemas ...*Schema) ([]Column, error) {
 	rowsLen := len(rows)
 	if rowsLen == 0 {
 		return []Column{}, errors.New("0 length column")
 	}
-	sch, err := ParseSchema(rows[0])
+
+	var sch *Schema
+	var err error
+	// if schema not provided, try to parse from row
+	if len(schemas) == 0 {
+		sch, err = ParseSchema(rows[0])
+	} else {
+		// use first schema provided
+		sch = schemas[0]
+	}
 	if err != nil {
 		return []Column{}, err
 	}
@@ -277,26 +298,19 @@ func RowsToColumns(rows []Row) ([]Column, error) {
 		}
 	}
 	for _, row := range rows {
-		s, err := ParseSchema(row)
-		if err != nil {
-			return []Column{}, err
-		}
-
-		if sch.CollectionName != s.CollectionName {
-			return []Column{}, errors.New("rows of diferent type is not valid")
-		}
+		// collection schema name need not to be same, since receiver could has other names
 		v := reflect.ValueOf(row)
 		if v.Kind() == reflect.Ptr {
 			v = v.Elem()
 		}
 
-		for _, field := range sch.Fields {
-			column, has := nameColumns[field.Name]
-			if has {
+		for idx, field := range sch.Fields {
+			column := nameColumns[field.Name]
 
+			fv := fieldFromNameTag(v, field.Name)
+			if !fv.IsValid() {
+				return []Column{}, fmt.Errorf("row %d does not has field %s", idx, field.Name)
 			}
-
-			fv := v.FieldByName(field.Name)
 			if fv.Kind() == reflect.Array { // change to slice
 				fv = fv.Slice(0, fv.Len()-1)
 			}
@@ -312,4 +326,21 @@ func RowsToColumns(rows []Row) ([]Column, error) {
 		columns = append(columns, column)
 	}
 	return columns, nil
+}
+
+func fieldFromNameTag(v reflect.Value, name string) reflect.Value {
+	// tag has higher priority
+	for i := 0; i < v.NumField(); i++ {
+		tag := v.Type().Field(i).Tag.Get(MilvusTag)
+		if tag == "" {
+			continue
+		}
+		settings := ParseTagSetting(tag, MilvusTagSep)
+		fn, has := settings[MilvusTagName]
+		if has && fn == name {
+			return v.Field(i)
+		}
+	}
+	// try use name directly
+	return v.FieldByName(name)
 }

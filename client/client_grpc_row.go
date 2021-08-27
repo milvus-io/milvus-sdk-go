@@ -57,6 +57,49 @@ func (c *grpcClient) CreateCollectionByRow(ctx context.Context, row entity.Row, 
 	return nil
 }
 
+// InsertByRows insert by rows
+func (c *grpcClient) InsertByRows(ctx context.Context, collName string, partitionName string,
+	rows []entity.Row) (entity.Column, error) {
+	if c.service == nil {
+		return nil, ErrClientNotReady
+	}
+	if len(rows) == 0 {
+		return nil, errors.New("empty rows provided")
+	}
+
+	coll, err := c.DescribeCollection(ctx, collName)
+	if err != nil {
+		return nil, err
+	}
+	// 1. convert rows to columns
+	columns, err := entity.RowsToColumns(rows, coll.Schema)
+	if err != nil {
+		return nil, err
+	}
+	// 2. do insert request
+	req := &server.InsertRequest{
+		DbName:         "", // reserved
+		CollectionName: collName,
+		PartitionName:  partitionName,
+	}
+	if req.PartitionName == "" {
+		req.PartitionName = "_default" // use default partition
+	}
+	req.NumRows = uint32(len(rows))
+	for _, column := range columns {
+		req.FieldsData = append(req.FieldsData, column.FieldData())
+	}
+	resp, err := c.service.Insert(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	if err := handleRespStatus(resp.GetStatus()); err != nil {
+		return nil, err
+	}
+	// 3. parse id column
+	return entity.IDColumns(resp.GetIDs(), 0, -1)
+}
+
 // SearchResultByRows search result for row-based Search
 type SearchResultByRows struct {
 	ResultCount int
