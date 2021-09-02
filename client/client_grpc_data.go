@@ -139,7 +139,6 @@ func (c *grpcClient) Flush(ctx context.Context, collName string, async bool) err
 	if err := handleRespStatus(resp.GetStatus()); err != nil {
 		return err
 	}
-	//TODO silverxia, add context done respect logic while waiting
 	if !async {
 		segmentIDs, has := resp.GetCollSegIDs()[collName]
 		if has {
@@ -165,7 +164,13 @@ func (c *grpcClient) Flush(ctx context.Context, collName string, async bool) err
 				return len(waitingSet) == flushed
 			}
 			for !flushed() {
-				time.Sleep(500 * time.Millisecond)
+				// respect context deadline/cancel
+				select {
+				case <-ctx.Done():
+					return errors.New("deadline exceeded")
+				default:
+				}
+				time.Sleep(200 * time.Millisecond)
 			}
 		}
 	}

@@ -278,6 +278,33 @@ func TestGrpcClientLoadPartitions(t *testing.T) {
 			},
 			loadNames: []string{"_part1", "_part2"},
 		}
+
+		// paritions will not be loaded
+		mock.setInjection(mShowPartitions, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
+			req, ok := raw.(*server.ShowPartitionsRequest)
+			resp := &server.ShowPartitionsResponse{}
+			if !ok {
+				s, err := badRequestStatus()
+				resp.Status = s
+				return resp, err
+			}
+			assert.Equal(t, testCollectionName, req.GetCollectionName())
+			resp.PartitionIDs = make([]int64, 0, len(tc.loadNames))
+			resp.PartitionNames = make([]string, 0, len(tc.loadNames))
+			var perc int64 = 0
+			for _, part := range tc.partitions {
+				resp.PartitionIDs = append(resp.PartitionIDs, part.ID)
+				resp.PartitionNames = append(resp.PartitionNames, part.Name)
+				resp.InMemoryPercentages = append(resp.InMemoryPercentages, perc)
+			}
+			s, err := successStatus()
+			resp.Status = s
+			return resp, err
+		})
+		quickCtx, cancel := context.WithTimeout(ctx, 10*time.Millisecond)
+		defer cancel()
+		assert.NotNil(t, c.LoadPartitions(quickCtx, tc.collName, tc.loadNames, false))
+
 		mock.setInjection(mShowPartitions, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			return &server.ShowPartitionsResponse{}, errors.New("always fail")
 		})
