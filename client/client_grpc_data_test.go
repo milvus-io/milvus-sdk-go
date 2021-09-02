@@ -120,8 +120,8 @@ func TestGrpcClientFlush(t *testing.T) {
 		for i := 0; i < segCount; i++ {
 			segments = append(segments, rand.Int63())
 		}
-		// 500ms ~ 2s
-		flushTime := 500 + rand.Intn(1500)
+		// 510ms ~ 2s
+		flushTime := 510 + rand.Intn(1500)
 		start := time.Now()
 		flag := false
 		mock.setInjection(mFlush, func(_ context.Context, raw proto.Message) (proto.Message, error) {
@@ -172,6 +172,12 @@ func TestGrpcClientFlush(t *testing.T) {
 		})
 		assert.Nil(t, c.Flush(ctx, testCollectionName, false))
 		assert.True(t, flag)
+
+		start = time.Now()
+		flag = false
+		quickCtx, cancel := context.WithTimeout(ctx, 10*time.Millisecond)
+		defer cancel()
+		assert.NotNil(t, c.Flush(quickCtx, testCollectionName, false))
 	})
 }
 

@@ -173,6 +173,11 @@ func (c *grpcClient) LoadPartitions(ctx context.Context, collName string, partit
 
 	if !async {
 		for {
+			select {
+			case <-ctx.Done():
+				return errors.New("context deadline exceeded")
+			default:
+			}
 			partitions, err := c.ShowPartitions(ctx, collName)
 			if err != nil {
 				return err

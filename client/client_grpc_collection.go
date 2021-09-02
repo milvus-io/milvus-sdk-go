@@ -261,8 +261,8 @@ func (c *grpcClient) HasCollection(ctx context.Context, collName string) (bool, 
 	if err != nil {
 		return false, err
 	}
-	if resp.Status.ErrorCode != common.ErrorCode_Success {
-		return false, errors.New("request failed")
+	if err := handleRespStatus(resp.GetStatus()); err != nil {
+		return false, err
 	}
 	return resp.GetValue(), nil
 }
@@ -343,6 +343,12 @@ func (c *grpcClient) LoadCollection(ctx context.Context, collName string, async 
 
 	if !async {
 		for {
+			select {
+			case <-ctx.Done():
+				return errors.New("context deadline exceeded")
+			default:
+			}
+
 			coll, err := c.ShowCollection(ctx, collName)
 			if err != nil {
 				return err
@@ -350,7 +356,8 @@ func (c *grpcClient) LoadCollection(ctx context.Context, collName string, async 
 			if coll.Loaded {
 				break
 			}
-			time.Sleep(100 * time.Millisecond) // TODO change to configuration
+
+			time.Sleep(200 * time.Millisecond) // TODO change to configuration
 		}
 	}
 	return nil

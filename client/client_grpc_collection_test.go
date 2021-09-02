@@ -279,6 +279,7 @@ func TestGrpcClientDropCollection(t *testing.T) {
 func TestGrpcClientLoadCollection(t *testing.T) {
 	ctx := context.Background()
 	c := testClient(ctx, t)
+	mock.setInjection(mHasCollection, hasCollectionDefault)
 	// injection check collection name equals
 	mock.setInjection(mLoadCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 		req, ok := raw.(*server.LoadCollectionRequest)
@@ -293,47 +294,9 @@ func TestGrpcClientLoadCollection(t *testing.T) {
 	})
 	t.Run("Load collection sync", func(t *testing.T) {
 
-		loadTime := rand.Intn(900) + 100 // in milli seconds, 100~1000 milliseconds
+		loadTime := rand.Intn(500) + 500 // in milli seconds, 100~1000 milliseconds
 		passed := false                  //### flag variable
 		start := time.Now()
-		/*
-			mock.setInjection(mGetPersistentSegmentInfo, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-				s, err := successStatus()
-				r := &server.GetPersistentSegmentInfoResponse{
-					Status: s,
-					Infos:  make([]*server.PersistentSegmentInfo, 0, segmentCount),
-				}
-				for i := 0; i < segmentCount; i++ {
-					r.Infos = append(r.Infos, &server.PersistentSegmentInfo{
-						SegmentID: int64(i),
-						NumRows:   int64(rowCounts),
-					})
-				}
-				r.Infos = append(r.Infos, &server.PersistentSegmentInfo{
-					SegmentID: int64(segmentCount),
-					NumRows:   0, // handcrafted empty segment
-				})
-				return r, err
-			})
-			mock.setInjection(mGetQuerySegmentInfo, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-				s, err := successStatus()
-				r := &server.GetQuerySegmentInfoResponse{
-					Status: s,
-					Infos:  make([]*server.QuerySegmentInfo, 0, segmentCount),
-				}
-				rc := 0
-				if time.Since(start) > time.Duration(loadTime)*time.Millisecond {
-					rc = rowCounts // after load time, row counts set to full amount
-					ok = true
-				}
-				for i := 0; i < segmentCount; i++ {
-					r.Infos = append(r.Infos, &server.QuerySegmentInfo{
-						SegmentID: int64(i),
-						NumRows:   int64(rc),
-					})
-				}
-				return r, err
-			})*/
 
 		mock.setInjection(mShowCollections, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			req, ok := raw.(*server.ShowCollectionsRequest)
@@ -348,6 +311,7 @@ func TestGrpcClientLoadCollection(t *testing.T) {
 			r.CollectionIds = []int64{1}
 			var perc int64 = 0
 			if time.Since(start) > time.Duration(loadTime)*time.Millisecond {
+				t.Log("passed")
 				perc = 100
 				passed = true
 			}
@@ -357,11 +321,13 @@ func TestGrpcClientLoadCollection(t *testing.T) {
 		assert.Nil(t, c.LoadCollection(ctx, testCollectionName, false))
 		assert.True(t, passed)
 
+		start = time.Now()
+		passed = false
+		quickCtx, cancel := context.WithTimeout(ctx, 50*time.Millisecond)
+		defer cancel()
+		assert.NotNil(t, c.LoadCollection(quickCtx, testCollectionName, false))
+
 		// remove injection
-		/*
-			mock.delInjection(mGetPersistentSegmentInfo)
-			mock.delInjection(mGetQuerySegmentInfo)
-		*/
 		mock.delInjection(mShowCollections)
 	})
 }
