@@ -1,6 +1,6 @@
 # Index Parameter Range
 
-Searching with most indexes that Milvus supported reuiqres specifying construction and search parameters. Below list the type and ranges for these parameters.
+Searching with most indexes that Milvus supported requires specifying construction and search parameters. Listed below are the type and ranges of these parameters.
 
 <table class="index_limit">
 	<thead>
