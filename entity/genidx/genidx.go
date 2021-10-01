@@ -467,7 +467,7 @@ func main() {
 				SearchParams: []idxParam{
 					{
 						Name:           "nprobe",
-						ValidationRule: "[1, 65536]", // [1, nilist], refer to index construct param, not supported yet
+						ValidationRule: "[1, 65536]", // [1, nlist], refer to index construct param, not supported yet
 					},
 				},
 				ValidExamples: []string{
@@ -582,7 +582,7 @@ func main() {
 				SearchParams: []idxParam{
 					{
 						Name:           "search_length",
-						ValidationRule: "[10, 300]", // [1, nilist], refer to index construct param, not supported yet
+						ValidationRule: "[10, 300]", // [1, nlist], refer to index construct param, not supported yet
 					},
 				},
 				ValidExamples: []string{
