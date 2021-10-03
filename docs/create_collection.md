@@ -31,7 +31,7 @@ The below schema is for the fields parameter of the above collection schema
 | `PrimaryKey` | bool | Primary Key of the schema |
 | `AutoID` | bool | AutoID of the schema |
 | `Description` | string | Description of the schema |
-| `DataType` | [FieldType](https://github.com/DiptoChakrabarty/milvus-sdk-go/blob/9a7ab65299b4281cc24ad9da7834f6e25866f435/entity/schema.go#L116) | DataType of field |
+| `DataType` | [FieldType](https://github.com/milvus-io/milvus-sdk-go/blob/9a7ab65299b4281cc24ad9da7834f6e25866f435/entity/schema.go#L116) | DataType of field |
 | `TypeParams` | map of key string value string | Type Params for the schema |
 | `IndexParams` | map of key string value string | Index Params for the schema |
 
