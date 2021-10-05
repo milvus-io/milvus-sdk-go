@@ -1,6 +1,6 @@
 # Show Partitions 
 
-API to list all the partitions in the specified collections.
+API to list all the partitions in the specified collection.
 
 ## Params
 
@@ -27,9 +27,9 @@ API to list all the partitions in the specified collections.
 ```go
 ctx := context.Background()
 // cli is a valid Client instance
-parts, err := cli.ShowPartitions(ctx, "TestCollection")
+partitions, err := cli.ShowPartitions(ctx, "TestCollection")
 // handles the error not nil
-for _, part := range paritions {
+for _, part := range partitions {
 // process each partition if needed
 }
 ```

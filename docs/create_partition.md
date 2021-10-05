@@ -28,10 +28,6 @@ API to create partition in a collection.
 
 ```go
 ctx := context.Background()
-schema := &entity.Schema{
-// omit for simpliciy
-} 
-
 // cli is a valid Client instance
 err := cli.CreatePartition(ctx, "TestCollection", "Partition1")
 // handles the error not nil

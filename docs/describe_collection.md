@@ -7,7 +7,7 @@ API to describe collection information.
 | Parameter    | Description                                                  | Type                     |
 | ------------ | ------------------------------------------------------------ | ------------------------ |
 | `ctx`        | Context to control API invocation process                    | context.Context          |
-| `name`       | Name of the collection to describe                           | String                   |
+| `collName`       | Name of the collection to describe                           | String                   |
 
 
 

@@ -1,6 +1,6 @@
 # Release Collection
 
-API to drop collection by name.
+API to release collection by name.
 
 ## Params
 
@@ -24,6 +24,6 @@ API to drop collection by name.
 ```go
 ctx := context.Background()
 // cli is a valid Client instance, assume test collection exists
-err := cli.DropCollection(ctx, "TestCollection")
+err := cli.ReleaseCollection(ctx, "TestCollection")
 // handles the error not nil
 ```

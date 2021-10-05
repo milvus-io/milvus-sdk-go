@@ -8,7 +8,7 @@ API to search data with criteria provided.
 | ------------ | ----------------------------------------- | --------------- |
 | `ctx`        | Context to control API invocation process | context.Context |
 | `collName`   | Name of the collection to search          | String          |
-| `partitions` | Name of the collection to search. </br>If empty, all partition will be serched. | Slice of string |
+| `partitions` | Name of the collection to search. </br>If empty, all partition will be searched. | Slice of string |
 | `expr`       | Boolean expression to filter the data     | String          |
 | `outputFields` | The output fields                       | Slice of string |
 | `vectors`    | Vectors to search with                    | Slice of entity.Vector |

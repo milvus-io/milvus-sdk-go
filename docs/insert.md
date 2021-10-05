@@ -7,8 +7,8 @@ API to insert data into collection.
 | Parameter    | Description                                                  | Type                     |
 | ------------ | ------------------------------------------------------------ | ------------------------ |
 | `ctx`        | Context to control API invocation process                    | context.Context          |
-| `collName`   | Name of the collection to indert into                        | String                   |
-| `partitionName` | Name of the collection to indert into. </br>If empty, default partition will be used. | String |
+| `collName`   | Name of the collection to insert into                        | String                   |
+| `partitionName` | Name of the collection to insert into. </br>If empty, default partition will be used. | String |
 | `columns`    | Columnar data to insert                                      | Variadic slice of entity.Column |
 
 

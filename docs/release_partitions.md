@@ -8,7 +8,7 @@ API to release partitions by name.
 | ------------ | ------------------------------------------------------------ | ------------------------ |
 | `ctx`        | Context to control API invocation process                    | context.Context          |
 | `collName`   | Name of the collection to release                            | String                   |
-| `paritionName` | Name of the partitions to release                          | Slice of string          |
+| `partitionName` | Name of the partitions to release                          | Slice of string          |
 
 ## Response
 
@@ -25,6 +25,6 @@ API to release partitions by name.
 ```go
 ctx := context.Background()
 // cli is a valid Client instance, assume test collection exists
-err := cli.ReleasePartitions(ctx, "TestCollection",[]string{"Partitions"})
+err := cli.ReleasePartitions(ctx, "TestCollection", []string{"Partitions"})
 // handles the error not nil
 ```
