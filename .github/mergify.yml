@@ -53,8 +53,13 @@ pull_request_rules:
 
   - name: Dismiss block label if related issue be added into PR
     conditions:
-      - base=master
-      - body~=\#[0-9]{1,6}(\s+|$)
+      - or:
+        - and:
+          - base=master
+          - body~=\#[0-9]{1,6}(\s+|$)
+        - and:
+          - base=master
+          - label=kind/improvement
     actions:
       label:
         remove:
