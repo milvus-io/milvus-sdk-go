@@ -158,7 +158,7 @@ type film struct {
 	ID     int64
 	Title  string
 	Year   int32
-	Vector [8]float32 // fix lenght array
+	Vector [8]float32 // fix length array
 }
 
 func loadFilmCSV() ([]film, error) {

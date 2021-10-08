@@ -73,7 +73,7 @@ func(i *Index{{.IdxName}}) Params() map[string]string {
 	}
 }
 
-// NewIndex{{.IdxName}} create index with contruction parameters
+// NewIndex{{.IdxName}} create index with construction parameters
 func NewIndex{{.IdxName}}(metricType MetricType, {{range .ConstructParams}}{{with .}}
 	{{.Name}} {{.ParamType}},
 {{end}}{{end}}) (*Index{{.IdxName}}, error) {
