@@ -127,7 +127,7 @@ func main() {
 	if err != nil {
 		log.Fatal("fail to search collection:", err.Error())
 	}
-	log.Println("search without index time elasped:", time.Since(start))
+	log.Println("search without index time elapsed:", time.Since(start))
 	for _, result := range sr {
 		var idColumn *entity.ColumnInt64
 		for _, field := range result.Fields {
@@ -168,7 +168,7 @@ func main() {
 	if err != nil {
 		log.Fatal("fail to search collection:", err.Error())
 	}
-	log.Println("search with index time elasped:", time.Since(start))
+	log.Println("search with index time elapsed:", time.Since(start))
 
 	// clean up
 	_ = c.DropCollection(ctx, collectionName)
@@ -178,7 +178,7 @@ type film struct {
 	ID     int64
 	Title  string
 	Year   int32
-	Vector [8]float32 // fix lenght array
+	Vector [8]float32 // fix length array
 }
 
 func loadFilmCSV() ([]film, error) {
