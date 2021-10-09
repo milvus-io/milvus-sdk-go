@@ -300,10 +300,11 @@ func splitSearchRequest(sch *entity.Schema, partitions []string,
 	params := sp.Params()
 	bs, _ := json.Marshal(params)
 	searchParams := entity.MapKvPairs(map[string]string{
-		"anns_field":  vectorField,
-		"topk":        fmt.Sprintf("%d", topK),
-		"params":      string(bs),
-		"metric_type": string(metricType),
+		"anns_field":    vectorField,
+		"topk":          fmt.Sprintf("%d", topK),
+		"params":        string(bs),
+		"metric_type":   string(metricType),
+		"round_decimal": "-1",
 	})
 
 	ers := estRowSize(sch, outputFields)
@@ -583,9 +584,9 @@ func estRowSize(sch *entity.Schema, selected []string) int64 {
 		}
 		switch field.DataType {
 		case entity.FieldTypeBool:
-			total += 1
+			total++
 		case entity.FieldTypeInt8:
-			total += 1
+			total++
 		case entity.FieldTypeInt16:
 			total += 2
 		case entity.FieldTypeInt32:
