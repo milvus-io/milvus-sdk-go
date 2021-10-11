@@ -14,32 +14,35 @@ var host string
 var port int64
 
 func init()  {
-	flag.StringVar(&host, "host", "10.98.0.13", "server host")
+	flag.StringVar(&host, "host", "localhost", "server host")
 	flag.Int64Var(&port, "port", 19530, "server port")
 }
 
-func GetMilvusAddr() string {
+// Generate addr to connect Milvus
+func GenMilvusAddr() string {
 	return host + ":" + strconv.FormatInt(port, 10)
 }
 
-func GetClient() client.Client {
-	addr := GetMilvusAddr()
+// Generate an connected Milvus client
+func GenClient() (client.Client, error) {
+	addr := GenMilvusAddr()
 	client, err := client.NewGrpcClient(context.Background(), addr)
 	if err != nil {
 		fmt.Printf("Failed to connect %s\n", addr)
-		return nil
+		return nil, nil
 	}
-	return client
+	return client, nil
 }
 
 func teardown()  {
 	fmt.Println("Start to tear down")
 	ctx := context.Background()
-	client := GetClient()
+	client, _ := GenClient()
 	collections, _ := client.ListCollections(ctx)
 	for _,collection := range collections {
 		client.DropCollection(ctx, collection.Name)
 	}
+	defer client.Close()
 }
 
 func TestMain(m *testing.M)  {
