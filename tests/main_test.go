@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/milvus-io/milvus-sdk-go/v2/client"
+	ut "github.com/milvus-io/milvus-sdk-go/v2/tests/testutil"
 	"os"
 	"testing"
 )
@@ -27,12 +28,23 @@ func GenMilvusAddr() string {
 func GenClient(t *testing.T) client.Client {
 	t.Helper()
 	addr := GenMilvusAddr()
-	client, err := client.NewGrpcClient(context.Background(), addr)
+	c, err := client.NewGrpcClient(context.Background(), addr)
 	if err != nil {
-		t.Logf("Failed to connect %s\n", addr)
-		return nil
+		t.Errorf("Failed to connect %s\n", addr)
 	}
-	return client
+	return c
+}
+
+// Generate an collection
+func GenCollection(t *testing.T, name string)  {
+	t.Helper()
+	c := GenClient(t)
+	fields := ut.GenDefaultFields(ut.DefaultDim)
+	schema := ut.GenSchema(name, false, fields)
+	err := c.CreateCollection(context.Background(), schema, ut.DefaultShards)
+	if err != nil {
+		t.Errorf("Failed to create collection %s\n", name)
+	}
 }
 
 func teardown()  {
@@ -40,8 +52,9 @@ func teardown()  {
 	ctx := context.Background()
 	client, _ := client.NewGrpcClient(context.Background(), GenMilvusAddr())
 	collections, _ := client.ListCollections(ctx)
-	for _,collection := range collections {
+	for _, collection := range collections {
 		client.DropCollection(ctx, collection.Name)
+		fmt.Printf("Drop collection %s\n", collection.Name)
 	}
 	defer client.Close()
 }
