@@ -354,12 +354,12 @@ func (client *Milvusclient) ServerStatus(ctx context.Context) (string, Status, e
 	if client.Instance == nil {
 		return "not connect to server", status{int64(0), ""}, nil
 	}
-	command := pb.Command{Cmd: ""}
+	command := pb.Command{Cmd: "status"}
 	serverStatus, err := client.Instance.Cmd(ctx, command)
 	if err != nil {
 		return "connection lost", nil, err
 	}
-	return "server alive", status{int64(serverStatus.GetStatus().GetErrorCode()), serverStatus.GetStatus().GetReason()}, err
+	return serverStatus.GetStringReply(), status{int64(serverStatus.GetStatus().GetErrorCode()), serverStatus.GetStatus().GetReason()}, err
 }
 
 ////////////////////////////////////////////////////////////////////////////
