@@ -22,8 +22,10 @@ var dimTests = []struct {
 	dim int64
 }{
 	{-1},
+	{-50},
 	{0},
 	{32769},
+	{32780},
 }
 
 // Test create collection with default schema
@@ -167,7 +169,6 @@ func TestCollectionWithoutVector(t *testing.T)  {
 }
 
 // Test create collection with invalid dim
-// TODO issue: #220
 func TestCollectionInvalidDim(t *testing.T)  {
 	ctx := context.Background()
 	c := GenClient(t)
@@ -177,7 +178,8 @@ func TestCollectionInvalidDim(t *testing.T)  {
 		t.Log(fields[2].TypeParams["dim"])
 		schema := ut.GenSchema(name, false, fields)
 		err := c.CreateCollection(ctx, schema, ut.DefaultDim)
-		t.Log(err)
+		expError := "only dimensions within the correct range are acceptable"
+		assert.Contains(t, err.Error(), expError)
 	}
 }
 

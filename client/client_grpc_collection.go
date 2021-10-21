@@ -15,6 +15,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -176,6 +177,12 @@ func validateSchema(sch *entity.Schema) error {
 		}
 		if field.DataType == entity.FieldTypeFloatVector || field.DataType == entity.FieldTypeBinaryVector {
 			vectors++
+		}
+		if _, ok := field.TypeParams["dim"]; ok {
+			dim, err := strconv.Atoi(field.TypeParams["dim"])
+			if err != nil || dim < 1 || dim > 32768{
+				return errors.New("only dimensions within the correct range are acceptable")
+			}
 		}
 	}
 	if vectors <= 0 {
