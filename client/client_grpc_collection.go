@@ -175,6 +175,9 @@ func validateSchema(sch *entity.Schema) error {
 			autoID = true
 		}
 		if field.DataType == entity.FieldTypeFloatVector || field.DataType == entity.FieldTypeBinaryVector {
+			if _, ok := field.TypeParams["dim"]; !ok {
+				return errors.New("only the \"dim\" keyword should be entered")
+			}
 			vectors++
 		}
 	}

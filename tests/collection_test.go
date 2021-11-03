@@ -182,7 +182,6 @@ func TestCollectionInvalidDim(t *testing.T)  {
 }
 
 // Test create collection with wrong keyword "dim", like "dims", expected an error
-// TODO issue: #221
 func TestCollectionWrongDimKey(t *testing.T)  {
 	ctx := context.Background()
 	c := GenClient(t)
@@ -203,5 +202,6 @@ func TestCollectionWrongDimKey(t *testing.T)  {
 	}
 	schema := ut.GenSchema(name, false, fields)
 	err := c.CreateCollection(ctx, schema, ut.DefaultShards)
-	t.Log(err)
+	expError := "only the \"dim\" keyword should be entered"
+	assert.Contains(t, err.Error(), expError)
 }
