@@ -1,14 +1,14 @@
 # Drop Index 
 
-API to drop index from vector field of a collection.
+API to drop index from vector field of a specified collection.
 
 ## Params
 
 | Parameter    | Description                                                  | Type                     |
 | ------------ | ------------------------------------------------------------ | ------------------------ |
-| `ctx`        | Context to control API invocation process                    | context.Context          |
-| `collName`   | Name of the collection to drop index from                    | String                   |
-| `fieldName`  | Name of the field to drop index from                         | String                   |
+| `ctx`        | Context to control API invocation process.                    | context.Context          |
+| `collName`   | Name of the collection to drop index from.                    | String                   |
+| `fieldName`  | Name of the field to drop index from.                         | String                   |
 
 
 ## Response

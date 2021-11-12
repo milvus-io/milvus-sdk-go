@@ -1,14 +1,14 @@
-# Get Index Build Progress 
+# Get Index Building Progress 
 
 API to describe index building progress.
 
-## Params
+## Parameters
 
 | Parameter    | Description                                                  | Type                     |
 | ------------ | ------------------------------------------------------------ | ------------------------ |
-| `ctx`        | Context to control API invocation process                    | context.Context          |
-| `collName`   | Name of the collection to describe index building progress   | String                   |
-| `fieldName`  | Name of the field to describe index building progress        | String                   |
+| `ctx`        | Context to control API invocation process.                    | context.Context          |
+| `collName`   | Name of the collection to describe index building progress.   | String                   |
+| `fieldName`  | Name of the field to describe index building progress.        | String                   |
 
 
 ## Response

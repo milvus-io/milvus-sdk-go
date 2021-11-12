@@ -1,15 +1,15 @@
 # Insert 
 
-API to insert data into collection.
+API to insert data into a specified collection.
 
-## Params
+## Parameters
 
 | Parameter    | Description                                                  | Type                     |
 | ------------ | ------------------------------------------------------------ | ------------------------ |
-| `ctx`        | Context to control API invocation process                    | context.Context          |
-| `collName`   | Name of the collection to insert into                        | String                   |
-| `partitionName` | Name of the collection to insert into. </br>If empty, default partition will be used. | String |
-| `columns`    | Columnar data to insert                                      | Variadic slice of entity.Column |
+| `ctx`        | Context to control API invocation process.                    | context.Context          |
+| `collName`   | Name of the collection to insert data into.                        | String                   |
+| `partitionName` | Name of the collection to insert data into. </br>If empty, default partition will be used. | String |
+| `columns`    | Columnar data to insert.                                      | Variadic slice of entity.Column |
 
 
 

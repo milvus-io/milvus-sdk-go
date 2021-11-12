@@ -1,13 +1,13 @@
 # Describe Collection
 
-API to describe collection information.
+API to get collection information.
 
-## Params
+## Parameters
 
-| Parameter    | Description                                                  | Type                     |
-| ------------ | ------------------------------------------------------------ | ------------------------ |
-| `ctx`        | Context to control API invocation process                    | context.Context          |
-| `collName`       | Name of the collection to describe                           | String                   |
+| Parameter    | Description                                                   | Type                     |
+| ------------ | ------------------------------------------------------------- | ------------------------ |
+| `ctx`        | Context to control API invocation process.                    | context.Context          |
+| `collName`   | Name of the collection to describe.                           | String                   |
 
 
 

@@ -2,13 +2,13 @@
 
 API to describe index on vector field of a collection.
 
-## Params
+## Parameters
 
 | Parameter    | Description                                                  | Type                     |
 | ------------ | ------------------------------------------------------------ | ------------------------ |
-| `ctx`        | Context to control API invocation process                    | context.Context          |
-| `collName`   | Name of the collection to describe index on                  | String                   |
-| `fieldName`  | Name of the field to describe index     on                   | String                   |
+| `ctx`        | Context to control API invocation process.                    | context.Context          |
+| `collName`   | Name of the collection to describe index on.                  | String                   |
+| `fieldName`  | Name of the field to describe index on.                       | String                   |
 
 ## Response
 

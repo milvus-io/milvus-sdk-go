@@ -1,14 +1,14 @@
 # Release Partitions
 
-API to release partitions by name.
+API to release partitions by names.
 
-## Params
+## Parameters
 
 | Parameter    | Description                                                  | Type                     |
 | ------------ | ------------------------------------------------------------ | ------------------------ |
-| `ctx`        | Context to control API invocation process                    | context.Context          |
-| `collName`   | Name of the collection to release                            | String                   |
-| `partitionName` | Name of the partitions to release                          | Slice of string          |
+| `ctx`        | Context to control API invocation process.                    | context.Context          |
+| `collName`   | Name of the collection to release partitions from.            | String                   |
+| `partitionNames` | List of names of the partitions to release.                | Slice of string          |
 
 ## Response
 

@@ -1,14 +1,14 @@
 # Drop Partition
 
-API to drop partition from collection by name.
+API to drop a partition from a specified collection by name.
 
-## Params
+## Parameters
 
 | Parameter    | Description                                                  | Type                     |
 | ------------ | ------------------------------------------------------------ | ------------------------ |
-| `ctx`        | Context to control API invocation process                    | context.Context          |
-| `collName`   | Name of the collection to drop partition from                | String                   |
-| `partitionName` | Name of the Partition to drop                             | String                   |
+| `ctx`        | Context to control API invocation process.                    | context.Context          |
+| `collName`   | Name of the collection to drop partition from.                | String                   |
+| `partitionName` | Name of the partition to drop.                             | String                   |
 
 ## Response
 
