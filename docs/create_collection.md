@@ -1,39 +1,45 @@
 # Create Collection
 
-API to create collection according to the specified schema.
+API to create a collection according to the specified schema.
 
-## Params
+## Parameters
 
 | Parameter    | Description                                                  | Type                     |
 | ------------ | ------------------------------------------------------------ | ------------------------ |
 | `ctx`        | Context to control API invocation process                    | context.Context          |
 | `collSchema` | Collection schema definition                                 | Pointer of entity.Schema |
-| `shardNum`   | Shard number of the collection to create. If the `shardNum` is set to 0, default shard number, i.e. 2, will be used. | INT32   |
+| `shardNum`   | Shard number of the collection to create. If the `shardNum` is set to 0, default shard number `2` will be used. | INT32   |
 
 
-## Schema Structure
+## Schema
 
-The schema represents the schema info of the collection in milvus , the schema structure is shown below
+A schema specifies the features of the collection to create and the fields within the collection.
 
-| Parameter |  Type |   Description |
+### Collection schema
+
+A collection schema is the logical definition of a collection.
+
+| Parameter |   Description |  Type |
 | --------- | ------ | ---------- |
-| `Collection Name` | string | Name given to the collection |
-| `Description` | string | Description given to collection |
-| `AutoID` | boolean | The auto id of the collection |
-| `Fields` | [Field Schema of milvus](https://github.com/milvus-io/milvus-sdk-go/blob/7410632233597d4af58df727682ffb29f1d1d51d/entity/schema.go#L54-L63) | Contains various fields for the schema  |
+| `Collection Name` | Name of the collection to create. | String |
+| `Description` | Description of the collection to create. | String |
+| `AutoID` | Automatically assigns IDs to entities in the collection if it is set to `true`. | Boolean |
+| `Fields` | Defines the fields in the collection.  | See [Field Schema of Milvus](https://github.com/milvus-io/milvus-sdk-go/blob/7410632233597d4af58df727682ffb29f1d1d51d/entity/schema.go#L54-L63) for more information. |
 
-The below schema is for the fields parameter of the above collection schema
+### Field schema
 
-| Parameter |  Type |   Description |
-| --------- | ------ | ---------- |
-|  `ID` | int64 | Field id generated when collection is made |
-| `Name` | string | Name of field |
-| `PrimaryKey` | bool | Primary Key of the schema |
-| `AutoID` | bool | AutoID of the schema |
-| `Description` | string | Description of the schema |
-| `DataType` | [FieldType](https://github.com/milvus-io/milvus-sdk-go/blob/9a7ab65299b4281cc24ad9da7834f6e25866f435/entity/schema.go#L116) | DataType of field |
-| `TypeParams` | map of key string value string | Type Params for the schema |
-| `IndexParams` | map of key string value string | Index Params for the schema |
+A field schema is the logical definition of a field.
+
+| Parameter  |   Description                                  |  Type        |
+| ---------- | ---------------------------------------------- | ------------ |
+|  `ID`      | Field ID generated when collection is created. | int64        |
+| `Name`     | Name of the field.                             | int64        |
+| `PrimaryKey` | Switch value of primary key enablement.      | Boolean      |
+| `AutoID`   | Switch value of auto-generated ID enablement.  | Boolean |
+| `Description` | Description of the field.                   | String       |
+| `DataType` | Data type of the field. | See [FieldType](https://github.com/milvus-io/milvus-sdk-go/blob/9a7ab65299b4281cc24ad9da7834f6e25866f435/entity/schema.go#L116) for more information. |
+| `TypeParams` | Type parameters for the field.               | Map of key string value string |
+| `IndexParams` | Index parameters for the field.             | Map of key string value string |
 
 
 ## Response

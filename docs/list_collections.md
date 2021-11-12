@@ -1,11 +1,11 @@
 # List Collections
 
-API to list all the collections in the connected Milvus instance.
+API to list all collections in the connected Milvus instance.
 
-## Params
+## Parameters
 | Parameter    | Description                                                  | Type                     |
 | ------------ | ------------------------------------------------------------ | ------------------------ |
-| `ctx`        | Context to control API invocation process                    | context.Context          |
+| `ctx`        | Context to control API invocation process.                    | context.Context          |
 
 ## Response
 

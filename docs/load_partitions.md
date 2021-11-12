@@ -1,14 +1,14 @@
 # Load Partitions
 
-API to load partitions by name.
+API to load partitions by names.
 
-## Params
+## Parameters
 
 | Parameter    | Description                                                  | Type                     |
 | ------------ | ------------------------------------------------------------ | ------------------------ |
-| `ctx`        | Context to control API invocation process                    | context.Context          |
-| `collName`   | Name of the collection to load partition from                | String                   |
-| `partitionNames` | Name of the Partition to load                            | Slice of string          |
+| `ctx`        | Context to control API invocation process.                    | context.Context          |
+| `collName`   | Name of the collection to load partition from.                | String                   |
+| `partitionNames` | List of names of the partition to load.                   | Slice of string          |
 | `async`      | Switch value of the sync/async behavior. </br>Note: the deadline of context is not applied in sync load. | Boolean |
 
 ## Response

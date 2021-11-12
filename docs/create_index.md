@@ -2,14 +2,14 @@
 
 API to create index on vector field of a collection.
 
-## Params
+## Parameters
 
-| Parameter    | Description                                                  | Type                     |
-| ------------ | ------------------------------------------------------------ | ------------------------ |
-| `ctx`        | Context to control API invocation process                    | context.Context          |
-| `collName`   | Name of the collection to build index on                     | String                   |
-| `fieldName`  | Name of the field to build index on                          | String                   |
-| `idx`        | Index definition structure                                   | entity.Index             |
+| Parameter    | Description                                                   | Type                     |
+| ------------ | ------------------------------------------------------------- | ------------------------ |
+| `ctx`        | Context to control API invocation process.                    | context.Context          |
+| `collName`   | Name of the collection to build index on.                     | String                   |
+| `fieldName`  | Name of the field to build index on.                          | String                   |
+| `idx`        | Index type and specific parameters.                           | entity.Index             |
 | `async`      | Switch value of the sync/async behavior. </br>Note: the deadline of context is not applied in sync creation precess. | Boolean |
 
 

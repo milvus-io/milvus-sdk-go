@@ -1,20 +1,20 @@
 # Search 
 
-API to search data with criteria provided.
+API to search data with the specified criteria.
 
 ## Params
 
-| Parameter    | Description                               | Type            |
-| ------------ | ----------------------------------------- | --------------- |
-| `ctx`        | Context to control API invocation process | context.Context |
-| `collName`   | Name of the collection to search          | String          |
-| `partitions` | Name of the collection to search. </br>If empty, all partition will be searched. | Slice of string |
-| `expr`       | Boolean expression to filter the data     | String          |
-| `outputFields` | The output fields                       | Slice of string |
-| `vectors`    | Vectors to search with                    | Slice of entity.Vector |
-| `metricType` | Metric type to calculate distance with    | entity.MetricType |
-| `topK`       | Number of nearest record to return        | INT             |
-| `sp`         | Specified search param that is related to the index type a vector field has | entity.SearchParam |
+| Parameter    | Description                                | Type            |
+| ------------ | ------------------------------------------ | --------------- |
+| `ctx`        | Context to control API invocation process. | context.Context |
+| `collName`   | Name of the collection to search in.       | String          |
+| `partitions` | List of names of the partitions to search in. </br>If empty, all partition will be searched. | Slice of string |
+| `expr`       | Boolean expression to filter the data.     | String          |
+| `outputFields` | List of names of fields to output.       | Slice of string |
+| `vectors`    | Vectors to search with.                    | Slice of entity.Vector |
+| `metricType` | Metric type to calculate distance with.    | entity.MetricType |
+| `topK`       | Number of nearest records to return.       | INT             |
+| `sp`         | Specific search parameter(s) that related to the index type the vector field has. | entity.SearchParam |
 
 
 

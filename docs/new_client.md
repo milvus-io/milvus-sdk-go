@@ -2,7 +2,7 @@
 
 This is the "Constructor" method set (only one for current release) to obtain `Client` instance.
 
-## Common Params
+## Parameters
 
 | Parameter    | Description                                                  | Type                     |
 | ------------ | ------------------------------------------------------------ | ------------------------ |
@@ -11,8 +11,8 @@ This is the "Constructor" method set (only one for current release) to obtain `C
 
 
 ## Response
-
-`err`: connection error (if any).
+- Milvus client instance.
+- `err`: connection error (if any).
 
 ## Example
 
