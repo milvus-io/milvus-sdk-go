@@ -1,13 +1,13 @@
 # Flush 
 
-API to flush data inserted 
+API to flush the newly inserted data inserted.
 
-## Params
+## Parameters
 
 | Parameter    | Description                                                  | Type                     |
 | ------------ | ------------------------------------------------------------ | ------------------------ |
-| `ctx`        | Context to control API invocation process                    | context.Context          |
-| `collName`   | Name of the collection to flush                              | String                   |
+| `ctx`        | Context to control API invocation process.                    | context.Context          |
+| `collName`   | Name of the collection to flush.                              | String                   |
 | `async`      | Switch value of the sync/async behavior. </br>Note: the deadline of context is not applied in sync flush. | Boolean |
 
 ## Response

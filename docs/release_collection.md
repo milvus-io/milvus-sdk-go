@@ -2,12 +2,12 @@
 
 API to release collection by name.
 
-## Params
+## Parameters
 
 | Parameter    | Description                                                  | Type                     |
 | ------------ | ------------------------------------------------------------ | ------------------------ |
-| `ctx`        | Context to control API invocation process                    | context.Context          |
-| `name`       | Name of the collection to release                            | String                   |
+| `ctx`        | Context to control API invocation process.                    | context.Context          |
+| `name`       | Name of the collection to release.                            | String                   |
 
 ## Response
 

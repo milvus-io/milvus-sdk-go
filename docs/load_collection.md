@@ -2,12 +2,12 @@
 
 API to load collection by name.
 
-## Params
+## Parameters
 
 | Parameter    | Description                                                  | Type                     |
 | ------------ | ------------------------------------------------------------ | ------------------------ |
-| `ctx`        | Context to control API invocation process                    | context.Context          |
-| `name`       | Name of the collection to load                               | String                   |
+| `ctx`        | Context to control API invocation process.                    | context.Context          |
+| `name`       | Name of the collection to load.                               | String                   |
 | `async`      | Switch value of the sync/async behavior. </br>Note: the deadline of context is not applied in sync load. | Boolean |
 
 

@@ -1,14 +1,14 @@
 # Create Partition 
 
-API to create partition in a collection.
+API to create a partition in a specified collection.
 
-## Params
+## Parameters
 
-| Parameter    | Description                                                  | Type                     |
-| ------------ | ------------------------------------------------------------ | ------------------------ |
-| `ctx`        | Context to control API invocation process                    | context.Context          |
-| `collName`   | Name of the collection to create partition in                | String                   |
-| `partitionName` | Name of the partition to create                           | String                   |
+| Parameter    | Description                                                   | Type                     |
+| ------------ | ------------------------------------------------------------- | ------------------------ |
+| `ctx`        | Context to control API invocation process.                    | context.Context          |
+| `collName`   | Name of the collection to create a partition in.              | String                   |
+| `partitionName` | Name of the partition to create.                           | String                   |
 
 
 

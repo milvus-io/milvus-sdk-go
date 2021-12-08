@@ -1,14 +1,14 @@
 # Has Partition
 
-API to check if partition from a collection with specified name exists.
+API to check if a partition from a collection with specified name exists.
 
 ## Params
 
 | Parameter    | Description                                                  | Type                     |
 | ------------ | ------------------------------------------------------------ | ------------------------ |
-| `ctx`        | Context to control API invocation process                    | context.Context          |
-| `collName`   | Name of the collection with the partition to check           | String                   |
-| `partitionName` | Name of the partition to check                            | String                   |
+| `ctx`        | Context to control API invocation process.                    | context.Context          |
+| `collName`   | Name of the collection with the partition to check.           | String                   |
+| `partitionName` | Name of the partition to check.                            | String                   |
 
 
 ## Response

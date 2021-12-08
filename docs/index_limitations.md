@@ -18,7 +18,7 @@ Searching with most indexes that Milvus supported requires specifying constructi
 		<td>entity.Flat</td>
 		<td>N/A</td>
 		<td>N/A</td>
- 		<td>No parameter is required for search with Flat</td>
+ 		<td>No parameter is required for search with Flat.</td>
 	</tr>
 	<tr>
 		<td>BinFlat</td>
@@ -39,7 +39,7 @@ Searching with most indexes that Milvus supported requires specifying constructi
 		<td>entity.BinIvfFlat</td>
 		<td><code>nlist</code>&isin;[1, 65536]</td>
 		<td><code>nprobe</code>&isin;[1, <code>nlist</code>]</td>
-		<td>BinIvfFlat will be supported in upcoming version of Milvus</td>
+		<td>BinIvfFlat will be supported in upcoming version of Milvus.</td>
 	</tr>
 	<tr>
 		<td>IvfSQ8</td>
@@ -116,14 +116,14 @@ Searching with most indexes that Milvus supported requires specifying constructi
 		<td>entity.NGTPANNG</td>
 		<td><code>edge_size</code>&isin;[1, 200]<br/><code>forcedly_pruned_edge_size</code>&isin;[selectively_pruned_edge_size + 1, 200]<br/><code>selectively_pruned_edge_size</code>&isin;[1, forcedly_pruned_edge_size -1 ]</td>
 		<td><code>max_search_edges</code>&isin;[-1, 200]<br/><code>epsilon</code>&isin;[-1.0, 1.0]</td>
-		<td>Search param epsilon type is float64</td>
+		<td>Search parameter epsilon type is float64.</td>
 	</tr>
 	<tr>
 		<td>NGTONNG</td>
 		<td>entity.NGTONNG</td>
 		<td><code>edge_size</code>&isin;[1, 200]<br/><code>outgoing_edge_size</code>&isin;[1, 200]<br/><code>incoming_edge_size</code>&isin;[1, 200]</td>
 		<td><code>max_search_edges</code>&isin;[-1, 200]<br/><code>epsilon</code>&isin;[-1.0, 1.0]</td>
-		<td>Search param epsilon type is float64</td>
+		<td>Search parameter epsilon type is float64.</td>
 	</tr>
 	</tbody>
 </table>
