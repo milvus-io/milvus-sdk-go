@@ -264,7 +264,7 @@ func (c *grpcClient) Search(ctx context.Context, collName string, partitions []s
 				rc := int(results.GetTopks()[i]) // result entry count for current query
 				entry := SearchResult{
 					ResultCount: rc,
-					Scores:      results.GetScores()[offset:rc],
+					Scores:      results.GetScores()[offset:offset+rc],
 				}
 				entry.IDs, entry.Err = entity.IDColumns(results.GetIds(), offset, offset+rc)
 				if entry.Err != nil {
