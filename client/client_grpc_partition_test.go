@@ -16,7 +16,7 @@ import (
 )
 
 // return injection asserts collection name matchs
-// parition name request in partitionNames if flag is true
+// partition name request in partitionNames if flag is true
 func hasPartitionInjection(t *testing.T, collName string, mustIn bool, partitionNames ...string) func(context.Context, proto.Message) (proto.Message, error) {
 	return func(_ context.Context, raw proto.Message) (proto.Message, error) {
 		req, ok := raw.(*server.HasPartitionRequest)
@@ -94,7 +94,7 @@ func TestGrpcClientHasPartition(t *testing.T) {
 	assert.True(t, r)
 }
 
-// default partition intercetion for ShowPartitions, generates testCollection related paritition data
+// default partition interception for ShowPartitions, generates testCollection related paritition data
 func getPartitionsInterception(t *testing.T, collName string, partitions ...*entity.Partition) func(ctx context.Context, raw proto.Message) (proto.Message, error) {
 	return func(ctx context.Context, raw proto.Message) (proto.Message, error) {
 		req, ok := raw.(*server.ShowPartitionsRequest)

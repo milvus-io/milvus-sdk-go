@@ -55,7 +55,7 @@ type Client interface {
 	CreatePartition(ctx context.Context, collName string, partitionName string) error
 	// DropPartition drop partition from collection
 	DropPartition(ctx context.Context, collName string, partitionName string) error
-	// ShowParitions list all partitions from collection
+	// ShowPartitions list all partitions from collection
 	ShowPartitions(ctx context.Context, collName string) ([]*entity.Partition, error)
 	// HasPartition check whether partition exists in collection
 	HasPartition(ctx context.Context, collName string, partitionName string) (bool, error)
@@ -72,7 +72,7 @@ type Client interface {
 	// DescribeIndex describe index on collection
 	// currently index naming is not supported, so only one index on vector field is supported
 	DescribeIndex(ctx context.Context, collName string, fieldName string) ([]entity.Index, error)
-	// DropINdex drop index from collection with specified field name
+	// DropIndex drop index from collection with specified field name
 	DropIndex(ctx context.Context, collName string, fieldName string) error
 	// GetIndexState get index state with specified collection and field name
 	// index naming is not supported yet

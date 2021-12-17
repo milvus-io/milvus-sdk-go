@@ -28,7 +28,7 @@ import (
 	"github.com/milvus-io/milvus-sdk-go/v2/internal/proto/server"
 )
 
-// Index insert into collection with column-based format
+// Insert Index  into collection with column-based format
 // collName is the collection name
 // partitionName is the partition to insert, if not specified(empty), default partition will be used
 // columns are slice of the column-based data
@@ -177,7 +177,7 @@ func (c *grpcClient) Flush(ctx context.Context, collName string, async bool) err
 	return nil
 }
 
-//BoolExprSearch search with bool expression
+//Search with bool expression
 func (c *grpcClient) Search(ctx context.Context, collName string, partitions []string,
 	expr string, outputFields []string, vectors []entity.Vector, vectorField string, metricType entity.MetricType, topK int, sp entity.SearchParam) ([]SearchResult, error) {
 	if c.service == nil {

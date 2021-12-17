@@ -75,8 +75,7 @@ func main() {
 		log.Printf("Collection id: %d, name: %s\n", collection.ID, collection.Name)
 	}
 
-	// show collection parititions
-	log.Println("New collection with partitions:")
+	// show collection partitions
 	partitions, err := c.ShowPartitions(ctx, collectionName)
 	if err != nil {
 		log.Fatal("failed to show partitions:", err.Error())
@@ -94,7 +93,7 @@ func main() {
 	}
 
 	log.Println("After create partition")
-	// show collection parititions, check creation
+	// show collection partitions, check creation
 	partitions, err = c.ShowPartitions(ctx, collectionName)
 	if err != nil {
 		log.Fatal("failed to show partitions:", err.Error())
