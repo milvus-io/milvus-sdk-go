@@ -15,7 +15,7 @@ func init() {
 
 var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
-// RandomString returns a batch of random string
+// GenRandomString returns a batch of random string
 func GenRandomString(n int) string {
 	b := make([]rune, n)
 	for i := range b {
