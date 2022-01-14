@@ -139,7 +139,7 @@ func (c *grpcClient) CreateCollection(ctx context.Context, collSchema *entity.Sc
 	}
 	err = handleRespStatus(resp)
 	if err != nil {
-		return nil
+		return err
 	}
 	return nil
 }

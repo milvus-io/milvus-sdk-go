@@ -217,6 +217,7 @@ func TestGrpcClientCreateCollection(t *testing.T) {
 
 			return successStatus()
 		})
+		defer mock.delInjection(mCreateCollection)
 		mock.setInjection(mHasCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			req, ok := raw.(*server.HasCollectionRequest)
 			resp := &server.BoolResponse{}
@@ -230,9 +231,31 @@ func TestGrpcClientCreateCollection(t *testing.T) {
 			resp.Status = s
 			return resp, err
 		})
+		defer mock.delInjection(mHasCollection)
 
 		assert.Nil(t, c.CreateCollection(ctx, defaultSchema(), 1))
 		assert.NotNil(t, c.CreateCollection(ctx, defaultSchema(), 1))
+	})
+
+	t.Run("test server returns error", func(t *testing.T) {
+		mock.setInjection(mCreateCollection, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
+			_, ok := raw.(*server.CreateCollectionRequest)
+			if !ok {
+				return badRequestStatus()
+			}
+			return &common.Status{
+				ErrorCode: common.ErrorCode_UnexpectedError,
+				Reason:    "service is not healthy",
+			}, nil
+		})
+		assert.Error(t, c.CreateCollection(ctx, defaultSchema(), 1))
+
+		mock.setInjection(mCreateCollection, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
+			return &common.Status{}, errors.New("mocked grpc error")
+		})
+
+		assert.Error(t, c.CreateCollection(ctx, defaultSchema(), 1))
+		mock.delInjection(mCreateCollection)
 	})
 }
 
