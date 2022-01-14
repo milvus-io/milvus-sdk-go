@@ -143,27 +143,20 @@ func TestGrpcClientFlush(t *testing.T) {
 			resp.Status = s
 			return resp, err
 		})
-		mock.setInjection(mGetPersistentSegmentInfo, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			req, ok := raw.(*server.GetPersistentSegmentInfoRequest)
-			resp := &server.GetPersistentSegmentInfoResponse{}
+
+		mock.setInjection(mGetFlushState, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+			req, ok := raw.(*server.GetFlushStateRequest)
+			resp := &server.GetFlushStateResponse{}
 			if !ok {
 				s, err := badRequestStatus()
 				resp.Status = s
 				return resp, err
 			}
-			assert.Equal(t, testCollectionName, req.GetCollectionName())
-
-			state := common.SegmentState_Flushing
+			assert.ElementsMatch(t, segments, req.GetSegmentIDs())
+			resp.Flushed = false
 			if time.Since(start) > time.Duration(flushTime)*time.Millisecond {
-				state = common.SegmentState_Flushed
+				resp.Flushed = true
 				flag = true
-			}
-
-			for _, segID := range segments {
-				resp.Infos = append(resp.Infos, &server.PersistentSegmentInfo{
-					SegmentID: segID,
-					State:     state,
-				})
 			}
 
 			s, err := successStatus()

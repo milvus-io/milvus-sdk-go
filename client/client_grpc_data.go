@@ -141,27 +141,17 @@ func (c *grpcClient) Flush(ctx context.Context, collName string, async bool) err
 	}
 	if !async {
 		segmentIDs, has := resp.GetCollSegIDs()[collName]
-		if has {
-			waitingSet := make(map[int64]struct{})
-			for _, segmentID := range segmentIDs.GetData() {
-				waitingSet[segmentID] = struct{}{}
-			}
+		ids := segmentIDs.GetData()
+		if has && len(ids) > 0 {
 			flushed := func() bool {
-				segments, err := c.GetPersistentSegmentInfo(context.Background(), collName)
+				resp, err := c.service.GetFlushState(ctx, &server.GetFlushStateRequest{
+					SegmentIDs: ids,
+				})
 				if err != nil {
-					//TODO handles grpc failure, maybe need reconnect?
+					// TODO max retry
+					return false
 				}
-				flushed := 0
-				for _, segment := range segments {
-					if _, has := waitingSet[segment.ID]; !has {
-						continue
-					}
-					if !segment.Flushed() {
-						return false
-					}
-					flushed++
-				}
-				return len(waitingSet) == flushed
+				return resp.GetFlushed()
 			}
 			for !flushed() {
 				// respect context deadline/cancel
