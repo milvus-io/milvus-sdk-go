@@ -136,10 +136,11 @@ const (
 	mGetIndexState         serviceMethod = 23
 	mGetIndexBuildProgress serviceMethod = 24
 
-	mInsert       serviceMethod = 30
-	mFlush        serviceMethod = 31
-	mSearch       serviceMethod = 32
-	mCalcDistance serviceMethod = 33
+	mInsert        serviceMethod = 30
+	mFlush         serviceMethod = 31
+	mSearch        serviceMethod = 32
+	mCalcDistance  serviceMethod = 33
+	mGetFlushState serviceMethod = 34
 
 	mGetPersistentSegmentInfo serviceMethod = 98
 	mGetQuerySegmentInfo      serviceMethod = 99
@@ -453,5 +454,46 @@ func (m *mockServer) Delete(_ context.Context, _ *server.DeleteRequest) (*server
 
 // https://wiki.lfaidata.foundation/display/MIL/MEP+8+--+Add+metrics+for+proxy
 func (m *mockServer) GetMetrics(_ context.Context, _ *server.GetMetricsRequest) (*server.GetMetricsResponse, error) {
+	panic("not implemented") // TODO: Implement
+}
+
+func (m *mockServer) CreateAlias(_ context.Context, _ *server.CreateAliasRequest) (*common.Status, error) {
+	panic("not implemented") // TODO: Implement
+}
+
+func (m *mockServer) DropAlias(_ context.Context, _ *server.DropAliasRequest) (*common.Status, error) {
+	panic("not implemented") // TODO: Implement
+}
+
+func (m *mockServer) AlterAlias(_ context.Context, _ *server.AlterAliasRequest) (*common.Status, error) {
+	panic("not implemented") // TODO: Implement
+}
+
+func (m *mockServer) GetFlushState(ctx context.Context, req *server.GetFlushStateRequest) (*server.GetFlushStateResponse, error) {
+	f := m.getInjection(mGetFlushState)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*server.GetFlushStateResponse), err
+	}
+
+	resp := &server.GetFlushStateResponse{}
+	s, err := successStatus()
+	resp.Status = s
+	return resp, err
+}
+
+func (m *mockServer) LoadBalance(_ context.Context, _ *server.LoadBalanceRequest) (*common.Status, error) {
+	panic("not implemented") // TODO: Implement
+}
+
+func (m *mockServer) GetCompactionState(_ context.Context, _ *server.GetCompactionStateRequest) (*server.GetCompactionStateResponse, error) {
+	panic("not implemented") // TODO: Implement
+}
+
+func (m *mockServer) ManualCompaction(_ context.Context, _ *server.ManualCompactionRequest) (*server.ManualCompactionResponse, error) {
+	panic("not implemented") // TODO: Implement
+}
+
+func (m *mockServer) GetCompactionStateWithPlans(_ context.Context, _ *server.GetCompactionPlansRequest) (*server.GetCompactionPlansResponse, error) {
 	panic("not implemented") // TODO: Implement
 }
