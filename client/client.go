@@ -14,6 +14,7 @@ package client
 
 import (
 	"context"
+	"time"
 
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 	"google.golang.org/grpc"
@@ -104,6 +105,13 @@ type Client interface {
 	CreateCollectionByRow(ctx context.Context, row entity.Row, shardNum int32) error
 	// InsertByRows insert by rows
 	InsertByRows(ctx context.Context, collName string, paritionName string, rows []entity.Row) (entity.Column, error)
+
+	// ManualCompaction triggers a compaction on provided collection
+	ManualCompaction(ctx context.Context, collName string, toleranceDuration time.Duration) (int64, error)
+	// GetCompactionState get compaction state of provided compaction id
+	GetCompactionState(ctx context.Context, id int64) (entity.CompactionState, error)
+	// GetCompactionStateWithPlans get compaction state with plans of provided compaction id
+	GetCompactionStateWithPlans(ctx context.Context, id int64) (entity.CompactionState, []entity.CompactionPlan, error)
 }
 
 // SearchResult contains the result from Search api of client
