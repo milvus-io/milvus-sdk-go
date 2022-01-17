@@ -145,6 +145,10 @@ const (
 	mCalcDistance  serviceMethod = 33
 	mGetFlushState serviceMethod = 34
 
+	mManualCompaction            = 40
+	mGetCompactionState          = 41
+	mGetCompactionStateWithPlans = 42
+
 	mGetPersistentSegmentInfo serviceMethod = 98
 	mGetQuerySegmentInfo      serviceMethod = 99
 )
@@ -505,14 +509,40 @@ func (m *mockServer) LoadBalance(_ context.Context, _ *server.LoadBalanceRequest
 	panic("not implemented") // TODO: Implement
 }
 
-func (m *mockServer) GetCompactionState(_ context.Context, _ *server.GetCompactionStateRequest) (*server.GetCompactionStateResponse, error) {
-	panic("not implemented") // TODO: Implement
+func (m *mockServer) GetCompactionState(ctx context.Context, req *server.GetCompactionStateRequest) (*server.GetCompactionStateResponse, error) {
+	f := m.getInjection(mGetCompactionState)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*server.GetCompactionStateResponse), err
+	}
+
+	resp := &server.GetCompactionStateResponse{}
+	s, err := successStatus()
+	resp.Status = s
+	return resp, err
 }
 
-func (m *mockServer) ManualCompaction(_ context.Context, _ *server.ManualCompactionRequest) (*server.ManualCompactionResponse, error) {
-	panic("not implemented") // TODO: Implement
+func (m *mockServer) ManualCompaction(ctx context.Context, req *server.ManualCompactionRequest) (*server.ManualCompactionResponse, error) {
+	f := m.getInjection(mManualCompaction)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*server.ManualCompactionResponse), err
+	}
+	resp := &server.ManualCompactionResponse{}
+	s, err := successStatus()
+	resp.Status = s
+	return resp, err
 }
 
-func (m *mockServer) GetCompactionStateWithPlans(_ context.Context, _ *server.GetCompactionPlansRequest) (*server.GetCompactionPlansResponse, error) {
-	panic("not implemented") // TODO: Implement
+func (m *mockServer) GetCompactionStateWithPlans(ctx context.Context, req *server.GetCompactionPlansRequest) (*server.GetCompactionPlansResponse, error) {
+	f := m.getInjection(mGetCompactionStateWithPlans)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*server.GetCompactionPlansResponse), err
+	}
+
+	resp := &server.GetCompactionPlansResponse{}
+	s, err := successStatus()
+	resp.Status = s
+	return resp, err
 }
