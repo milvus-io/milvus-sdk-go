@@ -49,6 +49,13 @@ type Client interface {
 	// HasCollection check whether collection exists
 	HasCollection(ctx context.Context, collName string) (bool, error)
 
+	// CreateAlias creates an alias for collection
+	CreateAlias(ctx context.Context, collName string, alias string) error
+	// DropAlias drops the specified Alias
+	DropAlias(ctx context.Context, alias string) error
+	// AlterAlias changes collection alias to provided alias
+	AlterAlias(ctx context.Context, collName string, alias string) error
+
 	// -- partition --
 
 	// CreatePartition create partition for collection

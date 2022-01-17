@@ -122,6 +122,9 @@ const (
 	mListCollection          serviceMethod = 7
 	mGetCollectionStatistics serviceMethod = 8
 	mShowCollections         serviceMethod = 15
+	mCreateAlias             serviceMethod = 16
+	mDropAlias               serviceMethod = 17
+	mAlterAlias              serviceMethod = 18
 
 	mCreatePartition   serviceMethod = 9
 	mDropPartition     serviceMethod = 10
@@ -457,16 +460,32 @@ func (m *mockServer) GetMetrics(_ context.Context, _ *server.GetMetricsRequest) 
 	panic("not implemented") // TODO: Implement
 }
 
-func (m *mockServer) CreateAlias(_ context.Context, _ *server.CreateAliasRequest) (*common.Status, error) {
-	panic("not implemented") // TODO: Implement
+func (m *mockServer) CreateAlias(ctx context.Context, req *server.CreateAliasRequest) (*common.Status, error) {
+	f := m.getInjection(mCreateAlias)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*common.Status), err
+	}
+	return successStatus()
 }
 
-func (m *mockServer) DropAlias(_ context.Context, _ *server.DropAliasRequest) (*common.Status, error) {
-	panic("not implemented") // TODO: Implement
+func (m *mockServer) DropAlias(ctx context.Context, req *server.DropAliasRequest) (*common.Status, error) {
+	f := m.getInjection(mDropAlias)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*common.Status), err
+	}
+	return successStatus()
 }
 
-func (m *mockServer) AlterAlias(_ context.Context, _ *server.AlterAliasRequest) (*common.Status, error) {
-	panic("not implemented") // TODO: Implement
+func (m *mockServer) AlterAlias(ctx context.Context, req *server.AlterAliasRequest) (*common.Status, error) {
+	f := m.getInjection(mAlterAlias)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*common.Status), err
+	}
+
+	return successStatus()
 }
 
 func (m *mockServer) GetFlushState(ctx context.Context, req *server.GetFlushStateRequest) (*server.GetFlushStateResponse, error) {
