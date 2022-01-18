@@ -144,10 +144,11 @@ const (
 	mSearch        serviceMethod = 32
 	mCalcDistance  serviceMethod = 33
 	mGetFlushState serviceMethod = 34
+	mDelete        serviceMethod = 35
 
-	mManualCompaction            = 40
-	mGetCompactionState          = 41
-	mGetCompactionStateWithPlans = 42
+	mManualCompaction            serviceMethod = 40
+	mGetCompactionState          serviceMethod = 41
+	mGetCompactionStateWithPlans serviceMethod = 42
 
 	mGetPersistentSegmentInfo serviceMethod = 98
 	mGetQuerySegmentInfo      serviceMethod = 99
@@ -455,8 +456,16 @@ func (m *mockServer) CalcDistance(ctx context.Context, req *server.CalcDistanceR
 	return resp, err
 }
 
-func (m *mockServer) Delete(_ context.Context, _ *server.DeleteRequest) (*server.MutationResult, error) {
-	panic("not implemented") // TODO: Implement
+func (m *mockServer) Delete(ctx context.Context, req *server.DeleteRequest) (*server.MutationResult, error) {
+	f := m.getInjection(mDelete)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*server.MutationResult), err
+	}
+	resp := &server.MutationResult{}
+	s, err := successStatus()
+	resp.Status = s
+	return resp, err
 }
 
 // https://wiki.lfaidata.foundation/display/MIL/MEP+8+--+Add+metrics+for+proxy

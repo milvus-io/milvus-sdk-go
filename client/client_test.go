@@ -76,11 +76,14 @@ func TestGrpcClientNil(t *testing.T) {
 			case reflect.Interface:
 				idxType := reflect.TypeOf((*entity.Index)(nil)).Elem()
 				rowType := reflect.TypeOf((*entity.Row)(nil)).Elem()
+				colType := reflect.TypeOf((*entity.Column)(nil)).Elem()
 				switch {
 				case inT.Implements(idxType):
 					ins = append(ins, reflect.ValueOf(entity.NewFlatIndex("flat_index", entity.L2)))
 				case inT.Implements(rowType):
 					ins = append(ins, reflect.ValueOf(&ValidStruct{}))
+				case inT.Implements(colType):
+					ins = append(ins, reflect.ValueOf(entity.NewColumnInt64("id", []int64{})))
 				}
 			default:
 				ins = append(ins, reflect.Zero(inT))

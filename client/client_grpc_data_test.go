@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/rand"
 	"testing"
@@ -174,11 +175,91 @@ func TestGrpcClientFlush(t *testing.T) {
 	})
 }
 
+func TestGrpcDeleteByPks(t *testing.T) {
+	ctx := context.Background()
+
+	c := testClient(ctx, t)
+	defer c.Close()
+
+	mock.setInjection(mDescribeCollection, describeCollectionInjection(t, 1, testCollectionName, defaultSchema()))
+	defer mock.delInjection(mDescribeCollection)
+
+	t.Run("normal delete by pks", func(t *testing.T) {
+		partName := "testPart"
+		mock.setInjection(mHasPartition, hasPartitionInjection(t, testCollectionName, true, partName))
+		defer mock.delInjection(mHasPartition)
+		mock.setInjection(mDelete, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+			req, ok := raw.(*server.DeleteRequest)
+			if !ok {
+				t.FailNow()
+			}
+			assert.Equal(t, testCollectionName, req.GetCollectionName())
+			assert.Equal(t, partName, req.GetPartitionName())
+
+			resp := &server.MutationResult{}
+			s, err := successStatus()
+			resp.Status = s
+			return resp, err
+		})
+		defer mock.delInjection(mDelete)
+
+		err := c.DeleteByPks(ctx, testCollectionName, partName, entity.NewColumnInt64(testPrimaryField, []int64{1, 2, 3}))
+		assert.NoError(t, err)
+	})
+
+	t.Run("Bad request deletes", func(t *testing.T) {
+		partName := "testPart"
+		mock.setInjection(mHasPartition, hasPartitionInjection(t, testCollectionName, false, partName))
+		defer mock.delInjection(mHasPartition)
+
+		// non-exist collection
+		err := c.DeleteByPks(ctx, "non-exists-collection", "", entity.NewColumnInt64("pk", []int64{}))
+		assert.Error(t, err)
+
+		// non-exist parition
+		err = c.DeleteByPks(ctx, testCollectionName, "non-exists-part", entity.NewColumnInt64("pk", []int64{}))
+		assert.Error(t, err)
+
+		// zero length pk
+		err = c.DeleteByPks(ctx, testCollectionName, "", entity.NewColumnInt64(testPrimaryField, []int64{}))
+		assert.Error(t, err)
+
+		// string pk field
+		err = c.DeleteByPks(ctx, testCollectionName, "", entity.NewColumnString(testPrimaryField, []string{"1"}))
+		assert.Error(t, err)
+
+		// pk name not match
+		err = c.DeleteByPks(ctx, testCollectionName, "", entity.NewColumnInt64("not_pk", []int64{1}))
+		assert.Error(t, err)
+	})
+
+	t.Run("delete services fail", func(t *testing.T) {
+		mock.setInjection(mDelete, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+			resp := &server.MutationResult{}
+			return resp, errors.New("mocked error")
+		})
+
+		err := c.DeleteByPks(ctx, testCollectionName, "", entity.NewColumnInt64(testPrimaryField, []int64{1}))
+		assert.Error(t, err)
+
+		mock.setInjection(mDelete, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+			resp := &server.MutationResult{}
+			resp.Status = &common.Status{
+				ErrorCode: common.ErrorCode_UnexpectedError,
+			}
+			return resp, nil
+		})
+		err = c.DeleteByPks(ctx, testCollectionName, "", entity.NewColumnInt64(testPrimaryField, []int64{1}))
+		assert.Error(t, err)
+	})
+}
+
 func TestGrpcSearch(t *testing.T) {
 
 	ctx := context.Background()
 
 	c := testClient(ctx, t)
+	defer c.Close()
 	vectors := generateFloatVector(4096, testVectorDim)
 
 	t.Run("search fail due to meta error", func(t *testing.T) {
