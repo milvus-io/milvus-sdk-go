@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -167,6 +168,59 @@ func (c *grpcClient) Flush(ctx context.Context, collName string, async bool) err
 	return nil
 }
 
+// DeleteByPks deletes entries related to provided primary keys
+func (c *grpcClient) DeleteByPks(ctx context.Context, collName string, partitionName string, ids entity.Column) error {
+	if c.service == nil {
+		return ErrClientNotReady
+	}
+
+	// check collection name
+	coll, err := c.DescribeCollection(ctx, collName)
+	if err != nil {
+		return err
+	}
+	// check partition name
+	if partitionName != "" {
+		err := c.checkPartitionExists(ctx, collName, partitionName)
+		if err != nil {
+			return err
+		}
+	}
+	// check primary keys
+	if ids.Len() == 0 {
+		return errors.New("ids len must not be zero")
+	}
+	if ids.Type() != entity.FieldTypeInt64 {
+		return errors.New("only int64 pk is supported for now")
+	}
+
+	pkf := getPKField(coll.Schema)
+	// pkf shall not be nil since is returned from milvus
+	if pkf.Name != ids.Name() {
+		return errors.New("only delete by primary key is supported now")
+	}
+	// for now pk must be int64
+	expr := fmt.Sprintf("%s in %s", ids.Name(), strings.Join(strings.Fields(fmt.Sprint(ids.FieldData().GetScalars().GetLongData().GetData())), ","))
+
+	req := &server.DeleteRequest{
+		DbName:         "",
+		CollectionName: collName,
+		PartitionName:  partitionName,
+		Expr:           expr,
+	}
+
+	resp, err := c.service.Delete(ctx, req)
+	if err != nil {
+		return err
+	}
+	err = handleRespStatus(resp.GetStatus())
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 //Search with bool expression
 func (c *grpcClient) Search(ctx context.Context, collName string, partitions []string,
 	expr string, outputFields []string, vectors []entity.Vector, vectorField string, metricType entity.MetricType, topK int, sp entity.SearchParam) ([]SearchResult, error) {
@@ -282,6 +336,15 @@ func (c *grpcClient) Search(ctx context.Context, collName string, partitions []s
 		return []SearchResult{}, batchErr
 	}
 	return sr, nil
+}
+
+func getPKField(schema *entity.Schema) *entity.Field {
+	for _, f := range schema.Fields {
+		if f.PrimaryKey {
+			return f
+		}
+	}
+	return nil
 }
 
 func splitSearchRequest(sch *entity.Schema, partitions []string,
