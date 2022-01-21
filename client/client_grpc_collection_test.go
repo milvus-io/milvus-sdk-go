@@ -24,6 +24,7 @@ func TestGrpcClientListCollections(t *testing.T) {
 		ids     []int64
 		names   []string
 		collNum int
+		inMem   []int64
 	}
 	caseLen := 5
 	cases := make([]testCase, 0, caseLen)
@@ -40,6 +41,13 @@ func TestGrpcClientListCollections(t *testing.T) {
 			tc.ids = append(tc.ids, int64(base))
 			base += rand.Intn(500)
 			tc.names = append(tc.names, fmt.Sprintf("coll_%d", base))
+			inMem := rand.Intn(100)
+			if inMem%2 == 0 {
+
+				tc.inMem = append(tc.inMem, 100)
+			} else {
+				tc.inMem = append(tc.inMem, 0)
+			}
 		}
 		cases = append(cases, tc)
 	}
@@ -48,9 +56,10 @@ func TestGrpcClientListCollections(t *testing.T) {
 		mock.setInjection(mShowCollections, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			s, err := successStatus()
 			resp := &server.ShowCollectionsResponse{
-				Status:          s,
-				CollectionIds:   tc.ids,
-				CollectionNames: tc.names,
+				Status:              s,
+				CollectionIds:       tc.ids,
+				CollectionNames:     tc.names,
+				InMemoryPercentages: tc.inMem,
 			}
 			return resp, err
 		})
@@ -70,6 +79,7 @@ func TestGrpcClientListCollections(t *testing.T) {
 				for jdx, id := range tc.ids {
 					if rid == id {
 						assert.Equal(t, tc.names[jdx], rnames[idx])
+						assert.Equal(t, tc.inMem[jdx] == 100, collections[idx].Loaded)
 					}
 				}
 			}

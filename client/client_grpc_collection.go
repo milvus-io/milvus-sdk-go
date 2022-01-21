@@ -85,7 +85,8 @@ func (c *grpcClient) ListCollections(ctx context.Context) ([]*entity.Collection,
 	}
 	req := &server.ShowCollectionsRequest{
 		DbName:    "",
-		TimeStamp: 0, // means now
+		TimeStamp: 0,                        // means now
+		Type:      server.ShowType_InMemory, // make loaded result in response
 	}
 	resp, err := c.service.ShowCollections(ctx, req)
 	if err != nil {
@@ -100,6 +101,9 @@ func (c *grpcClient) ListCollections(ctx context.Context) ([]*entity.Collection,
 		collection := &entity.Collection{
 			ID:   item,
 			Name: resp.GetCollectionNames()[idx],
+		}
+		if len(resp.GetInMemoryPercentages()) > idx {
+			collection.Loaded = resp.GetInMemoryPercentages()[idx] == 100
 		}
 		collections = append(collections, collection)
 	}
