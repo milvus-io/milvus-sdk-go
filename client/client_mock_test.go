@@ -145,6 +145,7 @@ const (
 	mCalcDistance  serviceMethod = 33
 	mGetFlushState serviceMethod = 34
 	mDelete        serviceMethod = 35
+	mQuery         serviceMethod = 36
 
 	mManualCompaction            serviceMethod = 40
 	mGetCompactionState          serviceMethod = 41
@@ -411,8 +412,14 @@ func (m *mockServer) Flush(ctx context.Context, req *server.FlushRequest) (*serv
 	return &server.FlushResponse{Status: s}, err
 }
 
-func (m *mockServer) Query(_ context.Context, _ *server.QueryRequest) (*server.QueryResults, error) {
-	panic("not implemented") // TODO: Implement
+func (m *mockServer) Query(ctx context.Context, req *server.QueryRequest) (*server.QueryResults, error) {
+	f := m.getInjection(mQuery)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*server.QueryResults), err
+	}
+	s, err := successStatus()
+	return &server.QueryResults{Status: s}, err
 }
 
 func (m *mockServer) GetPersistentSegmentInfo(ctx context.Context, req *server.GetPersistentSegmentInfoRequest) (*server.GetPersistentSegmentInfoResponse, error) {

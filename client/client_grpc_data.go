@@ -338,6 +338,69 @@ func (c *grpcClient) Search(ctx context.Context, collName string, partitions []s
 	return sr, nil
 }
 
+// QueryByPks query record by specified primary key(s)
+func (c *grpcClient) QueryByPks(ctx context.Context, collectionName string, partitionNames []string, ids entity.Column, outputFields []string) ([]entity.Column, error) {
+	if c.service == nil {
+		return nil, ErrClientNotReady
+	}
+
+	// check collection exists and get collection schema
+	coll, err := c.DescribeCollection(ctx, collectionName)
+	if err != nil {
+		return nil, err
+	}
+	// check partition exists
+	for _, partitionName := range partitionNames {
+		err := c.checkPartitionExists(ctx, collectionName, partitionName)
+		if err != nil {
+			return nil, err
+		}
+	}
+	// check primary keys
+	if ids.Len() == 0 {
+		return nil, errors.New("ids len must not be zero")
+	}
+	if ids.Type() != entity.FieldTypeInt64 {
+		return nil, errors.New("only int64 pk is supported for now")
+	}
+
+	pkf := getPKField(coll.Schema)
+	// pkf shall not be nil since is returned from milvus
+	if pkf.Name != ids.Name() {
+		return nil, errors.New("only delete by primary key is supported now")
+	}
+	// for now pk must be int64
+	expr := fmt.Sprintf("%s in %s", ids.Name(), strings.Join(strings.Fields(fmt.Sprint(ids.FieldData().GetScalars().GetLongData().GetData())), ","))
+
+	req := &server.QueryRequest{
+		DbName:         "", // reserved field
+		CollectionName: collectionName,
+		PartitionNames: partitionNames,
+		OutputFields:   outputFields,
+		Expr:           expr,
+	}
+	resp, err := c.service.Query(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	err = handleRespStatus(resp.GetStatus())
+	if err != nil {
+		return nil, err
+	}
+
+	fieldsData := resp.GetFieldsData()
+	columns := make([]entity.Column, 0, len(fieldsData))
+	for _, fieldData := range resp.GetFieldsData() {
+		column, err := entity.FieldDataColumn(fieldData, 0, -1)
+		if err != nil {
+			return nil, err
+		}
+		columns = append(columns, column)
+	}
+
+	return columns, nil
+}
+
 func getPKField(schema *entity.Schema) *entity.Field {
 	for _, f := range schema.Fields {
 		if f.PrimaryKey {

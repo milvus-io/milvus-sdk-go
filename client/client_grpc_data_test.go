@@ -373,6 +373,155 @@ func TestGrpcSearch(t *testing.T) {
 	})
 }
 
+func TestGrpcQueryByPks(t *testing.T) {
+	ctx := context.Background()
+	c := testClient(ctx, t)
+	partName := "testPart"
+
+	t.Run("normal query by pks", func(t *testing.T) {
+		mock.setInjection(mHasCollection, hasCollectionDefault)
+		mock.setInjection(mHasPartition, hasPartitionInjection(t, testCollectionName, false, partName))
+		defer mock.delInjection(mHasPartition)
+
+		mock.setInjection(mQuery, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+			req, ok := raw.(*server.QueryRequest)
+			if !ok {
+				t.FailNow()
+			}
+			assert.Equal(t, testCollectionName, req.GetCollectionName())
+			if len(req.GetPartitionNames()) > 0 {
+				assert.Equal(t, partName, req.GetPartitionNames()[0])
+			}
+
+			resp := &server.QueryResults{}
+			s, err := successStatus()
+			resp.Status = s
+			resp.FieldsData = []*schema.FieldData{
+				{
+					Type:      schema.DataType_Int64,
+					FieldName: "int64",
+					Field: &schema.FieldData_Scalars{
+						Scalars: &schema.ScalarField{
+							Data: &schema.ScalarField_LongData{
+								LongData: &schema.LongArray{
+									Data: []int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+								},
+							},
+						},
+					},
+				},
+			}
+
+			return resp, err
+		})
+		defer mock.delInjection(mQuery)
+
+		columns, err := c.QueryByPks(ctx, testCollectionName, []string{partName}, entity.NewColumnInt64(testPrimaryField, []int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}), []string{"int64"})
+		assert.NoError(t, err)
+		assert.Equal(t, 1, len(columns))
+		assert.Equal(t, entity.FieldTypeInt64, columns[0].Type())
+		assert.Equal(t, 10, columns[0].Len())
+
+		colInt64, ok := columns[0].(*entity.ColumnInt64)
+		assert.True(t, ok)
+		assert.ElementsMatch(t, []int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, colInt64.Data())
+
+	})
+
+	t.Run("Bad request querys", func(t *testing.T) {
+		mock.setInjection(mHasCollection, hasCollectionDefault)
+		mock.setInjection(mHasPartition, hasPartitionInjection(t, testCollectionName, false, partName))
+		defer mock.delInjection(mHasPartition)
+
+		// non-exist collection
+		_, err := c.QueryByPks(ctx, "non-exists-collection", []string{}, entity.NewColumnInt64("pk", []int64{}), []string{})
+		assert.Error(t, err)
+
+		// non-exist parition
+		_, err = c.QueryByPks(ctx, testCollectionName, []string{"non-exists-part"}, entity.NewColumnInt64("pk", []int64{}), []string{})
+		assert.Error(t, err)
+
+		// zero length pk
+		_, err = c.QueryByPks(ctx, testCollectionName, []string{}, entity.NewColumnInt64("pk", []int64{}), []string{})
+		assert.Error(t, err)
+
+		// string pk field
+		_, err = c.QueryByPks(ctx, testCollectionName, []string{}, entity.NewColumnString("pk", []string{"1"}), []string{})
+		assert.Error(t, err)
+
+		// pk name not match
+		_, err = c.QueryByPks(ctx, testCollectionName, []string{}, entity.NewColumnInt64("non_pk", []int64{1}), []string{})
+		assert.Error(t, err)
+	})
+
+	t.Run("Query service error", func(t *testing.T) {
+		mock.setInjection(mHasCollection, hasCollectionDefault)
+		mock.setInjection(mHasPartition, hasPartitionInjection(t, testCollectionName, false, partName))
+		defer mock.delInjection(mHasPartition)
+
+		mock.setInjection(mQuery, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+			_, ok := raw.(*server.QueryRequest)
+			if !ok {
+				t.FailNow()
+			}
+
+			resp := &server.QueryResults{}
+			return resp, errors.New("mocked error")
+		})
+		defer mock.delInjection(mQuery)
+
+		_, err := c.QueryByPks(ctx, testCollectionName, []string{}, entity.NewColumnInt64(testPrimaryField, []int64{1}), []string{"*"})
+		assert.Error(t, err)
+
+		mock.setInjection(mQuery, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+			_, ok := raw.(*server.QueryRequest)
+			if !ok {
+				t.FailNow()
+			}
+
+			resp := &server.QueryResults{}
+			resp.Status = &common.Status{
+				ErrorCode: common.ErrorCode_UnexpectedError,
+				Reason:    "mocked error",
+			}
+			return resp, nil
+		})
+
+		_, err = c.QueryByPks(ctx, testCollectionName, []string{}, entity.NewColumnInt64(testPrimaryField, []int64{1}), []string{"*"})
+		assert.Error(t, err)
+
+		mock.setInjection(mQuery, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+			_, ok := raw.(*server.QueryRequest)
+			if !ok {
+				t.FailNow()
+			}
+
+			resp := &server.QueryResults{}
+			s, err := successStatus()
+			resp.Status = s
+			resp.FieldsData = []*schema.FieldData{
+				{
+					Type:      schema.DataType_String,
+					FieldName: "int64",
+					Field: &schema.FieldData_Scalars{
+						Scalars: &schema.ScalarField{
+							Data: &schema.ScalarField_LongData{
+								LongData: &schema.LongArray{
+									Data: []int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+								},
+							},
+						},
+					},
+				},
+			}
+
+			return resp, err
+		})
+		_, err = c.QueryByPks(ctx, testCollectionName, []string{}, entity.NewColumnInt64(testPrimaryField, []int64{1}), []string{"*"})
+		assert.Error(t, err)
+	})
+}
+
 func TestGrpcCalcDistanceWithIDs(t *testing.T) {
 	ctx := context.Background()
 	t.Run("bad client calls CalcDistance", func(t *testing.T) {

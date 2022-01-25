@@ -311,6 +311,25 @@ func TestFieldData{{.TypeName}}Column(t *testing.T) {
 		_, err := FieldDataColumn(fd, 0, len)
 		assert.NotNil(t, err)
 	})
+	
+	t.Run("get all data", func(t *testing.T) {
+		fd.Field = &schema.FieldData_Scalars{
+			Scalars: &schema.ScalarField{
+				Data: &schema.ScalarField_{{.PbName}}Data{
+					{{.PbName}}Data: &schema.{{.PbName}}Array{
+						Data: make([]{{.PbType}}, len),
+					},
+				},
+			},
+		}
+		column, err := FieldDataColumn(fd, 0, -1)
+		assert.Nil(t, err)
+		assert.NotNil(t, column)
+		
+		assert.Equal(t, name, column.Name())
+		assert.Equal(t, len, column.Len())
+		assert.Equal(t, FieldType{{.TypeName}}, column.Type())
+	})
 }
 {{end}}{{end}}
 `))

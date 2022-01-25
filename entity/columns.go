@@ -106,6 +106,9 @@ func FieldDataColumn(fd *schema.FieldData, begin, end int) (Column, error) {
 		if !ok {
 			return nil, errFieldDataTypeNotMatch
 		}
+		if end < 0 {
+			return NewColumnBool(fd.GetFieldName(), data.BoolData.GetData()[begin:]), nil
+		}
 		return NewColumnBool(fd.GetFieldName(), data.BoolData.GetData()[begin:end]), nil
 
 	case schema.DataType_Int8:
@@ -117,6 +120,11 @@ func FieldDataColumn(fd *schema.FieldData, begin, end int) (Column, error) {
 		for _, v := range data.IntData.GetData() {
 			values = append(values, int8(v))
 		}
+
+		if end < 0 {
+			return NewColumnInt8(fd.GetFieldName(), values[begin:]), nil
+		}
+
 		return NewColumnInt8(fd.GetFieldName(), values[begin:end]), nil
 
 	case schema.DataType_Int16:
@@ -128,12 +136,19 @@ func FieldDataColumn(fd *schema.FieldData, begin, end int) (Column, error) {
 		for _, v := range data.IntData.GetData() {
 			values = append(values, int16(v))
 		}
+		if end < 0 {
+			return NewColumnInt16(fd.GetFieldName(), values[begin:]), nil
+		}
+
 		return NewColumnInt16(fd.GetFieldName(), values[begin:end]), nil
 
 	case schema.DataType_Int32:
 		data, ok := fd.GetScalars().GetData().(*schema.ScalarField_IntData)
 		if !ok {
 			return nil, errFieldDataTypeNotMatch
+		}
+		if end < 0 {
+			return NewColumnInt32(fd.GetFieldName(), data.IntData.GetData()[begin:]), nil
 		}
 		return NewColumnInt32(fd.GetFieldName(), data.IntData.GetData()[begin:end]), nil
 
@@ -142,12 +157,18 @@ func FieldDataColumn(fd *schema.FieldData, begin, end int) (Column, error) {
 		if !ok {
 			return nil, errFieldDataTypeNotMatch
 		}
+		if end < 0 {
+			return NewColumnInt64(fd.GetFieldName(), data.LongData.GetData()[begin:]), nil
+		}
 		return NewColumnInt64(fd.GetFieldName(), data.LongData.GetData()[begin:end]), nil
 
 	case schema.DataType_Float:
 		data, ok := fd.GetScalars().GetData().(*schema.ScalarField_FloatData)
 		if !ok {
 			return nil, errFieldDataTypeNotMatch
+		}
+		if end < 0 {
+			return NewColumnFloat(fd.GetFieldName(), data.FloatData.GetData()[begin:]), nil
 		}
 		return NewColumnFloat(fd.GetFieldName(), data.FloatData.GetData()[begin:end]), nil
 
@@ -156,12 +177,18 @@ func FieldDataColumn(fd *schema.FieldData, begin, end int) (Column, error) {
 		if !ok {
 			return nil, errFieldDataTypeNotMatch
 		}
+		if end < 0 {
+			return NewColumnDouble(fd.GetFieldName(), data.DoubleData.GetData()[begin:]), nil
+		}
 		return NewColumnDouble(fd.GetFieldName(), data.DoubleData.GetData()[begin:end]), nil
 
 	case schema.DataType_String:
 		data, ok := fd.GetScalars().GetData().(*schema.ScalarField_StringData)
 		if !ok {
 			return nil, errFieldDataTypeNotMatch
+		}
+		if end < 0 {
+			return NewColumnString(fd.GetFieldName(), data.StringData.GetData()[begin:]), nil
 		}
 		return NewColumnString(fd.GetFieldName(), data.StringData.GetData()[begin:end]), nil
 
