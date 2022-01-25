@@ -85,8 +85,7 @@ func (c *grpcClient) ListCollections(ctx context.Context) ([]*entity.Collection,
 	}
 	req := &server.ShowCollectionsRequest{
 		DbName:    "",
-		TimeStamp: 0,                        // means now
-		Type:      server.ShowType_InMemory, // make loaded result in response
+		TimeStamp: 0, // means now
 	}
 	resp, err := c.service.ShowCollections(ctx, req)
 	if err != nil {

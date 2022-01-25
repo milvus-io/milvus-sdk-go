@@ -123,12 +123,16 @@ func (c *grpcClient) ShowPartitions(ctx context.Context, collName string) ([]*en
 		return []*entity.Partition{}, err
 	}
 	partitions := make([]*entity.Partition, 0, len(resp.GetPartitionIDs()))
-	if len(resp.GetPartitionNames())==0 || len(resp.GetInMemoryPercentages())==0{
-		return  []*entity.Partition{}, errors.New("length of GetPartitionNames or GetInMemoryPercentages is 0")
+	if len(resp.GetPartitionNames()) == 0 {
+		return []*entity.Partition{}, errors.New("length of PartitionNames")
 	}
 	for idx, partitionID := range resp.GetPartitionIDs() {
-		partitions = append(partitions, &entity.Partition{ID: partitionID, Name: resp.GetPartitionNames()[idx],
-			Loaded: resp.GetInMemoryPercentages()[idx] == 100})
+		partition := &entity.Partition{ID: partitionID, Name: resp.GetPartitionNames()[idx]}
+		if len(resp.GetInMemoryPercentages()) > idx {
+			partition.Loaded = resp.GetInMemoryPercentages()[idx] == 100
+		}
+
+		partitions = append(partitions, partition)
 	}
 	return partitions, nil
 }
