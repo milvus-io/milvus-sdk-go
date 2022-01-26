@@ -410,16 +410,31 @@ func TestGrpcQueryByPks(t *testing.T) {
 						},
 					},
 				},
+				{
+					Type:      schema.DataType_FloatVector,
+					FieldName: testVectorField,
+					Field: &schema.FieldData_Vectors{
+						Vectors: &schema.VectorField{
+							Dim: 1,
+							Data: &schema.VectorField_FloatVector{
+								FloatVector: &schema.FloatArray{
+									Data: []float32{0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0},
+								},
+							},
+						},
+					},
+				},
 			}
 
 			return resp, err
 		})
 		defer mock.delInjection(mQuery)
 
-		columns, err := c.QueryByPks(ctx, testCollectionName, []string{partName}, entity.NewColumnInt64(testPrimaryField, []int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}), []string{"int64"})
+		columns, err := c.QueryByPks(ctx, testCollectionName, []string{partName}, entity.NewColumnInt64(testPrimaryField, []int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}), []string{"int64", testVectorField})
 		assert.NoError(t, err)
-		assert.Equal(t, 1, len(columns))
+		assert.Equal(t, 2, len(columns))
 		assert.Equal(t, entity.FieldTypeInt64, columns[0].Type())
+		assert.Equal(t, entity.FieldTypeFloatVector, columns[1].Type())
 		assert.Equal(t, 10, columns[0].Len())
 
 		colInt64, ok := columns[0].(*entity.ColumnInt64)
@@ -502,6 +517,36 @@ func TestGrpcQueryByPks(t *testing.T) {
 			resp.FieldsData = []*schema.FieldData{
 				{
 					Type:      schema.DataType_String,
+					FieldName: "int64",
+					Field: &schema.FieldData_Scalars{
+						Scalars: &schema.ScalarField{
+							Data: &schema.ScalarField_LongData{
+								LongData: &schema.LongArray{
+									Data: []int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+								},
+							},
+						},
+					},
+				},
+			}
+
+			return resp, err
+		})
+		_, err = c.QueryByPks(ctx, testCollectionName, []string{}, entity.NewColumnInt64(testPrimaryField, []int64{1}), []string{"*"})
+		assert.Error(t, err)
+
+		mock.setInjection(mQuery, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+			_, ok := raw.(*server.QueryRequest)
+			if !ok {
+				t.FailNow()
+			}
+
+			resp := &server.QueryResults{}
+			s, err := successStatus()
+			resp.Status = s
+			resp.FieldsData = []*schema.FieldData{
+				{
+					Type:      schema.DataType_FloatVector,
 					FieldName: "int64",
 					Field: &schema.FieldData_Scalars{
 						Scalars: &schema.ScalarField{
