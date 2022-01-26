@@ -391,6 +391,15 @@ func (c *grpcClient) QueryByPks(ctx context.Context, collectionName string, part
 	fieldsData := resp.GetFieldsData()
 	columns := make([]entity.Column, 0, len(fieldsData))
 	for _, fieldData := range resp.GetFieldsData() {
+		if fieldData.GetType() == schema.DataType_FloatVector ||
+			fieldData.GetType() == schema.DataType_BinaryVector {
+			column, err := entity.FieldDataVector(fieldData)
+			if err != nil {
+				return nil, err
+			}
+			columns = append(columns, column)
+			continue
+		}
 		column, err := entity.FieldDataColumn(fieldData, 0, -1)
 		if err != nil {
 			return nil, err
