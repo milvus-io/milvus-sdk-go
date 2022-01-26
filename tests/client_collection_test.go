@@ -55,7 +55,7 @@ func TestCreateCollection(t *testing.T) {
 				Name:     "vector",
 				DataType: entity.FieldTypeFloatVector,
 				TypeParams: map[string]string{
-					"dim": "128",
+					entity.TYPE_PARAM_DIM: "128",
 				},
 			},
 		},
