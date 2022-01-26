@@ -16,6 +16,11 @@ import (
 	"github.com/milvus-io/milvus-sdk-go/v2/internal/proto/schema"
 )
 
+const (
+	// TYPE_PARAM_DIM is the const for field type param dimension
+	TYPE_PARAM_DIM = "dim"
+)
+
 // Schema represents schema info of collection in milvus
 type Schema struct {
 	CollectionName string

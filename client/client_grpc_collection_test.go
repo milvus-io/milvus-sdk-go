@@ -139,7 +139,7 @@ func TestGrpcClientCreateCollection(t *testing.T) {
 					{
 						Name:       "vector",
 						DataType:   entity.FieldTypeFloatVector,
-						TypeParams: map[string]string{"dim": "128"},
+						TypeParams: map[string]string{entity.TYPE_PARAM_DIM: "128"},
 					},
 				},
 			},
@@ -160,7 +160,7 @@ func TestGrpcClientCreateCollection(t *testing.T) {
 					{
 						Name:       "vector",
 						DataType:   entity.FieldTypeFloatVector,
-						TypeParams: map[string]string{"dim": "128"},
+						TypeParams: map[string]string{entity.TYPE_PARAM_DIM: "128"},
 					},
 				},
 			},
@@ -183,7 +183,7 @@ func TestGrpcClientCreateCollection(t *testing.T) {
 					{
 						Name:       "vector",
 						DataType:   entity.FieldTypeFloatVector,
-						TypeParams: map[string]string{"dim": "128"},
+						TypeParams: map[string]string{entity.TYPE_PARAM_DIM: "128"},
 					},
 				},
 			},
@@ -199,7 +199,7 @@ func TestGrpcClientCreateCollection(t *testing.T) {
 					{
 						Name:       "vector",
 						DataType:   entity.FieldTypeFloatVector,
-						TypeParams: map[string]string{"dim": "128"},
+						TypeParams: map[string]string{entity.TYPE_PARAM_DIM: "128"},
 					},
 				},
 			},
