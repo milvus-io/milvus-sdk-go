@@ -1,6 +1,12 @@
-# New Client
+# NewGrpcClient()
 
-This is the "Constructor" method set (only one for current release) to obtain `Client` instance.
+This is the constructor method set (only one for current release) to obtain a `Client` instance.
+
+## Invocation
+
+```go
+client.NewGrpcClient(ctx, addr)
+```
 
 ## Parameters
 
@@ -10,13 +16,22 @@ This is the "Constructor" method set (only one for current release) to obtain `C
 | `addr`       | Address of the Milvus instance                               | String                   |
 
 
-## Response
-- Milvus client instance.
-- `err`: connection error (if any).
+## Return
+
+A Milvus client instance.
+
+## Errors
+
+Connection error (if any).
 
 ## Example
 
 ```go
-ctx := context.Background()
-cli, err := client.NewGrpcClient(ctx, "localhost:19530")
+milvusClient, err := client.NewGrpcClient(
+    context.Background(), 
+    "localhost:19530"
+)
+if err != nil {
+  log.Fatal("failed to connect to Milvus:", err.Error())
+}
 ```
