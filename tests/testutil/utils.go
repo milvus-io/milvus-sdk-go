@@ -2,9 +2,10 @@ package testutil
 
 import (
 	"fmt"
-	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 	"math/rand"
 	"time"
+
+	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )
 
 var r *rand.Rand = nil
@@ -15,7 +16,7 @@ func init() {
 
 var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
-// RandomString returns a batch of random string
+// GenRandomString returns a batch of random string
 func GenRandomString(n int) string {
 	b := make([]rune, n)
 	for i := range b {
@@ -25,7 +26,7 @@ func GenRandomString(n int) string {
 }
 
 func GenDefaultFields(dim int64) []*entity.Field {
-	var fields = []*entity.Field {
+	var fields = []*entity.Field{
 		{
 			Name:       DefaultIntFieldName,
 			DataType:   entity.FieldTypeInt64,
@@ -38,19 +39,19 @@ func GenDefaultFields(dim int64) []*entity.Field {
 		{
 			Name:     DefaultFloatVecFieldName,
 			DataType: entity.FieldTypeFloatVector,
-			TypeParams: map[string]string {
-				"dim": fmt.Sprintf("%d", dim),
+			TypeParams: map[string]string{
+				entity.TYPE_PARAM_DIM: fmt.Sprintf("%d", dim),
 			},
 		},
 	}
 	return fields
 }
 
-func GenSchema(name string, autoId bool, fields []*entity.Field) *entity.Schema {
+func GenSchema(name string, autoID bool, fields []*entity.Field) *entity.Schema {
 	schema := &entity.Schema{
 		CollectionName: name,
-		AutoID: autoId,
-		Fields: fields,
+		AutoID:         autoID,
+		Fields:         fields,
 	}
 	return schema
 }

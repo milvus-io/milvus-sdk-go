@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -28,7 +29,7 @@ import (
 	"github.com/milvus-io/milvus-sdk-go/v2/internal/proto/server"
 )
 
-// Index insert into collection with column-based format
+// Insert Index  into collection with column-based format
 // collName is the collection name
 // partitionName is the partition to insert, if not specified(empty), default partition will be used
 // columns are slice of the column-based data
@@ -83,8 +84,8 @@ func (c *grpcClient) Insert(ctx context.Context, collName string, partitionName 
 			case *entity.ColumnBinaryVector:
 				dim = column.Dim()
 			}
-			if fmt.Sprintf("%d", dim) != field.TypeParams["dim"] {
-				return nil, fmt.Errorf("params column %s vector dim %d not match collection definition, which has dim of %s", field.Name, dim, field.TypeParams["dim"])
+			if fmt.Sprintf("%d", dim) != field.TypeParams[entity.TYPE_PARAM_DIM] {
+				return nil, fmt.Errorf("params column %s vector dim %d not match collection definition, which has dim of %s", field.Name, dim, field.TypeParams[entity.TYPE_PARAM_DIM])
 			}
 		}
 	}
@@ -141,27 +142,17 @@ func (c *grpcClient) Flush(ctx context.Context, collName string, async bool) err
 	}
 	if !async {
 		segmentIDs, has := resp.GetCollSegIDs()[collName]
-		if has {
-			waitingSet := make(map[int64]struct{})
-			for _, segmentID := range segmentIDs.GetData() {
-				waitingSet[segmentID] = struct{}{}
-			}
+		ids := segmentIDs.GetData()
+		if has && len(ids) > 0 {
 			flushed := func() bool {
-				segments, err := c.GetPersistentSegmentInfo(context.Background(), collName)
+				resp, err := c.service.GetFlushState(ctx, &server.GetFlushStateRequest{
+					SegmentIDs: ids,
+				})
 				if err != nil {
-					//TODO handles grpc failure, maybe need reconnect?
+					// TODO max retry
+					return false
 				}
-				flushed := 0
-				for _, segment := range segments {
-					if _, has := waitingSet[segment.ID]; !has {
-						continue
-					}
-					if !segment.Flushed() {
-						return false
-					}
-					flushed++
-				}
-				return len(waitingSet) == flushed
+				return resp.GetFlushed()
 			}
 			for !flushed() {
 				// respect context deadline/cancel
@@ -177,7 +168,60 @@ func (c *grpcClient) Flush(ctx context.Context, collName string, async bool) err
 	return nil
 }
 
-//BoolExprSearch search with bool expression
+// DeleteByPks deletes entries related to provided primary keys
+func (c *grpcClient) DeleteByPks(ctx context.Context, collName string, partitionName string, ids entity.Column) error {
+	if c.service == nil {
+		return ErrClientNotReady
+	}
+
+	// check collection name
+	coll, err := c.DescribeCollection(ctx, collName)
+	if err != nil {
+		return err
+	}
+	// check partition name
+	if partitionName != "" {
+		err := c.checkPartitionExists(ctx, collName, partitionName)
+		if err != nil {
+			return err
+		}
+	}
+	// check primary keys
+	if ids.Len() == 0 {
+		return errors.New("ids len must not be zero")
+	}
+	if ids.Type() != entity.FieldTypeInt64 {
+		return errors.New("only int64 pk is supported for now")
+	}
+
+	pkf := getPKField(coll.Schema)
+	// pkf shall not be nil since is returned from milvus
+	if pkf.Name != ids.Name() {
+		return errors.New("only delete by primary key is supported now")
+	}
+	// for now pk must be int64
+	expr := fmt.Sprintf("%s in %s", ids.Name(), strings.Join(strings.Fields(fmt.Sprint(ids.FieldData().GetScalars().GetLongData().GetData())), ","))
+
+	req := &server.DeleteRequest{
+		DbName:         "",
+		CollectionName: collName,
+		PartitionName:  partitionName,
+		Expr:           expr,
+	}
+
+	resp, err := c.service.Delete(ctx, req)
+	if err != nil {
+		return err
+	}
+	err = handleRespStatus(resp.GetStatus())
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+//Search with bool expression
 func (c *grpcClient) Search(ctx context.Context, collName string, partitions []string,
 	expr string, outputFields []string, vectors []entity.Vector, vectorField string, metricType entity.MetricType, topK int, sp entity.SearchParam) ([]SearchResult, error) {
 	if c.service == nil {
@@ -215,7 +259,7 @@ func (c *grpcClient) Search(ctx context.Context, collName string, partitions []s
 	if !has {
 		return nil, fmt.Errorf("vector field %s does not exist in collection %s", vectorField, collName)
 	}
-	dimStr := vfDef.TypeParams["dim"]
+	dimStr := vfDef.TypeParams[entity.TYPE_PARAM_DIM]
 	for _, vector := range vectors {
 		if fmt.Sprintf("%d", vector.Dim()) != dimStr {
 			return nil, fmt.Errorf("vector %s has dim of %s while found search vector with dim %d", vectorField,
@@ -264,7 +308,7 @@ func (c *grpcClient) Search(ctx context.Context, collName string, partitions []s
 				rc := int(results.GetTopks()[i]) // result entry count for current query
 				entry := SearchResult{
 					ResultCount: rc,
-					Scores:      results.GetScores()[offset:rc],
+					Scores:      results.GetScores()[offset : offset+rc],
 				}
 				entry.IDs, entry.Err = entity.IDColumns(results.GetIds(), offset, offset+rc)
 				if entry.Err != nil {
@@ -292,6 +336,87 @@ func (c *grpcClient) Search(ctx context.Context, collName string, partitions []s
 		return []SearchResult{}, batchErr
 	}
 	return sr, nil
+}
+
+// QueryByPks query record by specified primary key(s)
+func (c *grpcClient) QueryByPks(ctx context.Context, collectionName string, partitionNames []string, ids entity.Column, outputFields []string) ([]entity.Column, error) {
+	if c.service == nil {
+		return nil, ErrClientNotReady
+	}
+
+	// check collection exists and get collection schema
+	coll, err := c.DescribeCollection(ctx, collectionName)
+	if err != nil {
+		return nil, err
+	}
+	// check partition exists
+	for _, partitionName := range partitionNames {
+		err := c.checkPartitionExists(ctx, collectionName, partitionName)
+		if err != nil {
+			return nil, err
+		}
+	}
+	// check primary keys
+	if ids.Len() == 0 {
+		return nil, errors.New("ids len must not be zero")
+	}
+	if ids.Type() != entity.FieldTypeInt64 {
+		return nil, errors.New("only int64 pk is supported for now")
+	}
+
+	pkf := getPKField(coll.Schema)
+	// pkf shall not be nil since is returned from milvus
+	if pkf.Name != ids.Name() {
+		return nil, errors.New("only delete by primary key is supported now")
+	}
+	// for now pk must be int64
+	expr := fmt.Sprintf("%s in %s", ids.Name(), strings.Join(strings.Fields(fmt.Sprint(ids.FieldData().GetScalars().GetLongData().GetData())), ","))
+
+	req := &server.QueryRequest{
+		DbName:         "", // reserved field
+		CollectionName: collectionName,
+		PartitionNames: partitionNames,
+		OutputFields:   outputFields,
+		Expr:           expr,
+	}
+	resp, err := c.service.Query(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	err = handleRespStatus(resp.GetStatus())
+	if err != nil {
+		return nil, err
+	}
+
+	fieldsData := resp.GetFieldsData()
+	columns := make([]entity.Column, 0, len(fieldsData))
+	for _, fieldData := range resp.GetFieldsData() {
+		if fieldData.GetType() == schema.DataType_FloatVector ||
+			fieldData.GetType() == schema.DataType_BinaryVector {
+			column, err := entity.FieldDataVector(fieldData)
+			if err != nil {
+				return nil, err
+			}
+			columns = append(columns, column)
+			continue
+		}
+		column, err := entity.FieldDataColumn(fieldData, 0, -1)
+		if err != nil {
+			return nil, err
+		}
+		columns = append(columns, column)
+	}
+
+	return columns, nil
+}
+
+func getPKField(schema *entity.Schema) *entity.Field {
+	for _, f := range schema.Fields {
+		if f.PrimaryKey {
+			return f
+		}
+	}
+	return nil
 }
 
 func splitSearchRequest(sch *entity.Schema, partitions []string,
@@ -600,11 +725,11 @@ func estRowSize(sch *entity.Schema, selected []string) int64 {
 		case entity.FieldTypeString:
 			//TODO string need varchar[max] syntax like limitation
 		case entity.FieldTypeFloatVector:
-			dimStr := field.TypeParams["dim"]
+			dimStr := field.TypeParams[entity.TYPE_PARAM_DIM]
 			dim, _ := strconv.ParseInt(dimStr, 10, 64)
 			total += 4 * dim
 		case entity.FieldTypeBinaryVector:
-			dimStr := field.TypeParams["dim"]
+			dimStr := field.TypeParams[entity.TYPE_PARAM_DIM]
 			dim, _ := strconv.ParseInt(dimStr, 10, 64)
 			total += 4 * dim / 8
 		}

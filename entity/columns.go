@@ -106,6 +106,9 @@ func FieldDataColumn(fd *schema.FieldData, begin, end int) (Column, error) {
 		if !ok {
 			return nil, errFieldDataTypeNotMatch
 		}
+		if end < 0 {
+			return NewColumnBool(fd.GetFieldName(), data.BoolData.GetData()[begin:]), nil
+		}
 		return NewColumnBool(fd.GetFieldName(), data.BoolData.GetData()[begin:end]), nil
 
 	case schema.DataType_Int8:
@@ -117,6 +120,11 @@ func FieldDataColumn(fd *schema.FieldData, begin, end int) (Column, error) {
 		for _, v := range data.IntData.GetData() {
 			values = append(values, int8(v))
 		}
+
+		if end < 0 {
+			return NewColumnInt8(fd.GetFieldName(), values[begin:]), nil
+		}
+
 		return NewColumnInt8(fd.GetFieldName(), values[begin:end]), nil
 
 	case schema.DataType_Int16:
@@ -128,12 +136,19 @@ func FieldDataColumn(fd *schema.FieldData, begin, end int) (Column, error) {
 		for _, v := range data.IntData.GetData() {
 			values = append(values, int16(v))
 		}
+		if end < 0 {
+			return NewColumnInt16(fd.GetFieldName(), values[begin:]), nil
+		}
+
 		return NewColumnInt16(fd.GetFieldName(), values[begin:end]), nil
 
 	case schema.DataType_Int32:
 		data, ok := fd.GetScalars().GetData().(*schema.ScalarField_IntData)
 		if !ok {
 			return nil, errFieldDataTypeNotMatch
+		}
+		if end < 0 {
+			return NewColumnInt32(fd.GetFieldName(), data.IntData.GetData()[begin:]), nil
 		}
 		return NewColumnInt32(fd.GetFieldName(), data.IntData.GetData()[begin:end]), nil
 
@@ -142,12 +157,18 @@ func FieldDataColumn(fd *schema.FieldData, begin, end int) (Column, error) {
 		if !ok {
 			return nil, errFieldDataTypeNotMatch
 		}
+		if end < 0 {
+			return NewColumnInt64(fd.GetFieldName(), data.LongData.GetData()[begin:]), nil
+		}
 		return NewColumnInt64(fd.GetFieldName(), data.LongData.GetData()[begin:end]), nil
 
 	case schema.DataType_Float:
 		data, ok := fd.GetScalars().GetData().(*schema.ScalarField_FloatData)
 		if !ok {
 			return nil, errFieldDataTypeNotMatch
+		}
+		if end < 0 {
+			return NewColumnFloat(fd.GetFieldName(), data.FloatData.GetData()[begin:]), nil
 		}
 		return NewColumnFloat(fd.GetFieldName(), data.FloatData.GetData()[begin:end]), nil
 
@@ -156,6 +177,9 @@ func FieldDataColumn(fd *schema.FieldData, begin, end int) (Column, error) {
 		if !ok {
 			return nil, errFieldDataTypeNotMatch
 		}
+		if end < 0 {
+			return NewColumnDouble(fd.GetFieldName(), data.DoubleData.GetData()[begin:]), nil
+		}
 		return NewColumnDouble(fd.GetFieldName(), data.DoubleData.GetData()[begin:end]), nil
 
 	case schema.DataType_String:
@@ -163,8 +187,47 @@ func FieldDataColumn(fd *schema.FieldData, begin, end int) (Column, error) {
 		if !ok {
 			return nil, errFieldDataTypeNotMatch
 		}
+		if end < 0 {
+			return NewColumnString(fd.GetFieldName(), data.StringData.GetData()[begin:]), nil
+		}
 		return NewColumnString(fd.GetFieldName(), data.StringData.GetData()[begin:end]), nil
+	default:
+		return nil, errors.New("unsupported data type")
+	}
+}
 
+// FieldDataColumn converts schema.FieldData to vector Column
+func FieldDataVector(fd *schema.FieldData) (Column, error) {
+	switch fd.GetType() {
+	case schema.DataType_FloatVector:
+		vectors := fd.GetVectors()
+		data := vectors.GetFloatVector().GetData()
+		if data == nil {
+			return nil, errFieldDataTypeNotMatch
+		}
+		dim := int(vectors.GetDim())
+		vector := make([][]float32, 0, len(data)/dim) // shall not have remanunt
+		for i := 0; i < len(data)/dim; i++ {
+			v := make([]float32, dim)
+			copy(v, data[i*dim:(i+1)*dim])
+			vector = append(vector, v)
+		}
+		return NewColumnFloatVector(fd.GetFieldName(), dim, vector), nil
+	case schema.DataType_BinaryVector:
+		vectors := fd.GetVectors()
+		data := vectors.GetBinaryVector()
+		if data == nil {
+			return nil, errFieldDataTypeNotMatch
+		}
+		dim := int(vectors.GetDim())
+		blen := dim / 8
+		vector := make([][]byte, 0, len(data)/blen)
+		for i := 0; i < len(data)/blen; i++ {
+			v := make([]byte, blen)
+			copy(v, data[i*blen:(i+1)*blen])
+			vector = append(vector, v)
+		}
+		return NewColumnBinaryVector(fd.GetFieldName(), dim, vector), nil
 	default:
 		return nil, errors.New("unsupported data type")
 	}

@@ -101,6 +101,9 @@ func (c *grpcClient) ListCollections(ctx context.Context) ([]*entity.Collection,
 			ID:   item,
 			Name: resp.GetCollectionNames()[idx],
 		}
+		if len(resp.GetInMemoryPercentages()) > idx {
+			collection.Loaded = resp.GetInMemoryPercentages()[idx] == 100
+		}
 		collections = append(collections, collection)
 	}
 	return collections, nil
@@ -139,7 +142,7 @@ func (c *grpcClient) CreateCollection(ctx context.Context, collSchema *entity.Sc
 	}
 	err = handleRespStatus(resp)
 	if err != nil {
-		return nil
+		return err
 	}
 	return nil
 }

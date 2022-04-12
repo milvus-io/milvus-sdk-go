@@ -24,7 +24,7 @@ type Collection struct {
 
 // Partition represent partition meta in Milvus
 type Partition struct {
-	ID     int64  // paritition id
-	Name   string // parition name
+	ID     int64  // partition id
+	Name   string // partition name
 	Loaded bool   // partition loaded
 }

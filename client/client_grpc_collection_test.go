@@ -24,6 +24,7 @@ func TestGrpcClientListCollections(t *testing.T) {
 		ids     []int64
 		names   []string
 		collNum int
+		inMem   []int64
 	}
 	caseLen := 5
 	cases := make([]testCase, 0, caseLen)
@@ -40,6 +41,13 @@ func TestGrpcClientListCollections(t *testing.T) {
 			tc.ids = append(tc.ids, int64(base))
 			base += rand.Intn(500)
 			tc.names = append(tc.names, fmt.Sprintf("coll_%d", base))
+			inMem := rand.Intn(100)
+			if inMem%2 == 0 {
+
+				tc.inMem = append(tc.inMem, 100)
+			} else {
+				tc.inMem = append(tc.inMem, 0)
+			}
 		}
 		cases = append(cases, tc)
 	}
@@ -48,9 +56,10 @@ func TestGrpcClientListCollections(t *testing.T) {
 		mock.setInjection(mShowCollections, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			s, err := successStatus()
 			resp := &server.ShowCollectionsResponse{
-				Status:          s,
-				CollectionIds:   tc.ids,
-				CollectionNames: tc.names,
+				Status:              s,
+				CollectionIds:       tc.ids,
+				CollectionNames:     tc.names,
+				InMemoryPercentages: tc.inMem,
 			}
 			return resp, err
 		})
@@ -70,6 +79,7 @@ func TestGrpcClientListCollections(t *testing.T) {
 				for jdx, id := range tc.ids {
 					if rid == id {
 						assert.Equal(t, tc.names[jdx], rnames[idx])
+						assert.Equal(t, tc.inMem[jdx] == 100, collections[idx].Loaded)
 					}
 				}
 			}
@@ -129,7 +139,7 @@ func TestGrpcClientCreateCollection(t *testing.T) {
 					{
 						Name:       "vector",
 						DataType:   entity.FieldTypeFloatVector,
-						TypeParams: map[string]string{"dim": "128"},
+						TypeParams: map[string]string{entity.TYPE_PARAM_DIM: "128"},
 					},
 				},
 			},
@@ -150,7 +160,7 @@ func TestGrpcClientCreateCollection(t *testing.T) {
 					{
 						Name:       "vector",
 						DataType:   entity.FieldTypeFloatVector,
-						TypeParams: map[string]string{"dim": "128"},
+						TypeParams: map[string]string{entity.TYPE_PARAM_DIM: "128"},
 					},
 				},
 			},
@@ -173,7 +183,7 @@ func TestGrpcClientCreateCollection(t *testing.T) {
 					{
 						Name:       "vector",
 						DataType:   entity.FieldTypeFloatVector,
-						TypeParams: map[string]string{"dim": "128"},
+						TypeParams: map[string]string{entity.TYPE_PARAM_DIM: "128"},
 					},
 				},
 			},
@@ -189,7 +199,7 @@ func TestGrpcClientCreateCollection(t *testing.T) {
 					{
 						Name:       "vector",
 						DataType:   entity.FieldTypeFloatVector,
-						TypeParams: map[string]string{"dim": "128"},
+						TypeParams: map[string]string{entity.TYPE_PARAM_DIM: "128"},
 					},
 				},
 			},
@@ -217,6 +227,7 @@ func TestGrpcClientCreateCollection(t *testing.T) {
 
 			return successStatus()
 		})
+		defer mock.delInjection(mCreateCollection)
 		mock.setInjection(mHasCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			req, ok := raw.(*server.HasCollectionRequest)
 			resp := &server.BoolResponse{}
@@ -230,9 +241,31 @@ func TestGrpcClientCreateCollection(t *testing.T) {
 			resp.Status = s
 			return resp, err
 		})
+		defer mock.delInjection(mHasCollection)
 
 		assert.Nil(t, c.CreateCollection(ctx, defaultSchema(), 1))
 		assert.NotNil(t, c.CreateCollection(ctx, defaultSchema(), 1))
+	})
+
+	t.Run("test server returns error", func(t *testing.T) {
+		mock.setInjection(mCreateCollection, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
+			_, ok := raw.(*server.CreateCollectionRequest)
+			if !ok {
+				return badRequestStatus()
+			}
+			return &common.Status{
+				ErrorCode: common.ErrorCode_UnexpectedError,
+				Reason:    "service is not healthy",
+			}, nil
+		})
+		assert.Error(t, c.CreateCollection(ctx, defaultSchema(), 1))
+
+		mock.setInjection(mCreateCollection, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
+			return &common.Status{}, errors.New("mocked grpc error")
+		})
+
+		assert.Error(t, c.CreateCollection(ctx, defaultSchema(), 1))
+		mock.delInjection(mCreateCollection)
 	})
 }
 

@@ -142,12 +142,12 @@ func ParseSchema(r Row) (*Schema, error) {
 				field.DataType = FieldTypeBinaryVector
 				//TODO maybe override by tag settings, when dim is not multiplier of 8
 				field.TypeParams = map[string]string{
-					"dim": strconv.FormatInt(int64(arrayLen*8), 10),
+					TYPE_PARAM_DIM: strconv.FormatInt(int64(arrayLen*8), 10),
 				}
 			case reflect.Float32:
 				field.DataType = FieldTypeFloatVector
 				field.TypeParams = map[string]string{
-					"dim": strconv.FormatInt(int64(arrayLen), 10),
+					TYPE_PARAM_DIM: strconv.FormatInt(int64(arrayLen), 10),
 				}
 			default:
 				return nil, fmt.Errorf("field %s is array of %v, which is not supported", f.Name, elemType)
@@ -165,7 +165,7 @@ func ParseSchema(r Row) (*Schema, error) {
 				return nil, fmt.Errorf("dim value %d is out of range", dim)
 			}
 			field.TypeParams = map[string]string{
-				"dim": dimStr,
+				TYPE_PARAM_DIM: dimStr,
 			}
 			elemType := ft.Elem()
 			switch elemType.Kind() {
@@ -273,7 +273,7 @@ func RowsToColumns(rows []Row, schemas ...*Schema) ([]Column, error) {
 			nameColumns[field.Name] = col
 		case FieldTypeFloatVector:
 			data := make([][]float32, 0, rowsLen)
-			dimStr, has := field.TypeParams["dim"]
+			dimStr, has := field.TypeParams[TYPE_PARAM_DIM]
 			if !has {
 				return []Column{}, errors.New("vector field with no dim")
 			}
@@ -285,7 +285,7 @@ func RowsToColumns(rows []Row, schemas ...*Schema) ([]Column, error) {
 			nameColumns[field.Name] = col
 		case FieldTypeBinaryVector:
 			data := make([][]byte, 0, rowsLen)
-			dimStr, has := field.TypeParams["dim"]
+			dimStr, has := field.TypeParams[TYPE_PARAM_DIM]
 			if !has {
 				return []Column{}, errors.New("vector field with no dim")
 			}

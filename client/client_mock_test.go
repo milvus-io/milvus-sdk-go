@@ -86,7 +86,7 @@ func defaultSchema() *entity.Schema {
 				Name:     testVectorField,
 				DataType: entity.FieldTypeFloatVector,
 				TypeParams: map[string]string{
-					"dim": fmt.Sprintf("%d", testVectorDim),
+					entity.TYPE_PARAM_DIM: fmt.Sprintf("%d", testVectorDim),
 				},
 			},
 		},
@@ -122,6 +122,9 @@ const (
 	mListCollection          serviceMethod = 7
 	mGetCollectionStatistics serviceMethod = 8
 	mShowCollections         serviceMethod = 15
+	mCreateAlias             serviceMethod = 16
+	mDropAlias               serviceMethod = 17
+	mAlterAlias              serviceMethod = 18
 
 	mCreatePartition   serviceMethod = 9
 	mDropPartition     serviceMethod = 10
@@ -136,10 +139,17 @@ const (
 	mGetIndexState         serviceMethod = 23
 	mGetIndexBuildProgress serviceMethod = 24
 
-	mInsert       serviceMethod = 30
-	mFlush        serviceMethod = 31
-	mSearch       serviceMethod = 32
-	mCalcDistance serviceMethod = 33
+	mInsert        serviceMethod = 30
+	mFlush         serviceMethod = 31
+	mSearch        serviceMethod = 32
+	mCalcDistance  serviceMethod = 33
+	mGetFlushState serviceMethod = 34
+	mDelete        serviceMethod = 35
+	mQuery         serviceMethod = 36
+
+	mManualCompaction            serviceMethod = 40
+	mGetCompactionState          serviceMethod = 41
+	mGetCompactionStateWithPlans serviceMethod = 42
 
 	mGetPersistentSegmentInfo serviceMethod = 98
 	mGetQuerySegmentInfo      serviceMethod = 99
@@ -402,8 +412,14 @@ func (m *mockServer) Flush(ctx context.Context, req *server.FlushRequest) (*serv
 	return &server.FlushResponse{Status: s}, err
 }
 
-func (m *mockServer) Query(_ context.Context, _ *server.QueryRequest) (*server.QueryResults, error) {
-	panic("not implemented") // TODO: Implement
+func (m *mockServer) Query(ctx context.Context, req *server.QueryRequest) (*server.QueryResults, error) {
+	f := m.getInjection(mQuery)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*server.QueryResults), err
+	}
+	s, err := successStatus()
+	return &server.QueryResults{Status: s}, err
 }
 
 func (m *mockServer) GetPersistentSegmentInfo(ctx context.Context, req *server.GetPersistentSegmentInfoRequest) (*server.GetPersistentSegmentInfoResponse, error) {
@@ -447,11 +463,102 @@ func (m *mockServer) CalcDistance(ctx context.Context, req *server.CalcDistanceR
 	return resp, err
 }
 
-func (m *mockServer) Delete(_ context.Context, _ *server.DeleteRequest) (*server.MutationResult, error) {
-	panic("not implemented") // TODO: Implement
+func (m *mockServer) Delete(ctx context.Context, req *server.DeleteRequest) (*server.MutationResult, error) {
+	f := m.getInjection(mDelete)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*server.MutationResult), err
+	}
+	resp := &server.MutationResult{}
+	s, err := successStatus()
+	resp.Status = s
+	return resp, err
 }
 
 // https://wiki.lfaidata.foundation/display/MIL/MEP+8+--+Add+metrics+for+proxy
 func (m *mockServer) GetMetrics(_ context.Context, _ *server.GetMetricsRequest) (*server.GetMetricsResponse, error) {
 	panic("not implemented") // TODO: Implement
+}
+
+func (m *mockServer) CreateAlias(ctx context.Context, req *server.CreateAliasRequest) (*common.Status, error) {
+	f := m.getInjection(mCreateAlias)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*common.Status), err
+	}
+	return successStatus()
+}
+
+func (m *mockServer) DropAlias(ctx context.Context, req *server.DropAliasRequest) (*common.Status, error) {
+	f := m.getInjection(mDropAlias)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*common.Status), err
+	}
+	return successStatus()
+}
+
+func (m *mockServer) AlterAlias(ctx context.Context, req *server.AlterAliasRequest) (*common.Status, error) {
+	f := m.getInjection(mAlterAlias)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*common.Status), err
+	}
+
+	return successStatus()
+}
+
+func (m *mockServer) GetFlushState(ctx context.Context, req *server.GetFlushStateRequest) (*server.GetFlushStateResponse, error) {
+	f := m.getInjection(mGetFlushState)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*server.GetFlushStateResponse), err
+	}
+
+	resp := &server.GetFlushStateResponse{}
+	s, err := successStatus()
+	resp.Status = s
+	return resp, err
+}
+
+func (m *mockServer) LoadBalance(_ context.Context, _ *server.LoadBalanceRequest) (*common.Status, error) {
+	panic("not implemented") // TODO: Implement
+}
+
+func (m *mockServer) GetCompactionState(ctx context.Context, req *server.GetCompactionStateRequest) (*server.GetCompactionStateResponse, error) {
+	f := m.getInjection(mGetCompactionState)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*server.GetCompactionStateResponse), err
+	}
+
+	resp := &server.GetCompactionStateResponse{}
+	s, err := successStatus()
+	resp.Status = s
+	return resp, err
+}
+
+func (m *mockServer) ManualCompaction(ctx context.Context, req *server.ManualCompactionRequest) (*server.ManualCompactionResponse, error) {
+	f := m.getInjection(mManualCompaction)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*server.ManualCompactionResponse), err
+	}
+	resp := &server.ManualCompactionResponse{}
+	s, err := successStatus()
+	resp.Status = s
+	return resp, err
+}
+
+func (m *mockServer) GetCompactionStateWithPlans(ctx context.Context, req *server.GetCompactionPlansRequest) (*server.GetCompactionPlansResponse, error) {
+	f := m.getInjection(mGetCompactionStateWithPlans)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*server.GetCompactionPlansResponse), err
+	}
+
+	resp := &server.GetCompactionPlansResponse{}
+	s, err := successStatus()
+	resp.Status = s
+	return resp, err
 }

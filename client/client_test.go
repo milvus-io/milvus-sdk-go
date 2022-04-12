@@ -51,6 +51,7 @@ func TestGrpcClientNil(t *testing.T) {
 		if m.Name == "Close" || m.Name == "Connect" || // skip connect & close
 			m.Name == "Search" || // type alias MetricType treated as string
 			m.Name == "CalcDistance" ||
+			m.Name == "ManualCompaction" || // time.Duration hard to detect in reflect
 			m.Name == "Insert" { // complex methods with ...
 			continue
 		}
@@ -66,18 +67,23 @@ func TestGrpcClientNil(t *testing.T) {
 			switch inT.Kind() {
 			case reflect.String: // pass empty
 				ins = append(ins, reflect.ValueOf(""))
-			case reflect.Int, reflect.Int64:
+			case reflect.Int:
 				ins = append(ins, reflect.ValueOf(0))
+			case reflect.Int64:
+				ins = append(ins, reflect.ValueOf(int64(0)))
 			case reflect.Bool:
 				ins = append(ins, reflect.ValueOf(false))
 			case reflect.Interface:
 				idxType := reflect.TypeOf((*entity.Index)(nil)).Elem()
 				rowType := reflect.TypeOf((*entity.Row)(nil)).Elem()
+				colType := reflect.TypeOf((*entity.Column)(nil)).Elem()
 				switch {
 				case inT.Implements(idxType):
 					ins = append(ins, reflect.ValueOf(entity.NewFlatIndex("flat_index", entity.L2)))
 				case inT.Implements(rowType):
 					ins = append(ins, reflect.ValueOf(&ValidStruct{}))
+				case inT.Implements(colType):
+					ins = append(ins, reflect.ValueOf(entity.NewColumnInt64("id", []int64{})))
 				}
 			default:
 				ins = append(ins, reflect.Zero(inT))

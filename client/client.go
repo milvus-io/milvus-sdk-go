@@ -14,6 +14,7 @@ package client
 
 import (
 	"context"
+	"time"
 
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 	"google.golang.org/grpc"
@@ -49,13 +50,20 @@ type Client interface {
 	// HasCollection check whether collection exists
 	HasCollection(ctx context.Context, collName string) (bool, error)
 
+	// CreateAlias creates an alias for collection
+	CreateAlias(ctx context.Context, collName string, alias string) error
+	// DropAlias drops the specified Alias
+	DropAlias(ctx context.Context, alias string) error
+	// AlterAlias changes collection alias to provided alias
+	AlterAlias(ctx context.Context, collName string, alias string) error
+
 	// -- partition --
 
 	// CreatePartition create partition for collection
 	CreatePartition(ctx context.Context, collName string, partitionName string) error
 	// DropPartition drop partition from collection
 	DropPartition(ctx context.Context, collName string, partitionName string) error
-	// ShowParitions list all partitions from collection
+	// ShowPartitions list all partitions from collection
 	ShowPartitions(ctx context.Context, collName string) ([]*entity.Partition, error)
 	// HasPartition check whether partition exists in collection
 	HasPartition(ctx context.Context, collName string, partitionName string) (bool, error)
@@ -72,7 +80,7 @@ type Client interface {
 	// DescribeIndex describe index on collection
 	// currently index naming is not supported, so only one index on vector field is supported
 	DescribeIndex(ctx context.Context, collName string, fieldName string) ([]entity.Index, error)
-	// DropINdex drop index from collection with specified field name
+	// DropIndex drop index from collection with specified field name
 	DropIndex(ctx context.Context, collName string, fieldName string) error
 	// GetIndexState get index state with specified collection and field name
 	// index naming is not supported yet
@@ -84,9 +92,13 @@ type Client interface {
 	Insert(ctx context.Context, collName string, partitionName string, columns ...entity.Column) (entity.Column, error)
 	// Flush flush collection, specified
 	Flush(ctx context.Context, collName string, async bool) error
+	// DeleteByPks deletes entries related to provided primary keys
+	DeleteByPks(ctx context.Context, collName string, partitionName string, ids entity.Column) error
 	// Search search with bool expression
 	Search(ctx context.Context, collName string, partitions []string,
 		expr string, outputFields []string, vectors []entity.Vector, vectorField string, metricType entity.MetricType, topK int, sp entity.SearchParam) ([]SearchResult, error)
+	// QueryByPks query record by specified primary key(s)
+	QueryByPks(ctx context.Context, collectionName string, partitionNames []string, ids entity.Column, outputFields []string) ([]entity.Column, error)
 
 	// CalcDistance calculate the distance between vectors specified by ids or provided
 	CalcDistance(ctx context.Context, collName string, partitions []string,
@@ -97,6 +109,13 @@ type Client interface {
 	CreateCollectionByRow(ctx context.Context, row entity.Row, shardNum int32) error
 	// InsertByRows insert by rows
 	InsertByRows(ctx context.Context, collName string, paritionName string, rows []entity.Row) (entity.Column, error)
+
+	// ManualCompaction triggers a compaction on provided collection
+	ManualCompaction(ctx context.Context, collName string, toleranceDuration time.Duration) (int64, error)
+	// GetCompactionState get compaction state of provided compaction id
+	GetCompactionState(ctx context.Context, id int64) (entity.CompactionState, error)
+	// GetCompactionStateWithPlans get compaction state with plans of provided compaction id
+	GetCompactionStateWithPlans(ctx context.Context, id int64) (entity.CompactionState, []entity.CompactionPlan, error)
 }
 
 // SearchResult contains the result from Search api of client

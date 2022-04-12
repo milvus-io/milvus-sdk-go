@@ -311,6 +311,25 @@ func TestFieldData{{.TypeName}}Column(t *testing.T) {
 		_, err := FieldDataColumn(fd, 0, len)
 		assert.NotNil(t, err)
 	})
+	
+	t.Run("get all data", func(t *testing.T) {
+		fd.Field = &schema.FieldData_Scalars{
+			Scalars: &schema.ScalarField{
+				Data: &schema.ScalarField_{{.PbName}}Data{
+					{{.PbName}}Data: &schema.{{.PbName}}Array{
+						Data: make([]{{.PbType}}, len),
+					},
+				},
+			},
+		}
+		column, err := FieldDataColumn(fd, 0, -1)
+		assert.Nil(t, err)
+		assert.NotNil(t, column)
+		
+		assert.Equal(t, name, column.Name())
+		assert.Equal(t, len, column.Len())
+		assert.Equal(t, FieldType{{.TypeName}}, column.Type())
+	})
 }
 {{end}}{{end}}
 `))
@@ -325,17 +344,25 @@ import (
 	"testing"
 	"time"
 
+	"github.com/milvus-io/milvus-sdk-go/v2/internal/proto/schema"
 	"github.com/stretchr/testify/assert"
 )
 {{range .Types}}{{with .}}
 func TestColumn{{.TypeName}}(t *testing.T) {
 	rand.Seed(time.Now().UnixNano())
 	columnName := fmt.Sprintf("column_{{.TypeName}}_%d", rand.Int())
-	columnLen := 8 + rand.Intn(10)
-	dim := ([]int{8, 32, 64, 128})[rand.Intn(4)]
+	columnLen := 12 + rand.Intn(10)
+	dim := ([]int{64, 128, 256, 512})[rand.Intn(4)]
 
-	v := make([]{{.TypeDef}}, columnLen)
-	column := NewColumn{{.TypeName}}(columnName,dim, v)
+	v := make([]{{.TypeDef}},0, columnLen)
+	dlen := dim
+	{{if eq .TypeName "BinaryVector" }}dlen /= 8{{end}}
+	
+	for i := 0; i < columnLen; i++ {
+		entry := make({{.TypeDef}}, dlen)
+		v = append(v, entry)
+	}
+	column := NewColumn{{.TypeName}}(columnName, dim, v)
 	
 	t.Run("test meta", func(t *testing.T) {
 		ft := FieldType{{.TypeName}}
@@ -367,6 +394,19 @@ func TestColumn{{.TypeName}}(t *testing.T) {
 		fd := column.FieldData()
 		assert.NotNil(t, fd)
 		assert.Equal(t, fd.GetFieldName(), columnName)
+
+		c, err := FieldDataVector(fd)
+		assert.NotNil(t, c)
+		assert.NoError(t, err)
+	})
+
+	t.Run("test column field data error", func(t *testing.T) {
+		fd := &schema.FieldData{
+			Type:      schema.DataType_{{.TypeName}},
+			FieldName: columnName,
+		}
+		_, err := FieldDataVector(fd) 
+		assert.Error(t, err)
 	})
 
 }

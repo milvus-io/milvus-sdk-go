@@ -1,7 +1,3 @@
-<a href="https://milvus.io/hacktoberfest-2021">
-    <img src="https://zilliz-cms.s3.us-west-2.amazonaws.com/milvus_hacktoberfest_15ba8e5083.jpeg" alt="Join Hacktoberfest with Milvus">
-</a>
-
 # Milvus Go SDK
 
 [![license](https://img.shields.io/hexpm/l/plug.svg?color=green)](https://github.com/milvus-io/milvus-sdk-go/blob/master/LICENSE)
@@ -19,8 +15,7 @@ Go SDK for [Milvus](https://github.com/milvus-io/milvus). To contribute code to 
 
 |Milvus version| Recommended Go SDK version |
 |:-----:|:-----:|
-| 2.0.0-rc7 | 2.0.0-alpha.3 |
-| 2.0.0-rc6 | 2.0.0-alpha.2 |
+| 2.0.0 | [2.0.0](https://github.com/milvus-io/milvus-sdk-go/tree/v2.0.0) |
 | 1.1.x | [1.1.0](https://github.com/milvus-io/milvus-sdk-go/tree/v1.1.0) |
 | 1.0.x | [1.0.0](https://github.com/milvus-io/milvus-sdk-go/tree/v1.0.0) |
 
@@ -47,6 +42,7 @@ Go 1.15 or higher
 
    //...other snippet ...
    client, err := client.NewGrpcClient(context.Background(), "address_of_milvus")
+   defer client.Close()
    if err != nil {
        // handle error
    }
