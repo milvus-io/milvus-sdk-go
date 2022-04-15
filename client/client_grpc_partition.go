@@ -51,11 +51,6 @@ func (c *grpcClient) CreatePartition(ctx context.Context, collName string, parti
 }
 
 func (c *grpcClient) checkPartitionExists(ctx context.Context, collName string, partitionName string) error {
-	err := c.checkCollectionExists(ctx, collName)
-	if err != nil {
-		return err
-	}
-
 	has, err := c.HasPartition(ctx, collName, partitionName)
 	if err != nil {
 		return err
@@ -70,6 +65,9 @@ func (c *grpcClient) checkPartitionExists(ctx context.Context, collName string, 
 func (c *grpcClient) DropPartition(ctx context.Context, collName string, partitionName string) error {
 	if c.service == nil {
 		return ErrClientNotReady
+	}
+	if err := c.checkCollectionExists(ctx, collName); err != nil {
+		return err
 	}
 	if err := c.checkPartitionExists(ctx, collName, partitionName); err != nil {
 		return err
@@ -141,6 +139,9 @@ func (c *grpcClient) ShowPartitions(ctx context.Context, collName string) ([]*en
 func (c *grpcClient) LoadPartitions(ctx context.Context, collName string, partitionNames []string, async bool) error {
 	if c.service == nil {
 		return ErrClientNotReady
+	}
+	if err := c.checkCollectionExists(ctx, collName); err != nil {
+		return err
 	}
 	for _, partitionName := range partitionNames {
 		if err := c.checkPartitionExists(ctx, collName, partitionName); err != nil {
@@ -217,6 +218,9 @@ func (c *grpcClient) LoadPartitions(ctx context.Context, collName string, partit
 func (c *grpcClient) ReleasePartitions(ctx context.Context, collName string, partitionNames []string) error {
 	if c.service == nil {
 		return ErrClientNotReady
+	}
+	if err := c.checkCollectionExists(ctx, collName); err != nil {
+		return err
 	}
 	for _, partitionName := range partitionNames {
 		if err := c.checkPartitionExists(ctx, collName, partitionName); err != nil {

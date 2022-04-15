@@ -175,6 +175,9 @@ func (c *grpcClient) DeleteByPks(ctx context.Context, collName string, partition
 	}
 
 	// check collection name
+	if err := c.checkCollectionExists(ctx, collName); err != nil {
+		return err
+	}
 	coll, err := c.DescribeCollection(ctx, collName)
 	if err != nil {
 		return err
@@ -345,6 +348,10 @@ func (c *grpcClient) QueryByPks(ctx context.Context, collectionName string, part
 	}
 
 	// check collection exists and get collection schema
+	// check collection name
+	if err := c.checkCollectionExists(ctx, collectionName); err != nil {
+		return nil, err
+	}
 	coll, err := c.DescribeCollection(ctx, collectionName)
 	if err != nil {
 		return nil, err
