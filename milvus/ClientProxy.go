@@ -51,6 +51,9 @@ func (client *Milvusclient) Connect(ctx context.Context, connectParam ConnectPar
 	opts = append(opts, grpc.WithBlock())
 	opts = append(opts, grpc.WithDefaultCallOptions(grpc.MaxCallSendMsgSize(math.MaxInt64)))
 	opts = append(opts, grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(math.MaxInt64)))
+	if len(connectParam.opts) > 0 {
+		opts = append(opts, connectParam.opts...)
+	}
 
 	serverAddr := connectParam.IPAddress + ":" + connectParam.Port
 
