@@ -36,7 +36,7 @@ type Client interface {
 	// ListCollections list collections from connection
 	ListCollections(ctx context.Context) ([]*entity.Collection, error)
 	// CreateCollection create collection using provided schema
-	CreateCollection(ctx context.Context, schema *entity.Schema, shardsNum int32) error
+	CreateCollection(ctx context.Context, schema *entity.Schema, shardsNum int32, opts ...CreateCollectionOpt) error
 	// DescribeCollection describe collection meta
 	DescribeCollection(ctx context.Context, collName string) (*entity.Collection, error)
 	// DropCollection drop the specified collection

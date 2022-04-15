@@ -408,6 +408,32 @@ func TestGrpcClientHasCollection(t *testing.T) {
 	assert.True(t, has)
 }
 
+// return injection asserts collection name matchs
+// partition name request in partitionNames if flag is true
+func hasCollectionInjection(t *testing.T, mustIn bool, collNames ...string) func(context.Context, proto.Message) (proto.Message, error) {
+	return func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		req, ok := raw.(*server.HasCollectionRequest)
+		resp := &server.BoolResponse{}
+		if !ok {
+			s, err := badRequestStatus()
+			resp.Status = s
+			return resp, err
+		}
+		if mustIn {
+			resp.Value = assert.Contains(t, collNames, req.GetCollectionName())
+		} else {
+			for _, pn := range collNames {
+				if pn == req.GetCollectionName() {
+					resp.Value = true
+				}
+			}
+		}
+		s, err := successStatus()
+		resp.Status = s
+		return resp, err
+	}
+}
+
 func describeCollectionInjection(t *testing.T, collID int64, collName string, sch *entity.Schema) func(_ context.Context, raw proto.Message) (proto.Message, error) {
 	return func(_ context.Context, raw proto.Message) (proto.Message, error) {
 		req, ok := raw.(*server.DescribeCollectionRequest)
