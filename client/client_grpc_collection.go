@@ -110,7 +110,7 @@ func (c *grpcClient) ListCollections(ctx context.Context) ([]*entity.Collection,
 }
 
 // CreateCollection create collection with specified schema
-func (c *grpcClient) CreateCollection(ctx context.Context, collSchema *entity.Schema, shardNum int32) error {
+func (c *grpcClient) CreateCollection(ctx context.Context, collSchema *entity.Schema, shardNum int32, opts ...CreateCollectionOpt) error {
 	if c.service == nil {
 		return ErrClientNotReady
 	}
@@ -135,6 +135,13 @@ func (c *grpcClient) CreateCollection(ctx context.Context, collSchema *entity.Sc
 		CollectionName: collSchema.CollectionName,
 		Schema:         bs,
 		ShardsNum:      shardNum,
+		// default consistency level is strong
+		// to be consistent with previous version
+		ConsistencyLevel: common.ConsistencyLevel_Strong,
+	}
+	// apply options on request
+	for _, opt := range opts {
+		opt.OptCreateCollection(req)
 	}
 	resp, err := c.service.CreateCollection(ctx, req)
 	if err != nil {

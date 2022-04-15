@@ -19,7 +19,24 @@ import (
 const (
 	// TYPE_PARAM_DIM is the const for field type param dimension
 	TYPE_PARAM_DIM = "dim"
+
+	// CL_STRONG strong consistency level
+	CL_STRONG ConsistencyLevel = ConsistencyLevel(common.ConsistencyLevel_Strong)
+	// CL_BOUNDED bounded consistency level with default tolerance of 5 seconds
+	CL_BOUNDED ConsistencyLevel = ConsistencyLevel(common.ConsistencyLevel_Bounded)
+	// CL_SESSION session consistency level
+	CL_SESSION ConsistencyLevel = ConsistencyLevel(common.ConsistencyLevel_Session)
+	// CL_EVENTUALLY eventually consistencty level
+	CL_EVENTUALLY ConsistencyLevel = ConsistencyLevel(common.ConsistencyLevel_Eventually)
 )
+
+// ConsistencyLevel enum type for collection Consistency Level
+type ConsistencyLevel common.ConsistencyLevel
+
+// CommonConsisencyLevel returns corresponding common.ConsisencyLevel
+func (cl ConsistencyLevel) CommonConsisencyLevel() common.ConsistencyLevel {
+	return common.ConsistencyLevel(cl)
+}
 
 // Schema represents schema info of collection in milvus
 type Schema struct {

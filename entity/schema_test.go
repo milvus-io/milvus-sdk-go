@@ -3,8 +3,21 @@ package entity
 import (
 	"testing"
 
+	"github.com/milvus-io/milvus-sdk-go/v2/internal/proto/common"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestCL_CommonCL(t *testing.T) {
+	cls := []ConsistencyLevel{
+		CL_STRONG,
+		CL_BOUNDED,
+		CL_SESSION,
+		CL_EVENTUALLY,
+	}
+	for _, cl := range cls {
+		assert.EqualValues(t, common.ConsistencyLevel(cl), cl.CommonConsisencyLevel())
+	}
+}
 
 func TestFieldSchema(t *testing.T) {
 	fields := []*Field{
