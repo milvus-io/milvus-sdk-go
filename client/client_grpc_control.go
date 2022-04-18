@@ -31,6 +31,9 @@ func (c *grpcClient) ManualCompaction(ctx context.Context, collName string, tole
 		return 0, ErrClientNotReady
 	}
 
+	if err := c.checkCollectionExists(ctx, collName); err != nil {
+		return 0, err
+	}
 	coll, err := c.DescribeCollection(ctx, collName)
 	if err != nil {
 		return 0, err

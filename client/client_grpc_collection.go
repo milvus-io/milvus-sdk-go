@@ -211,10 +211,6 @@ func (c *grpcClient) DescribeCollection(ctx context.Context, collName string) (*
 		return nil, ErrClientNotReady
 	}
 
-	if err := c.checkCollectionExists(ctx, collName); err != nil {
-		return nil, err
-	}
-
 	req := &server.DescribeCollectionRequest{
 		CollectionName: collName,
 	}
