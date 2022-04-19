@@ -22,6 +22,7 @@ package milvus
 
 import (
 	"context"
+	"google.golang.org/grpc"
 )
 
 var clientVersion string = "1.1.0"
@@ -80,6 +81,8 @@ type ConnectParam struct {
 	IPAddress string
 	// Port Server port
 	Port string
+	// grpc dial option
+	Opts []grpc.DialOption
 }
 
 // SegmentStat segment statistics
