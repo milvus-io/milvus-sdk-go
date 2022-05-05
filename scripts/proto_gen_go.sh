@@ -2,6 +2,7 @@
 SCRIPTS_DIR=$(dirname "$0")
 
 PROTO_DIR=$SCRIPTS_DIR/../internal/proto
+MILVUS_PROTO_DIR=$SCRIPTS_DIR/../internal/milvus-proto
 
 PROGRAM=$(basename "$0")
 GOPATH=$(go env GOPATH)
@@ -16,18 +17,28 @@ case ":$PATH:" in
     *) export PATH="$GOPATH/bin:$PATH";;
 esac
 
+echo "updating module-proto submodule"
+git submodule update --init
+
 echo "using protoc-gen-go: $(which protoc-gen-go)"
 
-pushd ${PROTO_DIR}
+mkdir -p ${PROTO_DIR}/common
+mkdir -p ${PROTO_DIR}/server
+mkdir -p ${PROTO_DIR}/milvus
 
-mkdir -p common
-mkdir -p server
-mkdir -p milvus
-
-
-protoc --go_out=plugins=grpc,paths=source_relative:./server milvus.proto
-protoc --go_out=plugins=grpc,paths=source_relative:./common common.proto
-protoc --go_out=plugins=grpc,paths=source_relative:./schema schema.proto
-
-popd
+protoc --proto_path=${MILVUS_PROTO_DIR}/proto \
+    --go_opt="Mmilvus.proto=github.com/milvus-io/milvus-sdk-go/v2/internal/proto/server;server" \
+    --go_opt=Mcommon.proto=github.com/milvus-io/milvus-sdk-go/v2/internal/proto/common \
+    --go_opt=Mschema.proto=github.com/milvus-io/milvus-sdk-go/v2/internal/proto/schema \
+    --go_out=plugins=grpc,paths=source_relative:${PROTO_DIR}/server ${MILVUS_PROTO_DIR}/proto/milvus.proto
+protoc --proto_path=${MILVUS_PROTO_DIR}/proto \
+    --go_opt=Mmilvus.proto=github.com/milvus-io/milvus-sdk-go/v2/internal/proto/server \
+    --go_opt="Mcommon.proto=github.com/milvus-io/milvus-sdk-go/v2/internal/proto/common;common" \
+    --go_opt=Mschema.proto=github.com/milvus-io/milvus-sdk-go/v2/internal/proto/schema \
+    --go_out=plugins=grpc,paths=source_relative:${PROTO_DIR}/common ${MILVUS_PROTO_DIR}/proto/common.proto
+protoc --proto_path=${MILVUS_PROTO_DIR}/proto \
+    --go_opt=Mmilvus.proto=github.com/milvus-io/milvus-sdk-go/v2/internal/proto/server \
+    --go_opt=Mcommon.proto=github.com/milvus-io/milvus-sdk-go/v2/internal/proto/common \
+    --go_opt="Mschema.proto=github.com/milvus-io/milvus-sdk-go/v2/internal/proto/schema;schema" \
+    --go_out=plugins=grpc,paths=source_relative:${PROTO_DIR}/schema ${MILVUS_PROTO_DIR}/proto/schema.proto
 
