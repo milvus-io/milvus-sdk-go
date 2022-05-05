@@ -1,0 +1,3 @@
+[submodule "internal/milvus-proto"]
+	path = internal/milvus-proto
+	url = git@github.com:milvus-io/milvus-proto.git

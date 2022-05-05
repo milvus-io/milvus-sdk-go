@@ -28,7 +28,7 @@ check-protoc-version: check-protoc
 	@(env bash $(PWD)/scripts/check_protoc_version.sh)
 
 generate-proto: check-protoc-version
-	@which protoc-gen-go 1>/dev/null || (echo "Installing protoc-gen-go" && go get github.com/golang/protobuf/protoc-gen-go@v1.3.2)
+	@which protoc-gen-go 1>/dev/null || (echo "Installing protoc-gen-go" && go get github.com/golang/protobuf/protoc-gen-go@v1.5.2)
 	@(env bash $(PWD)/scripts/proto_gen_go.sh)
 
 static-check:

@@ -562,3 +562,37 @@ func (m *mockServer) GetCompactionStateWithPlans(ctx context.Context, req *serve
 	resp.Status = s
 	return resp, err
 }
+
+func (m *mockServer) GetReplicas(_ context.Context, _ *server.GetReplicasRequest) (*server.GetReplicasResponse, error) {
+	panic("not implemented") // TODO: Implement
+}
+
+// https://wiki.lfaidata.foundation/display/MIL/MEP+24+--+Support+bulk+load
+func (m *mockServer) Import(_ context.Context, _ *server.ImportRequest) (*server.ImportResponse, error) {
+	panic("not implemented") // TODO: Implement
+}
+
+func (m *mockServer) GetImportState(_ context.Context, _ *server.GetImportStateRequest) (*server.GetImportStateResponse, error) {
+	panic("not implemented") // TODO: Implement
+}
+
+func (m *mockServer) ListImportTasks(_ context.Context, _ *server.ListImportTasksRequest) (*server.ListImportTasksResponse, error) {
+	panic("not implemented") // TODO: Implement
+}
+
+// https://wiki.lfaidata.foundation/display/MIL/MEP+27+--+Support+Basic+Authentication
+func (m *mockServer) CreateCredential(_ context.Context, _ *server.CreateCredentialRequest) (*common.Status, error) {
+	panic("not implemented") // TODO: Implement
+}
+
+func (m *mockServer) UpdateCredential(_ context.Context, _ *server.UpdateCredentialRequest) (*common.Status, error) {
+	panic("not implemented") // TODO: Implement
+}
+
+func (m *mockServer) DeleteCredential(_ context.Context, _ *server.DeleteCredentialRequest) (*common.Status, error) {
+	panic("not implemented") // TODO: Implement
+}
+
+func (m *mockServer) ListCredUsers(_ context.Context, _ *server.ListCredUsersRequest) (*server.ListCredUsersResponse, error) {
+	panic("not implemented") // TODO: Implement
+}
