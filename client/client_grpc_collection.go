@@ -322,6 +322,7 @@ func (c *grpcClient) ShowCollection(ctx context.Context, collName string) (*enti
 		return nil, errors.New("response len not valid")
 	}
 	return &entity.Collection{
+		ID:     resp.CollectionIds[0],
 		Loaded: resp.InMemoryPercentages[0] == 100, // TODO silverxia, the percentage can be either 0 or 100
 	}, nil
 }
@@ -393,4 +394,47 @@ func (c *grpcClient) ReleaseCollection(ctx context.Context, collName string) err
 		return err
 	}
 	return handleRespStatus(resp)
+}
+
+// GetReplicas gets the replica groups as well as their querynodes and shards information
+func (c *grpcClient) GetReplicas(ctx context.Context, collName string) ([]*entity.ReplicaGroup, error) {
+	if c.service == nil {
+		return nil, ErrClientNotReady
+	}
+	coll, err := c.ShowCollection(ctx, collName)
+	if err != nil {
+		return nil, err
+	}
+
+	req := &server.GetReplicasRequest{
+		CollectionID:   coll.ID,
+		WithShardNodes: true, // return nodes by default
+	}
+
+	resp, err := c.service.GetReplicas(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	if err = handleRespStatus(resp.GetStatus()); err != nil {
+		return nil, err
+	}
+
+	groups := make([]*entity.ReplicaGroup, 0, len(resp.GetReplicas()))
+	for _, rp := range resp.GetReplicas() {
+		group := &entity.ReplicaGroup{
+			ReplicaID:     rp.ReplicaID,
+			NodeIDs:       rp.NodeIds,
+			ShardReplicas: make([]*entity.ShardReplica, 0, len(rp.ShardReplicas)),
+		}
+		for _, s := range rp.ShardReplicas {
+			shard := &entity.ShardReplica{
+				LeaderID:      s.LeaderID,
+				NodesIDs:      s.NodeIds,
+				DmChannelName: s.DmChannelName,
+			}
+			group.ShardReplicas = append(group.ShardReplicas, shard)
+		}
+		groups = append(groups, group)
+	}
+	return groups, nil
 }

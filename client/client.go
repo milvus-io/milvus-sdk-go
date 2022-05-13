@@ -57,6 +57,9 @@ type Client interface {
 	// AlterAlias changes collection alias to provided alias
 	AlterAlias(ctx context.Context, collName string, alias string) error
 
+	// GetReplicas gets the replica groups as well as their querynodes and shards information
+	GetReplicas(ctx context.Context, collName string) ([]*entity.ReplicaGroup, error)
+
 	// -- partition --
 
 	// CreatePartition create partition for collection
@@ -88,8 +91,6 @@ type Client interface {
 
 	// -- basic operation --
 
-	// TODO: add get_replicas API in Collection
-
 	// Insert column-based data into collection, returns id column values
 	Insert(ctx context.Context, collName string, partitionName string, columns ...entity.Column) (entity.Column, error)
 	// Flush flush collection, specified
@@ -106,7 +107,8 @@ type Client interface {
 	CalcDistance(ctx context.Context, collName string, partitions []string,
 		metricType entity.MetricType, opLeft, opRight entity.Column) (entity.Column, error)
 
-	// -- row basd apis --
+	// -- row based apis --
+
 	// CreateCollectionByRow create collection by row
 	CreateCollectionByRow(ctx context.Context, row entity.Row, shardNum int32) error
 	// InsertByRows insert by rows
