@@ -12,60 +12,33 @@
 package client
 
 import (
-	"context"
-	"testing"
-
-	"github.com/golang/protobuf/proto"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 	"github.com/milvus-io/milvus-sdk-go/v2/internal/proto/common"
 	"github.com/milvus-io/milvus-sdk-go/v2/internal/proto/server"
 	"github.com/stretchr/testify/assert"
-	tmock "github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
+	"testing"
 )
 
-func TestCollectionWithConsistencyLevel(t *testing.T) {
-	opt := CollectionWithConsistencyLevel(entity.ConsistencyLevel(entity.CL_BOUNDED))
+func TestCreateCollectionWithConsistencyLevel(t *testing.T) {
+	opt := WithConsistencyLevel(entity.ConsistencyLevel(entity.CL_BOUNDED))
 	assert.NotNil(t, opt)
 	req := &server.CreateCollectionRequest{}
 
 	assert.NotPanics(t, func() {
-		opt.OptCreateCollection(req)
+		opt(req)
 	})
 
 	assert.Equal(t, common.ConsistencyLevel_Bounded, req.GetConsistencyLevel())
 }
 
-type mockCreateCollectionOpt struct {
-	tmock.Mock
-}
+func TestLoadCollectionWithReplicaNumber(t *testing.T) {
+	opt := WithReplicaNumber(testMultiReplicaNumber)
+	assert.NotNil(t, opt)
+	req := &server.LoadCollectionRequest{}
 
-func (m *mockCreateCollectionOpt) OptCreateCollection(req *server.CreateCollectionRequest) {
-	m.Called(req)
-}
+	assert.NotPanics(t, func() {
+		opt(req)
+	})
 
-func TestCreateCollection_WithConsistencyLevel(t *testing.T) {
-	ctx := context.Background()
-	c := testClient(ctx, t)
-	// default, all collection name returns false
-	mock.delInjection(mHasCollection)
-
-	ds := defaultSchema()
-	shardsNum := int32(1)
-	opt := &mockCreateCollectionOpt{}
-	sch := ds.ProtoMessage()
-	bs, err := proto.Marshal(sch)
-	require.NoError(t, err)
-	req := &server.CreateCollectionRequest{
-		DbName:           "", // reserved fields, not used for now
-		CollectionName:   ds.CollectionName,
-		Schema:           bs,
-		ShardsNum:        shardsNum,
-		ConsistencyLevel: common.ConsistencyLevel_Strong,
-	}
-	opt.On("OptCreateCollection", req).Return()
-
-	err = c.CreateCollection(ctx, ds, shardsNum, opt)
-	assert.NoError(t, err)
-	opt.AssertExpectations(t)
+	assert.Equal(t, testMultiReplicaNumber, req.GetReplicaNumber())
 }

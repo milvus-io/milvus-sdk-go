@@ -16,22 +16,22 @@ import (
 	"github.com/milvus-io/milvus-sdk-go/v2/internal/proto/server"
 )
 
-// CreateCollectionOpt is option interface for CreateCollection
-type CreateCollectionOpt interface {
-	OptCreateCollection(req *server.CreateCollectionRequest)
-}
+// CreateCollectionOption is an option that is used to modify CreateCollectionRequest
+type CreateCollectionOption func(*server.CreateCollectionRequest)
 
-// createCollectionOptFunc shortcut function type
-type createCollectionOptFunc func(*server.CreateCollectionRequest)
-
-// OptCreateCollection implements CreateCollectionOpt
-func (f createCollectionOptFunc) OptCreateCollection(req *server.CreateCollectionRequest) {
-	f(req)
-}
-
-// WithConsistencyLevel returns a CreateCollectionOpt with ConsistencyLevel
-func CollectionWithConsistencyLevel(cl entity.ConsistencyLevel) CreateCollectionOpt {
-	return createCollectionOptFunc(func(req *server.CreateCollectionRequest) {
+// WithConsistencyLevel specifies a specific ConsistencyLevel, rather than using the default ReaderProperties.
+func WithConsistencyLevel(cl entity.ConsistencyLevel) CreateCollectionOption {
+	return func(req *server.CreateCollectionRequest) {
 		req.ConsistencyLevel = cl.CommonConsisencyLevel()
-	})
+	}
+}
+
+// LoadCollectionOption is an option that is used to modify LoadCollectionRequest
+type LoadCollectionOption func(*server.LoadCollectionRequest)
+
+// WithReplicaNumber specifies a specific ReplicaNumber, rather than using the default ReplicaNumber.
+func WithReplicaNumber(rn int32) LoadCollectionOption {
+	return func(req *server.LoadCollectionRequest) {
+		req.ReplicaNumber = rn
+	}
 }
