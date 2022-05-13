@@ -110,7 +110,7 @@ func (c *grpcClient) ListCollections(ctx context.Context) ([]*entity.Collection,
 }
 
 // CreateCollection create collection with specified schema
-func (c *grpcClient) CreateCollection(ctx context.Context, collSchema *entity.Schema, shardNum int32, opts ...CreateCollectionOpt) error {
+func (c *grpcClient) CreateCollection(ctx context.Context, collSchema *entity.Schema, shardNum int32, opts ...CreateCollectionOption) error {
 	if c.service == nil {
 		return ErrClientNotReady
 	}
@@ -141,7 +141,7 @@ func (c *grpcClient) CreateCollection(ctx context.Context, collSchema *entity.Sc
 	}
 	// apply options on request
 	for _, opt := range opts {
-		opt.OptCreateCollection(req)
+		opt(req)
 	}
 	resp, err := c.service.CreateCollection(ctx, req)
 	if err != nil {
@@ -327,7 +327,7 @@ func (c *grpcClient) ShowCollection(ctx context.Context, collName string) (*enti
 }
 
 // LoadCollection load collection into memory
-func (c *grpcClient) LoadCollection(ctx context.Context, collName string, async bool) error {
+func (c *grpcClient) LoadCollection(ctx context.Context, collName string, async bool, opts ...LoadCollectionOption) error {
 	if c.service == nil {
 		return ErrClientNotReady
 	}
@@ -338,7 +338,13 @@ func (c *grpcClient) LoadCollection(ctx context.Context, collName string, async 
 
 	req := &server.LoadCollectionRequest{
 		CollectionName: collName,
+		ReplicaNumber:  1, // default replica number
 	}
+
+	for _, opt := range opts {
+		opt(req)
+	}
+
 	resp, err := c.service.LoadCollection(ctx, req)
 	if err != nil {
 		return err

@@ -120,6 +120,23 @@ func TestGrpcClientCreateCollection(t *testing.T) {
 		mock.delInjection(mCreateCollection)
 	})
 
+	t.Run("Test create with consistency level", func(t *testing.T) {
+		ds := defaultSchema()
+		shardsNum := int32(1)
+		mock.setInjection(mCreateCollection, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
+			req, ok := raw.(*server.CreateCollectionRequest)
+			if !ok {
+				return &common.Status{ErrorCode: common.ErrorCode_IllegalArgument}, errors.New("illegal request type")
+			}
+			assert.Equal(t, testCollectionName, req.GetCollectionName())
+			assert.Equal(t, common.ConsistencyLevel_Eventually, req.GetConsistencyLevel())
+
+			return &common.Status{ErrorCode: common.ErrorCode_Success}, nil
+		})
+		assert.Nil(t, c.CreateCollection(ctx, ds, shardsNum, WithConsistencyLevel(entity.CL_EVENTUALLY)))
+		mock.delInjection(mCreateCollection)
+	})
+
 	t.Run("Test invalid schemas", func(t *testing.T) {
 		cases := []*entity.Schema{
 			// empty fields
@@ -362,6 +379,34 @@ func TestGrpcClientLoadCollection(t *testing.T) {
 
 		// remove injection
 		mock.delInjection(mShowCollections)
+	})
+	t.Run("Load default replica", func(t *testing.T) {
+		mock.setInjection(mLoadCollection, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
+			req, ok := raw.(*server.LoadCollectionRequest)
+			if !ok {
+				return badRequestStatus()
+			}
+			assert.Equal(t, testDefaultReplicaNumber, req.GetReplicaNumber())
+			assert.Equal(t, testCollectionName, req.GetCollectionName())
+			return successStatus()
+		})
+		defer mock.delInjection(mLoadCollection)
+		assert.Nil(t, c.LoadCollection(ctx, testCollectionName, true))
+	})
+	t.Run("Load multiple replica", func(t *testing.T) {
+		mock.delInjection(mLoadCollection)
+
+		mock.setInjection(mLoadCollection, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
+			req, ok := raw.(*server.LoadCollectionRequest)
+			if !ok {
+				return badRequestStatus()
+			}
+			assert.Equal(t, testMultiReplicaNumber, req.GetReplicaNumber())
+			assert.Equal(t, testCollectionName, req.GetCollectionName())
+			return successStatus()
+		})
+		defer mock.delInjection(mLoadCollection)
+		assert.Nil(t, c.LoadCollection(ctx, testCollectionName, true, WithReplicaNumber(testMultiReplicaNumber)))
 	})
 }
 

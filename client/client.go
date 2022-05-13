@@ -36,7 +36,7 @@ type Client interface {
 	// ListCollections list collections from connection
 	ListCollections(ctx context.Context) ([]*entity.Collection, error)
 	// CreateCollection create collection using provided schema
-	CreateCollection(ctx context.Context, schema *entity.Schema, shardsNum int32, opts ...CreateCollectionOpt) error
+	CreateCollection(ctx context.Context, schema *entity.Schema, shardsNum int32, opts ...CreateCollectionOption) error
 	// DescribeCollection describe collection meta
 	DescribeCollection(ctx context.Context, collName string) (*entity.Collection, error)
 	// DropCollection drop the specified collection
@@ -44,7 +44,7 @@ type Client interface {
 	// GetCollectionStatistics get collection statistics
 	GetCollectionStatistics(ctx context.Context, collName string) (map[string]string, error)
 	// LoadCollection load collection into memory
-	LoadCollection(ctx context.Context, collName string, async bool) error
+	LoadCollection(ctx context.Context, collName string, async bool, opts ...LoadCollectionOption) error
 	// ReleaseCollection release loaded collection
 	ReleaseCollection(ctx context.Context, collName string) error
 	// HasCollection check whether collection exists
@@ -87,6 +87,8 @@ type Client interface {
 	GetIndexState(ctx context.Context, collName string, fieldName string) (entity.IndexState, error)
 
 	// -- basic operation --
+
+	// TODO: add get_replicas API in Collection
 
 	// Insert column-based data into collection, returns id column values
 	Insert(ctx context.Context, collName string, partitionName string, columns ...entity.Column) (entity.Column, error)

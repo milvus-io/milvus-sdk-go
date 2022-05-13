@@ -65,10 +65,12 @@ func testClient(ctx context.Context, t *testing.T) Client {
 }
 
 const (
-	testCollectionName = `test_go_sdk`
-	testPrimaryField   = `int64`
-	testVectorField    = `vector`
-	testVectorDim      = 128
+	testCollectionName       = `test_go_sdk`
+	testPrimaryField         = `int64`
+	testVectorField          = `vector`
+	testVectorDim            = 128
+	testDefaultReplicaNumber = int32(1)
+	testMultiReplicaNumber   = int32(2)
 )
 
 func defaultSchema() *entity.Schema {
