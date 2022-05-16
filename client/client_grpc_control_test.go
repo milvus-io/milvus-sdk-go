@@ -35,11 +35,13 @@ func TestGrpcManualCompaction(t *testing.T) {
 	c := testClient(ctx, t)
 	defer c.Close()
 
-	collID := int64(1)
+	mock.setInjection(mHasCollection, hasCollectionDefault)
+	defer mock.delInjection(mHasCollection)
+
 	compactionID := int64(1001)
 	t.Run("normal manual compaction", func(t *testing.T) {
 		now := time.Now()
-		mock.setInjection(mDescribeCollection, describeCollectionInjection(t, collID, testCollectionName, defaultSchema()))
+		mock.setInjection(mDescribeCollection, describeCollectionInjection(t, testCollectionID, testCollectionName, defaultSchema()))
 		defer mock.delInjection(mDescribeCollection)
 		mock.setInjection(mManualCompaction, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
 			req, ok := raw.(*server.ManualCompactionRequest)
@@ -47,7 +49,7 @@ func TestGrpcManualCompaction(t *testing.T) {
 				t.FailNow()
 			}
 
-			assert.Equal(t, collID, req.GetCollectionID())
+			assert.Equal(t, testCollectionID, req.GetCollectionID())
 			ts, _ := tso.ParseTS(req.GetTimetravel())
 			assert.True(t, ts.Sub(now) < time.Second)
 
@@ -83,7 +85,7 @@ func TestGrpcManualCompaction(t *testing.T) {
 	})
 
 	t.Run("compaction service error", func(t *testing.T) {
-		mock.setInjection(mDescribeCollection, describeCollectionInjection(t, collID, testCollectionName, defaultSchema()))
+		mock.setInjection(mDescribeCollection, describeCollectionInjection(t, testCollectionID, testCollectionName, defaultSchema()))
 		defer mock.delInjection(mDescribeCollection)
 		mock.setInjection(mManualCompaction, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
 			resp := &server.ManualCompactionResponse{

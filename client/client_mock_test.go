@@ -66,6 +66,7 @@ func testClient(ctx context.Context, t *testing.T) Client {
 
 const (
 	testCollectionName       = `test_go_sdk`
+	testCollectionID         = int64(789)
 	testPrimaryField         = `int64`
 	testVectorField          = `vector`
 	testVectorDim            = 128
@@ -127,6 +128,7 @@ const (
 	mCreateAlias             serviceMethod = 16
 	mDropAlias               serviceMethod = 17
 	mAlterAlias              serviceMethod = 18
+	mGetReplicas             serviceMethod = 19
 
 	mCreatePartition   serviceMethod = 9
 	mDropPartition     serviceMethod = 10
@@ -565,8 +567,16 @@ func (m *mockServer) GetCompactionStateWithPlans(ctx context.Context, req *serve
 	return resp, err
 }
 
-func (m *mockServer) GetReplicas(_ context.Context, _ *server.GetReplicasRequest) (*server.GetReplicasResponse, error) {
-	panic("not implemented") // TODO: Implement
+func (m *mockServer) GetReplicas(ctx context.Context, req *server.GetReplicasRequest) (*server.GetReplicasResponse, error) {
+	f := m.getInjection(mGetReplicas)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*server.GetReplicasResponse), err
+	}
+	resp := &server.GetReplicasResponse{}
+	s, err := successStatus()
+	resp.Status = s
+	return resp, err
 }
 
 // https://wiki.lfaidata.foundation/display/MIL/MEP+24+--+Support+bulk+load

@@ -550,3 +550,96 @@ func TestGrpcClientGetCollectionStatistics(t *testing.T) {
 		}
 	}
 }
+
+func TestGrpcClientGetReplicas(t *testing.T) {
+	ctx := context.Background()
+	c := testClient(ctx, t)
+
+	replicaID := rand.Int63()
+	nodeIds := []int64{1, 2, 3, 4}
+	mock.setInjection(mHasCollection, hasCollectionDefault)
+	defer mock.delInjection(mHasCollection)
+
+	mock.setInjection(mShowCollections, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		s, err := successStatus()
+		resp := &server.ShowCollectionsResponse{
+			Status:              s,
+			CollectionIds:       []int64{testCollectionID},
+			CollectionNames:     []string{testCollectionName},
+			InMemoryPercentages: []int64{100},
+		}
+		return resp, err
+	})
+	defer mock.delInjection(mShowCollections)
+
+	mock.setInjection(mGetReplicas, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
+		req, ok := raw.(*server.GetReplicasRequest)
+		resp := &server.GetReplicasResponse{}
+		if !ok {
+			s, err := badRequestStatus()
+			resp.Status = s
+			return resp, err
+		}
+
+		assert.Equal(t, testCollectionID, req.CollectionID)
+
+		s, err := successStatus()
+		resp.Status = s
+		resp.Replicas = []*server.ReplicaInfo{{
+			ReplicaID: replicaID,
+			ShardReplicas: []*server.ShardReplica{
+				{
+					LeaderID:      1,
+					DmChannelName: "DML_channel_v1",
+				},
+				{
+					LeaderID:   2,
+					LeaderAddr: "DML_channel_v2",
+				},
+			},
+			NodeIds: nodeIds,
+		}}
+		return resp, err
+	})
+
+	t.Run("get replicas normal", func(t *testing.T) {
+		groups, err := c.GetReplicas(ctx, testCollectionName)
+		assert.Nil(t, err)
+		assert.NotNil(t, groups)
+		fmt.Println(groups)
+		assert.Equal(t, 1, len(groups))
+
+		assert.Equal(t, replicaID, groups[0].ReplicaID)
+		assert.Equal(t, nodeIds, groups[0].NodeIDs)
+		assert.Equal(t, 2, len(groups[0].ShardReplicas))
+	})
+
+	t.Run("get replicas invalid name", func(t *testing.T) {
+		_, err := c.GetReplicas(ctx, "invalid name")
+		assert.Error(t, err)
+	})
+
+	t.Run("get replicas grpc error", func(t *testing.T) {
+		mock.setInjection(mGetReplicas, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
+			return &server.GetReplicasResponse{}, errors.New("mocked grpc error")
+		})
+		_, err := c.GetReplicas(ctx, testCollectionName)
+		assert.Error(t, err)
+	})
+
+	t.Run("get replicas server error", func(t *testing.T) {
+		mock.setInjection(mGetReplicas, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
+			return &server.GetReplicasResponse{
+				Status: &common.Status{
+					ErrorCode: common.ErrorCode_UnexpectedError,
+					Reason:    "service is not healthy",
+				},
+				Replicas: nil,
+			}, nil
+		})
+		_, err := c.GetReplicas(ctx, testCollectionName)
+		assert.Error(t, err)
+	})
+
+	mock.delInjection(mGetReplicas)
+}

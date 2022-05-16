@@ -28,3 +28,17 @@ type Partition struct {
 	Name   string // partition name
 	Loaded bool   // partition loaded
 }
+
+// ReplicaGroup represents a replica group
+type ReplicaGroup struct {
+	ReplicaID     int64
+	NodeIDs       []int64
+	ShardReplicas []*ShardReplica
+}
+
+// ShardReplica represents a shard in the ReplicaGroup
+type ShardReplica struct {
+	LeaderID      int64
+	NodesIDs      []int64
+	DmChannelName string
+}
