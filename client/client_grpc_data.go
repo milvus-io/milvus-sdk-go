@@ -451,6 +451,7 @@ func splitSearchRequest(sch *entity.Schema, partitions []string,
 			DslType:          common.DslType_BoolExprV1,
 			OutputFields:     outputFields,
 			PlaceholderGroup: vector2PlaceholderGroupBytes(batchVectors),
+			GuaranteeTimestamp: 1,
 		}
 		result = append(result, req)
 	}
