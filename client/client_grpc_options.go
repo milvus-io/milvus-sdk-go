@@ -35,3 +35,13 @@ func WithReplicaNumber(rn int32) LoadCollectionOption {
 		req.ReplicaNumber = rn
 	}
 }
+
+// SearchOption is an option that is used to modify SearchRequest
+type SearchOption func(*server.SearchRequest)
+
+// WithConsistencyLevel specifies a specific ConsistencyLevel, rather than using the default ReaderProperties.
+func WithSearchConsistencyLevel(cl entity.ConsistencyLevel) SearchOption {
+	return func(req *server.SearchRequest) {
+		req.GuaranteeTimestamp = uint64(cl.CommonConsisencyLevel())
+	}
+}

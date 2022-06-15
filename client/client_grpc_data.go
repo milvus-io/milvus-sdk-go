@@ -226,7 +226,7 @@ func (c *grpcClient) DeleteByPks(ctx context.Context, collName string, partition
 
 //Search with bool expression
 func (c *grpcClient) Search(ctx context.Context, collName string, partitions []string,
-	expr string, outputFields []string, vectors []entity.Vector, vectorField string, metricType entity.MetricType, topK int, sp entity.SearchParam) ([]SearchResult, error) {
+	expr string, outputFields []string, vectors []entity.Vector, vectorField string, metricType entity.MetricType, topK int, sp entity.SearchParam, opts ...SearchOption) ([]SearchResult, error) {
 	if c.service == nil {
 		return []SearchResult{}, ErrClientNotReady
 	}
@@ -428,7 +428,7 @@ func getPKField(schema *entity.Schema) *entity.Field {
 
 func splitSearchRequest(sch *entity.Schema, partitions []string,
 	expr string, outputFields []string, vectors []entity.Vector, vectorField string,
-	metricType entity.MetricType, topK int, sp entity.SearchParam) []*server.SearchRequest {
+	metricType entity.MetricType, topK int, sp entity.SearchParam, opts ...SearchOption) []*server.SearchRequest {
 	params := sp.Params()
 	bs, _ := json.Marshal(params)
 	searchParams := entity.MapKvPairs(map[string]string{
@@ -459,6 +459,11 @@ func splitSearchRequest(sch *entity.Schema, partitions []string,
 			OutputFields:     outputFields,
 			PlaceholderGroup: vector2PlaceholderGroupBytes(batchVectors),
 		}
+
+		for _, opt := range opts {
+			opt(req)
+		}
+
 		result = append(result, req)
 	}
 	return result

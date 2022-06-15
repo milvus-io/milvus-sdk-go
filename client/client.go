@@ -99,7 +99,7 @@ type Client interface {
 	DeleteByPks(ctx context.Context, collName string, partitionName string, ids entity.Column) error
 	// Search search with bool expression
 	Search(ctx context.Context, collName string, partitions []string,
-		expr string, outputFields []string, vectors []entity.Vector, vectorField string, metricType entity.MetricType, topK int, sp entity.SearchParam) ([]SearchResult, error)
+		expr string, outputFields []string, vectors []entity.Vector, vectorField string, metricType entity.MetricType, topK int, sp entity.SearchParam, opts ...SearchOption) ([]SearchResult, error)
 	// QueryByPks query record by specified primary key(s)
 	QueryByPks(ctx context.Context, collectionName string, partitionNames []string, ids entity.Column, outputFields []string) ([]entity.Column, error)
 
