@@ -19,8 +19,8 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
-	"github.com/milvus-io/milvus-sdk-go/v2/internal/proto/common"
-	"github.com/milvus-io/milvus-sdk-go/v2/internal/proto/server"
+	common "github.com/milvus-io/milvus-sdk-go/v2/internal/proto/common"
+	server "github.com/milvus-io/milvus-sdk-go/v2/internal/proto/server"
 	"google.golang.org/grpc"
 )
 
@@ -36,7 +36,7 @@ func (c *grpcClient) connect(ctx context.Context, addr string, opts ...grpc.Dial
 	// if not options provided, use default settings
 	if len(opts) == 0 {
 		opts = append(opts, grpc.WithInsecure(),
-			grpc.WithBlock(),                //block connect until healthy or timeout
+			grpc.WithBlock(),                // block connect until healthy or timeout
 			grpc.WithTimeout(2*time.Second)) // set connect timeout to 2 Second
 	}
 
@@ -386,7 +386,7 @@ func (c *grpcClient) ReleaseCollection(ctx context.Context, collName string) err
 	}
 
 	req := &server.ReleaseCollectionRequest{
-		DbName:         "", //reserved
+		DbName:         "", // reserved
 		CollectionName: collName,
 	}
 	resp, err := c.service.ReleaseCollection(ctx, req)

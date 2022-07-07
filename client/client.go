@@ -60,6 +60,17 @@ type Client interface {
 	// GetReplicas gets the replica groups as well as their querynodes and shards information
 	GetReplicas(ctx context.Context, collName string) ([]*entity.ReplicaGroup, error)
 
+	// -- authentication --
+
+	// CreateCredential create new user and password
+	CreateCredential(ctx context.Context, username string, password string) error
+	// UpdateCredential update password for a user
+	UpdateCredential(ctx context.Context, username string, oldPassword string, newPassword string) error
+	// DeleteCredential delete a user
+	DeleteCredential(ctx context.Context, username string) error
+	// ListCredUsers list all usernames
+	ListCredUsers(ctx context.Context) ([]string, error)
+
 	// -- partition --
 
 	// CreatePartition create partition for collection
