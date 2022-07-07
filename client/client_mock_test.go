@@ -72,6 +72,8 @@ const (
 	testVectorDim            = 128
 	testDefaultReplicaNumber = int32(1)
 	testMultiReplicaNumber   = int32(2)
+	testUsername             = "user"
+	testPassword             = "pwd"
 )
 
 func defaultSchema() *entity.Schema {
@@ -124,11 +126,6 @@ const (
 	mDescribeCollection      serviceMethod = 6
 	mListCollection          serviceMethod = 7
 	mGetCollectionStatistics serviceMethod = 8
-	mShowCollections         serviceMethod = 15
-	mCreateAlias             serviceMethod = 16
-	mDropAlias               serviceMethod = 17
-	mAlterAlias              serviceMethod = 18
-	mGetReplicas             serviceMethod = 19
 
 	mCreatePartition   serviceMethod = 9
 	mDropPartition     serviceMethod = 10
@@ -137,11 +134,22 @@ const (
 	mReleasePartitions serviceMethod = 13
 	mShowPartitions    serviceMethod = 14
 
+	mShowCollections serviceMethod = 15
+	mCreateAlias     serviceMethod = 16
+	mDropAlias       serviceMethod = 17
+	mAlterAlias      serviceMethod = 18
+	mGetReplicas     serviceMethod = 19
+
 	mCreateIndex           serviceMethod = 20
 	mDropIndex             serviceMethod = 21
 	mDescribeIndex         serviceMethod = 22
 	mGetIndexState         serviceMethod = 23
 	mGetIndexBuildProgress serviceMethod = 24
+
+	mCreateCredential serviceMethod = 25
+	mUpdateCredential serviceMethod = 26
+	mDeleteCredential serviceMethod = 27
+	mListCredUsers    serviceMethod = 28
 
 	mInsert        serviceMethod = 30
 	mFlush         serviceMethod = 31
@@ -593,18 +601,41 @@ func (m *mockServer) ListImportTasks(_ context.Context, _ *server.ListImportTask
 }
 
 // https://wiki.lfaidata.foundation/display/MIL/MEP+27+--+Support+Basic+Authentication
-func (m *mockServer) CreateCredential(_ context.Context, _ *server.CreateCredentialRequest) (*common.Status, error) {
-	panic("not implemented") // TODO: Implement
+func (m *mockServer) CreateCredential(ctx context.Context, req *server.CreateCredentialRequest) (*common.Status, error) {
+	f := m.getInjection(mCreateCredential)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*common.Status), err
+	}
+	return successStatus()
 }
 
-func (m *mockServer) UpdateCredential(_ context.Context, _ *server.UpdateCredentialRequest) (*common.Status, error) {
-	panic("not implemented") // TODO: Implement
+func (m *mockServer) UpdateCredential(ctx context.Context, req *server.UpdateCredentialRequest) (*common.Status, error) {
+	f := m.getInjection(mUpdateCredential)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*common.Status), err
+	}
+	return successStatus()
 }
 
-func (m *mockServer) DeleteCredential(_ context.Context, _ *server.DeleteCredentialRequest) (*common.Status, error) {
-	panic("not implemented") // TODO: Implement
+func (m *mockServer) DeleteCredential(ctx context.Context, req *server.DeleteCredentialRequest) (*common.Status, error) {
+	f := m.getInjection(mDeleteCredential)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*common.Status), err
+	}
+	return successStatus()
 }
 
-func (m *mockServer) ListCredUsers(_ context.Context, _ *server.ListCredUsersRequest) (*server.ListCredUsersResponse, error) {
-	panic("not implemented") // TODO: Implement
+func (m *mockServer) ListCredUsers(ctx context.Context, req *server.ListCredUsersRequest) (*server.ListCredUsersResponse, error) {
+	f := m.getInjection(mListCredUsers)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*server.ListCredUsersResponse), err
+	}
+	resp := &server.ListCredUsersResponse{}
+	s, err := successStatus()
+	resp.Status = s
+	return resp, err
 }
