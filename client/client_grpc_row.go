@@ -99,6 +99,7 @@ func (c *grpcClient) InsertByRows(ctx context.Context, collName string, partitio
 	if err := handleRespStatus(resp.GetStatus()); err != nil {
 		return nil, err
 	}
+	tsm.set(coll.ID, resp.Timestamp)
 	// 3. parse id column
 	return entity.IDColumns(resp.GetIDs(), 0, -1)
 }
@@ -137,7 +138,7 @@ func SearchResultToRows(sch *entity.Schema, results *schema.SearchResultData, t 
 			p := reflect.New(t)
 			v := p.Elem()
 
-			//extract primary field logic
+			// extract primary field logic
 			for _, field := range sch.Fields {
 				f := v.FieldByName(field.Name) // TODO silverxia field may be annotated by tags, which means the field name will not be the same
 				if !f.IsValid() {
@@ -170,7 +171,7 @@ func SearchResultToRows(sch *entity.Schema, results *schema.SearchResultData, t 
 					continue
 				}
 
-				//fieldDataList
+				// fieldDataList
 				fieldData, has := nameFieldData[field.Name]
 				if !has || fieldData == nil {
 					if _, has := output[field.Name]; has {

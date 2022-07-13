@@ -26,8 +26,10 @@ const (
 	CL_BOUNDED ConsistencyLevel = ConsistencyLevel(common.ConsistencyLevel_Bounded)
 	// CL_SESSION session consistency level
 	CL_SESSION ConsistencyLevel = ConsistencyLevel(common.ConsistencyLevel_Session)
-	// CL_EVENTUALLY eventually consistencty level
+	// CL_EVENTUALLY eventually consistency level
 	CL_EVENTUALLY ConsistencyLevel = ConsistencyLevel(common.ConsistencyLevel_Eventually)
+	// CL_CUSTOMIZED customized consistency level and users pass their own `guarantee_timestamp`.
+	CL_CUSTOMIZED ConsistencyLevel = ConsistencyLevel(common.ConsistencyLevel_Customized)
 )
 
 // ConsistencyLevel enum type for collection Consistency Level
@@ -225,26 +227,26 @@ func (t FieldType) PbFieldType() (string, string) {
 
 // Match schema definition
 const (
-	//FieldTypeNone zero value place holder
+	// FieldTypeNone zero value place holder
 	FieldTypeNone FieldType = 0 // zero value place holder
-	//FieldTypeBool field type boolean
+	// FieldTypeBool field type boolean
 	FieldTypeBool FieldType = 1
-	//FieldTypeInt8 field type int8
+	// FieldTypeInt8 field type int8
 	FieldTypeInt8 FieldType = 2
-	//FieldTypeInt16 field type int16
+	// FieldTypeInt16 field type int16
 	FieldTypeInt16 FieldType = 3
-	//FieldTypeInt32 field type int32
+	// FieldTypeInt32 field type int32
 	FieldTypeInt32 FieldType = 4
-	//FIeldTypeInt64 field type int64
+	// FIeldTypeInt64 field type int64
 	FieldTypeInt64 FieldType = 5
-	//FieldTypeFloat field type float
+	// FieldTypeFloat field type float
 	FieldTypeFloat FieldType = 10
-	//FieldTypeDouble field type double
+	// FieldTypeDouble field type double
 	FieldTypeDouble FieldType = 11
-	//FieldTypeString field type string
+	// FieldTypeString field type string
 	FieldTypeString FieldType = 20
-	//FieldTypeBinaryVector field type binary vector
+	// FieldTypeBinaryVector field type binary vector
 	FieldTypeBinaryVector FieldType = 100
-	//FieldTypeFloatVector field type float vector
+	// FieldTypeFloatVector field type float vector
 	FieldTypeFloatVector FieldType = 101
 )

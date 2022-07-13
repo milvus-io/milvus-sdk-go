@@ -42,3 +42,80 @@ func TestLoadCollectionWithReplicaNumber(t *testing.T) {
 
 	assert.Equal(t, testMultiReplicaNumber, req.GetReplicaNumber())
 }
+
+func TestMakeSearchQueryOption(t *testing.T) {
+	c := &entity.Collection{
+		ID:               999,
+		ConsistencyLevel: entity.CL_STRONG,
+	}
+
+	t.Run("strong consistency", func(t *testing.T) {
+		opt, err := MakeSearchQueryOption(c)
+		assert.Nil(t, err)
+		assert.NotNil(t, opt)
+		expected := &SearchQueryOption{
+			ConsistencyLevel:   entity.CL_STRONG,
+			GuaranteeTimestamp: StrongTimestamp,
+		}
+		assert.Equal(t, expected, opt)
+	})
+
+	t.Run("session consistency", func(t *testing.T) {
+		opt, err := MakeSearchQueryOption(c, WithSearchQueryConsistencyLevel(entity.CL_SESSION))
+		assert.Nil(t, err)
+		assert.NotNil(t, opt)
+		expected := &SearchQueryOption{
+			ConsistencyLevel:   entity.CL_SESSION,
+			GuaranteeTimestamp: EventuallyTimestamp,
+		}
+		assert.Equal(t, expected, opt)
+
+		tsm.set(c.ID, 99)
+		opt, err = MakeSearchQueryOption(c, WithSearchQueryConsistencyLevel(entity.CL_SESSION))
+		assert.Nil(t, err)
+		assert.NotNil(t, opt)
+		expected = &SearchQueryOption{
+			ConsistencyLevel:   entity.CL_SESSION,
+			GuaranteeTimestamp: 99,
+		}
+		assert.Equal(t, expected, opt)
+	})
+
+	t.Run("bounded consistency", func(t *testing.T) {
+		opt, err := MakeSearchQueryOption(c, WithSearchQueryConsistencyLevel(entity.CL_BOUNDED))
+		assert.Nil(t, err)
+		assert.NotNil(t, opt)
+		expected := &SearchQueryOption{
+			ConsistencyLevel:   entity.CL_BOUNDED,
+			GuaranteeTimestamp: BoundedTimestamp,
+		}
+		assert.Equal(t, expected, opt)
+	})
+
+	t.Run("eventually consistency", func(t *testing.T) {
+		opt, err := MakeSearchQueryOption(c, WithSearchQueryConsistencyLevel(entity.CL_EVENTUALLY))
+		assert.Nil(t, err)
+		assert.NotNil(t, opt)
+		expected := &SearchQueryOption{
+			ConsistencyLevel:   entity.CL_EVENTUALLY,
+			GuaranteeTimestamp: EventuallyTimestamp,
+		}
+		assert.Equal(t, expected, opt)
+	})
+
+	t.Run("customized consistency", func(t *testing.T) {
+		opt, err := MakeSearchQueryOption(c, WithSearchQueryConsistencyLevel(entity.CL_CUSTOMIZED), WithGuaranteeTimestamp(100))
+		assert.Nil(t, err)
+		assert.NotNil(t, opt)
+		expected := &SearchQueryOption{
+			ConsistencyLevel:   entity.CL_CUSTOMIZED,
+			GuaranteeTimestamp: 100,
+		}
+		assert.Equal(t, expected, opt)
+	})
+
+	t.Run("guarantee timestamp sanity check", func(t *testing.T) {
+		_, err := MakeSearchQueryOption(c, WithSearchQueryConsistencyLevel(entity.CL_STRONG), WithGuaranteeTimestamp(100))
+		assert.Error(t, err)
+	})
+}

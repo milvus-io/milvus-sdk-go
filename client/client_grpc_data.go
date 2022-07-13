@@ -116,6 +116,7 @@ func (c *grpcClient) Insert(ctx context.Context, collName string, partitionName 
 	if err := handleRespStatus(resp.GetStatus()); err != nil {
 		return nil, err
 	}
+	tsm.set(coll.ID, resp.Timestamp)
 	// 3. parse id column
 	return entity.IDColumns(resp.GetIDs(), 0, -1)
 }
@@ -130,7 +131,7 @@ func (c *grpcClient) Flush(ctx context.Context, collName string, async bool) err
 		return err
 	}
 	req := &server.FlushRequest{
-		DbName:          "", //reserved,
+		DbName:          "", // reserved,
 		CollectionNames: []string{collName},
 	}
 	resp, err := c.service.Flush(ctx, req)
@@ -220,13 +221,13 @@ func (c *grpcClient) DeleteByPks(ctx context.Context, collName string, partition
 	if err != nil {
 		return err
 	}
-
+	tsm.set(coll.ID, resp.Timestamp)
 	return nil
 }
 
-//Search with bool expression
+// Search with bool expression
 func (c *grpcClient) Search(ctx context.Context, collName string, partitions []string,
-	expr string, outputFields []string, vectors []entity.Vector, vectorField string, metricType entity.MetricType, topK int, sp entity.SearchParam) ([]SearchResult, error) {
+	expr string, outputFields []string, vectors []entity.Vector, vectorField string, metricType entity.MetricType, topK int, sp entity.SearchParam, opts ...SearchQueryOptionFunc) ([]SearchResult, error) {
 	if c.service == nil {
 		return []SearchResult{}, ErrClientNotReady
 	}
@@ -280,8 +281,13 @@ func (c *grpcClient) Search(ctx context.Context, collName string, partitions []s
 		}
 	}
 
+	option, err := MakeSearchQueryOption(coll, opts...)
+	if err != nil {
+		return nil, err
+	}
+
 	// 2. Request milvus service
-	reqs := splitSearchRequest(coll.Schema, partitions, expr, outputFields, vectors, vectorField, metricType, topK, sp)
+	reqs := splitSearchRequest(coll.Schema, partitions, expr, outputFields, vectors, vectorField, metricType, topK, sp, option)
 	if len(reqs) == 0 {
 		return nil, errors.New("empty request generated")
 	}
@@ -342,7 +348,7 @@ func (c *grpcClient) Search(ctx context.Context, collName string, partitions []s
 }
 
 // QueryByPks query record by specified primary key(s)
-func (c *grpcClient) QueryByPks(ctx context.Context, collectionName string, partitionNames []string, ids entity.Column, outputFields []string) ([]entity.Column, error) {
+func (c *grpcClient) QueryByPks(ctx context.Context, collectionName string, partitionNames []string, ids entity.Column, outputFields []string, opts ...SearchQueryOptionFunc) ([]entity.Column, error) {
 	if c.service == nil {
 		return nil, ErrClientNotReady
 	}
@@ -379,12 +385,19 @@ func (c *grpcClient) QueryByPks(ctx context.Context, collectionName string, part
 	// for now pk must be int64
 	expr := fmt.Sprintf("%s in %s", ids.Name(), strings.Join(strings.Fields(fmt.Sprint(ids.FieldData().GetScalars().GetLongData().GetData())), ","))
 
+	option, err := MakeSearchQueryOption(coll, opts...)
+	if err != nil {
+		return nil, err
+	}
+
 	req := &server.QueryRequest{
-		DbName:         "", // reserved field
-		CollectionName: collectionName,
-		PartitionNames: partitionNames,
-		OutputFields:   outputFields,
-		Expr:           expr,
+		DbName:             "", // reserved field
+		CollectionName:     collectionName,
+		Expr:               expr,
+		OutputFields:       outputFields,
+		PartitionNames:     partitionNames,
+		GuaranteeTimestamp: option.GuaranteeTimestamp,
+		TravelTimestamp:    option.TravelTimestamp,
 	}
 	resp, err := c.service.Query(ctx, req)
 	if err != nil {
@@ -428,7 +441,7 @@ func getPKField(schema *entity.Schema) *entity.Field {
 
 func splitSearchRequest(sch *entity.Schema, partitions []string,
 	expr string, outputFields []string, vectors []entity.Vector, vectorField string,
-	metricType entity.MetricType, topK int, sp entity.SearchParam) []*server.SearchRequest {
+	metricType entity.MetricType, topK int, sp entity.SearchParam, opt *SearchQueryOption) []*server.SearchRequest {
 	params := sp.Params()
 	bs, _ := json.Marshal(params)
 	searchParams := entity.MapKvPairs(map[string]string{
@@ -441,7 +454,7 @@ func splitSearchRequest(sch *entity.Schema, partitions []string,
 
 	ers := estRowSize(sch, outputFields)
 	maxBatch := int(math.Ceil(float64(5*1024*1024) / float64(ers*int64(topK))))
-	result := []*server.SearchRequest{}
+	var result []*server.SearchRequest
 	for i := 0; i*maxBatch < len(vectors); i++ {
 		start := i * maxBatch
 		end := (i + 1) * maxBatch
@@ -450,14 +463,16 @@ func splitSearchRequest(sch *entity.Schema, partitions []string,
 		}
 		batchVectors := vectors[start:end]
 		req := &server.SearchRequest{
-			DbName:           "",
-			CollectionName:   sch.CollectionName,
-			PartitionNames:   partitions,
-			SearchParams:     searchParams,
-			Dsl:              expr,
-			DslType:          common.DslType_BoolExprV1,
-			OutputFields:     outputFields,
-			PlaceholderGroup: vector2PlaceholderGroupBytes(batchVectors),
+			DbName:             "",
+			CollectionName:     sch.CollectionName,
+			PartitionNames:     partitions,
+			Dsl:                expr,
+			PlaceholderGroup:   vector2PlaceholderGroupBytes(batchVectors),
+			DslType:            common.DslType_BoolExprV1,
+			OutputFields:       outputFields,
+			SearchParams:       searchParams,
+			TravelTimestamp:    opt.GuaranteeTimestamp,
+			GuaranteeTimestamp: opt.TravelTimestamp,
 		}
 		result = append(result, req)
 	}
@@ -470,7 +485,7 @@ func (c *grpcClient) GetPersistentSegmentInfo(ctx context.Context, collName stri
 		return []*entity.Segment{}, ErrClientNotReady
 	}
 	req := &server.GetPersistentSegmentInfoRequest{
-		DbName:         "", //reserved
+		DbName:         "", // reserved
 		CollectionName: collName,
 	}
 	resp, err := c.service.GetPersistentSegmentInfo(ctx, req)
@@ -500,7 +515,7 @@ func (c *grpcClient) GetQuerySegmentInfo(ctx context.Context, collName string) (
 		return []*entity.Segment{}, ErrClientNotReady
 	}
 	req := &server.GetQuerySegmentInfoRequest{
-		DbName:         "", //reserved
+		DbName:         "", // reserved
 		CollectionName: collName,
 	}
 	resp, err := c.service.GetQuerySegmentInfo(ctx, req)
@@ -590,7 +605,7 @@ func columnToVectorsArray(collName string, partitions []string, column entity.Co
 		ids := &server.VectorIDs{
 			CollectionName: collName,
 			PartitionNames: partitions,
-			FieldName:      column.Name(), //TODO use field name or column name?
+			FieldName:      column.Name(), // TODO use field name or column name?
 			IdArray: &schema.IDs{
 				IdField: &schema.IDs_IntId{
 					IntId: &schema.LongArray{
@@ -730,7 +745,7 @@ func estRowSize(sch *entity.Schema, selected []string) int64 {
 		case entity.FieldTypeDouble:
 			total += 8
 		case entity.FieldTypeString:
-			//TODO string need varchar[max] syntax like limitation
+			// TODO string need varchar[max] syntax like limitation
 		case entity.FieldTypeFloatVector:
 			dimStr := field.TypeParams[entity.TYPE_PARAM_DIM]
 			dim, _ := strconv.ParseInt(dimStr, 10, 64)

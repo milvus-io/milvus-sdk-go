@@ -20,6 +20,7 @@ type Collection struct {
 	PhysicalChannels []string
 	VirtualChannels  []string
 	Loaded           bool
+	ConsistencyLevel ConsistencyLevel
 }
 
 // Partition represent partition meta in Milvus
