@@ -224,9 +224,11 @@ func (c *grpcClient) DescribeCollection(ctx context.Context, collName string) (*
 	}
 	collection := &entity.Collection{
 		ID:               resp.GetCollectionID(),
+		Name:             resp.CollectionName,
 		Schema:           (&entity.Schema{}).ReadProto(resp.GetSchema()),
 		PhysicalChannels: resp.GetPhysicalChannelNames(),
 		VirtualChannels:  resp.GetVirtualChannelNames(),
+		ConsistencyLevel: entity.ConsistencyLevel(resp.ConsistencyLevel),
 	}
 	collection.Name = collection.Schema.CollectionName
 	return collection, nil

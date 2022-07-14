@@ -345,7 +345,7 @@ func TestGrpcClientLoadCollection(t *testing.T) {
 	t.Run("Load collection sync", func(t *testing.T) {
 
 		loadTime := rand.Intn(500) + 500 // in milli seconds, 100~1000 milliseconds
-		passed := false                  //### flag variable
+		passed := false                  // ### flag variable
 		start := time.Now()
 
 		mock.setInjection(mShowCollections, func(_ context.Context, raw proto.Message) (proto.Message, error) {
@@ -606,7 +606,6 @@ func TestGrpcClientGetReplicas(t *testing.T) {
 		groups, err := c.GetReplicas(ctx, testCollectionName)
 		assert.Nil(t, err)
 		assert.NotNil(t, groups)
-		fmt.Println(groups)
 		assert.Equal(t, 1, len(groups))
 
 		assert.Equal(t, replicaID, groups[0].ReplicaID)
