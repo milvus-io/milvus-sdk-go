@@ -16,6 +16,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"math"
 	"strconv"
 	"strings"
@@ -194,8 +195,8 @@ func (c *grpcClient) DeleteByPks(ctx context.Context, collName string, partition
 	if ids.Len() == 0 {
 		return errors.New("ids len must not be zero")
 	}
-	if ids.Type() != entity.FieldTypeInt64 {
-		return errors.New("only int64 pk is supported for now")
+	if ids.Type() != entity.FieldTypeInt64 && ids.Type() != entity.FieldTypeVarChar { // string key not supported yet
+		return errors.New("only int64 and varchar column can be primary key for now")
 	}
 
 	pkf := getPKField(coll.Schema)
@@ -373,17 +374,27 @@ func (c *grpcClient) QueryByPks(ctx context.Context, collectionName string, part
 	if ids.Len() == 0 {
 		return nil, errors.New("ids len must not be zero")
 	}
-	if ids.Type() != entity.FieldTypeInt64 {
-		return nil, errors.New("only int64 pk is supported for now")
+	if ids.Type() != entity.FieldTypeInt64 && ids.Type() != entity.FieldTypeVarChar { // string key not supported yet
+		return nil, errors.New("only int64 and varchar column can be primary key for now")
 	}
 
 	pkf := getPKField(coll.Schema)
 	// pkf shall not be nil since is returned from milvus
 	if pkf.Name != ids.Name() {
-		return nil, errors.New("only delete by primary key is supported now")
+		return nil, errors.New("only query by primary key is supported now")
 	}
-	// for now pk must be int64
-	expr := fmt.Sprintf("%s in %s", ids.Name(), strings.Join(strings.Fields(fmt.Sprint(ids.FieldData().GetScalars().GetLongData().GetData())), ","))
+
+	var expr string
+	switch ids.Type() {
+	case entity.FieldTypeInt64:
+		expr = fmt.Sprintf("%s in %s", ids.Name(), strings.Join(strings.Fields(fmt.Sprint(ids.FieldData().GetScalars().GetLongData().GetData())), ","))
+	case entity.FieldTypeVarChar:
+		data := ids.FieldData().GetScalars().GetData().(*schema.ScalarField_StringData).StringData.Data
+		for i := range data {
+			data[i] = fmt.Sprintf("\"%s\"", data[i])
+		}
+		expr = fmt.Sprintf("%s in %s", ids.Name(), strings.Join(strings.Fields(fmt.Sprint(data)), ","))
+	}
 
 	option, err := MakeSearchQueryOption(coll, opts...)
 	if err != nil {
@@ -746,6 +757,12 @@ func estRowSize(sch *entity.Schema, selected []string) int64 {
 			total += 8
 		case entity.FieldTypeString:
 			// TODO string need varchar[max] syntax like limitation
+		case entity.FieldTypeVarChar:
+			maxLength, err := strconv.Atoi(field.TypeParams[entity.TYPE_PARAM_MAX_LENGTH])
+			if err != nil {
+				log.Fatalf("got invalid varchar max length = %s", field.TypeParams[entity.TYPE_PARAM_MAX_LENGTH])
+			}
+			total += int64(maxLength)
 		case entity.FieldTypeFloatVector:
 			dimStr := field.TypeParams[entity.TYPE_PARAM_DIM]
 			dim, _ := strconv.ParseInt(dimStr, 10, 64)

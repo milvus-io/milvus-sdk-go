@@ -170,8 +170,8 @@ func validateSchema(sch *entity.Schema) error {
 			if primaryKey { // another primary key found, only one primary key field for now
 				return errors.New("only one primary key only")
 			}
-			if field.DataType != entity.FieldTypeInt64 { // string key not supported yet
-				return errors.New("only int64 column can be primary key for now")
+			if field.DataType != entity.FieldTypeInt64 && field.DataType != entity.FieldTypeVarChar { // string key not supported yet
+				return errors.New("only int64 and varchar column can be primary key for now")
 			}
 			primaryKey = true
 		}

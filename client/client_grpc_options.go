@@ -23,7 +23,7 @@ type CreateCollectionOption func(*server.CreateCollectionRequest)
 // WithConsistencyLevel specifies a specific ConsistencyLevel, rather than using the default ReaderProperties.
 func WithConsistencyLevel(cl entity.ConsistencyLevel) CreateCollectionOption {
 	return func(req *server.CreateCollectionRequest) {
-		req.ConsistencyLevel = cl.CommonConsisencyLevel()
+		req.ConsistencyLevel = cl.CommonConsistencyLevel()
 	}
 }
 

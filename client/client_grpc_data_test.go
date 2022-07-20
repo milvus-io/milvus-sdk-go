@@ -471,6 +471,72 @@ func TestGrpcQueryByPks(t *testing.T) {
 		assert.ElementsMatch(t, []int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, colInt64.Data())
 	})
 
+	t.Run("normal query by varchar pks", func(t *testing.T) {
+		mock.setInjection(mHasCollection, hasCollectionDefault)
+		mock.setInjection(mHasPartition, hasPartitionInjection(t, testCollectionName, false, partName))
+		defer mock.delInjection(mHasPartition)
+		mock.setInjection(mDescribeCollection, describeCollectionInjection(t, testCollectionID, testCollectionName, varCharSchema()))
+		defer mock.setInjection(mDescribeCollection, describeCollectionInjection(t, testCollectionID, testCollectionName, defaultSchema()))
+
+		mock.setInjection(mQuery, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+			req, ok := raw.(*server.QueryRequest)
+			if !ok {
+				t.FailNow()
+			}
+			assert.Equal(t, testCollectionName, req.GetCollectionName())
+			if len(req.GetPartitionNames()) > 0 {
+				assert.Equal(t, partName, req.GetPartitionNames()[0])
+			}
+
+			resp := &server.QueryResults{}
+			s, err := successStatus()
+			resp.Status = s
+			resp.FieldsData = []*schema.FieldData{
+				{
+					Type:      schema.DataType_VarChar,
+					FieldName: "varchar",
+					Field: &schema.FieldData_Scalars{
+						Scalars: &schema.ScalarField{
+							Data: &schema.ScalarField_StringData{
+								StringData: &schema.StringArray{
+									Data: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"},
+								},
+							},
+						},
+					},
+				},
+				{
+					Type:      schema.DataType_FloatVector,
+					FieldName: testVectorField,
+					Field: &schema.FieldData_Vectors{
+						Vectors: &schema.VectorField{
+							Dim: 1,
+							Data: &schema.VectorField_FloatVector{
+								FloatVector: &schema.FloatArray{
+									Data: []float32{0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0},
+								},
+							},
+						},
+					},
+				},
+			}
+
+			return resp, err
+		})
+		defer mock.delInjection(mQuery)
+
+		columns, err := c.QueryByPks(ctx, testCollectionName, []string{partName}, entity.NewColumnVarChar("varchar", []string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"}), []string{"varchar", testVectorField})
+		assert.NoError(t, err)
+		assert.Equal(t, 2, len(columns))
+		assert.Equal(t, entity.FieldTypeVarChar, columns[0].Type())
+		assert.Equal(t, entity.FieldTypeFloatVector, columns[1].Type())
+		assert.Equal(t, 10, columns[0].Len())
+
+		colPK, ok := columns[0].(*entity.ColumnVarChar)
+		assert.True(t, ok)
+		assert.ElementsMatch(t, []string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"}, colPK.Data())
+	})
+
 	t.Run("Bad request querys", func(t *testing.T) {
 		mock.setInjection(mHasCollection, hasCollectionDefault)
 		mock.setInjection(mHasPartition, hasPartitionInjection(t, testCollectionName, false, partName))

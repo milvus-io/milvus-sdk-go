@@ -98,6 +98,31 @@ func defaultSchema() *entity.Schema {
 	}
 }
 
+func varCharSchema() *entity.Schema {
+	return &entity.Schema{
+		CollectionName: testCollectionName,
+		AutoID:         false,
+		Fields: []*entity.Field{
+			{
+				Name:       "varchar",
+				DataType:   entity.FieldTypeVarChar,
+				PrimaryKey: true,
+				AutoID:     false,
+				TypeParams: map[string]string{
+					entity.TYPE_PARAM_MAX_LENGTH: fmt.Sprintf("%d", 100),
+				},
+			},
+			{
+				Name:     testVectorField,
+				DataType: entity.FieldTypeFloatVector,
+				TypeParams: map[string]string{
+					entity.TYPE_PARAM_DIM: fmt.Sprintf("%d", testVectorDim),
+				},
+			},
+		},
+	}
+}
+
 var _ entity.Row = &defaultRow{}
 
 type defaultRow struct {
