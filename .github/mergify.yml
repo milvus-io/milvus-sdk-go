@@ -3,6 +3,7 @@ pull_request_rules:
     conditions:
       - base=master
       - "status-success=Unittest AMD64 Ubuntu 18.04"
+      - "status-success=lint"
     actions:
       label:
         add:
@@ -27,10 +28,12 @@ pull_request_rules:
         add:
           - ci-passed
 
-  - name: Remove ci-passed when unittest failed
+  - name: Remove ci-passed when some test failed
     conditions:
       - base=master
-      - "check-failure=Unittest AMD64 Ubuntu 18.04"
+      - or:
+        - "check-failure=Unittest AMD64 Ubuntu 18.04"
+        - "check-failure=lint"
     actions:
       label:
         remove:
