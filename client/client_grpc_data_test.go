@@ -309,7 +309,7 @@ func TestGrpcSearch(t *testing.T) {
 
 		// specify guarantee timestamp in strong consistency level
 		r, err = c.Search(ctx, testCollectionName, []string{}, "", []string{"int64"}, []entity.Vector{entity.FloatVector(vectors[0])}, "vector",
-			entity.HAMMING, 5, sp, WithSearchQueryConsistencyLevel(entity.CL_STRONG), WithGuaranteeTimestamp(1))
+			entity.HAMMING, 5, sp, WithSearchQueryConsistencyLevel(entity.ClStrong), WithGuaranteeTimestamp(1))
 		assert.Nil(t, r)
 		assert.NotNil(t, err)
 	})
@@ -378,13 +378,13 @@ func TestGrpcSearch(t *testing.T) {
 
 		// search with session consistency level
 		results, err = c.Search(ctx, testCollectionName, []string{}, expr, []string{"int64"}, []entity.Vector{entity.FloatVector(vectors[0])},
-			testVectorField, entity.L2, 10, sp, WithSearchQueryConsistencyLevel(entity.CL_SESSION), WithTravelTimestamp(0))
+			testVectorField, entity.L2, 10, sp, WithSearchQueryConsistencyLevel(entity.ClSession), WithTravelTimestamp(0))
 		assert.Nil(t, err)
 		assert.NotNil(t, results)
 
 		// search with customized consistency level
 		results, err = c.Search(ctx, testCollectionName, []string{}, expr, []string{"int64"}, []entity.Vector{entity.FloatVector(vectors[0])},
-			testVectorField, entity.L2, 10, sp, WithSearchQueryConsistencyLevel(entity.CL_CUSTOMIZED), WithTravelTimestamp(1))
+			testVectorField, entity.L2, 10, sp, WithSearchQueryConsistencyLevel(entity.ClCustomized), WithTravelTimestamp(1))
 		assert.Nil(t, err)
 		assert.NotNil(t, results)
 	})
@@ -459,7 +459,7 @@ func TestGrpcQueryByPks(t *testing.T) {
 		assert.ElementsMatch(t, []int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, colInt64.Data())
 
 		// query with options
-		columns, err = c.QueryByPks(ctx, testCollectionName, []string{partName}, entity.NewColumnInt64(testPrimaryField, []int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}), []string{"int64", testVectorField}, WithSearchQueryConsistencyLevel(entity.CL_SESSION), WithTravelTimestamp(0))
+		columns, err = c.QueryByPks(ctx, testCollectionName, []string{partName}, entity.NewColumnInt64(testPrimaryField, []int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}), []string{"int64", testVectorField}, WithSearchQueryConsistencyLevel(entity.ClSession), WithTravelTimestamp(0))
 		assert.NoError(t, err)
 		assert.Equal(t, 2, len(columns))
 		assert.Equal(t, entity.FieldTypeInt64, columns[0].Type())
@@ -956,14 +956,14 @@ func TestEstRowSize(t *testing.T) {
 				Name:     testVectorField,
 				DataType: entity.FieldTypeFloatVector,
 				TypeParams: map[string]string{
-					entity.TYPE_PARAM_DIM: fmt.Sprintf("%d", testVectorDim),
+					entity.TypeParamDim: fmt.Sprintf("%d", testVectorDim),
 				},
 			},
 			{
 				Name:     "binary_vector",
 				DataType: entity.FieldTypeBinaryVector,
 				TypeParams: map[string]string{
-					entity.TYPE_PARAM_DIM: fmt.Sprintf("%d", testVectorDim),
+					entity.TypeParamDim: fmt.Sprintf("%d", testVectorDim),
 				},
 			},
 		},

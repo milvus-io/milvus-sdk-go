@@ -3,13 +3,14 @@ package tests
 import (
 	"context"
 	"fmt"
-	"github.com/milvus-io/milvus-sdk-go/v2/client"
-	"github.com/stretchr/testify/assert"
 	"reflect"
 	"testing"
+
+	"github.com/milvus-io/milvus-sdk-go/v2/client"
+	"github.com/stretchr/testify/assert"
 )
 
-func TestClientConnect(t *testing.T)  {
+func TestClientConnect(t *testing.T) {
 	c, err := client.NewGrpcClient(context.Background(), GenMilvusAddr())
 	assert.NoError(t, err)
 	tp := reflect.TypeOf(c)
@@ -18,7 +19,7 @@ func TestClientConnect(t *testing.T)  {
 	defer c.Close()
 }
 
-func TestConnectRepeatedly(t *testing.T)  {
+func TestConnectRepeatedly(t *testing.T) {
 	c, err := client.NewGrpcClient(context.Background(), GenMilvusAddr())
 	assert.NoError(t, err)
 	c1, err1 := client.NewGrpcClient(context.Background(), GenMilvusAddr())
@@ -27,8 +28,8 @@ func TestConnectRepeatedly(t *testing.T)  {
 	defer c.Close()
 }
 
-func TestConnectInvalid(t *testing.T)  {
-	addrTests := []struct{
+func TestConnectInvalid(t *testing.T) {
+	addrTests := []struct {
 		addr string
 	}{
 		{fmt.Sprintf("%s%d", host, port)},
@@ -55,7 +56,7 @@ func TestClose(t *testing.T) {
 	assert.EqualError(t, err1, errString)
 }
 
-func TestCloseRepeatedly(t *testing.T)  {
+func TestCloseRepeatedly(t *testing.T) {
 	c := GenClient(t)
 	res := c.Close()
 	assert.NoError(t, res)

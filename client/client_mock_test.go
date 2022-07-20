@@ -91,7 +91,7 @@ func defaultSchema() *entity.Schema {
 				Name:     testVectorField,
 				DataType: entity.FieldTypeFloatVector,
 				TypeParams: map[string]string{
-					entity.TYPE_PARAM_DIM: fmt.Sprintf("%d", testVectorDim),
+					entity.TypeParamDim: fmt.Sprintf("%d", testVectorDim),
 				},
 			},
 		},
@@ -109,14 +109,14 @@ func varCharSchema() *entity.Schema {
 				PrimaryKey: true,
 				AutoID:     false,
 				TypeParams: map[string]string{
-					entity.TYPE_PARAM_MAX_LENGTH: fmt.Sprintf("%d", 100),
+					entity.TypeParamMaxLength: fmt.Sprintf("%d", 100),
 				},
 			},
 			{
 				Name:     testVectorField,
 				DataType: entity.FieldTypeFloatVector,
 				TypeParams: map[string]string{
-					entity.TYPE_PARAM_DIM: fmt.Sprintf("%d", testVectorDim),
+					entity.TypeParamDim: fmt.Sprintf("%d", testVectorDim),
 				},
 			},
 		},

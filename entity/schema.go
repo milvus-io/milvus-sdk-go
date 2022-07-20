@@ -17,22 +17,22 @@ import (
 )
 
 const (
-	// TYPE_PARAM_DIM is the const for field type param dimension
-	TYPE_PARAM_DIM = "dim"
+	// TypeParamDim is the const for field type param dimension
+	TypeParamDim = "dim"
 
-	// TYPE_PARAM_MAX_LENGTH is the const for varchar type maximal length
-	TYPE_PARAM_MAX_LENGTH = "max_length"
+	// TypeParamMaxLength is the const for varchar type maximal length
+	TypeParamMaxLength = "max_length"
 
-	// CL_STRONG strong consistency level
-	CL_STRONG ConsistencyLevel = ConsistencyLevel(common.ConsistencyLevel_Strong)
-	// CL_BOUNDED bounded consistency level with default tolerance of 5 seconds
-	CL_BOUNDED ConsistencyLevel = ConsistencyLevel(common.ConsistencyLevel_Bounded)
-	// CL_SESSION session consistency level
-	CL_SESSION ConsistencyLevel = ConsistencyLevel(common.ConsistencyLevel_Session)
-	// CL_EVENTUALLY eventually consistency level
-	CL_EVENTUALLY ConsistencyLevel = ConsistencyLevel(common.ConsistencyLevel_Eventually)
-	// CL_CUSTOMIZED customized consistency level and users pass their own `guarantee_timestamp`.
-	CL_CUSTOMIZED ConsistencyLevel = ConsistencyLevel(common.ConsistencyLevel_Customized)
+	// ClStrong strong consistency level
+	ClStrong ConsistencyLevel = ConsistencyLevel(common.ConsistencyLevel_Strong)
+	// ClBounded bounded consistency level with default tolerance of 5 seconds
+	ClBounded ConsistencyLevel = ConsistencyLevel(common.ConsistencyLevel_Bounded)
+	// ClSession session consistency level
+	ClSession ConsistencyLevel = ConsistencyLevel(common.ConsistencyLevel_Session)
+	// ClEvenually eventually consistency level
+	ClEventually ConsistencyLevel = ConsistencyLevel(common.ConsistencyLevel_Eventually)
+	// ClCustomized customized consistency level and users pass their own `guarantee_timestamp`.
+	ClCustomized ConsistencyLevel = ConsistencyLevel(common.ConsistencyLevel_Customized)
 )
 
 // ConsistencyLevel enum type for collection Consistency Level

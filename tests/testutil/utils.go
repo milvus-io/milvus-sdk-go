@@ -8,7 +8,7 @@ import (
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )
 
-var r *rand.Rand = nil
+var r *rand.Rand
 
 func init() {
 	r = rand.New(rand.NewSource(time.Now().UnixNano()))
@@ -40,7 +40,7 @@ func GenDefaultFields(dim int64) []*entity.Field {
 			Name:     DefaultFloatVecFieldName,
 			DataType: entity.FieldTypeFloatVector,
 			TypeParams: map[string]string{
-				entity.TYPE_PARAM_DIM: fmt.Sprintf("%d", dim),
+				entity.TypeParamDim: fmt.Sprintf("%d", dim),
 			},
 		},
 	}

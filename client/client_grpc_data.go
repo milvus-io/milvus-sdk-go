@@ -85,8 +85,8 @@ func (c *grpcClient) Insert(ctx context.Context, collName string, partitionName 
 			case *entity.ColumnBinaryVector:
 				dim = column.Dim()
 			}
-			if fmt.Sprintf("%d", dim) != field.TypeParams[entity.TYPE_PARAM_DIM] {
-				return nil, fmt.Errorf("params column %s vector dim %d not match collection definition, which has dim of %s", field.Name, dim, field.TypeParams[entity.TYPE_PARAM_DIM])
+			if fmt.Sprintf("%d", dim) != field.TypeParams[entity.TypeParamDim] {
+				return nil, fmt.Errorf("params column %s vector dim %d not match collection definition, which has dim of %s", field.Name, dim, field.TypeParams[entity.TypeParamDim])
 			}
 		}
 	}
@@ -264,7 +264,7 @@ func (c *grpcClient) Search(ctx context.Context, collName string, partitions []s
 	if !has {
 		return nil, fmt.Errorf("vector field %s does not exist in collection %s", vectorField, collName)
 	}
-	dimStr := vfDef.TypeParams[entity.TYPE_PARAM_DIM]
+	dimStr := vfDef.TypeParams[entity.TypeParamDim]
 	for _, vector := range vectors {
 		if fmt.Sprintf("%d", vector.Dim()) != dimStr {
 			return nil, fmt.Errorf("vector %s has dim of %s while found search vector with dim %d", vectorField,
@@ -758,17 +758,17 @@ func estRowSize(sch *entity.Schema, selected []string) int64 {
 		case entity.FieldTypeString:
 			// TODO string need varchar[max] syntax like limitation
 		case entity.FieldTypeVarChar:
-			maxLength, err := strconv.Atoi(field.TypeParams[entity.TYPE_PARAM_MAX_LENGTH])
+			maxLength, err := strconv.Atoi(field.TypeParams[entity.TypeParamMaxLength])
 			if err != nil {
-				log.Fatalf("got invalid varchar max length = %s", field.TypeParams[entity.TYPE_PARAM_MAX_LENGTH])
+				log.Fatalf("got invalid varchar max length = %s", field.TypeParams[entity.TypeParamMaxLength])
 			}
 			total += int64(maxLength)
 		case entity.FieldTypeFloatVector:
-			dimStr := field.TypeParams[entity.TYPE_PARAM_DIM]
+			dimStr := field.TypeParams[entity.TypeParamDim]
 			dim, _ := strconv.ParseInt(dimStr, 10, 64)
 			total += 4 * dim
 		case entity.FieldTypeBinaryVector:
-			dimStr := field.TypeParams[entity.TYPE_PARAM_DIM]
+			dimStr := field.TypeParams[entity.TypeParamDim]
 			dim, _ := strconv.ParseInt(dimStr, 10, 64)
 			total += 4 * dim / 8
 		}

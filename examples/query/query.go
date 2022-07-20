@@ -63,14 +63,14 @@ func main() {
 				Name:     embeddingCol,
 				DataType: entity.FieldTypeFloatVector,
 				TypeParams: map[string]string{
-					entity.TYPE_PARAM_DIM: fmt.Sprintf("%d", dim),
+					entity.TypeParamDim: fmt.Sprintf("%d", dim),
 				},
 			},
 		},
 	}
 
 	// create collection with consistency level, which serves as the default search/query consistency level
-	if err := c.CreateCollection(ctx, schema, 2, client.WithConsistencyLevel(entity.CL_BOUNDED)); err != nil {
+	if err := c.CreateCollection(ctx, schema, 2, client.WithConsistencyLevel(entity.ClBounded)); err != nil {
 		log.Fatalf("create collection failed, err: %v", err)
 	}
 
@@ -144,7 +144,7 @@ func main() {
 	begin = time.Now()
 	sp, _ = entity.NewIndexFlatSearchParam(10)
 	sRet, err = c.Search(ctx, collectionName, nil, "", []string{randomCol}, vec2search,
-		embeddingCol, entity.L2, topK, sp, client.WithSearchQueryConsistencyLevel(entity.CL_STRONG))
+		embeddingCol, entity.L2, topK, sp, client.WithSearchQueryConsistencyLevel(entity.ClStrong)
 	end = time.Now()
 	if err != nil {
 		log.Fatalf("failed to search collection, err: %v", err)

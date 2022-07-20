@@ -54,7 +54,7 @@ func main() {
 				PrimaryKey: true,
 				AutoID:     false,
 				TypeParams: map[string]string{
-					entity.TYPE_PARAM_MAX_LENGTH: fmt.Sprintf("%d", maxLength),
+					entity.TypeParamMaxLength: fmt.Sprintf("%d", maxLength),
 				},
 			},
 			{
@@ -67,7 +67,7 @@ func main() {
 				Name:     embeddingCol,
 				DataType: entity.FieldTypeFloatVector,
 				TypeParams: map[string]string{
-					entity.TYPE_PARAM_DIM: fmt.Sprintf("%d", dim),
+					entity.TypeParamDim: fmt.Sprintf("%d", dim),
 				},
 			},
 		},
@@ -103,7 +103,7 @@ func main() {
 	idColData := entity.NewColumnVarChar(idCol, idList)
 	randomColData := entity.NewColumnDouble(randomCol, randomList)
 	embeddingColData := entity.NewColumnFloatVector(embeddingCol, dim, embeddingList)
-	
+
 	if _, err := c.Insert(ctx, collectionName, "", idColData, randomColData, embeddingColData); err != nil {
 		log.Fatalf("failed to insert random data into `hello_milvus, err: %v", err)
 	}

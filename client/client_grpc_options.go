@@ -13,6 +13,7 @@ package client
 
 import (
 	"errors"
+
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 	server "github.com/milvus-io/milvus-sdk-go/v2/internal/proto/server"
 )
@@ -77,24 +78,24 @@ func MakeSearchQueryOption(c *entity.Collection, opts ...SearchQueryOptionFunc) 
 	}
 
 	// sanity-check
-	if opt.ConsistencyLevel != entity.CL_CUSTOMIZED && opt.GuaranteeTimestamp != 0 {
+	if opt.ConsistencyLevel != entity.ClCustomized && opt.GuaranteeTimestamp != 0 {
 		return nil, errors.New("user can only specify guarantee timestamp under customized consistency level")
 	}
 
 	switch opt.ConsistencyLevel {
-	case entity.CL_STRONG:
+	case entity.ClStrong:
 		opt.GuaranteeTimestamp = StrongTimestamp
-	case entity.CL_SESSION:
+	case entity.ClSession:
 		ts, ok := tsm.get(c.ID)
 		if !ok {
 			ts = EventuallyTimestamp
 		}
 		opt.GuaranteeTimestamp = ts
-	case entity.CL_BOUNDED:
+	case entity.ClBounded:
 		opt.GuaranteeTimestamp = BoundedTimestamp
-	case entity.CL_EVENTUALLY:
+	case entity.ClEventually:
 		opt.GuaranteeTimestamp = EventuallyTimestamp
-	case entity.CL_CUSTOMIZED:
+	case entity.ClCustomized:
 		// respect opt.GuaranteeTimestamp
 	}
 	return opt, nil

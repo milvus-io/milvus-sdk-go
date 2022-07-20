@@ -21,24 +21,24 @@ package entity
 type CompactionState int32
 
 const (
-	//COMPACTION_STATE_UNDEFINED zero value placeholder
-	COMPACTION_STATE_UNDEFINED CompactionState = 0
-	//COMPACTION_STATE_EXECUTING compaction in progress
-	COMPACTION_STATE_EXECUTING CompactionState = 1
-	// COMPACTION_STATE_COMPLETED compcation done
-	COMPACTION_STATE_COMPLETED CompactionState = 2
+	//CompcationStateUndefined zero value placeholder
+	CompcationStateUndefined CompactionState = 0
+	//CompactionStateExecuting compaction in progress
+	CompactionStateExecuting CompactionState = 1
+	// CompactionStateCompleted compcation done
+	CompactionStateCompleted CompactionState = 2
 )
 
 type CompactionPlanType int32
 
 // See https://wiki.lfaidata.foundation/display/MIL/MEP+16+--+Compaction
 const (
-	// COMPACTION_PLAN_UNDEFINE zero value placeholder
-	COMPACTION_PLAN_UNDEFINE CompactionPlanType = 0
-	// COMPACTION_PLAN_APPLY_DELETE apply delete log
-	COMPACTION_PLAN_APPLY_DELETE CompactionPlanType = 1
-	// COMPACTION_PLAN_MERGE_SEGMENTS merge multiple segments
-	COMPACTION_PLAN_MERGE_SEGMENTS CompactionPlanType = 2
+	// CompactionPlanUndefined zero value placeholder
+	CompactionPlanUndefined CompactionPlanType = 0
+	// CompactionPlanApplyDelete apply delete log
+	CompactionPlanApplyDelete CompactionPlanType = 1
+	// CompactionPlanMergeSegments merge multiple segments
+	CompactionPlanMergeSegments CompactionPlanType = 2
 )
 
 // CompactionMergePlan contains compaction plan of merging multple segments

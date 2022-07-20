@@ -9,10 +9,10 @@ import (
 
 func TestCL_CommonCL(t *testing.T) {
 	cls := []ConsistencyLevel{
-		CL_STRONG,
-		CL_BOUNDED,
-		CL_SESSION,
-		CL_EVENTUALLY,
+		ClStrong,
+		ClBounded,
+		ClSession,
+		ClEventually,
 	}
 	for _, cl := range cls {
 		assert.EqualValues(t, common.ConsistencyLevel(cl), cl.CommonConsistencyLevel())
