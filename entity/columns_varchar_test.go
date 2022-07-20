@@ -2,11 +2,12 @@ package entity
 
 import (
 	"fmt"
-	"github.com/milvus-io/milvus-sdk-go/v2/internal/proto/schema"
-	"github.com/stretchr/testify/assert"
 	"math/rand"
 	"testing"
 	"time"
+
+	"github.com/milvus-io/milvus-sdk-go/v2/internal/proto/schema"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestColumnVarChar(t *testing.T) {

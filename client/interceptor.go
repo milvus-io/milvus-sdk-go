@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
+
 	"github.com/milvus-io/milvus-sdk-go/v2/internal/utils/crypto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"

@@ -166,7 +166,6 @@ func SearchResultToRows(sch *entity.Schema, results *schema.SearchResultData, t 
 						f.SetString(strIds.GetData()[offset+j])
 					default:
 						entry.Err = fmt.Errorf("field %s is not valid primary key", field.Name)
-						break
 					}
 					continue
 				}

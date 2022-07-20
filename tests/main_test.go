@@ -4,16 +4,17 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/milvus-io/milvus-sdk-go/v2/client"
-	ut "github.com/milvus-io/milvus-sdk-go/v2/tests/testutil"
 	"os"
 	"testing"
+
+	"github.com/milvus-io/milvus-sdk-go/v2/client"
+	ut "github.com/milvus-io/milvus-sdk-go/v2/tests/testutil"
 )
 
 var host string
 var port int64
 
-func init()  {
+func init() {
 	flag.StringVar(&host, "host", "localhost", "server host")
 	flag.Int64Var(&port, "port", 19530, "server port")
 }
@@ -36,7 +37,7 @@ func GenClient(t *testing.T) client.Client {
 }
 
 // Generate an collection
-func GenCollection(t *testing.T, name string)  {
+func GenCollection(t *testing.T, name string) {
 	t.Helper()
 	c := GenClient(t)
 	fields := ut.GenDefaultFields(ut.DefaultDim)
@@ -47,7 +48,7 @@ func GenCollection(t *testing.T, name string)  {
 	}
 }
 
-func teardown()  {
+func teardown() {
 	fmt.Println("Start to tear down")
 	ctx := context.Background()
 	client, _ := client.NewGrpcClient(context.Background(), GenMilvusAddr())
@@ -59,7 +60,7 @@ func teardown()  {
 	defer client.Close()
 }
 
-func TestMain(m *testing.M)  {
+func TestMain(m *testing.M) {
 	flag.Parse()
 	code := m.Run()
 	teardown()

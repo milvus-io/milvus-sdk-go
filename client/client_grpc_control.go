@@ -62,18 +62,18 @@ func (c *grpcClient) ManualCompaction(ctx context.Context, collName string, tole
 // GetCompactionState get compaction state of provided compaction id
 func (c *grpcClient) GetCompactionState(ctx context.Context, id int64) (entity.CompactionState, error) {
 	if c.service == nil {
-		return entity.COMPACTION_STATE_UNDEFINED, ErrClientNotReady
+		return entity.CompcationStateUndefined, ErrClientNotReady
 	}
 
 	req := &server.GetCompactionStateRequest{CompactionID: id}
 	resp, err := c.service.GetCompactionState(ctx, req)
 	if err != nil {
-		return entity.COMPACTION_STATE_UNDEFINED, err
+		return entity.CompcationStateUndefined, err
 	}
 
 	err = handleRespStatus(resp.GetStatus())
 	if err != nil {
-		return entity.COMPACTION_STATE_UNDEFINED, err
+		return entity.CompcationStateUndefined, err
 	}
 
 	// direct mapping values of CompactionState
@@ -83,7 +83,7 @@ func (c *grpcClient) GetCompactionState(ctx context.Context, id int64) (entity.C
 // GetCompactionStateWithPlans get compaction state with plans of provided compaction id
 func (c *grpcClient) GetCompactionStateWithPlans(ctx context.Context, id int64) (entity.CompactionState, []entity.CompactionPlan, error) {
 	if c.service == nil {
-		return entity.COMPACTION_STATE_UNDEFINED, nil, ErrClientNotReady
+		return entity.CompcationStateUndefined, nil, ErrClientNotReady
 	}
 
 	req := &server.GetCompactionPlansRequest{
@@ -91,12 +91,12 @@ func (c *grpcClient) GetCompactionStateWithPlans(ctx context.Context, id int64) 
 	}
 	resp, err := c.service.GetCompactionStateWithPlans(ctx, req)
 	if err != nil {
-		return entity.COMPACTION_STATE_UNDEFINED, nil, err
+		return entity.CompcationStateUndefined, nil, err
 	}
 
 	err = handleRespStatus(resp.GetStatus())
 	if err != nil {
-		return entity.COMPACTION_STATE_UNDEFINED, nil, err
+		return entity.CompcationStateUndefined, nil, err
 	}
 
 	plans := make([]entity.CompactionPlan, 0, len(resp.GetMergeInfos()))
@@ -104,7 +104,7 @@ func (c *grpcClient) GetCompactionStateWithPlans(ctx context.Context, id int64) 
 		plans = append(plans, entity.CompactionPlan{
 			Source:   mergeInfo.GetSources(),
 			Target:   mergeInfo.GetTarget(),
-			PlanType: entity.COMPACTION_PLAN_MERGE_SEGMENTS,
+			PlanType: entity.CompactionPlanMergeSegments,
 		})
 	}
 

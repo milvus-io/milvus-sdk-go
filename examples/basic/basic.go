@@ -56,7 +56,7 @@ func main() {
 				Name:     "vector",
 				DataType: entity.FieldTypeFloatVector,
 				TypeParams: map[string]string{ // the vector dim may changed def method in release
-					entity.TYPE_PARAM_DIM: "128",
+					entity.TypeParamDim: "128",
 				},
 			},
 		},

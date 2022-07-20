@@ -13,4 +13,3 @@ const (
 
 	DefaultShards = 4
 )
-

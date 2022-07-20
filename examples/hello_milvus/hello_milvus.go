@@ -63,7 +63,7 @@ func main() {
 				Name:     embeddingCol,
 				DataType: entity.FieldTypeFloatVector,
 				TypeParams: map[string]string{
-					entity.TYPE_PARAM_DIM: fmt.Sprintf("%d", dim),
+					entity.TypeParamDim: fmt.Sprintf("%d", dim),
 				},
 			},
 		},

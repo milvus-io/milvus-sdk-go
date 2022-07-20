@@ -12,15 +12,16 @@
 package client
 
 import (
+	"testing"
+
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 	"github.com/milvus-io/milvus-sdk-go/v2/internal/proto/common"
 	"github.com/milvus-io/milvus-sdk-go/v2/internal/proto/server"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestCreateCollectionWithConsistencyLevel(t *testing.T) {
-	opt := WithConsistencyLevel(entity.ConsistencyLevel(entity.CL_BOUNDED))
+	opt := WithConsistencyLevel(entity.ConsistencyLevel(entity.ClBounded))
 	assert.NotNil(t, opt)
 	req := &server.CreateCollectionRequest{}
 
@@ -46,7 +47,7 @@ func TestLoadCollectionWithReplicaNumber(t *testing.T) {
 func TestMakeSearchQueryOption(t *testing.T) {
 	c := &entity.Collection{
 		ID:               999,
-		ConsistencyLevel: entity.CL_STRONG,
+		ConsistencyLevel: entity.ClStrong,
 	}
 
 	t.Run("strong consistency", func(t *testing.T) {
@@ -54,68 +55,68 @@ func TestMakeSearchQueryOption(t *testing.T) {
 		assert.Nil(t, err)
 		assert.NotNil(t, opt)
 		expected := &SearchQueryOption{
-			ConsistencyLevel:   entity.CL_STRONG,
+			ConsistencyLevel:   entity.ClStrong,
 			GuaranteeTimestamp: StrongTimestamp,
 		}
 		assert.Equal(t, expected, opt)
 	})
 
 	t.Run("session consistency", func(t *testing.T) {
-		opt, err := MakeSearchQueryOption(c, WithSearchQueryConsistencyLevel(entity.CL_SESSION))
+		opt, err := MakeSearchQueryOption(c, WithSearchQueryConsistencyLevel(entity.ClSession))
 		assert.Nil(t, err)
 		assert.NotNil(t, opt)
 		expected := &SearchQueryOption{
-			ConsistencyLevel:   entity.CL_SESSION,
+			ConsistencyLevel:   entity.ClSession,
 			GuaranteeTimestamp: EventuallyTimestamp,
 		}
 		assert.Equal(t, expected, opt)
 
 		tsm.set(c.ID, 99)
-		opt, err = MakeSearchQueryOption(c, WithSearchQueryConsistencyLevel(entity.CL_SESSION))
+		opt, err = MakeSearchQueryOption(c, WithSearchQueryConsistencyLevel(entity.ClSession))
 		assert.Nil(t, err)
 		assert.NotNil(t, opt)
 		expected = &SearchQueryOption{
-			ConsistencyLevel:   entity.CL_SESSION,
+			ConsistencyLevel:   entity.ClSession,
 			GuaranteeTimestamp: 99,
 		}
 		assert.Equal(t, expected, opt)
 	})
 
 	t.Run("bounded consistency", func(t *testing.T) {
-		opt, err := MakeSearchQueryOption(c, WithSearchQueryConsistencyLevel(entity.CL_BOUNDED))
+		opt, err := MakeSearchQueryOption(c, WithSearchQueryConsistencyLevel(entity.ClBounded))
 		assert.Nil(t, err)
 		assert.NotNil(t, opt)
 		expected := &SearchQueryOption{
-			ConsistencyLevel:   entity.CL_BOUNDED,
+			ConsistencyLevel:   entity.ClBounded,
 			GuaranteeTimestamp: BoundedTimestamp,
 		}
 		assert.Equal(t, expected, opt)
 	})
 
 	t.Run("eventually consistency", func(t *testing.T) {
-		opt, err := MakeSearchQueryOption(c, WithSearchQueryConsistencyLevel(entity.CL_EVENTUALLY))
+		opt, err := MakeSearchQueryOption(c, WithSearchQueryConsistencyLevel(entity.ClEventually))
 		assert.Nil(t, err)
 		assert.NotNil(t, opt)
 		expected := &SearchQueryOption{
-			ConsistencyLevel:   entity.CL_EVENTUALLY,
+			ConsistencyLevel:   entity.ClEventually,
 			GuaranteeTimestamp: EventuallyTimestamp,
 		}
 		assert.Equal(t, expected, opt)
 	})
 
 	t.Run("customized consistency", func(t *testing.T) {
-		opt, err := MakeSearchQueryOption(c, WithSearchQueryConsistencyLevel(entity.CL_CUSTOMIZED), WithGuaranteeTimestamp(100))
+		opt, err := MakeSearchQueryOption(c, WithSearchQueryConsistencyLevel(entity.ClCustomized), WithGuaranteeTimestamp(100))
 		assert.Nil(t, err)
 		assert.NotNil(t, opt)
 		expected := &SearchQueryOption{
-			ConsistencyLevel:   entity.CL_CUSTOMIZED,
+			ConsistencyLevel:   entity.ClCustomized,
 			GuaranteeTimestamp: 100,
 		}
 		assert.Equal(t, expected, opt)
 	})
 
 	t.Run("guarantee timestamp sanity check", func(t *testing.T) {
-		_, err := MakeSearchQueryOption(c, WithSearchQueryConsistencyLevel(entity.CL_STRONG), WithGuaranteeTimestamp(100))
+		_, err := MakeSearchQueryOption(c, WithSearchQueryConsistencyLevel(entity.ClStrong), WithGuaranteeTimestamp(100))
 		assert.Error(t, err)
 	})
 }

@@ -235,7 +235,7 @@ func TestGrpcClientLoadPartitions(t *testing.T) {
 			assert.Equal(t, testCollectionName, req.GetCollectionName())
 			resp.PartitionIDs = make([]int64, 0, len(tc.loadNames))
 			resp.PartitionNames = make([]string, 0, len(tc.loadNames))
-			var perc int64 = 0
+			var perc int64
 			if time.Since(start) > time.Duration(loadTime*int(time.Millisecond)) {
 				perc = 100
 				loaded = true
@@ -291,7 +291,7 @@ func TestGrpcClientLoadPartitions(t *testing.T) {
 			assert.Equal(t, testCollectionName, req.GetCollectionName())
 			resp.PartitionIDs = make([]int64, 0, len(tc.loadNames))
 			resp.PartitionNames = make([]string, 0, len(tc.loadNames))
-			var perc int64 = 0
+			var perc int64
 			for _, part := range tc.partitions {
 				resp.PartitionIDs = append(resp.PartitionIDs, part.ID)
 				resp.PartitionNames = append(resp.PartitionNames, part.Name)

@@ -64,7 +64,7 @@ func main() {
 				Name:     "Vector",
 				DataType: entity.FieldTypeFloatVector,
 				TypeParams: map[string]string{
-					entity.TYPE_PARAM_DIM: "8",
+					entity.TypeParamDim: "8",
 				},
 			},
 		},

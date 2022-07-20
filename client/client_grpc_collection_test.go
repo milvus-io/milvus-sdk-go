@@ -133,7 +133,7 @@ func TestGrpcClientCreateCollection(t *testing.T) {
 
 			return &common.Status{ErrorCode: common.ErrorCode_Success}, nil
 		})
-		assert.Nil(t, c.CreateCollection(ctx, ds, shardsNum, WithConsistencyLevel(entity.CL_EVENTUALLY)))
+		assert.Nil(t, c.CreateCollection(ctx, ds, shardsNum, WithConsistencyLevel(entity.ClEventually)))
 		mock.delInjection(mCreateCollection)
 	})
 
@@ -156,7 +156,7 @@ func TestGrpcClientCreateCollection(t *testing.T) {
 					{
 						Name:       "vector",
 						DataType:   entity.FieldTypeFloatVector,
-						TypeParams: map[string]string{entity.TYPE_PARAM_DIM: "128"},
+						TypeParams: map[string]string{entity.TypeParamDim: "128"},
 					},
 				},
 			},
@@ -177,7 +177,7 @@ func TestGrpcClientCreateCollection(t *testing.T) {
 					{
 						Name:       "vector",
 						DataType:   entity.FieldTypeFloatVector,
-						TypeParams: map[string]string{entity.TYPE_PARAM_DIM: "128"},
+						TypeParams: map[string]string{entity.TypeParamDim: "128"},
 					},
 				},
 			},
@@ -200,7 +200,7 @@ func TestGrpcClientCreateCollection(t *testing.T) {
 					{
 						Name:       "vector",
 						DataType:   entity.FieldTypeFloatVector,
-						TypeParams: map[string]string{entity.TYPE_PARAM_DIM: "128"},
+						TypeParams: map[string]string{entity.TypeParamDim: "128"},
 					},
 				},
 			},
@@ -216,7 +216,7 @@ func TestGrpcClientCreateCollection(t *testing.T) {
 					{
 						Name:       "vector",
 						DataType:   entity.FieldTypeFloatVector,
-						TypeParams: map[string]string{entity.TYPE_PARAM_DIM: "128"},
+						TypeParams: map[string]string{entity.TypeParamDim: "128"},
 					},
 				},
 			},
@@ -359,7 +359,7 @@ func TestGrpcClientLoadCollection(t *testing.T) {
 			s, err := successStatus()
 			r.Status = s
 			r.CollectionIds = []int64{1}
-			var perc int64 = 0
+			var perc int64
 			if time.Since(start) > time.Duration(loadTime)*time.Millisecond {
 				t.Log("passed")
 				perc = 100

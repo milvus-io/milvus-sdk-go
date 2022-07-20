@@ -21,9 +21,9 @@ linters:
     - goimports
     - misspell
     - govet
-    - golint
     - ineffassign
     - gosimple
+    - revive
 
 issues:
   exclude-use-default: false
@@ -33,6 +33,10 @@ issues:
     - should be of the form
     - should not use dot imports
     - which can be annoying to use
+  # Maximum issue count per one linter. Set to 0 to disable. Default is 50.
+  max-issues-per-linter: 0
+  # Maximum count of issues with same text. Set to 0 to disable. Default is 3.
+  max-same-issues: 0
 service:
   golangci-lint-version: 1.27.0 # use the fixed version to not introduce new linters unexpectedly
 

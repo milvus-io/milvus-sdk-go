@@ -4,13 +4,14 @@ import (
 	"context"
 	"encoding/csv"
 	"fmt"
-	"github.com/milvus-io/milvus-sdk-go/v2/client"
-	"github.com/milvus-io/milvus-sdk-go/v2/entity"
-	"google.golang.org/grpc"
 	"log"
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/milvus-io/milvus-sdk-go/v2/client"
+	"github.com/milvus-io/milvus-sdk-go/v2/entity"
+	"google.golang.org/grpc"
 )
 
 const (
@@ -84,7 +85,7 @@ func main() {
 				Name:     "Vector",
 				DataType: entity.FieldTypeFloatVector,
 				TypeParams: map[string]string{
-					entity.TYPE_PARAM_DIM: "8",
+					entity.TypeParamDim: "8",
 				},
 			},
 		},

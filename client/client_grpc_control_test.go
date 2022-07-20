@@ -142,12 +142,12 @@ func TestGrpcGetCompactionState(t *testing.T) {
 
 		result, err := c.GetCompactionState(ctx, compactionID)
 		assert.NoError(t, err)
-		assert.Equal(t, entity.COMPACTION_STATE_EXECUTING, result)
+		assert.Equal(t, entity.CompactionStateExecuting, result)
 
 		state = common.CompactionState_Completed
 		result, err = c.GetCompactionState(ctx, compactionID)
 		assert.NoError(t, err)
-		assert.Equal(t, entity.COMPACTION_STATE_COMPLETED, result)
+		assert.Equal(t, entity.CompactionStateCompleted, result)
 	})
 
 	t.Run("get compaction service fail", func(t *testing.T) {
@@ -175,8 +175,8 @@ func TestGrpcGetCompactionStateWithPlans(t *testing.T) {
 	t.Run("normal get compaction state with plans", func(t *testing.T) {
 		state := common.CompactionState_Executing
 		plans := []entity.CompactionPlan{
-			{Source: []int64{1, 2}, Target: 3, PlanType: entity.COMPACTION_PLAN_MERGE_SEGMENTS},
-			{Source: []int64{4, 5}, Target: 6, PlanType: entity.COMPACTION_PLAN_MERGE_SEGMENTS},
+			{Source: []int64{1, 2}, Target: 3, PlanType: entity.CompactionPlanMergeSegments},
+			{Source: []int64{4, 5}, Target: 6, PlanType: entity.CompactionPlanMergeSegments},
 		}
 
 		mock.setInjection(mGetCompactionStateWithPlans, func(_ context.Context, raw proto.Message) (proto.Message, error) {
@@ -206,13 +206,13 @@ func TestGrpcGetCompactionStateWithPlans(t *testing.T) {
 
 		result, rPlans, err := c.GetCompactionStateWithPlans(ctx, compactionID)
 		assert.NoError(t, err)
-		assert.Equal(t, entity.COMPACTION_STATE_EXECUTING, result)
+		assert.Equal(t, entity.CompactionStateExecuting, result)
 		assert.ElementsMatch(t, plans, rPlans)
 
 		state = common.CompactionState_Completed
 		result, rPlans, err = c.GetCompactionStateWithPlans(ctx, compactionID)
 		assert.NoError(t, err)
-		assert.Equal(t, entity.COMPACTION_STATE_COMPLETED, result)
+		assert.Equal(t, entity.CompactionStateCompleted, result)
 		assert.ElementsMatch(t, plans, rPlans)
 	})
 
