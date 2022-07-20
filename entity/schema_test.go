@@ -15,7 +15,7 @@ func TestCL_CommonCL(t *testing.T) {
 		CL_EVENTUALLY,
 	}
 	for _, cl := range cls {
-		assert.EqualValues(t, common.ConsistencyLevel(cl), cl.CommonConsisencyLevel())
+		assert.EqualValues(t, common.ConsistencyLevel(cl), cl.CommonConsistencyLevel())
 	}
 }
 

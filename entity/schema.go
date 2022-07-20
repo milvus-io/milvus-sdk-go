@@ -20,6 +20,9 @@ const (
 	// TYPE_PARAM_DIM is the const for field type param dimension
 	TYPE_PARAM_DIM = "dim"
 
+	// TYPE_PARAM_MAX_LENGTH is the const for varchar type maximal length
+	TYPE_PARAM_MAX_LENGTH = "max_length"
+
 	// CL_STRONG strong consistency level
 	CL_STRONG ConsistencyLevel = ConsistencyLevel(common.ConsistencyLevel_Strong)
 	// CL_BOUNDED bounded consistency level with default tolerance of 5 seconds
@@ -35,8 +38,8 @@ const (
 // ConsistencyLevel enum type for collection Consistency Level
 type ConsistencyLevel common.ConsistencyLevel
 
-// CommonConsisencyLevel returns corresponding common.ConsisencyLevel
-func (cl ConsistencyLevel) CommonConsisencyLevel() common.ConsistencyLevel {
+// CommonConsistencyLevel returns corresponding common.ConsistencyLevel
+func (cl ConsistencyLevel) CommonConsistencyLevel() common.ConsistencyLevel {
 	return common.ConsistencyLevel(cl)
 }
 
@@ -86,7 +89,7 @@ type Field struct {
 	IndexParams map[string]string
 }
 
-// ProtoMessage generetes corresponding FieldSchema
+// ProtoMessage generates corresponding FieldSchema
 func (f *Field) ProtoMessage() *schema.FieldSchema {
 	return &schema.FieldSchema{
 		FieldID:      f.ID,
@@ -158,6 +161,8 @@ func (t FieldType) Name() string {
 		return "Double"
 	case FieldTypeString:
 		return "String"
+	case FieldTypeVarChar:
+		return "VarChar"
 	case FieldTypeBinaryVector:
 		return "BinaryVector"
 	case FieldTypeFloatVector:
@@ -185,6 +190,8 @@ func (t FieldType) String() string {
 	case FieldTypeDouble:
 		return "float64"
 	case FieldTypeString:
+		return "string"
+	case FieldTypeVarChar:
 		return "string"
 	case FieldTypeBinaryVector:
 		return "[]byte"
@@ -214,6 +221,8 @@ func (t FieldType) PbFieldType() (string, string) {
 		return "Double", "float64"
 	case FieldTypeString:
 		return "String", "string"
+	case FieldTypeVarChar:
+		return "VarChar", "string"
 	case FieldTypeBinaryVector:
 		return "[]byte", ""
 	case FieldTypeFloatVector:
@@ -237,7 +246,7 @@ const (
 	FieldTypeInt16 FieldType = 3
 	// FieldTypeInt32 field type int32
 	FieldTypeInt32 FieldType = 4
-	// FIeldTypeInt64 field type int64
+	// FieldTypeInt64 field type int64
 	FieldTypeInt64 FieldType = 5
 	// FieldTypeFloat field type float
 	FieldTypeFloat FieldType = 10
@@ -245,6 +254,8 @@ const (
 	FieldTypeDouble FieldType = 11
 	// FieldTypeString field type string
 	FieldTypeString FieldType = 20
+	// FieldTypeVarChar field type varchar
+	FieldTypeVarChar FieldType = 21 // variable-length strings with a specified maximum length
 	// FieldTypeBinaryVector field type binary vector
 	FieldTypeBinaryVector FieldType = 100
 	// FieldTypeFloatVector field type float vector

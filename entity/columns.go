@@ -14,6 +14,7 @@ package entity
 import (
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"math"
 
 	"github.com/milvus-io/milvus-sdk-go/v2/internal/proto/schema"
@@ -44,7 +45,7 @@ func (fv FloatVector) Dim() int {
 	return len(fv)
 }
 
-// Serialize serialize vector into byte slice, used in search placeholder
+// Serialize serializes vector into byte slice, used in search placeholder
 // LittleEndian is used for convention
 func (fv FloatVector) Serialize() []byte {
 	data := make([]byte, 0, 4*len(fv)) // float32 occupies 4 bytes
@@ -87,12 +88,12 @@ func IDColumns(idField *schema.IDs, begin, end int) (Column, error) {
 		}
 	case *schema.IDs_StrId:
 		if end >= 0 {
-			idColumn = NewColumnString("", field.StrId.GetData()[begin:end])
+			idColumn = NewColumnVarChar("", field.StrId.GetData()[begin:end])
 		} else {
-			idColumn = NewColumnString("", field.StrId.GetData()[begin:])
+			idColumn = NewColumnVarChar("", field.StrId.GetData()[begin:])
 		}
 	default:
-		return nil, errors.New("unsupported id type")
+		return nil, fmt.Errorf("unsupported id type %v", field)
 	}
 	return idColumn, nil
 }
@@ -191,8 +192,18 @@ func FieldDataColumn(fd *schema.FieldData, begin, end int) (Column, error) {
 			return NewColumnString(fd.GetFieldName(), data.StringData.GetData()[begin:]), nil
 		}
 		return NewColumnString(fd.GetFieldName(), data.StringData.GetData()[begin:end]), nil
+
+	case schema.DataType_VarChar:
+		data, ok := fd.GetScalars().GetData().(*schema.ScalarField_StringData)
+		if !ok {
+			return nil, errFieldDataTypeNotMatch
+		}
+		if end < 0 {
+			return NewColumnVarChar(fd.GetFieldName(), data.StringData.GetData()[begin:]), nil
+		}
+		return NewColumnVarChar(fd.GetFieldName(), data.StringData.GetData()[begin:end]), nil
 	default:
-		return nil, errors.New("unsupported data type")
+		return nil, fmt.Errorf("unsupported data type %s", fd.GetType())
 	}
 }
 
