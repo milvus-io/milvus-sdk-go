@@ -236,9 +236,6 @@ func (c *grpcClient) ReleasePartitions(ctx context.Context, collName string, par
 	if err != nil {
 		return err
 	}
-	if err := handleRespStatus(resp); err != nil {
-		return err
-	}
 
-	return nil
+	return handleRespStatus(resp)
 }
