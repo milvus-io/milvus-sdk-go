@@ -14,6 +14,7 @@ import (
 	"github.com/milvus-io/milvus-sdk-go/v2/internal/proto/schema"
 	"github.com/milvus-io/milvus-sdk-go/v2/internal/proto/server"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGrpcClientInsert(t *testing.T) {
@@ -300,6 +301,13 @@ func TestGrpcSearch(t *testing.T) {
 			entity.L2, 5, sp)
 		assert.Nil(t, r)
 		assert.NotNil(t, err)
+
+		// wrong vector type
+		binaryVector := generateBinaryVector(1, testVectorDim)
+		r, err = c.Search(ctx, testCollectionName, []string{}, "", []string{"int64"}, []entity.Vector{entity.BinaryVector(binaryVector[0])}, "vector",
+			entity.L2, 5, sp)
+		assert.Nil(t, r)
+		assert.Error(t, err)
 
 		// metric type
 		r, err = c.Search(ctx, testCollectionName, []string{}, "", []string{"int64"}, []entity.Vector{entity.FloatVector(vectors[0])}, "vector",
@@ -1055,4 +1063,38 @@ func generateBinaryVector(num, dim int) [][]byte {
 		r = append(r, v)
 	}
 	return r
+}
+
+func TestVector2PlaceHolder(t *testing.T) {
+	t.Run("FloatVector", func(t *testing.T) {
+		data := generateFloatVector(10, 32)
+		vectors := make([]entity.Vector, 0, len(data))
+		for _, row := range data {
+			vectors = append(vectors, entity.FloatVector(row))
+		}
+
+		phv := vector2Placeholder(vectors, entity.FieldTypeFloatVector)
+		assert.Equal(t, "$0", phv.Tag)
+		assert.Equal(t, server.PlaceholderType_FloatVector, phv.Type)
+		require.Equal(t, len(vectors), len(phv.Values))
+		for idx, line := range phv.Values {
+			assert.Equal(t, vectors[idx].Serialize(), line)
+		}
+	})
+
+	t.Run("BinaryVector", func(t *testing.T) {
+		data := generateBinaryVector(10, 32)
+		vectors := make([]entity.Vector, 0, len(data))
+		for _, row := range data {
+			vectors = append(vectors, entity.BinaryVector(row))
+		}
+
+		phv := vector2Placeholder(vectors, entity.FieldTypeBinaryVector)
+		assert.Equal(t, "$0", phv.Tag)
+		assert.Equal(t, server.PlaceholderType_BinaryVector, phv.Type)
+		require.Equal(t, len(vectors), len(phv.Values))
+		for idx, line := range phv.Values {
+			assert.Equal(t, vectors[idx].Serialize(), line)
+		}
+	})
 }
