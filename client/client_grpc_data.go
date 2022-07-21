@@ -266,11 +266,17 @@ func (c *grpcClient) Search(ctx context.Context, collName string, partitions []s
 	}
 	dimStr := vfDef.TypeParams[entity.TypeParamDim]
 	for _, vector := range vectors {
+		if vector.FieldType() != vfDef.DataType {
+			return nil, fmt.Errorf("vector %s shall be type of %s, but input found type:%s", vectorField,
+				vfDef.DataType.String(), vector.FieldType().String())
+		}
+
 		if fmt.Sprintf("%d", vector.Dim()) != dimStr {
 			return nil, fmt.Errorf("vector %s has dim of %s while found search vector with dim %d", vectorField,
 				dimStr, vector.Dim())
 		}
 	}
+
 	switch vfDef.DataType {
 	case entity.FieldTypeFloatVector:
 		if metricType != entity.IP && metricType != entity.L2 {
@@ -288,7 +294,7 @@ func (c *grpcClient) Search(ctx context.Context, collName string, partitions []s
 	}
 
 	// 2. Request milvus service
-	reqs := splitSearchRequest(coll.Schema, partitions, expr, outputFields, vectors, vectorField, metricType, topK, sp, option)
+	reqs := splitSearchRequest(coll.Schema, partitions, expr, outputFields, vectors, vfDef.DataType, vectorField, metricType, topK, sp, option)
 	if len(reqs) == 0 {
 		return nil, errors.New("empty request generated")
 	}
@@ -451,7 +457,7 @@ func getPKField(schema *entity.Schema) *entity.Field {
 }
 
 func splitSearchRequest(sch *entity.Schema, partitions []string,
-	expr string, outputFields []string, vectors []entity.Vector, vectorField string,
+	expr string, outputFields []string, vectors []entity.Vector, fieldType entity.FieldType, vectorField string,
 	metricType entity.MetricType, topK int, sp entity.SearchParam, opt *SearchQueryOption) []*server.SearchRequest {
 	params := sp.Params()
 	bs, _ := json.Marshal(params)
@@ -478,7 +484,7 @@ func splitSearchRequest(sch *entity.Schema, partitions []string,
 			CollectionName:     sch.CollectionName,
 			PartitionNames:     partitions,
 			Dsl:                expr,
-			PlaceholderGroup:   vector2PlaceholderGroupBytes(batchVectors),
+			PlaceholderGroup:   vector2PlaceholderGroupBytes(batchVectors, fieldType),
 			DslType:            common.DslType_BoolExprV1,
 			OutputFields:       outputFields,
 			SearchParams:       searchParams,
@@ -684,10 +690,10 @@ func columnToVectorsArray(collName string, partitions []string, column entity.Co
 	return result
 }
 
-func vector2PlaceholderGroupBytes(vectors []entity.Vector) []byte {
+func vector2PlaceholderGroupBytes(vectors []entity.Vector, fieldType entity.FieldType) []byte {
 	phg := &server.PlaceholderGroup{
 		Placeholders: []*server.PlaceholderValue{
-			vector2Placeholder(vectors),
+			vector2Placeholder(vectors, fieldType),
 		},
 	}
 
@@ -695,10 +701,17 @@ func vector2PlaceholderGroupBytes(vectors []entity.Vector) []byte {
 	return bs
 }
 
-func vector2Placeholder(vectors []entity.Vector) *server.PlaceholderValue {
+func vector2Placeholder(vectors []entity.Vector, fieldType entity.FieldType) *server.PlaceholderValue {
+	var placeHolderType server.PlaceholderType
+	switch fieldType {
+	case entity.FieldTypeFloatVector:
+		placeHolderType = server.PlaceholderType_FloatVector
+	case entity.FieldTypeBinaryVector:
+		placeHolderType = server.PlaceholderType_BinaryVector
+	}
 	ph := &server.PlaceholderValue{
 		Tag:    "$0",
-		Type:   server.PlaceholderType_FloatVector,
+		Type:   placeHolderType,
 		Values: make([][]byte, 0, len(vectors)),
 	}
 	for _, vector := range vectors {

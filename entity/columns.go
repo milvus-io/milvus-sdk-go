@@ -35,14 +35,20 @@ type Column interface {
 type Vector interface {
 	Dim() int
 	Serialize() []byte
+	FieldType() FieldType
 }
 
-// FloatVector float32 vector wrapper
+// FloatVector float32 vector wrapper.
 type FloatVector []float32
 
-// Dim returns vector dimension
+// Dim returns vector dimension.
 func (fv FloatVector) Dim() int {
 	return len(fv)
+}
+
+// FieldType returns coresponding field type.
+func (fv FloatVector) FieldType() FieldType {
+	return FieldTypeFloatVector
 }
 
 // Serialize serializes vector into byte slice, used in search placeholder
@@ -68,6 +74,11 @@ func (bv BinaryVector) Dim() int {
 // Serialize just return bytes
 func (bv BinaryVector) Serialize() []byte {
 	return bv
+}
+
+// FieldType returns coresponding field type.
+func (bv BinaryVector) FieldType() FieldType {
+	return FieldTypeBinaryVector
 }
 
 var errFieldDataTypeNotMatch = errors.New("FieldData type not matched")
