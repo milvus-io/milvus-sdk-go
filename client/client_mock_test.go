@@ -664,3 +664,36 @@ func (m *mockServer) ListCredUsers(ctx context.Context, req *server.ListCredUser
 	resp.Status = s
 	return resp, err
 }
+
+// https://wiki.lfaidata.foundation/display/MIL/MEP+29+--+Support+Role-Based+Access+Control
+func (m *mockServer) CreateRole(_ context.Context, _ *server.CreateRoleRequest) (*common.Status, error) {
+	panic("not implemented") // TODO: Implement
+}
+
+func (m *mockServer) DropRole(_ context.Context, _ *server.DropRoleRequest) (*common.Status, error) {
+	panic("not implemented") // TODO: Implement
+}
+
+func (m *mockServer) OperateUserRole(_ context.Context, _ *server.OperateUserRoleRequest) (*common.Status, error) {
+	panic("not implemented") // TODO: Implement
+}
+
+func (m *mockServer) SelectRole(_ context.Context, _ *server.SelectRoleRequest) (*server.SelectRoleResponse, error) {
+	panic("not implemented") // TODO: Implement
+}
+
+func (m *mockServer) SelectUser(_ context.Context, _ *server.SelectUserRequest) (*server.SelectUserResponse, error) {
+	panic("not implemented") // TODO: Implement
+}
+
+func (m *mockServer) SelectResource(_ context.Context, _ *server.SelectResourceRequest) (*server.SelectResourceResponse, error) {
+	panic("not implemented") // TODO: Implement
+}
+
+func (m *mockServer) OperatePrivilege(_ context.Context, _ *server.OperatePrivilegeRequest) (*common.Status, error) {
+	panic("not implemented") // TODO: Implement
+}
+
+func (m *mockServer) SelectGrant(_ context.Context, _ *server.SelectGrantRequest) (*server.SelectGrantResponse, error) {
+	panic("not implemented") // TODO: Implement
+}

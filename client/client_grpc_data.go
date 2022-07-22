@@ -691,8 +691,8 @@ func columnToVectorsArray(collName string, partitions []string, column entity.Co
 }
 
 func vector2PlaceholderGroupBytes(vectors []entity.Vector, fieldType entity.FieldType) []byte {
-	phg := &server.PlaceholderGroup{
-		Placeholders: []*server.PlaceholderValue{
+	phg := &common.PlaceholderGroup{
+		Placeholders: []*common.PlaceholderValue{
 			vector2Placeholder(vectors, fieldType),
 		},
 	}
@@ -701,15 +701,15 @@ func vector2PlaceholderGroupBytes(vectors []entity.Vector, fieldType entity.Fiel
 	return bs
 }
 
-func vector2Placeholder(vectors []entity.Vector, fieldType entity.FieldType) *server.PlaceholderValue {
-	var placeHolderType server.PlaceholderType
+func vector2Placeholder(vectors []entity.Vector, fieldType entity.FieldType) *common.PlaceholderValue {
+	var placeHolderType common.PlaceholderType
 	switch fieldType {
 	case entity.FieldTypeFloatVector:
-		placeHolderType = server.PlaceholderType_FloatVector
+		placeHolderType = common.PlaceholderType_FloatVector
 	case entity.FieldTypeBinaryVector:
-		placeHolderType = server.PlaceholderType_BinaryVector
+		placeHolderType = common.PlaceholderType_BinaryVector
 	}
-	ph := &server.PlaceholderValue{
+	ph := &common.PlaceholderValue{
 		Tag:    "$0",
 		Type:   placeHolderType,
 		Values: make([][]byte, 0, len(vectors)),
