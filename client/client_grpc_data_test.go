@@ -1075,7 +1075,7 @@ func TestVector2PlaceHolder(t *testing.T) {
 
 		phv := vector2Placeholder(vectors, entity.FieldTypeFloatVector)
 		assert.Equal(t, "$0", phv.Tag)
-		assert.Equal(t, server.PlaceholderType_FloatVector, phv.Type)
+		assert.Equal(t, common.PlaceholderType_FloatVector, phv.Type)
 		require.Equal(t, len(vectors), len(phv.Values))
 		for idx, line := range phv.Values {
 			assert.Equal(t, vectors[idx].Serialize(), line)
@@ -1091,7 +1091,7 @@ func TestVector2PlaceHolder(t *testing.T) {
 
 		phv := vector2Placeholder(vectors, entity.FieldTypeBinaryVector)
 		assert.Equal(t, "$0", phv.Tag)
-		assert.Equal(t, server.PlaceholderType_BinaryVector, phv.Type)
+		assert.Equal(t, common.PlaceholderType_BinaryVector, phv.Type)
 		require.Equal(t, len(vectors), len(phv.Values))
 		for idx, line := range phv.Values {
 			assert.Equal(t, vectors[idx].Serialize(), line)
