@@ -9,18 +9,21 @@ import (
 
 	"github.com/milvus-io/milvus-sdk-go/v2/client"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
+	ut "github.com/milvus-io/milvus-sdk-go/v2/tests/testutil"
 	"github.com/stretchr/testify/assert"
 )
 
 var (
 	defaultMilvusAddr = `localhost:19530`
 
-	testCollectionName = `test_sdk_go` // collection name used for testing
-	testPrimaryField   = `int64`       // default primary key name
-	testVectorField    = `vector`      // default vector field name
-	testVectorDim      = 128
-	testShardsNum      = 1
+	testCollectionPrefix = `test_sdk_go` // collection name used for testing
+	testPrimaryField     = `int64`       // default primary key name
+	testVectorField      = `vector`      // default vector field name
+	testVectorDim        = 128
+	testShardsNum        = 1
 )
+
+var testCollections []string // generated collection names during testing, used to in tear down
 
 func getDefaultClient(t *testing.T) client.Client {
 	c, err := client.NewGrpcClient(context.Background(), defaultMilvusAddr)
@@ -32,35 +35,14 @@ func getDefaultClient(t *testing.T) client.Client {
 	return c
 }
 
-func generateTestCollection(t *testing.T, c client.Client) [][]float32 {
-	if c == nil {
-		t.FailNow()
-		return nil
-	}
-
-	ctx := context.Background()
-	has, err := c.HasCollection(ctx, testCollectionName)
-	assert.Nil(t, err)
-	if has { // maybe last test crashed, do clean up
-		assert.Nil(t, c.DropCollection(ctx, testCollectionName))
-	}
-
-	assert.Nil(t, c.CreateCollection(ctx, defaultSchema(), int32(testShardsNum)))
-
-	vector := generateFloatVector(4096, testVectorDim)
-	_, err = c.Insert(ctx, testCollectionName, "", // use default partition
-		entity.NewColumnFloatVector(testVectorField, testVectorDim, vector))
-	if err != nil {
-		t.Log(err.Error())
-	}
-	c.Flush(ctx, testCollectionName, false)
-	return vector
+func generateCollectionName() string {
+	cname := testCollectionPrefix + ut.GenRandomString(8)
+	testCollections = append(testCollections, cname)
+	return cname
 }
 
-func defaultSchema() *entity.Schema {
+func generateSchema() *entity.Schema {
 	return &entity.Schema{
-		CollectionName: testCollectionName,
-		AutoID:         false,
 		Fields: []*entity.Field{
 			{
 				Name:       testPrimaryField,
@@ -80,6 +62,35 @@ func defaultSchema() *entity.Schema {
 			},
 		},
 	}
+}
+
+func generateCollection(t *testing.T, c client.Client, cname string, schema *entity.Schema, data bool) [][]float32 {
+	if c == nil {
+		t.FailNow()
+		return nil
+	}
+
+	ctx := context.Background()
+	has, err := c.HasCollection(ctx, cname)
+	assert.Nil(t, err)
+	if has { // maybe last test crashed, do clean up
+		assert.Nil(t, c.DropCollection(ctx, cname))
+	}
+	schema.CollectionName = cname
+	assert.Nil(t, c.CreateCollection(ctx, schema, int32(testShardsNum)))
+
+	if !data {
+		return nil
+	}
+
+	vector := generateFloatVector(4096, testVectorDim)
+	_, err = c.Insert(ctx, cname, "", // use default partition
+		entity.NewColumnFloatVector(testVectorField, testVectorDim, vector))
+	if err != nil {
+		t.Log(err.Error())
+	}
+	c.Flush(ctx, cname, false)
+	return vector
 }
 
 func generateFloatVector(num, dim int) [][]float32 {

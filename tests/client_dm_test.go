@@ -15,13 +15,14 @@ func TestSearch(t *testing.T) {
 	if c != nil {
 		defer c.Close()
 	}
-
-	vectors := generateTestCollection(t, c)
+	cname := generateCollectionName()
+	schema := generateSchema()
+	vectors := generateCollection(t, c, cname, schema, true)
 
 	waitRowCountChanged(t, c)
-	c.LoadCollection(context.Background(), testCollectionName, false)
+	c.LoadCollection(context.Background(), cname, false)
 	sp, _ := entity.NewIndexFlatSearchParam(10)
-	results, err := c.Search(context.Background(), testCollectionName, []string{}, "int64 > 0", []string{"int64"}, []entity.Vector{entity.FloatVector(vectors[0])},
+	results, err := c.Search(context.Background(), cname, []string{}, "int64 > 0", []string{"int64"}, []entity.Vector{entity.FloatVector(vectors[0])},
 		testVectorField, entity.L2, 10, sp)
 
 	assert.Nil(t, err)
@@ -31,10 +32,14 @@ func TestSearch(t *testing.T) {
 }
 
 func waitRowCountChanged(t *testing.T, c client.Client) {
+	cname := generateCollectionName()
+	schema := generateSchema()
+	generateCollection(t, c, cname, schema, true)
+
 	start := time.Now()
 	f := func() bool {
 		ctx := context.Background()
-		m, err := c.GetCollectionStatistics(ctx, testCollectionName)
+		m, err := c.GetCollectionStatistics(ctx, cname)
 		assert.Nil(t, err)
 		for k, v := range m {
 			t.Log(k, v)

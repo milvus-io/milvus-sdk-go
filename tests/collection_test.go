@@ -31,12 +31,12 @@ var dimTests = []struct {
 func TestClientCreateCollection(t *testing.T) {
 	ctx := context.Background()
 	c := GenClient(t)
-	name := ut.GenRandomString(8)
+	cname := generateCollectionName()
 	fields := ut.GenDefaultFields(ut.DefaultDim)
-	schema := ut.GenSchema(name, false, fields)
+	schema := ut.GenSchema(cname, false, fields)
 	err := c.CreateCollection(ctx, schema, ut.DefaultShards)
 	assert.NoError(t, err)
-	isExist, err1 := c.HasCollection(ctx, name)
+	isExist, err1 := c.HasCollection(ctx, cname)
 	assert.NoError(t, err1)
 	assert.True(t, isExist)
 }
@@ -59,7 +59,7 @@ func TestCollectionWithoutName(t *testing.T) {
 func TestCollectionWithoutFields(t *testing.T) {
 	ctx := context.Background()
 	c := GenClient(t)
-	//fields := ut.GenDefaultFields()
+	// fields := ut.GenDefaultFields()
 	name := ut.GenRandomString(8)
 	schema := &entity.Schema{
 		CollectionName: name,

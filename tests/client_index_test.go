@@ -16,14 +16,17 @@ func TestCreateIndex(t *testing.T) {
 	if c != nil {
 		defer c.Close()
 	}
+	cname := generateCollectionName()
+	schema := generateSchema()
+	generateCollection(t, c, cname, schema, true)
 
 	idx := entity.NewGenericIndex("", entity.Flat, map[string]string{
 		"nlist":       "1024",
 		"metric_type": "IP",
 	})
-	err = c.CreateIndex(context.Background(), "test_go_sdk", "vector", idx, false)
+	err = c.CreateIndex(context.Background(), cname, "vector", idx, false)
 	assert.Nil(t, err)
-	indexes, err := c.DescribeIndex(context.Background(), "test_go_sdk", "vector")
+	indexes, err := c.DescribeIndex(context.Background(), cname, "vector")
 	if assert.Nil(t, err) {
 		for _, idx := range indexes {
 			t.Log(idx.IndexType())

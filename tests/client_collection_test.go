@@ -28,7 +28,7 @@ func TestListCollections(t *testing.T) {
 	if c != nil {
 		defer c.Close()
 	}
-	//TODO create before list and assert exists
+	// TODO create before list and assert exists
 	_, err = c.ListCollections(context.Background())
 	assert.Nil(t, err)
 }
@@ -42,9 +42,9 @@ func TestCreateCollection(t *testing.T) {
 		defer c.Close()
 	}
 
+	cname := generateCollectionName()
 	schema := &entity.Schema{
-		CollectionName: "test_go_sdk",
-		AutoID:         false,
+		CollectionName: cname,
 		Fields: []*entity.Field{
 			{
 				Name:       fmt.Sprintf("int64_%v", rand.Intn(10)),
@@ -72,11 +72,15 @@ func TestDescribeCollection(t *testing.T) {
 	if c != nil {
 		defer c.Close()
 	}
-	//TODO merge describe and create
-	schema, err := c.DescribeCollection(context.Background(), "test_go_sdk")
+	cname := generateCollectionName()
+	schema := generateSchema()
+	generateCollection(t, c, cname, schema, false)
+
+	// TODO merge describe and create
+	coll, err := c.DescribeCollection(context.Background(), cname)
 	if assert.Nil(t, err) {
-		t.Logf("schema -- name: %s\n", schema.Name)
-		for _, field := range schema.Schema.Fields {
+		t.Logf("schema -- name: %s\n", coll.Name)
+		for _, field := range coll.Schema.Fields {
 			t.Logf("schema -- field: %s data type: %v, is primary: %v\n", field.Name, field.DataType, field.PrimaryKey)
 		}
 	}
@@ -90,7 +94,11 @@ func TestDropCollection(t *testing.T) {
 		defer c.Close()
 	}
 
-	c.DropCollection(context.Background(), "test_go_sdk")
+	cname := generateCollectionName()
+	schema := generateSchema()
+	generateCollection(t, c, cname, schema, false)
+
+	c.DropCollection(context.Background(), cname)
 }
 
 func TestGetCollectionStatistics(t *testing.T) {
@@ -101,7 +109,11 @@ func TestGetCollectionStatistics(t *testing.T) {
 		defer c.Close()
 	}
 
-	m, err := c.GetCollectionStatistics(context.Background(), testCollectionName)
+	cname := generateCollectionName()
+	schema := generateSchema()
+	generateCollection(t, c, cname, schema, false)
+
+	m, err := c.GetCollectionStatistics(context.Background(), cname)
 	if assert.Nil(t, err) {
 		for k, v := range m {
 			t.Log(k, v)
