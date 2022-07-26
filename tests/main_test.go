@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/milvus-io/milvus-sdk-go/v2/client"
-	ut "github.com/milvus-io/milvus-sdk-go/v2/tests/testutil"
 )
 
 var host string
@@ -36,28 +35,15 @@ func GenClient(t *testing.T) client.Client {
 	return c
 }
 
-// Generate an collection
-func GenCollection(t *testing.T, name string) {
-	t.Helper()
-	c := GenClient(t)
-	fields := ut.GenDefaultFields(ut.DefaultDim)
-	schema := ut.GenSchema(name, false, fields)
-	err := c.CreateCollection(context.Background(), schema, ut.DefaultShards)
-	if err != nil {
-		t.Errorf("Failed to create collection %s\n", name)
-	}
-}
-
 func teardown() {
 	fmt.Println("Start to tear down")
 	ctx := context.Background()
-	client, _ := client.NewGrpcClient(context.Background(), GenMilvusAddr())
-	collections, _ := client.ListCollections(ctx)
-	for _, collection := range collections {
-		client.DropCollection(ctx, collection.Name)
-		fmt.Printf("Drop collection %s\n", collection.Name)
+	c, _ := client.NewGrpcClient(context.Background(), GenMilvusAddr())
+	defer c.Close()
+	for _, cname := range testCollections {
+		c.DropCollection(ctx, cname)
+		fmt.Printf("Drop collection %s\n", cname)
 	}
-	defer client.Close()
 }
 
 func TestMain(m *testing.M) {
