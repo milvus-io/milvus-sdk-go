@@ -17,7 +17,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"math"
 	"strconv"
 	"strings"
 	"sync"
@@ -232,69 +231,74 @@ func (c *grpcClient) Search(ctx context.Context, collName string, partitions []s
 	if c.service == nil {
 		return []SearchResult{}, ErrClientNotReady
 	}
-	// 1. check all input params
-	if err := c.checkCollectionExists(ctx, collName); err != nil {
-		return nil, err
+	//// 1. check all input params
+	//if err := c.checkCollectionExists(ctx, collName); err != nil {
+	//	return nil, err
+	//}
+	//for _, partition := range partitions {
+	//	err := c.checkPartitionExists(ctx, collName, partition)
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//}
+	//// TODO maybe add expr analysis?
+	//coll, err := c.DescribeCollection(ctx, collName)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//if coll.Schema.CollectionName == "" {
+	//	coll.Schema.CollectionName = collName
+	//}
+	//mNameField := make(map[string]*entity.Field)
+	//for _, field := range coll.Schema.Fields {
+	//	mNameField[field.Name] = field
+	//}
+	//for _, outField := range outputFields {
+	//	_, has := mNameField[outField]
+	//	if !has {
+	//		return nil, fmt.Errorf("field %s does not exist in collection %s", outField, collName)
+	//	}
+	//}
+	//vfDef, has := mNameField[vectorField]
+	//if !has {
+	//	return nil, fmt.Errorf("vector field %s does not exist in collection %s", vectorField, collName)
+	//}
+	//dimStr := vfDef.TypeParams[entity.TypeParamDim]
+	//for _, vector := range vectors {
+	//	if vector.FieldType() != vfDef.DataType {
+	//		return nil, fmt.Errorf("vector %s shall be type of %s, but input found type:%s", vectorField,
+	//			vfDef.DataType.String(), vector.FieldType().String())
+	//	}
+	//
+	//	if fmt.Sprintf("%d", vector.Dim()) != dimStr {
+	//		return nil, fmt.Errorf("vector %s has dim of %s while found search vector with dim %d", vectorField,
+	//			dimStr, vector.Dim())
+	//	}
+	//}
+	//
+	//switch vfDef.DataType {
+	//case entity.FieldTypeFloatVector:
+	//	if metricType != entity.IP && metricType != entity.L2 {
+	//		return nil, fmt.Errorf("Float vector does not support metric type %s", metricType)
+	//	}
+	//case entity.FieldTypeBinaryVector:
+	//	if metricType == entity.IP || metricType == entity.L2 {
+	//		return nil, fmt.Errorf("Binary vector does not support metric type %s", metricType)
+	//	}
+	//}
+	//
+	//option, err := MakeSearchQueryOption(coll, opts...)
+	//if err != nil {
+	//	return nil, err
+	//}
+	option := &SearchQueryOption{
 	}
-	for _, partition := range partitions {
-		err := c.checkPartitionExists(ctx, collName, partition)
-		if err != nil {
-			return nil, err
-		}
-	}
-	// TODO maybe add expr analysis?
-	coll, err := c.DescribeCollection(ctx, collName)
-	if err != nil {
-		return nil, err
-	}
-	if coll.Schema.CollectionName == "" {
-		coll.Schema.CollectionName = collName
-	}
-	mNameField := make(map[string]*entity.Field)
-	for _, field := range coll.Schema.Fields {
-		mNameField[field.Name] = field
-	}
-	for _, outField := range outputFields {
-		_, has := mNameField[outField]
-		if !has {
-			return nil, fmt.Errorf("field %s does not exist in collection %s", outField, collName)
-		}
-	}
-	vfDef, has := mNameField[vectorField]
-	if !has {
-		return nil, fmt.Errorf("vector field %s does not exist in collection %s", vectorField, collName)
-	}
-	dimStr := vfDef.TypeParams[entity.TypeParamDim]
-	for _, vector := range vectors {
-		if vector.FieldType() != vfDef.DataType {
-			return nil, fmt.Errorf("vector %s shall be type of %s, but input found type:%s", vectorField,
-				vfDef.DataType.String(), vector.FieldType().String())
-		}
-
-		if fmt.Sprintf("%d", vector.Dim()) != dimStr {
-			return nil, fmt.Errorf("vector %s has dim of %s while found search vector with dim %d", vectorField,
-				dimStr, vector.Dim())
-		}
-	}
-
-	switch vfDef.DataType {
-	case entity.FieldTypeFloatVector:
-		if metricType != entity.IP && metricType != entity.L2 {
-			return nil, fmt.Errorf("Float vector does not support metric type %s", metricType)
-		}
-	case entity.FieldTypeBinaryVector:
-		if metricType == entity.IP || metricType == entity.L2 {
-			return nil, fmt.Errorf("Binary vector does not support metric type %s", metricType)
-		}
-	}
-
-	option, err := MakeSearchQueryOption(coll, opts...)
-	if err != nil {
-		return nil, err
+	for _, o := range opts {
+		o(option)
 	}
 
 	// 2. Request milvus service
-	reqs := splitSearchRequest(coll.Schema, partitions, expr, outputFields, vectors, vfDef.DataType, vectorField, metricType, topK, sp, option)
+	reqs := splitSearchRequest(collName, partitions, expr, outputFields, vectors, entity.FieldTypeFloatVector, vectorField, metricType, topK, sp, option)
 	if len(reqs) == 0 {
 		return nil, errors.New("empty request generated")
 	}
@@ -456,7 +460,7 @@ func getPKField(schema *entity.Schema) *entity.Field {
 	return nil
 }
 
-func splitSearchRequest(sch *entity.Schema, partitions []string,
+func splitSearchRequest(collName string, partitions []string,
 	expr string, outputFields []string, vectors []entity.Vector, fieldType entity.FieldType, vectorField string,
 	metricType entity.MetricType, topK int, sp entity.SearchParam, opt *SearchQueryOption) []*server.SearchRequest {
 	params := sp.Params()
@@ -469,30 +473,42 @@ func splitSearchRequest(sch *entity.Schema, partitions []string,
 		"round_decimal": "-1",
 	})
 
-	ers := estRowSize(sch, outputFields)
-	maxBatch := int(math.Ceil(float64(5*1024*1024) / float64(ers*int64(topK))))
+	//ers := estRowSize(sch, outputFields)
+	//maxBatch := int(math.Ceil(float64(5*1024*1024) / float64(ers*int64(topK))))
 	var result []*server.SearchRequest
-	for i := 0; i*maxBatch < len(vectors); i++ {
-		start := i * maxBatch
-		end := (i + 1) * maxBatch
-		if end > len(vectors) {
-			end = len(vectors)
-		}
-		batchVectors := vectors[start:end]
-		req := &server.SearchRequest{
-			DbName:             "",
-			CollectionName:     sch.CollectionName,
-			PartitionNames:     partitions,
-			Dsl:                expr,
-			PlaceholderGroup:   vector2PlaceholderGroupBytes(batchVectors, fieldType),
-			DslType:            common.DslType_BoolExprV1,
-			OutputFields:       outputFields,
-			SearchParams:       searchParams,
-			GuaranteeTimestamp: opt.GuaranteeTimestamp,
-			TravelTimestamp:    opt.TravelTimestamp,
-		}
-		result = append(result, req)
+	req := &server.SearchRequest{
+		DbName:             "",
+		CollectionName:     collName,
+		PartitionNames:     partitions,
+		Dsl:                expr,
+		PlaceholderGroup:   vector2PlaceholderGroupBytes(vectors, fieldType),
+		DslType:            common.DslType_BoolExprV1,
+		OutputFields:       outputFields,
+		SearchParams:       searchParams,
+		GuaranteeTimestamp: opt.GuaranteeTimestamp,
+		TravelTimestamp:    opt.TravelTimestamp,
 	}
+	//for i := 0; i*maxBatch < len(vectors); i++ {
+	//	start := i * maxBatch
+	//	end := (i + 1) * maxBatch
+	//	if end > len(vectors) {
+	//		end = len(vectors)
+	//	}
+	//	batchVectors := vectors[start:end]
+	//	req := &server.SearchRequest{
+	//		DbName:             "",
+	//		CollectionName:     sch.CollectionName,
+	//		PartitionNames:     partitions,
+	//		Dsl:                expr,
+	//		PlaceholderGroup:   vector2PlaceholderGroupBytes(batchVectors, fieldType),
+	//		DslType:            common.DslType_BoolExprV1,
+	//		OutputFields:       outputFields,
+	//		SearchParams:       searchParams,
+	//		GuaranteeTimestamp: opt.GuaranteeTimestamp,
+	//		TravelTimestamp:    opt.TravelTimestamp,
+	//	}
+		result = append(result, req)
+	//}
 	return result
 }
 
