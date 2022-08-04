@@ -225,6 +225,7 @@ func (c *grpcClient) DescribeCollection(ctx context.Context, collName string) (*
 		PhysicalChannels: resp.GetPhysicalChannelNames(),
 		VirtualChannels:  resp.GetVirtualChannelNames(),
 		ConsistencyLevel: entity.ConsistencyLevel(resp.ConsistencyLevel),
+		ShardNum:         resp.GetShardsNum(),
 	}
 	collection.Name = collection.Schema.CollectionName
 	colInfo := collInfo{
