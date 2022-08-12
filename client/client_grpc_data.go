@@ -17,10 +17,8 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"math"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -117,7 +115,7 @@ func (c *grpcClient) Insert(ctx context.Context, collName string, partitionName 
 	if err := handleRespStatus(resp.GetStatus()); err != nil {
 		return nil, err
 	}
-	tsm.set(coll.ID, resp.Timestamp)
+	MetaCache.setSessionTs(collName, resp.Timestamp)
 	// 3. parse id column
 	return entity.IDColumns(resp.GetIDs(), 0, -1)
 }
@@ -222,7 +220,7 @@ func (c *grpcClient) DeleteByPks(ctx context.Context, collName string, partition
 	if err != nil {
 		return err
 	}
-	tsm.set(coll.ID, resp.Timestamp)
+	MetaCache.setSessionTs(collName, resp.Timestamp)
 	return nil
 }
 
@@ -232,124 +230,54 @@ func (c *grpcClient) Search(ctx context.Context, collName string, partitions []s
 	if c.service == nil {
 		return []SearchResult{}, ErrClientNotReady
 	}
-	// 1. check all input params
-	if err := c.checkCollectionExists(ctx, collName); err != nil {
-		return nil, err
+	_, ok := MetaCache.getCollectionInfo(collName)
+	if !ok {
+		c.DescribeCollection(ctx, collName)
 	}
-	for _, partition := range partitions {
-		err := c.checkPartitionExists(ctx, collName, partition)
-		if err != nil {
-			return nil, err
-		}
-	}
-	// TODO maybe add expr analysis?
-	coll, err := c.DescribeCollection(ctx, collName)
+	option, err := MakeSearchQueryOption(collName, opts...)
 	if err != nil {
 		return nil, err
 	}
-	if coll.Schema.CollectionName == "" {
-		coll.Schema.CollectionName = collName
-	}
-	mNameField := make(map[string]*entity.Field)
-	for _, field := range coll.Schema.Fields {
-		mNameField[field.Name] = field
-	}
-	for _, outField := range outputFields {
-		_, has := mNameField[outField]
-		if !has {
-			return nil, fmt.Errorf("field %s does not exist in collection %s", outField, collName)
-		}
-	}
-	vfDef, has := mNameField[vectorField]
-	if !has {
-		return nil, fmt.Errorf("vector field %s does not exist in collection %s", vectorField, collName)
-	}
-	dimStr := vfDef.TypeParams[entity.TypeParamDim]
-	for _, vector := range vectors {
-		if vector.FieldType() != vfDef.DataType {
-			return nil, fmt.Errorf("vector %s shall be type of %s, but input found type:%s", vectorField,
-				vfDef.DataType.String(), vector.FieldType().String())
-		}
-
-		if fmt.Sprintf("%d", vector.Dim()) != dimStr {
-			return nil, fmt.Errorf("vector %s has dim of %s while found search vector with dim %d", vectorField,
-				dimStr, vector.Dim())
-		}
-	}
-
-	switch vfDef.DataType {
-	case entity.FieldTypeFloatVector:
-		if metricType != entity.IP && metricType != entity.L2 {
-			return nil, fmt.Errorf("Float vector does not support metric type %s", metricType)
-		}
-	case entity.FieldTypeBinaryVector:
-		if metricType == entity.IP || metricType == entity.L2 {
-			return nil, fmt.Errorf("Binary vector does not support metric type %s", metricType)
-		}
-	}
-
-	option, err := MakeSearchQueryOption(coll, opts...)
-	if err != nil {
-		return nil, err
-	}
-
 	// 2. Request milvus service
-	reqs := splitSearchRequest(coll.Schema, partitions, expr, outputFields, vectors, vfDef.DataType, vectorField, metricType, topK, sp, option)
-	if len(reqs) == 0 {
-		return nil, errors.New("empty request generated")
+	req, err := prepareSearchRequest(collName, partitions, expr, outputFields, vectors, vectorField, metricType, topK, sp, option)
+	if err != nil {
+		return nil, err
 	}
-	wg := &sync.WaitGroup{}
-	wg.Add(len(reqs))
-	var batchErr error
-	sr := make([]SearchResult, 0, len(vectors))
-	mut := sync.Mutex{}
-	for _, req := range reqs {
-		go func(req *server.SearchRequest) {
-			defer wg.Done()
-			resp, err := c.service.Search(ctx, req)
-			if err != nil {
-				batchErr = err
-				return
-			}
-			if err := handleRespStatus(resp.GetStatus()); err != nil {
-				batchErr = err
-				return
-			}
-			// 3. parse result into result
-			results := resp.GetResults()
-			offset := 0
-			fieldDataList := results.GetFieldsData()
-			for i := 0; i < int(results.GetNumQueries()); i++ {
 
-				rc := int(results.GetTopks()[i]) // result entry count for current query
-				entry := SearchResult{
-					ResultCount: rc,
-					Scores:      results.GetScores()[offset : offset+rc],
-				}
-				entry.IDs, entry.Err = entity.IDColumns(results.GetIds(), offset, offset+rc)
-				if entry.Err != nil {
-					offset += rc
-					continue
-				}
-				entry.Fields = make([]entity.Column, 0, len(fieldDataList))
-				for _, fieldData := range fieldDataList {
-					column, err := entity.FieldDataColumn(fieldData, offset, offset+rc)
-					if err != nil {
-						entry.Err = err
-						continue
-					}
-					entry.Fields = append(entry.Fields, column)
-				}
-				mut.Lock()
-				sr = append(sr, entry)
-				mut.Unlock()
-				offset += rc
-			}
-		}(req)
+	sr := make([]SearchResult, 0, len(vectors))
+	resp, err := c.service.Search(ctx, req)
+	if err != nil {
+		return nil, err
 	}
-	wg.Wait()
-	if batchErr != nil {
-		return []SearchResult{}, batchErr
+	if err := handleRespStatus(resp.GetStatus()); err != nil {
+		return nil, err
+	}
+	// 3. parse result into result
+	results := resp.GetResults()
+	offset := 0
+	fieldDataList := results.GetFieldsData()
+	for i := 0; i < int(results.GetNumQueries()); i++ {
+		rc := int(results.GetTopks()[i]) // result entry count for current query
+		entry := SearchResult{
+			ResultCount: rc,
+			Scores:      results.GetScores()[offset : offset+rc],
+		}
+		entry.IDs, entry.Err = entity.IDColumns(results.GetIds(), offset, offset+rc)
+		if entry.Err != nil {
+			offset += rc
+			continue
+		}
+		entry.Fields = make([]entity.Column, 0, len(fieldDataList))
+		for _, fieldData := range fieldDataList {
+			column, err := entity.FieldDataColumn(fieldData, offset, offset+rc)
+			if err != nil {
+				entry.Err = err
+				continue
+			}
+			entry.Fields = append(entry.Fields, column)
+		}
+		sr = append(sr, entry)
+		offset += rc
 	}
 	return sr, nil
 }
@@ -359,35 +287,12 @@ func (c *grpcClient) QueryByPks(ctx context.Context, collectionName string, part
 	if c.service == nil {
 		return nil, ErrClientNotReady
 	}
-
-	// check collection exists and get collection schema
-	// check collection name
-	if err := c.checkCollectionExists(ctx, collectionName); err != nil {
-		return nil, err
-	}
-	coll, err := c.DescribeCollection(ctx, collectionName)
-	if err != nil {
-		return nil, err
-	}
-	// check partition exists
-	for _, partitionName := range partitionNames {
-		err := c.checkPartitionExists(ctx, collectionName, partitionName)
-		if err != nil {
-			return nil, err
-		}
-	}
 	// check primary keys
 	if ids.Len() == 0 {
 		return nil, errors.New("ids len must not be zero")
 	}
 	if ids.Type() != entity.FieldTypeInt64 && ids.Type() != entity.FieldTypeVarChar { // string key not supported yet
 		return nil, errors.New("only int64 and varchar column can be primary key for now")
-	}
-
-	pkf := getPKField(coll.Schema)
-	// pkf shall not be nil since is returned from milvus
-	if pkf.Name != ids.Name() {
-		return nil, errors.New("only query by primary key is supported now")
 	}
 
 	var expr string
@@ -402,7 +307,12 @@ func (c *grpcClient) QueryByPks(ctx context.Context, collectionName string, part
 		expr = fmt.Sprintf("%s in %s", ids.Name(), strings.Join(strings.Fields(fmt.Sprint(data)), ","))
 	}
 
-	option, err := MakeSearchQueryOption(coll, opts...)
+	_, ok := MetaCache.getCollectionInfo(collectionName)
+	if !ok {
+		c.DescribeCollection(ctx, collectionName)
+	}
+
+	option, err := MakeSearchQueryOption(collectionName, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -456,11 +366,14 @@ func getPKField(schema *entity.Schema) *entity.Field {
 	return nil
 }
 
-func splitSearchRequest(sch *entity.Schema, partitions []string,
-	expr string, outputFields []string, vectors []entity.Vector, fieldType entity.FieldType, vectorField string,
-	metricType entity.MetricType, topK int, sp entity.SearchParam, opt *SearchQueryOption) []*server.SearchRequest {
+func prepareSearchRequest(collName string, partitions []string,
+	expr string, outputFields []string, vectors []entity.Vector, vectorField string,
+	metricType entity.MetricType, topK int, sp entity.SearchParam, opt *SearchQueryOption) (*server.SearchRequest, error) {
 	params := sp.Params()
-	bs, _ := json.Marshal(params)
+	bs, err := json.Marshal(params)
+	if err != nil {
+		return nil, err
+	}
 	searchParams := entity.MapKvPairs(map[string]string{
 		"anns_field":    vectorField,
 		"topk":          fmt.Sprintf("%d", topK),
@@ -468,32 +381,19 @@ func splitSearchRequest(sch *entity.Schema, partitions []string,
 		"metric_type":   string(metricType),
 		"round_decimal": "-1",
 	})
-
-	ers := estRowSize(sch, outputFields)
-	maxBatch := int(math.Ceil(float64(5*1024*1024) / float64(ers*int64(topK))))
-	var result []*server.SearchRequest
-	for i := 0; i*maxBatch < len(vectors); i++ {
-		start := i * maxBatch
-		end := (i + 1) * maxBatch
-		if end > len(vectors) {
-			end = len(vectors)
-		}
-		batchVectors := vectors[start:end]
-		req := &server.SearchRequest{
-			DbName:             "",
-			CollectionName:     sch.CollectionName,
-			PartitionNames:     partitions,
-			Dsl:                expr,
-			PlaceholderGroup:   vector2PlaceholderGroupBytes(batchVectors, fieldType),
-			DslType:            common.DslType_BoolExprV1,
-			OutputFields:       outputFields,
-			SearchParams:       searchParams,
-			GuaranteeTimestamp: opt.GuaranteeTimestamp,
-			TravelTimestamp:    opt.TravelTimestamp,
-		}
-		result = append(result, req)
+	req := &server.SearchRequest{
+		DbName:             "",
+		CollectionName:     collName,
+		PartitionNames:     partitions,
+		Dsl:                expr,
+		PlaceholderGroup:   vector2PlaceholderGroupBytes(vectors),
+		DslType:            common.DslType_BoolExprV1,
+		OutputFields:       outputFields,
+		SearchParams:       searchParams,
+		GuaranteeTimestamp: opt.GuaranteeTimestamp,
+		TravelTimestamp:    opt.TravelTimestamp,
 	}
-	return result
+	return req, nil
 }
 
 // GetPersistentSegmentInfo get persistent segment info
@@ -690,10 +590,10 @@ func columnToVectorsArray(collName string, partitions []string, column entity.Co
 	return result
 }
 
-func vector2PlaceholderGroupBytes(vectors []entity.Vector, fieldType entity.FieldType) []byte {
+func vector2PlaceholderGroupBytes(vectors []entity.Vector) []byte {
 	phg := &common.PlaceholderGroup{
 		Placeholders: []*common.PlaceholderValue{
-			vector2Placeholder(vectors, fieldType),
+			vector2Placeholder(vectors),
 		},
 	}
 
@@ -701,19 +601,22 @@ func vector2PlaceholderGroupBytes(vectors []entity.Vector, fieldType entity.Fiel
 	return bs
 }
 
-func vector2Placeholder(vectors []entity.Vector, fieldType entity.FieldType) *common.PlaceholderValue {
+func vector2Placeholder(vectors []entity.Vector) *common.PlaceholderValue {
 	var placeHolderType common.PlaceholderType
-	switch fieldType {
-	case entity.FieldTypeFloatVector:
-		placeHolderType = common.PlaceholderType_FloatVector
-	case entity.FieldTypeBinaryVector:
-		placeHolderType = common.PlaceholderType_BinaryVector
-	}
 	ph := &common.PlaceholderValue{
 		Tag:    "$0",
-		Type:   placeHolderType,
 		Values: make([][]byte, 0, len(vectors)),
 	}
+	if len(vectors) == 0 {
+		return ph
+	}
+	switch vectors[0].(type) {
+	case entity.FloatVector:
+		placeHolderType = common.PlaceholderType_FloatVector
+	case entity.BinaryVector:
+		placeHolderType = common.PlaceholderType_BinaryVector
+	}
+	ph.Type = placeHolderType
 	for _, vector := range vectors {
 		ph.Values = append(ph.Values, vector.Serialize())
 	}

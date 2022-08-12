@@ -144,7 +144,7 @@ func main() {
 	begin = time.Now()
 	sp, _ = entity.NewIndexFlatSearchParam(10)
 	sRet, err = c.Search(ctx, collectionName, nil, "", []string{randomCol}, vec2search,
-		embeddingCol, entity.L2, topK, sp, client.WithSearchQueryConsistencyLevel(entity.ClStrong)
+		embeddingCol, entity.L2, topK, sp, client.WithSearchQueryConsistencyLevel(entity.ClStrong))
 	end = time.Now()
 	if err != nil {
 		log.Fatalf("failed to search collection, err: %v", err)

@@ -267,56 +267,8 @@ func TestGrpcSearch(t *testing.T) {
 		sp, err := entity.NewIndexFlatSearchParam(10)
 		assert.Nil(t, err)
 
-		// collection name
-		mock.delInjection(mHasCollection)
-		r, err := c.Search(ctx, testCollectionName, []string{}, "", []string{}, []entity.Vector{}, "vector",
-			entity.L2, 5, sp)
-		assert.Nil(t, r)
-		assert.NotNil(t, err)
-
-		// partition
-		mock.setInjection(mHasCollection, hasCollectionDefault)
-		r, err = c.Search(ctx, testCollectionName, []string{"_non_exist"}, "", []string{}, []entity.Vector{}, "vector",
-			entity.L2, 5, sp)
-		assert.Nil(t, r)
-		assert.NotNil(t, err)
-
-		// output field
-		mock.setInjection(mDescribeCollection, describeCollectionInjection(t, 0, testCollectionName, defaultSchema()))
-		r, err = c.Search(ctx, testCollectionName, []string{}, "", []string{"extra"}, []entity.Vector{}, "vector",
-			entity.L2, 5, sp)
-		assert.Nil(t, r)
-		assert.NotNil(t, err)
-
-		// vector field
-		mock.setInjection(mDescribeCollection, describeCollectionInjection(t, 0, testCollectionName, defaultSchema()))
-		r, err = c.Search(ctx, testCollectionName, []string{}, "", []string{"int64"}, []entity.Vector{}, "no_vector",
-			entity.L2, 5, sp)
-		assert.Nil(t, r)
-		assert.NotNil(t, err)
-
-		// vector dim
-		badVectors := generateFloatVector(1, testVectorDim*2)
-		r, err = c.Search(ctx, testCollectionName, []string{}, "", []string{"int64"}, []entity.Vector{entity.FloatVector(badVectors[0])}, "vector",
-			entity.L2, 5, sp)
-		assert.Nil(t, r)
-		assert.NotNil(t, err)
-
-		// wrong vector type
-		binaryVector := generateBinaryVector(1, testVectorDim)
-		r, err = c.Search(ctx, testCollectionName, []string{}, "", []string{"int64"}, []entity.Vector{entity.BinaryVector(binaryVector[0])}, "vector",
-			entity.L2, 5, sp)
-		assert.Nil(t, r)
-		assert.Error(t, err)
-
-		// metric type
-		r, err = c.Search(ctx, testCollectionName, []string{}, "", []string{"int64"}, []entity.Vector{entity.FloatVector(vectors[0])}, "vector",
-			entity.HAMMING, 5, sp)
-		assert.Nil(t, r)
-		assert.NotNil(t, err)
-
 		// specify guarantee timestamp in strong consistency level
-		r, err = c.Search(ctx, testCollectionName, []string{}, "", []string{"int64"}, []entity.Vector{entity.FloatVector(vectors[0])}, "vector",
+		r, err := c.Search(ctx, testCollectionName, []string{}, "", []string{"int64"}, []entity.Vector{entity.FloatVector(vectors[0])}, "vector",
 			entity.HAMMING, 5, sp, WithSearchQueryConsistencyLevel(entity.ClStrong), WithGuaranteeTimestamp(1))
 		assert.Nil(t, r)
 		assert.NotNil(t, err)
@@ -564,10 +516,6 @@ func TestGrpcQueryByPks(t *testing.T) {
 
 		// string pk field
 		_, err = c.QueryByPks(ctx, testCollectionName, []string{}, entity.NewColumnString("pk", []string{"1"}), []string{})
-		assert.Error(t, err)
-
-		// pk name not match
-		_, err = c.QueryByPks(ctx, testCollectionName, []string{}, entity.NewColumnInt64("non_pk", []int64{1}), []string{})
 		assert.Error(t, err)
 	})
 
@@ -1073,7 +1021,7 @@ func TestVector2PlaceHolder(t *testing.T) {
 			vectors = append(vectors, entity.FloatVector(row))
 		}
 
-		phv := vector2Placeholder(vectors, entity.FieldTypeFloatVector)
+		phv := vector2Placeholder(vectors)
 		assert.Equal(t, "$0", phv.Tag)
 		assert.Equal(t, common.PlaceholderType_FloatVector, phv.Type)
 		require.Equal(t, len(vectors), len(phv.Values))
@@ -1089,7 +1037,7 @@ func TestVector2PlaceHolder(t *testing.T) {
 			vectors = append(vectors, entity.BinaryVector(row))
 		}
 
-		phv := vector2Placeholder(vectors, entity.FieldTypeBinaryVector)
+		phv := vector2Placeholder(vectors)
 		assert.Equal(t, "$0", phv.Tag)
 		assert.Equal(t, common.PlaceholderType_BinaryVector, phv.Type)
 		require.Equal(t, len(vectors), len(phv.Values))

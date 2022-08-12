@@ -19,9 +19,10 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
+	"google.golang.org/grpc"
+
 	common "github.com/milvus-io/milvus-sdk-go/v2/internal/proto/common"
 	server "github.com/milvus-io/milvus-sdk-go/v2/internal/proto/server"
-	"google.golang.org/grpc"
 )
 
 // grpcClient, uses default grpc service definition to connect with Milvus2.0
@@ -231,6 +232,13 @@ func (c *grpcClient) DescribeCollection(ctx context.Context, collName string) (*
 		ConsistencyLevel: entity.ConsistencyLevel(resp.ConsistencyLevel),
 	}
 	collection.Name = collection.Schema.CollectionName
+	colInfo := collInfo{
+		ID:               collection.ID,
+		Name:             collection.Name,
+		Schema:           collection.Schema,
+		ConsistencyLevel: collection.ConsistencyLevel,
+	}
+	MetaCache.setCollectionInfo(resp.CollectionName, &colInfo)
 	return collection, nil
 }
 
@@ -250,7 +258,11 @@ func (c *grpcClient) DropCollection(ctx context.Context, collName string) error 
 	if err != nil {
 		return err
 	}
-	return handleRespStatus(resp)
+	err = handleRespStatus(resp)
+	if err == nil {
+		MetaCache.setCollectionInfo(collName, nil)
+	}
+	return err
 }
 
 // HasCollection check whether collection name exists

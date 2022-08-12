@@ -69,14 +69,17 @@ func WithTravelTimestamp(tt uint64) SearchQueryOptionFunc {
 	}
 }
 
-func MakeSearchQueryOption(c *entity.Collection, opts ...SearchQueryOptionFunc) (*SearchQueryOption, error) {
+func MakeSearchQueryOption(collName string, opts ...SearchQueryOptionFunc) (*SearchQueryOption, error) {
 	opt := &SearchQueryOption{
-		ConsistencyLevel: c.ConsistencyLevel, // default
+		ConsistencyLevel: entity.ClBounded, // default
+	}
+	info, ok := MetaCache.getCollectionInfo(collName)
+	if ok {
+		opt.ConsistencyLevel = info.ConsistencyLevel
 	}
 	for _, o := range opts {
 		o(opt)
 	}
-
 	// sanity-check
 	if opt.ConsistencyLevel != entity.ClCustomized && opt.GuaranteeTimestamp != 0 {
 		return nil, errors.New("user can only specify guarantee timestamp under customized consistency level")
@@ -86,7 +89,7 @@ func MakeSearchQueryOption(c *entity.Collection, opts ...SearchQueryOptionFunc) 
 	case entity.ClStrong:
 		opt.GuaranteeTimestamp = StrongTimestamp
 	case entity.ClSession:
-		ts, ok := tsm.get(c.ID)
+		ts, ok := MetaCache.getSessionTs(collName)
 		if !ok {
 			ts = EventuallyTimestamp
 		}
