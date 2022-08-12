@@ -17,16 +17,11 @@ import (
 	"time"
 
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
+
 	"google.golang.org/grpc"
 )
 
 // Client is the interface used to communicate with Milvus
-// The common usage is like follow
-//		c, err := client.NewGrpcClient(context.Background, "address-to-milvus") // or other creation func maybe added later
-//		if err != nil {
-//		//handle err
-//		}
-//		// start doing things with client instance, note that there is no need to call Connect since NewXXXClient will do that for you
 type Client interface {
 	// Close close the remaining connection resources
 	Close() error

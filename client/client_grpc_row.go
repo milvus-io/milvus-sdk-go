@@ -99,7 +99,7 @@ func (c *grpcClient) InsertByRows(ctx context.Context, collName string, partitio
 	if err := handleRespStatus(resp.GetStatus()); err != nil {
 		return nil, err
 	}
-	tsm.set(coll.ID, resp.Timestamp)
+	MetaCache.setSessionTs(collName, resp.Timestamp)
 	// 3. parse id column
 	return entity.IDColumns(resp.GetIDs(), 0, -1)
 }
