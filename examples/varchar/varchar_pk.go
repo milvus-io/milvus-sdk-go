@@ -200,7 +200,7 @@ func main() {
 	if err := c.DeleteByPks(ctx, collectionName, "", pks); err != nil {
 		log.Fatalf("failed to delete by pks, err: %v", err)
 	}
-	_, err = c.QueryByPks(ctx, collectionName, nil, pks, []string{randomCol})
+	_, err = c.QueryByPks(ctx, collectionName, nil, pks, []string{randomCol}, client.WithSearchQueryConsistencyLevel(entity.ClStrong))
 	if err != nil {
 		log.Printf("failed to query result, err: %v", err)
 	}
