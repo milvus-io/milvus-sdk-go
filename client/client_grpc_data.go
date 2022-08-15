@@ -202,8 +202,8 @@ func (c *grpcClient) DeleteByPks(ctx context.Context, collName string, partition
 	if pkf.Name != ids.Name() {
 		return errors.New("only delete by primary key is supported now")
 	}
-	// for now pk must be int64
-	expr := fmt.Sprintf("%s in %s", ids.Name(), strings.Join(strings.Fields(fmt.Sprint(ids.FieldData().GetScalars().GetLongData().GetData())), ","))
+
+	expr := PKs2Expr(ids)
 
 	req := &server.DeleteRequest{
 		DbName:         "",
@@ -282,6 +282,21 @@ func (c *grpcClient) Search(ctx context.Context, collName string, partitions []s
 	return sr, nil
 }
 
+func PKs2Expr(ids entity.Column) string {
+	var expr string
+	switch ids.Type() {
+	case entity.FieldTypeInt64:
+		expr = fmt.Sprintf("%s in %s", ids.Name(), strings.Join(strings.Fields(fmt.Sprint(ids.FieldData().GetScalars().GetLongData().GetData())), ","))
+	case entity.FieldTypeVarChar:
+		data := ids.FieldData().GetScalars().GetData().(*schema.ScalarField_StringData).StringData.Data
+		for i := range data {
+			data[i] = fmt.Sprintf("\"%s\"", data[i])
+		}
+		expr = fmt.Sprintf("%s in %s", ids.Name(), strings.Join(strings.Fields(fmt.Sprint(data)), ","))
+	}
+	return expr
+}
+
 // QueryByPks query record by specified primary key(s)
 func (c *grpcClient) QueryByPks(ctx context.Context, collectionName string, partitionNames []string, ids entity.Column, outputFields []string, opts ...SearchQueryOptionFunc) ([]entity.Column, error) {
 	if c.service == nil {
@@ -295,17 +310,7 @@ func (c *grpcClient) QueryByPks(ctx context.Context, collectionName string, part
 		return nil, errors.New("only int64 and varchar column can be primary key for now")
 	}
 
-	var expr string
-	switch ids.Type() {
-	case entity.FieldTypeInt64:
-		expr = fmt.Sprintf("%s in %s", ids.Name(), strings.Join(strings.Fields(fmt.Sprint(ids.FieldData().GetScalars().GetLongData().GetData())), ","))
-	case entity.FieldTypeVarChar:
-		data := ids.FieldData().GetScalars().GetData().(*schema.ScalarField_StringData).StringData.Data
-		for i := range data {
-			data[i] = fmt.Sprintf("\"%s\"", data[i])
-		}
-		expr = fmt.Sprintf("%s in %s", ids.Name(), strings.Join(strings.Fields(fmt.Sprint(data)), ","))
-	}
+	expr := PKs2Expr(ids)
 
 	_, ok := MetaCache.getCollectionInfo(collectionName)
 	if !ok {
