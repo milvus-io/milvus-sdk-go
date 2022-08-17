@@ -15,17 +15,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math"
-
 	"time"
 
-	"google.golang.org/grpc/backoff"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/keepalive"
-
 	"github.com/golang/protobuf/proto"
-	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 	"google.golang.org/grpc"
 
@@ -41,50 +33,16 @@ type grpcClient struct {
 
 // connect connect to service
 func (c *grpcClient) connect(ctx context.Context, addr string, opts ...grpc.DialOption) error {
-	if err := c.establishConnection(addr, opts...); err != nil {
-		return err
-	}
-
-	c.service = server.NewMilvusServiceClient(c.conn)
-	return nil
-}
-
-func (c *grpcClient) establishConnection(addr string, opts ...grpc.DialOption) error {
 	if addr == "" {
 		return fmt.Errorf("address is empty")
 	}
-
-	defaultOpts := []grpc.DialOption{
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithKeepaliveParams(keepalive.ClientParameters{
-			Time:                5 * time.Second,
-			Timeout:             10 * time.Second,
-			PermitWithoutStream: true,
-		}),
-		grpc.WithConnectParams(grpc.ConnectParams{
-			Backoff: backoff.Config{
-				BaseDelay:  100 * time.Millisecond,
-				Multiplier: 1.6,
-				Jitter:     0.2,
-				MaxDelay:   3 * time.Second,
-			},
-			MinConnectTimeout: 3 * time.Second,
-		}),
-		grpc.WithUnaryInterceptor(grpc_retry.UnaryClientInterceptor(
-			grpc_retry.WithMax(6),
-			grpc_retry.WithBackoff(func(attempt uint) time.Duration {
-				return 60 * time.Millisecond * time.Duration(math.Pow(3, float64(attempt)))
-			}),
-			grpc_retry.WithCodes(codes.Unavailable, codes.ResourceExhausted))),
-	}
-
-	opts = append(opts, defaultOpts...)
 	conn, err := grpc.Dial(addr, opts...)
 	if err != nil {
 		return err
 	}
 
 	c.conn = conn
+	c.service = server.NewMilvusServiceClient(c.conn)
 	return nil
 }
 

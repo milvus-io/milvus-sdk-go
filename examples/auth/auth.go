@@ -11,7 +11,6 @@ import (
 
 	"github.com/milvus-io/milvus-sdk-go/v2/client"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
-	"google.golang.org/grpc"
 )
 
 const (
@@ -22,31 +21,8 @@ const (
 
 func main() {
 	ctx := context.Background()
-	// create user credential if needed
-	c, err := client.NewGrpcClient(ctx, addr)
-	if err != nil {
-		log.Fatal("failed to connect:", err)
-	}
-	users, err := c.ListCredUsers(ctx)
-	registered := false
-	for _, user := range users {
-		if user == username {
-			registered = true
-			break
-		}
-	}
-	if !registered {
-		if err = c.CreateCredential(ctx, username, password); err != nil {
-			log.Fatal("failed to create credential:", err)
-		}
-	}
-	c.Close()
-
-	// client with auth interceptor
-	unaryAuthInterceptor := client.CreateAuthenticationUnaryInterceptor(username, password)
-	streamAuthInterceptor := client.CreateAuthenticationStreamInterceptor(username, password)
-	c, err = client.NewGrpcClient(ctx, addr, grpc.WithInsecure(),
-		grpc.WithUnaryInterceptor(unaryAuthInterceptor), grpc.WithStreamInterceptor(streamAuthInterceptor))
+	// create grpc client that tls is enabled
+	c, err := client.NewDefaultGrpcClientWithTLSAuth(ctx, addr, username, password)
 	if err != nil {
 		log.Fatal("failed to connect:", err)
 	}

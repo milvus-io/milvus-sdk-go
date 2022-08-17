@@ -203,16 +203,26 @@ func TestGrpcClientRetryPolicy(t *testing.T) {
 	}()
 	defer s.Stop()
 
-	grpcClient := &grpcClient{}
-	grpcClient.establishConnection(address)
-	defer grpcClient.Close()
+	client, err := NewGrpcClient(context.TODO(), address)
+	assert.Nil(t, err)
+	defer client.Close()
 
-	greeterClient := helloworld.NewGreeterClient(grpcClient.conn)
+	greeterClient := helloworld.NewGreeterClient(client.(*grpcClient).conn)
 	ctx := context.Background()
 	name := fmt.Sprintf("hello world %d", time.Now().Second())
 	res, err := greeterClient.SayHello(ctx, &helloworld.HelloRequest{Name: name})
 	assert.Nil(t, err)
 	assert.Equal(t, res.Message, strings.ToUpper(name))
+}
+
+func TestClient_getDefaultAuthOpts(t *testing.T) {
+	username := "u"
+	password := "pwd"
+	defaultOpts := getDefaultAuthOpts(username, password, true)
+	assert.True(t, len(defaultOpts) == 6)
+
+	defaultOpts = getDefaultAuthOpts(username, password, false)
+	assert.True(t, len(defaultOpts) == 6)
 }
 
 func successStatus() (*common.Status, error) {

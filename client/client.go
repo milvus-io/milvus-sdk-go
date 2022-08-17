@@ -14,7 +14,16 @@ package client
 
 import (
 	"context"
+	"crypto/tls"
+	"math"
 	"time"
+
+	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
+	"google.golang.org/grpc/backoff"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/keepalive"
 
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 
@@ -140,21 +149,92 @@ type SearchResult struct {
 	Err         error           // search error if any
 }
 
-// alias type for context field key
-type grpcKey int
-
-const (
-	dialOption grpcKey = 1
-)
+var DefaultGrpcOpts = []grpc.DialOption{
+	grpc.WithBlock(),
+	grpc.WithKeepaliveParams(keepalive.ClientParameters{
+		Time:                5 * time.Second,
+		Timeout:             10 * time.Second,
+		PermitWithoutStream: true,
+	}),
+	grpc.WithConnectParams(grpc.ConnectParams{
+		Backoff: backoff.Config{
+			BaseDelay:  100 * time.Millisecond,
+			Multiplier: 1.6,
+			Jitter:     0.2,
+			MaxDelay:   3 * time.Second,
+		},
+		MinConnectTimeout: 3 * time.Second,
+	}),
+}
 
 // NewGrpcClient create client with grpc addr
 // the `Connect` API will be called for you
 // dialOptions contains the dial option(s) that control the grpc dialing process
 func NewGrpcClient(ctx context.Context, addr string, dialOptions ...grpc.DialOption) (Client, error) {
 	c := &grpcClient{}
-	err := c.connect(ctx, addr, dialOptions...)
+	if len(dialOptions) == 0 {
+		return NewDefaultGrpcClient(ctx, addr)
+	}
+
+	if err := c.connect(ctx, addr, dialOptions...); err != nil {
+		return nil, err
+	}
+
+	return c, nil
+}
+
+func NewDefaultGrpcClient(ctx context.Context, addr string) (Client, error) {
+	c := &grpcClient{}
+	defaultOpts := append(DefaultGrpcOpts,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithUnaryInterceptor(
+			grpc_retry.UnaryClientInterceptor(
+				grpc_retry.WithMax(6),
+				grpc_retry.WithBackoff(func(attempt uint) time.Duration {
+					return 60 * time.Millisecond * time.Duration(math.Pow(3, float64(attempt)))
+				}),
+				grpc_retry.WithCodes(codes.Unavailable, codes.ResourceExhausted)),
+		),
+	)
+	err := c.connect(ctx, addr, defaultOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return c, nil
+}
+
+// NewDefaultGrpcClientWithTLSAuth enable transport security
+func NewDefaultGrpcClientWithTLSAuth(ctx context.Context, addr, username, password string) (Client, error) {
+	defaultOpts := getDefaultAuthOpts(username, password, true)
+	return NewGrpcClient(ctx, addr, defaultOpts...)
+}
+
+// NewDefaultGrpcClientWithAuth  disable transport security
+func NewDefaultGrpcClientWithAuth(ctx context.Context, addr, username, password string) (Client, error) {
+	defaultOpts := getDefaultAuthOpts(username, password, false)
+	return NewGrpcClient(ctx, addr, defaultOpts...)
+}
+
+func getDefaultAuthOpts(username, password string, enableTLS bool) []grpc.DialOption {
+	var credential credentials.TransportCredentials
+	if enableTLS {
+		credential = credentials.NewTLS(&tls.Config{})
+	} else {
+		credential = insecure.NewCredentials()
+	}
+
+	defaultOpts := append(DefaultGrpcOpts,
+		grpc.WithTransportCredentials(credential),
+		grpc.WithChainUnaryInterceptor(
+			CreateAuthenticationUnaryInterceptor(username, password),
+			grpc_retry.UnaryClientInterceptor(
+				grpc_retry.WithMax(6),
+				grpc_retry.WithBackoff(func(attempt uint) time.Duration {
+					return 60 * time.Millisecond * time.Duration(math.Pow(3, float64(attempt)))
+				}),
+				grpc_retry.WithCodes(codes.Unavailable, codes.ResourceExhausted)),
+		),
+		grpc.WithStreamInterceptor(CreateAuthenticationStreamInterceptor(username, password)),
+	)
+	return defaultOpts
 }
