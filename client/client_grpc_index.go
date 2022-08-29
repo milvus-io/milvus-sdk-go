@@ -56,6 +56,11 @@ func (c *grpcClient) CreateIndex(ctx context.Context, collName string, fieldName
 		return err
 	}
 
+	flushErr := c.Flush(ctx, collName, true)
+	if flushErr != nil {
+		return flushErr
+	}
+
 	req := &server.CreateIndexRequest{
 		DbName:         "", // reserved
 		CollectionName: collName,

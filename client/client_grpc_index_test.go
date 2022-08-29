@@ -40,6 +40,14 @@ func TestGrpcClientCreateIndex(t *testing.T) {
 		assert.Nil(t, c.CreateIndex(ctx, testCollectionName, fieldName, idx, true))
 	})
 
+	t.Run("test flush err", func(t *testing.T) {
+		mock.setInjection(mGetFlushState, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+			return badRequestStatus()
+		})
+		assert.NotNil(t, c.CreateIndex(ctx, testCollectionName, fieldName, idx, false))
+		defer mock.delInjection(mGetIndexState)
+	})
+
 	t.Run("test sync create index", func(t *testing.T) {
 		buildTime := rand.Intn(900) + 100
 		start := time.Now()
