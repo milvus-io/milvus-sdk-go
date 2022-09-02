@@ -207,7 +207,6 @@ func (c *grpcClient) DescribeCollection(ctx context.Context, collName string) (*
 	if c.service == nil {
 		return nil, ErrClientNotReady
 	}
-
 	req := &server.DescribeCollectionRequest{
 		CollectionName: collName,
 	}
@@ -221,7 +220,7 @@ func (c *grpcClient) DescribeCollection(ctx context.Context, collName string) (*
 	}
 	collection := &entity.Collection{
 		ID:               resp.GetCollectionID(),
-		Name:             resp.CollectionName,
+		Name:             collName,
 		Schema:           (&entity.Schema{}).ReadProto(resp.GetSchema()),
 		PhysicalChannels: resp.GetPhysicalChannelNames(),
 		VirtualChannels:  resp.GetVirtualChannelNames(),
@@ -234,7 +233,7 @@ func (c *grpcClient) DescribeCollection(ctx context.Context, collName string) (*
 		Schema:           collection.Schema,
 		ConsistencyLevel: collection.ConsistencyLevel,
 	}
-	MetaCache.setCollectionInfo(resp.CollectionName, &colInfo)
+	MetaCache.setCollectionInfo(collName, &colInfo)
 	return collection, nil
 }
 
