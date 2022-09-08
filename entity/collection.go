@@ -21,6 +21,7 @@ type Collection struct {
 	VirtualChannels  []string
 	Loaded           bool
 	ConsistencyLevel ConsistencyLevel
+	ShardNum         int32
 }
 
 // Partition represent partition meta in Milvus
