@@ -43,10 +43,11 @@ Go 1.15 or higher
 
    //...other snippet ...
    client, err := client.NewGrpcClient(context.Background(), "address_of_milvus")
-   defer client.Close()
    if err != nil {
        // handle error
    }
+   defer client.Close()
+
    client.HasCollection(context.Background(), "YOUR_COLLECTION_NAME")
    ```
 
