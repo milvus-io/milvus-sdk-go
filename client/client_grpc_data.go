@@ -696,3 +696,88 @@ func estRowSize(sch *entity.Schema, selected []string) int64 {
 	}
 	return total
 }
+
+// Bulkload data files(json, numpy, etc.) on MinIO/S3 storage, read and parse them into sealed segments
+func (c *grpcClient) Bulkload(ctx context.Context, collName string, partitionName string, rowBased bool, files []string, options map[string]string) ([]int64, error) {
+	if c.service == nil {
+		return []int64{}, ErrClientNotReady
+	}
+	req := &server.ImportRequest{
+		CollectionName: collName,
+		PartitionName:  partitionName,
+		RowBased:       rowBased,
+		Files:          files,
+		Options:        entity.MapKvPairs(options),
+	}
+	resp, err := c.service.Import(ctx, req)
+	if err != nil {
+		return []int64{}, err
+	}
+	if err := handleRespStatus(resp.GetStatus()); err != nil {
+		return []int64{}, err
+	}
+
+	return resp.Tasks, nil
+}
+
+// GetBulkloadState checks import task state
+func (c *grpcClient) GetBulkloadState(ctx context.Context, taskID int64) (*entity.BulkloadTaskState, error) {
+	if c.service == nil {
+		return nil, ErrClientNotReady
+	}
+	req := &server.GetImportStateRequest{
+		Task: taskID,
+	}
+	resp, err := c.service.GetImportState(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	if err := handleRespStatus(resp.GetStatus()); err != nil {
+		return nil, err
+	}
+
+	return &entity.BulkloadTaskState{
+		ID:           resp.GetId(),
+		State:        entity.BulkloadState(resp.GetState()),
+		RowCount:     resp.GetRowCount(),
+		IDList:       resp.GetIdList(),
+		Infos:        entity.KvPairsMap(resp.GetInfos()),
+		CollectionID: resp.GetCollectionId(),
+		SegmentIDs:   resp.GetSegmentIds(),
+		CreateTs:     resp.GetCreateTs(),
+	}, nil
+}
+
+// ListImportTasks list state of all import tasks
+func (c *grpcClient) ListBulkloadTasks(ctx context.Context, collName string, limit int64) ([]*entity.BulkloadTaskState, error) {
+	if c.service == nil {
+		return nil, ErrClientNotReady
+	}
+	req := &server.ListImportTasksRequest{
+		CollectionName: collName,
+		Limit:          limit,
+	}
+	resp, err := c.service.ListImportTasks(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	if err := handleRespStatus(resp.GetStatus()); err != nil {
+		return nil, err
+	}
+
+	tasks := make([]*entity.BulkloadTaskState, 0)
+	for _, task := range resp.GetTasks() {
+		tasks = append(tasks, &entity.BulkloadTaskState{
+			ID:           task.GetId(),
+			State:        entity.BulkloadState(task.GetState()),
+			RowCount:     task.GetRowCount(),
+			IDList:       task.GetIdList(),
+			Infos:        entity.KvPairsMap(task.GetInfos()),
+			CollectionID: task.GetCollectionId(),
+			SegmentIDs:   task.GetSegmentIds(),
+			CreateTs:     task.GetCreateTs(),
+		})
+	}
+
+	return tasks, nil
+}
