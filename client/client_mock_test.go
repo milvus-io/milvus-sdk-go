@@ -686,14 +686,14 @@ func (m *mockServer) SelectUser(_ context.Context, _ *server.SelectUserRequest) 
 	panic("not implemented") // TODO: Implement
 }
 
-func (m *mockServer) SelectResource(_ context.Context, _ *server.SelectResourceRequest) (*server.SelectResourceResponse, error) {
-	panic("not implemented") // TODO: Implement
-}
-
 func (m *mockServer) OperatePrivilege(_ context.Context, _ *server.OperatePrivilegeRequest) (*common.Status, error) {
 	panic("not implemented") // TODO: Implement
 }
 
 func (m *mockServer) SelectGrant(_ context.Context, _ *server.SelectGrantRequest) (*server.SelectGrantResponse, error) {
+	panic("not implemented") // TODO: Implement
+}
+
+func (m *mockServer) DescribePartition(ctx context.Context, req *server.DescribePartitionRequest) (*server.DescribePartitionResponse, error) {
 	panic("not implemented") // TODO: Implement
 }
