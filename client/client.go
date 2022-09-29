@@ -110,8 +110,8 @@ type Client interface {
 
 	// Insert column-based data into collection, returns id column values
 	Insert(ctx context.Context, collName string, partitionName string, columns ...entity.Column) (entity.Column, error)
-	// Flush flush collection, specified
-	Flush(ctx context.Context, collName string, async bool) error
+	// Flush flush collection, specified, return newly sealed segmentIds, all flushed segmentIds of the collection, seal time and error
+	Flush(ctx context.Context, collName string, async bool) ([]int64, []int64, int64, error)
 	// DeleteByPks deletes entries related to provided primary keys
 	DeleteByPks(ctx context.Context, collName string, partitionName string, ids entity.Column) error
 	// Search search with bool expression

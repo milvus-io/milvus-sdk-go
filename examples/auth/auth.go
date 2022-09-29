@@ -100,7 +100,7 @@ func main() {
 	}
 	log.Println("insert completed")
 
-	err = c.Flush(ctx, collectionName, false)
+	_, _, _, err = c.Flush(ctx, collectionName, false)
 	if err != nil {
 		log.Fatal("failed to flush collection:", err.Error())
 	}

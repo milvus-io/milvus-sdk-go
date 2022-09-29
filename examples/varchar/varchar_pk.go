@@ -108,7 +108,8 @@ func main() {
 		log.Fatalf("failed to insert random data into `hello_milvus, err: %v", err)
 	}
 
-	if err := c.Flush(ctx, collectionName, false); err != nil {
+	_, _, _, err = c.Flush(ctx, collectionName, false)
+	if err != nil {
 		log.Fatalf("failed to flush data, err: %v", err)
 	}
 

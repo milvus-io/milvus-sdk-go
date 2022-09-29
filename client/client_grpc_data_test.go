@@ -112,7 +112,8 @@ func TestGrpcClientFlush(t *testing.T) {
 	c := testClient(ctx, t)
 
 	t.Run("test async flush", func(t *testing.T) {
-		assert.Nil(t, c.Flush(ctx, testCollectionName, true))
+		_, _, _, err := c.Flush(ctx, testCollectionName, true)
+		assert.NoError(t, err)
 	})
 
 	t.Run("test sync flush", func(t *testing.T) {
@@ -165,14 +166,16 @@ func TestGrpcClientFlush(t *testing.T) {
 			resp.Status = s
 			return resp, err
 		})
-		assert.Nil(t, c.Flush(ctx, testCollectionName, false))
+		_, _, _, err := c.Flush(ctx, testCollectionName, false)
+		assert.NoError(t, err)
 		assert.True(t, flag)
 
 		start = time.Now()
 		flag = false
 		quickCtx, cancel := context.WithTimeout(ctx, 10*time.Millisecond)
 		defer cancel()
-		assert.NotNil(t, c.Flush(quickCtx, testCollectionName, false))
+		_, _, _, err = c.Flush(quickCtx, testCollectionName, false)
+		assert.NotNil(t, err)
 	})
 }
 

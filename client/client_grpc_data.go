@@ -122,12 +122,14 @@ func (c *grpcClient) Insert(ctx context.Context, collName string, partitionName 
 
 // Flush force collection to flush memory records into storage
 // in sync mode, flush will wait all segments to be flushed
-func (c *grpcClient) Flush(ctx context.Context, collName string, async bool) error {
+// return all newly sealed segmentIds of the collection, past flushed segmentIds of the collection, seal time and error
+// see https://github.com/milvus-io/milvus/issues/18887 for detail
+func (c *grpcClient) Flush(ctx context.Context, collName string, async bool) ([]int64, []int64, int64, error) {
 	if c.service == nil {
-		return ErrClientNotReady
+		return nil, nil, 0, ErrClientNotReady
 	}
 	if err := c.checkCollectionExists(ctx, collName); err != nil {
-		return err
+		return nil, nil, 0, err
 	}
 	req := &server.FlushRequest{
 		DbName:          "", // reserved,
@@ -135,10 +137,10 @@ func (c *grpcClient) Flush(ctx context.Context, collName string, async bool) err
 	}
 	resp, err := c.service.Flush(ctx, req)
 	if err != nil {
-		return err
+		return nil, nil, 0, err
 	}
 	if err := handleRespStatus(resp.GetStatus()); err != nil {
-		return err
+		return nil, nil, 0, err
 	}
 	if !async {
 		segmentIDs, has := resp.GetCollSegIDs()[collName]
@@ -158,14 +160,14 @@ func (c *grpcClient) Flush(ctx context.Context, collName string, async bool) err
 				// respect context deadline/cancel
 				select {
 				case <-ctx.Done():
-					return errors.New("deadline exceeded")
+					return nil, nil, 0, errors.New("deadline exceeded")
 				default:
 				}
 				time.Sleep(200 * time.Millisecond)
 			}
 		}
 	}
-	return nil
+	return resp.GetCollSegIDs()[collName].GetData(), resp.GetFlushCollSegIDs()[collName].GetData(), resp.GetCollSealTimes()[collName], nil
 }
 
 // DeleteByPks deletes entries related to provided primary keys
