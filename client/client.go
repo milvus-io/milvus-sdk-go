@@ -90,6 +90,8 @@ type Client interface {
 	// ReleasePartitions release partitions
 	ReleasePartitions(ctx context.Context, collName string, partitionNames []string) error
 
+	// -- segment --
+	GetPersistentSegmentInfo(ctx context.Context, collName string) ([]*entity.Segment, error)
 	// -- index --
 
 	// CreateIndex create index for field of specified collection
