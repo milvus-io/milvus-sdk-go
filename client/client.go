@@ -18,7 +18,9 @@ import (
 	"math"
 	"time"
 
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/backoff"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
@@ -26,8 +28,6 @@ import (
 	"google.golang.org/grpc/keepalive"
 
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
-
-	"google.golang.org/grpc"
 )
 
 // Client is the interface used to communicate with Milvus
@@ -197,12 +197,17 @@ func NewDefaultGrpcClient(ctx context.Context, addr string) (Client, error) {
 	defaultOpts := append(DefaultGrpcOpts,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithUnaryInterceptor(
-			grpc_retry.UnaryClientInterceptor(
-				grpc_retry.WithMax(6),
-				grpc_retry.WithBackoff(func(attempt uint) time.Duration {
-					return 60 * time.Millisecond * time.Duration(math.Pow(3, float64(attempt)))
+			grpc_middleware.ChainUnaryClient(
+				grpc_retry.UnaryClientInterceptor(
+					grpc_retry.WithMax(6),
+					grpc_retry.WithBackoff(func(attempt uint) time.Duration {
+						return 60 * time.Millisecond * time.Duration(math.Pow(3, float64(attempt)))
+					}),
+					grpc_retry.WithCodes(codes.Unavailable, codes.ResourceExhausted)),
+				RetryOnRateLimitInterceptor(10, func(ctx context.Context, attempt uint) time.Duration {
+					return 10 * time.Millisecond * time.Duration(math.Pow(3, float64(attempt)))
 				}),
-				grpc_retry.WithCodes(codes.Unavailable, codes.ResourceExhausted)),
+			),
 		),
 	)
 	err := c.connect(ctx, addr, defaultOpts...)
