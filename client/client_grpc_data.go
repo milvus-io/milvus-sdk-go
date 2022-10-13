@@ -697,8 +697,8 @@ func estRowSize(sch *entity.Schema, selected []string) int64 {
 	return total
 }
 
-// Bulkload data files(json, numpy, etc.) on MinIO/S3 storage, read and parse them into sealed segments
-func (c *grpcClient) Bulkload(ctx context.Context, collName string, partitionName string, rowBased bool, files []string, options map[string]string) ([]int64, error) {
+// BulkInsert data files(json, numpy, etc.) on MinIO/S3 storage, read and parse them into sealed segments
+func (c *grpcClient) BulkInsert(ctx context.Context, collName string, partitionName string, rowBased bool, files []string, opts ...BulkInsertOption) ([]int64, error) {
 	if c.service == nil {
 		return []int64{}, ErrClientNotReady
 	}
@@ -707,8 +707,12 @@ func (c *grpcClient) Bulkload(ctx context.Context, collName string, partitionNam
 		PartitionName:  partitionName,
 		RowBased:       rowBased,
 		Files:          files,
-		Options:        entity.MapKvPairs(options),
 	}
+
+	for _, opt := range opts {
+		opt(req)
+	}
+
 	resp, err := c.service.Import(ctx, req)
 	if err != nil {
 		return []int64{}, err
@@ -720,8 +724,8 @@ func (c *grpcClient) Bulkload(ctx context.Context, collName string, partitionNam
 	return resp.Tasks, nil
 }
 
-// GetBulkloadState checks import task state
-func (c *grpcClient) GetBulkloadState(ctx context.Context, taskID int64) (*entity.BulkloadTaskState, error) {
+// GetBulkInsertState checks import task state
+func (c *grpcClient) GetBulkInsertState(ctx context.Context, taskID int64) (*entity.BulkInsertTaskState, error) {
 	if c.service == nil {
 		return nil, ErrClientNotReady
 	}
@@ -736,9 +740,9 @@ func (c *grpcClient) GetBulkloadState(ctx context.Context, taskID int64) (*entit
 		return nil, err
 	}
 
-	return &entity.BulkloadTaskState{
+	return &entity.BulkInsertTaskState{
 		ID:           resp.GetId(),
-		State:        entity.BulkloadState(resp.GetState()),
+		State:        entity.BulkInsertState(resp.GetState()),
 		RowCount:     resp.GetRowCount(),
 		IDList:       resp.GetIdList(),
 		Infos:        entity.KvPairsMap(resp.GetInfos()),
@@ -748,8 +752,8 @@ func (c *grpcClient) GetBulkloadState(ctx context.Context, taskID int64) (*entit
 	}, nil
 }
 
-// ListImportTasks list state of all import tasks
-func (c *grpcClient) ListBulkloadTasks(ctx context.Context, collName string, limit int64) ([]*entity.BulkloadTaskState, error) {
+// ListBulkInsertTasks list state of all import tasks
+func (c *grpcClient) ListBulkInsertTasks(ctx context.Context, collName string, limit int64) ([]*entity.BulkInsertTaskState, error) {
 	if c.service == nil {
 		return nil, ErrClientNotReady
 	}
@@ -765,11 +769,11 @@ func (c *grpcClient) ListBulkloadTasks(ctx context.Context, collName string, lim
 		return nil, err
 	}
 
-	tasks := make([]*entity.BulkloadTaskState, 0)
+	tasks := make([]*entity.BulkInsertTaskState, 0)
 	for _, task := range resp.GetTasks() {
-		tasks = append(tasks, &entity.BulkloadTaskState{
+		tasks = append(tasks, &entity.BulkInsertTaskState{
 			ID:           task.GetId(),
-			State:        entity.BulkloadState(task.GetState()),
+			State:        entity.BulkInsertState(task.GetState()),
 			RowCount:     task.GetRowCount(),
 			IDList:       task.GetIdList(),
 			Infos:        entity.KvPairsMap(task.GetInfos()),
