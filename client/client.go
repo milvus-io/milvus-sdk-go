@@ -138,12 +138,12 @@ type Client interface {
 	// GetCompactionStateWithPlans get compaction state with plans of provided compaction id
 	GetCompactionStateWithPlans(ctx context.Context, id int64) (entity.CompactionState, []entity.CompactionPlan, error)
 
-	// Bulkload import data files(json, numpy, etc.) on MinIO/S3 storage, read and parse them into sealed segments
-	Bulkload(ctx context.Context, collName string, partitionName string, rowBased bool, files []string, options map[string]string) ([]int64, error)
-	// GetBulkloadState checks import task state
-	GetBulkloadState(ctx context.Context, taskID int64) (*entity.BulkloadTaskState, error)
-	// ListBulkloadTasks list state of all import tasks
-	ListBulkloadTasks(ctx context.Context, collName string, limit int64) ([]*entity.BulkloadTaskState, error)
+	// BulkInsert import data files(json, numpy, etc.) on MinIO/S3 storage, read and parse them into sealed segments
+	BulkInsert(ctx context.Context, collName string, partitionName string, rowBased bool, files []string, opts ...BulkInsertOption) ([]int64, error)
+	// GetBulkInsertState checks import task state
+	GetBulkInsertState(ctx context.Context, taskID int64) (*entity.BulkInsertTaskState, error)
+	// ListBulkInsertTasks list state of all import tasks
+	ListBulkInsertTasks(ctx context.Context, collName string, limit int64) ([]*entity.BulkInsertTaskState, error)
 }
 
 // SearchResult contains the result from Search api of client

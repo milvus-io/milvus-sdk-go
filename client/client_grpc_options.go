@@ -13,6 +13,7 @@ package client
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 	server "github.com/milvus-io/milvus-sdk-go/v2/internal/proto/server"
@@ -102,4 +103,25 @@ func MakeSearchQueryOption(collName string, opts ...SearchQueryOptionFunc) (*Sea
 		// respect opt.GuaranteeTimestamp
 	}
 	return opt, nil
+}
+
+// BulkInsertOption is an option that is used to modify ImportRequest
+type BulkInsertOption func(request *server.ImportRequest)
+
+// WithStartTs specifies a specific startTs
+func WithStartTs(startTs int64) BulkInsertOption {
+	return func(req *server.ImportRequest) {
+		optionMap := entity.KvPairsMap(req.GetOptions())
+		optionMap["start_ts"] = fmt.Sprint(startTs)
+		req.Options = entity.MapKvPairs(optionMap)
+	}
+}
+
+// WithEndTs specifies a specific endTs
+func WithEndTs(endTs int64) BulkInsertOption {
+	return func(req *server.ImportRequest) {
+		optionMap := entity.KvPairsMap(req.GetOptions())
+		optionMap["end_ts"] = fmt.Sprint(endTs)
+		req.Options = entity.MapKvPairs(optionMap)
+	}
 }
