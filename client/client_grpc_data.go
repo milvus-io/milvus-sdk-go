@@ -397,6 +397,7 @@ func prepareSearchRequest(collName string, partitions []string,
 		SearchParams:       searchParams,
 		GuaranteeTimestamp: opt.GuaranteeTimestamp,
 		TravelTimestamp:    opt.TravelTimestamp,
+		Nq:                 int64(len(vectors)),
 	}
 	return req, nil
 }
