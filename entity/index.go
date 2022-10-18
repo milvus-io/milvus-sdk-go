@@ -42,6 +42,7 @@ const (
 	ANNOY      IndexType = "ANNOY"
 	NGTPANNG   IndexType = "NGT_PANNG"
 	NGTONNG    IndexType = "NGT_ONNG"
+	AUTOINDEX  IndexType = "AUTOINDEX"
 )
 
 // Metric Constants

@@ -1,4 +1,5 @@
-//+build ignore
+//go:build ignore
+// +build ignore
 
 // Copyright (C) 2019-2021 Zilliz. All rights reserved.
 //
@@ -935,6 +936,29 @@ func main() {
 					"max_search_edges, epsilon = 201, 0.1",
 					"max_search_edges, epsilon = 40, 1.2",
 					"max_search_edges, epsilon = 40, -1.1",
+				},
+			},
+			{
+				IdxName:         "AUTOINDEX",
+				IdxType:         entity.AUTOINDEX,
+				ConstructParams: []idxParam{},
+				SearchParams: []idxParam{
+					{
+						Name:           "level",
+						ValidationRule: "[1, 3]",
+					},
+				},
+				ValidExamples: []string{
+					"",
+				},
+				InvalidExamples: []string{},
+				ValidSearchParams: []string{
+					"level = 1",
+				},
+				InvalidSearchParams: []string{
+					"level = 0",
+					"level = 10",
+					"level = -1",
 				},
 			},
 		},
