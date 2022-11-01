@@ -12,9 +12,9 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
+	common "github.com/milvus-io/milvus-proto/go-api/commonpb"
+	server "github.com/milvus-io/milvus-proto/go-api/milvuspb"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
-	"github.com/milvus-io/milvus-sdk-go/v2/internal/proto/common"
-	"github.com/milvus-io/milvus-sdk-go/v2/internal/proto/server"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
@@ -143,53 +143,59 @@ var (
 type serviceMethod int
 
 const (
-	mCreateCollection        serviceMethod = 1
-	mDropCollection          serviceMethod = 2
-	mHasCollection           serviceMethod = 3
-	mLoadCollection          serviceMethod = 4
-	mReleaseCollection       serviceMethod = 5
-	mDescribeCollection      serviceMethod = 6
-	mListCollection          serviceMethod = 7
-	mGetCollectionStatistics serviceMethod = 8
+	mCreateCollection        serviceMethod = 101
+	mDropCollection          serviceMethod = 102
+	mHasCollection           serviceMethod = 103
+	mLoadCollection          serviceMethod = 104
+	mReleaseCollection       serviceMethod = 105
+	mDescribeCollection      serviceMethod = 106
+	mListCollection          serviceMethod = 107
+	mGetCollectionStatistics serviceMethod = 108
+	mAlterCollection         serviceMethod = 109
+	mGetLoadingProgress      serviceMethod = 110
 
-	mCreatePartition   serviceMethod = 9
-	mDropPartition     serviceMethod = 10
-	mHasPartition      serviceMethod = 11
-	mLoadPartitions    serviceMethod = 12
-	mReleasePartitions serviceMethod = 13
-	mShowPartitions    serviceMethod = 14
+	mCreatePartition   serviceMethod = 201
+	mDropPartition     serviceMethod = 202
+	mHasPartition      serviceMethod = 203
+	mLoadPartitions    serviceMethod = 204
+	mReleasePartitions serviceMethod = 205
+	mShowPartitions    serviceMethod = 206
 
-	mShowCollections serviceMethod = 15
-	mCreateAlias     serviceMethod = 16
-	mDropAlias       serviceMethod = 17
-	mAlterAlias      serviceMethod = 18
-	mGetReplicas     serviceMethod = 19
+	mShowCollections serviceMethod = 301
+	mCreateAlias     serviceMethod = 302
+	mDropAlias       serviceMethod = 303
+	mAlterAlias      serviceMethod = 304
+	mGetReplicas     serviceMethod = 305
 
-	mCreateIndex           serviceMethod = 20
-	mDropIndex             serviceMethod = 21
-	mDescribeIndex         serviceMethod = 22
-	mGetIndexState         serviceMethod = 23
-	mGetIndexBuildProgress serviceMethod = 24
+	mCreateIndex           serviceMethod = 401
+	mDropIndex             serviceMethod = 402
+	mDescribeIndex         serviceMethod = 403
+	mGetIndexState         serviceMethod = 404
+	mGetIndexBuildProgress serviceMethod = 405
 
-	mCreateCredential serviceMethod = 25
-	mUpdateCredential serviceMethod = 26
-	mDeleteCredential serviceMethod = 27
-	mListCredUsers    serviceMethod = 28
+	mCreateCredential serviceMethod = 500
+	mUpdateCredential serviceMethod = 501
+	mDeleteCredential serviceMethod = 502
+	mListCredUsers    serviceMethod = 503
 
-	mInsert        serviceMethod = 30
-	mFlush         serviceMethod = 31
-	mSearch        serviceMethod = 32
-	mCalcDistance  serviceMethod = 33
-	mGetFlushState serviceMethod = 34
-	mDelete        serviceMethod = 35
-	mQuery         serviceMethod = 36
+	mInsert        serviceMethod = 600
+	mFlush         serviceMethod = 601
+	mSearch        serviceMethod = 602
+	mCalcDistance  serviceMethod = 603
+	mGetFlushState serviceMethod = 604
+	mDelete        serviceMethod = 605
+	mQuery         serviceMethod = 606
 
-	mManualCompaction            serviceMethod = 40
-	mGetCompactionState          serviceMethod = 41
-	mGetCompactionStateWithPlans serviceMethod = 42
+	mManualCompaction            serviceMethod = 700
+	mGetCompactionState          serviceMethod = 701
+	mGetCompactionStateWithPlans serviceMethod = 702
 
-	mGetPersistentSegmentInfo serviceMethod = 98
-	mGetQuerySegmentInfo      serviceMethod = 99
+	mGetPersistentSegmentInfo serviceMethod = 800
+	mGetQuerySegmentInfo      serviceMethod = 801
+
+	mGetComponentStates serviceMethod = 900
+	mGetVersion         serviceMethod = 901
+	mCheckHealth        serviceMethod = 902
 )
 
 // injection function definition
@@ -308,6 +314,15 @@ func (m *mockServer) ShowCollections(ctx context.Context, req *server.ShowCollec
 	return &server.ShowCollectionsResponse{Status: s}, err
 }
 
+func (m *mockServer) AlterCollection(ctx context.Context, req *server.AlterCollectionRequest) (*common.Status, error) {
+	f := m.getInjection(mAlterCollection)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*common.Status), err
+	}
+	return successStatus()
+}
+
 func (m *mockServer) CreatePartition(ctx context.Context, req *server.CreatePartitionRequest) (*common.Status, error) {
 	f := m.getInjection(mCreatePartition)
 	if f != nil {
@@ -367,6 +382,16 @@ func (m *mockServer) ShowPartitions(ctx context.Context, req *server.ShowPartiti
 	}
 	s, err := successStatus()
 	return &server.ShowPartitionsResponse{Status: s}, err
+}
+
+func (m *mockServer) GetLoadingProgress(ctx context.Context, req *server.GetLoadingProgressRequest) (*server.GetLoadingProgressResponse, error) {
+	f := m.getInjection(mGetLoadingProgress)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*server.GetLoadingProgressResponse), err
+	}
+	s, err := successStatus()
+	return &server.GetLoadingProgressResponse{Status: s}, err
 }
 
 func (m *mockServer) CreateIndex(ctx context.Context, req *server.CreateIndexRequest) (*common.Status, error) {
@@ -694,6 +719,36 @@ func (m *mockServer) SelectGrant(_ context.Context, _ *server.SelectGrantRequest
 	panic("not implemented") // TODO: Implement
 }
 
-func (m *mockServer) DescribePartition(ctx context.Context, req *server.DescribePartitionRequest) (*server.DescribePartitionResponse, error) {
-	panic("not implemented") // TODO: Implement
+//func (m *mockServer) DescribePartition(ctx context.Context, req *server.DescribePartitionRequest) (*server.DescribePartitionResponse, error) {
+//	panic("not implemented") // TODO: Implement
+//}
+
+func (m *mockServer) GetComponentStates(ctx context.Context, req *server.GetComponentStatesRequest) (*server.ComponentStates, error) {
+	f := m.getInjection(mGetComponentStates)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*server.ComponentStates), err
+	}
+	s, err := successStatus()
+	return &server.ComponentStates{Status: s}, err
+}
+
+func (m *mockServer) GetVersion(ctx context.Context, req *server.GetVersionRequest) (*server.GetVersionResponse, error) {
+	f := m.getInjection(mGetVersion)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*server.GetVersionResponse), err
+	}
+	s, err := successStatus()
+	return &server.GetVersionResponse{Status: s}, err
+}
+
+func (m *mockServer) CheckHealth(ctx context.Context, req *server.CheckHealthRequest) (*server.CheckHealthResponse, error) {
+	f := m.getInjection(mCheckHealth)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*server.CheckHealthResponse), err
+	}
+	s, err := successStatus()
+	return &server.CheckHealthResponse{Status: s}, err
 }

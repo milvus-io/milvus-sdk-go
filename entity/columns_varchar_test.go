@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/milvus-io/milvus-sdk-go/v2/internal/proto/schema"
+	schema "github.com/milvus-io/milvus-proto/go-api/schemapb"
 	"github.com/stretchr/testify/assert"
 )
 

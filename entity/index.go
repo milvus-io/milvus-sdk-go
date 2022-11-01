@@ -11,7 +11,7 @@
 
 package entity
 
-import "github.com/milvus-io/milvus-sdk-go/v2/internal/proto/common"
+import common "github.com/milvus-io/milvus-proto/go-api/commonpb"
 
 //go:generate go run genidx/genidx.go
 

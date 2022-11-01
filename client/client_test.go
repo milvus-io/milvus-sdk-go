@@ -17,8 +17,8 @@ import (
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
 
+	common "github.com/milvus-io/milvus-proto/go-api/commonpb"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
-	"github.com/milvus-io/milvus-sdk-go/v2/internal/proto/common"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 )
