@@ -21,7 +21,7 @@ func TestSearch(t *testing.T) {
 
 	waitRowCountChanged(t, c)
 	c.LoadCollection(context.Background(), cname, false)
-	sp, _ := entity.NewIndexFlatSearchParam(10)
+	sp, _ := entity.NewIndexFlatSearchParam()
 	results, err := c.Search(context.Background(), cname, []string{}, "int64 > 0", []string{"int64"}, []entity.Vector{entity.FloatVector(vectors[0])},
 		testVectorField, entity.L2, 10, sp)
 

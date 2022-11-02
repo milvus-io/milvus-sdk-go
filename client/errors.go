@@ -16,7 +16,7 @@ import (
 	"fmt"
 )
 
-// ErrServiceFailed indicates error returns from milvus service
+// ErrServiceFailed indicates error returns from milvus Service
 type ErrServiceFailed error
 
 var (

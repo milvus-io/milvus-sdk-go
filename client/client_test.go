@@ -2,26 +2,141 @@ package client
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
+	"math/rand"
 	"net"
 	"reflect"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/examples/helloworld/helloworld"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
+	"google.golang.org/grpc/test/bufconn"
 
 	common "github.com/milvus-io/milvus-proto/go-api/commonpb"
+	server "github.com/milvus-io/milvus-proto/go-api/milvuspb"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
-	"github.com/stretchr/testify/assert"
-	"google.golang.org/grpc"
 )
+
+const (
+	bufSzie = 1024 * 1024
+)
+
+var (
+	lis  *bufconn.Listener
+	mock *MockServer
+)
+
+const (
+	testCollectionName       = `test_go_sdk`
+	testCollectionID         = int64(789)
+	testPrimaryField         = `int64`
+	testVectorField          = `vector`
+	testVectorDim            = 128
+	testDefaultReplicaNumber = int32(1)
+	testMultiReplicaNumber   = int32(2)
+	testUsername             = "user"
+	testPassword             = "pwd"
+)
+
+func defaultSchema() *entity.Schema {
+	return &entity.Schema{
+		CollectionName: testCollectionName,
+		AutoID:         false,
+		Fields: []*entity.Field{
+			{
+				Name:       testPrimaryField,
+				DataType:   entity.FieldTypeInt64,
+				PrimaryKey: true,
+				AutoID:     true,
+			},
+			{
+				Name:     testVectorField,
+				DataType: entity.FieldTypeFloatVector,
+				TypeParams: map[string]string{
+					entity.TypeParamDim: fmt.Sprintf("%d", testVectorDim),
+				},
+			},
+		},
+	}
+}
+
+func varCharSchema() *entity.Schema {
+	return &entity.Schema{
+		CollectionName: testCollectionName,
+		AutoID:         false,
+		Fields: []*entity.Field{
+			{
+				Name:       "varchar",
+				DataType:   entity.FieldTypeVarChar,
+				PrimaryKey: true,
+				AutoID:     false,
+				TypeParams: map[string]string{
+					entity.TypeParamMaxLength: fmt.Sprintf("%d", 100),
+				},
+			},
+			{
+				Name:     testVectorField,
+				DataType: entity.FieldTypeFloatVector,
+				TypeParams: map[string]string{
+					entity.TypeParamDim: fmt.Sprintf("%d", testVectorDim),
+				},
+			},
+		},
+	}
+}
+
+var _ entity.Row = &defaultRow{}
+
+type defaultRow struct {
+	entity.RowBase
+	int64  int64     `milvus:"primary_key"`
+	Vector []float32 `milvus:"dim:128"`
+}
+
+func (r defaultRow) Collection() string {
+	return testCollectionName
+}
+
+// TestMain establishes mock grpc server to testing client behavior
+func TestMain(m *testing.M) {
+	rand.Seed(time.Now().Unix())
+	lis = bufconn.Listen(bufSzie)
+	s := grpc.NewServer()
+	mock = &MockServer{
+		Injections: make(map[ServiceMethod]TestInjection),
+	}
+	server.RegisterMilvusServiceServer(s, mock)
+	go func() {
+		if err := s.Serve(lis); err != nil {
+			log.Fatalf("Server exited with error: %v", err)
+		}
+	}()
+	m.Run()
+	//	lis.Close()
+}
+
+// use bufconn dialer
+func bufDialer(context.Context, string) (net.Conn, error) {
+	return lis.Dial()
+}
+
+func testClient(ctx context.Context, t *testing.T) Client {
+	c, err := NewGrpcClient(ctx, "bufnet", grpc.WithBlock(),
+		grpc.WithInsecure(), grpc.WithContextDialer(bufDialer))
+
+	if !assert.Nil(t, err) || !assert.NotNil(t, c) {
+		t.FailNow()
+	}
+	return c
+}
 
 func TestHandleRespStatus(t *testing.T) {
 	assert.NotNil(t, handleRespStatus(nil))
@@ -46,7 +161,7 @@ type ValidStruct struct {
 }
 
 func TestGrpcClientNil(t *testing.T) {
-	c := &grpcClient{}
+	c := &GrpcClient{}
 	tp := reflect.TypeOf(c)
 	v := reflect.ValueOf(c)
 	ctx := context.Background()
@@ -207,7 +322,7 @@ func TestGrpcClientRetryPolicy(t *testing.T) {
 	assert.Nil(t, err)
 	defer client.Close()
 
-	greeterClient := helloworld.NewGreeterClient(client.(*grpcClient).conn)
+	greeterClient := helloworld.NewGreeterClient(client.(*GrpcClient).Conn)
 	ctx := context.Background()
 	name := fmt.Sprintf("hello world %d", time.Now().Second())
 	res, err := greeterClient.SayHello(ctx, &helloworld.HelloRequest{Name: name})
@@ -223,12 +338,4 @@ func TestClient_getDefaultAuthOpts(t *testing.T) {
 
 	defaultOpts = getDefaultAuthOpts(username, password, false)
 	assert.True(t, len(defaultOpts) == 6)
-}
-
-func successStatus() (*common.Status, error) {
-	return &common.Status{ErrorCode: common.ErrorCode_Success}, nil
-}
-
-func badRequestStatus() (*common.Status, error) {
-	return &common.Status{ErrorCode: common.ErrorCode_IllegalArgument}, errors.New("illegal request type")
 }

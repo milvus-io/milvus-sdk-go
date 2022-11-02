@@ -26,8 +26,8 @@ import (
 )
 
 // ManualCompaction triggers a compaction on provided collection
-func (c *grpcClient) ManualCompaction(ctx context.Context, collName string, toleranceDuration time.Duration) (int64, error) {
-	if c.service == nil {
+func (c *GrpcClient) ManualCompaction(ctx context.Context, collName string, toleranceDuration time.Duration) (int64, error) {
+	if c.Service == nil {
 		return 0, ErrClientNotReady
 	}
 
@@ -46,7 +46,7 @@ func (c *grpcClient) ManualCompaction(ctx context.Context, collName string, tole
 		Timetravel:   tt,
 	}
 
-	resp, err := c.service.ManualCompaction(ctx, req)
+	resp, err := c.Service.ManualCompaction(ctx, req)
 	if err != nil {
 		return 0, err
 	}
@@ -60,13 +60,13 @@ func (c *grpcClient) ManualCompaction(ctx context.Context, collName string, tole
 }
 
 // GetCompactionState get compaction state of provided compaction id
-func (c *grpcClient) GetCompactionState(ctx context.Context, id int64) (entity.CompactionState, error) {
-	if c.service == nil {
+func (c *GrpcClient) GetCompactionState(ctx context.Context, id int64) (entity.CompactionState, error) {
+	if c.Service == nil {
 		return entity.CompcationStateUndefined, ErrClientNotReady
 	}
 
 	req := &server.GetCompactionStateRequest{CompactionID: id}
-	resp, err := c.service.GetCompactionState(ctx, req)
+	resp, err := c.Service.GetCompactionState(ctx, req)
 	if err != nil {
 		return entity.CompcationStateUndefined, err
 	}
@@ -81,15 +81,15 @@ func (c *grpcClient) GetCompactionState(ctx context.Context, id int64) (entity.C
 }
 
 // GetCompactionStateWithPlans get compaction state with plans of provided compaction id
-func (c *grpcClient) GetCompactionStateWithPlans(ctx context.Context, id int64) (entity.CompactionState, []entity.CompactionPlan, error) {
-	if c.service == nil {
+func (c *GrpcClient) GetCompactionStateWithPlans(ctx context.Context, id int64) (entity.CompactionState, []entity.CompactionPlan, error) {
+	if c.Service == nil {
 		return entity.CompcationStateUndefined, nil, ErrClientNotReady
 	}
 
 	req := &server.GetCompactionPlansRequest{
 		CompactionID: id,
 	}
-	resp, err := c.service.GetCompactionStateWithPlans(ctx, req)
+	resp, err := c.Service.GetCompactionStateWithPlans(ctx, req)
 	if err != nil {
 		return entity.CompcationStateUndefined, nil, err
 	}

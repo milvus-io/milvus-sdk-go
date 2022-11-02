@@ -10,20 +10,20 @@ import (
 	"strings"
 	"time"
 
-	"github.com/milvus-io/milvus-sdk-go/v2/client"
+	v2 "github.com/milvus-io/milvus-sdk-go/v2/client/v2"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )
 
 func main() {
 	// Milvus instance proxy address, may verify in your env/settings
-	milvusAddr := `localhost:19530`
+	milvusAddr := "localhost:19530"
 
 	// setup context for client creation, use 2 seconds here
 	ctx := context.Background()
 	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
 
-	c, err := client.NewGrpcClient(ctx, milvusAddr)
+	c, err := v2.NewGrpcClient(ctx, milvusAddr)
 	if err != nil {
 		// handling error and exit, to make example simple here
 		log.Fatal("failed to connect to milvus:", err.Error())
@@ -32,7 +32,7 @@ func main() {
 	defer c.Close()
 
 	// here is the collection name we use in this example
-	collectionName := `gosdk_insert_example`
+	collectionName := `gosdk_index_v2_example`
 
 	has, err := c.HasCollection(ctx, collectionName)
 	if err != nil {
@@ -111,6 +111,35 @@ func main() {
 	}
 	log.Println("flush completed")
 
+	// Now add index
+	idx, err := entity.NewIndexFlat(entity.L2)
+	if err != nil {
+		log.Fatal("fail to create ivf flat index:", err.Error())
+	}
+	err = c.CreateIndex(ctx, false, idx, v2.SetCollectionNameForCreateIndex(collectionName),
+		v2.SetFieldNameForCreateIndex("Vector"))
+	if err != nil {
+		log.Fatal("fail to create index:", err.Error())
+	}
+	log.Println("create index completed")
+
+	// create same index
+	err = c.CreateIndex(ctx, false, idx, v2.SetCollectionNameForCreateIndex(collectionName),
+		v2.SetFieldNameForCreateIndex("Vector"))
+	if err != nil {
+		log.Fatal("fail to create index:", err.Error())
+	}
+	log.Println("create index again completed")
+
+	indexes, err := c.DescribeIndex(ctx, v2.SetCollectionNameForDescribeIndex(collectionName))
+	if err != nil {
+		log.Fatal("fail to describe index:", err.Error())
+	}
+	log.Println("describe index success, indexes: ")
+	for _, index := range indexes {
+		log.Println(index)
+	}
+
 	// load collection with async=false
 	err = c.LoadCollection(ctx, collectionName, false)
 	if err != nil {
@@ -120,13 +149,14 @@ func main() {
 
 	searchFilm := films[0] // use first fim to search
 	vector := entity.FloatVector(searchFilm.Vector[:])
-	// Use flat search param
 	sp, _ := entity.NewIndexFlatSearchParam()
+	start := time.Now()
 	sr, err := c.Search(ctx, collectionName, []string{}, "Year > 1990", []string{"ID"}, []entity.Vector{vector}, "Vector",
 		entity.L2, 10, sp)
 	if err != nil {
 		log.Fatal("fail to search collection:", err.Error())
 	}
+	log.Println("search without index time elapsed:", time.Since(start))
 	for _, result := range sr {
 		var idColumn *entity.ColumnInt64
 		for _, field := range result.Fields {
@@ -150,8 +180,68 @@ func main() {
 		}
 	}
 
+	err = c.ReleaseCollection(ctx, collectionName)
+	if err != nil {
+		log.Fatal("failed to release collection:", err.Error())
+	}
+	log.Println("release collection success")
+
+	err = c.DropIndex(ctx, v2.SetCollectionNameForDropIndex(collectionName))
+	if err != nil {
+		log.Fatal("failed to drop index:", err.Error())
+	}
+	log.Println("drop index success")
+
+	log.Println("create flat index")
+	idx2, err := entity.NewIndexIvfFlat(entity.L2, 2)
+	if err != nil {
+		log.Fatal("fail to create ivf flat index:", err.Error())
+	}
+	err = c.CreateIndex(ctx, false, idx2, v2.SetCollectionNameForCreateIndex(collectionName),
+		v2.SetFieldNameForCreateIndex("Vector"))
+	if err != nil {
+		log.Fatal("fail to create index:", err.Error())
+	}
+	log.Println("create index completed")
+
+	// load collection with async=false
+	err = c.LoadCollection(ctx, collectionName, false)
+	if err != nil {
+		log.Fatal("failed to load collection:", err.Error())
+	}
+	log.Println("load collection completed")
+
+	// do search again
+	start = time.Now()
+	sp2, _ := entity.NewIndexIvfFlatSearchParam(10)
+	sr, err = c.Search(ctx, collectionName, []string{}, "Year > 1990", []string{"ID"}, []entity.Vector{vector}, "Vector",
+		entity.L2, 10, sp2)
+	if err != nil {
+		log.Fatal("fail to search collection:", err.Error())
+	}
+	log.Println("search with index time elapsed:", time.Since(start))
+
+	err = c.ReleaseCollection(ctx, collectionName)
+	if err != nil {
+		log.Fatal("failed to release collection:", err.Error())
+	}
+	log.Println("release collection success")
+
+	err = c.DropIndex(ctx, v2.SetCollectionNameForDropIndex(collectionName))
+	if err != nil {
+		log.Fatal("failed to drop index:", err.Error())
+	}
+	log.Println("drop index success")
+
+	log.Println("drop index again")
+	err = c.DropIndex(ctx, v2.SetCollectionNameForDropIndex(collectionName))
+	if err != nil {
+		log.Fatal("failed to drop index:", err.Error())
+	}
+	log.Println("drop index success")
 	// clean up
 	_ = c.DropCollection(ctx, collectionName)
+	log.Println("drop collection success")
 }
 
 type film struct {
@@ -162,7 +252,7 @@ type film struct {
 }
 
 func loadFilmCSV() ([]film, error) {
-	f, err := os.Open("../films.csv") // assume you are in examples/insert folder, if not, please change the path
+	f, err := os.Open("../../films.csv") // assume you are in examples/insert folder, if not, please change the path
 	if err != nil {
 		return []film{}, err
 	}

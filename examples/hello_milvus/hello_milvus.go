@@ -128,7 +128,7 @@ func main() {
 		entity.FloatVector(embeddingList[len(embeddingList)-1]),
 	}
 	begin := time.Now()
-	sp, _ := entity.NewIndexFlatSearchParam(10)
+	sp, _ := entity.NewIndexFlatSearchParam()
 	sRet, err := c.Search(ctx, collectionName, nil, "", []string{randomCol}, vec2search,
 		embeddingCol, entity.L2, topK, sp)
 	end := time.Now()

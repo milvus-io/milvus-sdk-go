@@ -23,8 +23,8 @@ import (
 )
 
 // CreateAlias creates an alias for collection
-func (c *grpcClient) CreateAlias(ctx context.Context, collName string, alias string) error {
-	if c.service == nil {
+func (c *GrpcClient) CreateAlias(ctx context.Context, collName string, alias string) error {
+	if c.Service == nil {
 		return ErrClientNotReady
 	}
 
@@ -34,7 +34,7 @@ func (c *grpcClient) CreateAlias(ctx context.Context, collName string, alias str
 		Alias:          alias,
 	}
 
-	resp, err := c.service.CreateAlias(ctx, req)
+	resp, err := c.Service.CreateAlias(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -46,8 +46,8 @@ func (c *grpcClient) CreateAlias(ctx context.Context, collName string, alias str
 }
 
 // DropAlias drops the specified Alias
-func (c *grpcClient) DropAlias(ctx context.Context, alias string) error {
-	if c.service == nil {
+func (c *GrpcClient) DropAlias(ctx context.Context, alias string) error {
+	if c.Service == nil {
 		return ErrClientNotReady
 	}
 
@@ -56,7 +56,7 @@ func (c *grpcClient) DropAlias(ctx context.Context, alias string) error {
 		Alias:  alias,
 	}
 
-	resp, err := c.service.DropAlias(ctx, req)
+	resp, err := c.Service.DropAlias(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -68,8 +68,8 @@ func (c *grpcClient) DropAlias(ctx context.Context, alias string) error {
 }
 
 // AlterAlias changes collection alias to provided alias
-func (c *grpcClient) AlterAlias(ctx context.Context, collName string, alias string) error {
-	if c.service == nil {
+func (c *GrpcClient) AlterAlias(ctx context.Context, collName string, alias string) error {
+	if c.Service == nil {
 		return ErrClientNotReady
 	}
 
@@ -79,7 +79,7 @@ func (c *grpcClient) AlterAlias(ctx context.Context, collName string, alias stri
 		Alias:          alias,
 	}
 
-	resp, err := c.service.AlterAlias(ctx, req)
+	resp, err := c.Service.AlterAlias(ctx, req)
 	if err != nil {
 		return err
 	}
