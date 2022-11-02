@@ -25,8 +25,8 @@ import (
 	"google.golang.org/grpc/status"
 
 	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
-	"github.com/milvus-io/milvus-sdk-go/v2/internal/proto/common"
-	"github.com/milvus-io/milvus-sdk-go/v2/internal/proto/server"
+	common "github.com/milvus-io/milvus-proto/go-api/commonpb"
+	server "github.com/milvus-io/milvus-proto/go-api/milvuspb"
 )
 
 // ref: https://github.com/grpc-ecosystem/go-grpc-middleware

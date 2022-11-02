@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
+	common "github.com/milvus-io/milvus-proto/go-api/commonpb"
+	server "github.com/milvus-io/milvus-proto/go-api/milvuspb"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
-	"github.com/milvus-io/milvus-sdk-go/v2/internal/proto/common"
-	"github.com/milvus-io/milvus-sdk-go/v2/internal/proto/server"
 	"github.com/stretchr/testify/assert"
 )
 

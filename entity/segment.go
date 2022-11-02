@@ -11,7 +11,9 @@
 
 package entity
 
-import "github.com/milvus-io/milvus-sdk-go/v2/internal/proto/common"
+import (
+	common "github.com/milvus-io/milvus-proto/go-api/commonpb"
+)
 
 // Segment represent segment in milvus
 type Segment struct {

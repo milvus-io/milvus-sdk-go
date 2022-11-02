@@ -17,9 +17,9 @@ import (
 	"fmt"
 	"time"
 
+	common "github.com/milvus-io/milvus-proto/go-api/commonpb"
+	server "github.com/milvus-io/milvus-proto/go-api/milvuspb"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
-	"github.com/milvus-io/milvus-sdk-go/v2/internal/proto/common"
-	"github.com/milvus-io/milvus-sdk-go/v2/internal/proto/server"
 )
 
 func (c *grpcClient) checkCollField(ctx context.Context, collName string, fieldName string) error {

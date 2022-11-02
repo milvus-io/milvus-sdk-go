@@ -21,8 +21,8 @@ import (
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 	"google.golang.org/grpc"
 
-	common "github.com/milvus-io/milvus-sdk-go/v2/internal/proto/common"
-	server "github.com/milvus-io/milvus-sdk-go/v2/internal/proto/server"
+	common "github.com/milvus-io/milvus-proto/go-api/commonpb"
+	server "github.com/milvus-io/milvus-proto/go-api/milvuspb"
 )
 
 // grpcClient, uses default grpc service definition to connect with Milvus2.0

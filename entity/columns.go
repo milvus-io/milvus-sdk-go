@@ -17,7 +17,7 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/milvus-io/milvus-sdk-go/v2/internal/proto/schema"
+	schema "github.com/milvus-io/milvus-proto/go-api/schemapb"
 )
 
 //go:generate go run gen/gen.go
