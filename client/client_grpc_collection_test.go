@@ -53,8 +53,8 @@ func TestGrpcClientListCollections(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		mock.setInjection(mShowCollections, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			s, err := successStatus()
+		mock.SetInjection(MShowCollections, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+			s, err := SuccessStatus()
 			resp := &server.ShowCollectionsResponse{
 				Status:              s,
 				CollectionIds:       tc.ids,
@@ -91,11 +91,11 @@ func TestGrpcClientCreateCollection(t *testing.T) {
 	ctx := context.Background()
 	c := testClient(ctx, t)
 	// default, all collection name returns false
-	mock.delInjection(mHasCollection)
+	mock.DelInjection(MHasCollection)
 	t.Run("Test normal creation", func(t *testing.T) {
 		ds := defaultSchema()
 		shardsNum := int32(1)
-		mock.setInjection(mCreateCollection, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
+		mock.SetInjection(MCreateCollection, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
 			req, ok := raw.(*server.CreateCollectionRequest)
 			if !ok {
 				return &common.Status{ErrorCode: common.ErrorCode_IllegalArgument}, errors.New("illegal request type")
@@ -117,13 +117,13 @@ func TestGrpcClientCreateCollection(t *testing.T) {
 			return &common.Status{ErrorCode: common.ErrorCode_Success}, nil
 		})
 		assert.Nil(t, c.CreateCollection(ctx, ds, shardsNum))
-		mock.delInjection(mCreateCollection)
+		mock.DelInjection(MCreateCollection)
 	})
 
 	t.Run("Test create with consistency level", func(t *testing.T) {
 		ds := defaultSchema()
 		shardsNum := int32(1)
-		mock.setInjection(mCreateCollection, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
+		mock.SetInjection(MCreateCollection, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
 			req, ok := raw.(*server.CreateCollectionRequest)
 			if !ok {
 				return &common.Status{ErrorCode: common.ErrorCode_IllegalArgument}, errors.New("illegal request type")
@@ -134,7 +134,7 @@ func TestGrpcClientCreateCollection(t *testing.T) {
 			return &common.Status{ErrorCode: common.ErrorCode_Success}, nil
 		})
 		assert.Nil(t, c.CreateCollection(ctx, ds, shardsNum, WithConsistencyLevel(entity.ClEventually)))
-		mock.delInjection(mCreateCollection)
+		mock.DelInjection(MCreateCollection)
 	})
 
 	t.Run("Test invalid schemas", func(t *testing.T) {
@@ -222,67 +222,67 @@ func TestGrpcClientCreateCollection(t *testing.T) {
 			},
 		}
 		shardsNum := int32(1) // <= 0 will used default shards num 2, skip check
-		mock.setInjection(mCreateCollection, func(_ context.Context, _ proto.Message) (proto.Message, error) {
+		mock.SetInjection(MCreateCollection, func(_ context.Context, _ proto.Message) (proto.Message, error) {
 			// should not be here!
 			assert.FailNow(t, "should not be here")
 			return nil, errors.New("should not be here")
 		})
 		for _, s := range cases {
 			assert.NotNil(t, c.CreateCollection(ctx, s, shardsNum))
-			mock.delInjection(mCreateCollection)
+			mock.DelInjection(MCreateCollection)
 		}
 	})
 
 	t.Run("test duplicated collection", func(t *testing.T) {
 		m := make(map[string]struct{})
-		mock.setInjection(mCreateCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		mock.SetInjection(MCreateCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			req, ok := raw.(*server.CreateCollectionRequest)
 			if !ok {
-				return badRequestStatus()
+				return BadRequestStatus()
 			}
 			m[req.GetCollectionName()] = struct{}{}
 
-			return successStatus()
+			return SuccessStatus()
 		})
-		defer mock.delInjection(mCreateCollection)
-		mock.setInjection(mHasCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		defer mock.DelInjection(MCreateCollection)
+		mock.SetInjection(MHasCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			req, ok := raw.(*server.HasCollectionRequest)
 			resp := &server.BoolResponse{}
 			if !ok {
-				return badRequestStatus()
+				return BadRequestStatus()
 			}
 
 			_, has := m[req.GetCollectionName()]
 			resp.Value = has
-			s, err := successStatus()
+			s, err := SuccessStatus()
 			resp.Status = s
 			return resp, err
 		})
-		defer mock.delInjection(mHasCollection)
+		defer mock.DelInjection(MHasCollection)
 
 		assert.Nil(t, c.CreateCollection(ctx, defaultSchema(), 1))
 		assert.NotNil(t, c.CreateCollection(ctx, defaultSchema(), 1))
 	})
 
 	t.Run("test server returns error", func(t *testing.T) {
-		mock.setInjection(mCreateCollection, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
+		mock.SetInjection(MCreateCollection, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
 			_, ok := raw.(*server.CreateCollectionRequest)
 			if !ok {
-				return badRequestStatus()
+				return BadRequestStatus()
 			}
 			return &common.Status{
 				ErrorCode: common.ErrorCode_UnexpectedError,
-				Reason:    "service is not healthy",
+				Reason:    "Service is not healthy",
 			}, nil
 		})
 		assert.Error(t, c.CreateCollection(ctx, defaultSchema(), 1))
 
-		mock.setInjection(mCreateCollection, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
+		mock.SetInjection(MCreateCollection, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
 			return &common.Status{}, errors.New("mocked grpc error")
 		})
 
 		assert.Error(t, c.CreateCollection(ctx, defaultSchema(), 1))
-		mock.delInjection(mCreateCollection)
+		mock.DelInjection(MCreateCollection)
 	})
 }
 
@@ -291,12 +291,12 @@ var hasCollectionDefault = func(_ context.Context, raw proto.Message) (proto.Mes
 	req, ok := raw.(*server.HasCollectionRequest)
 	resp := &server.BoolResponse{}
 	if !ok {
-		s, err := badRequestStatus()
+		s, err := BadRequestStatus()
 		resp.Status = s
 		return s, err
 	}
 	resp.Value = req.GetCollectionName() == testCollectionName
-	s, err := successStatus()
+	s, err := SuccessStatus()
 	resp.Status = s
 	return resp, err
 }
@@ -305,16 +305,16 @@ func TestGrpcClientDropCollection(t *testing.T) {
 	ctx := context.Background()
 	c := testClient(ctx, t)
 
-	mock.setInjection(mHasCollection, hasCollectionDefault)
-	mock.setInjection(mDropCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+	mock.SetInjection(MHasCollection, hasCollectionDefault)
+	mock.SetInjection(MDropCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 		req, ok := (raw).(*server.DropCollectionRequest)
 		if !ok {
-			return badRequestStatus()
+			return BadRequestStatus()
 		}
 		if req.GetCollectionName() != testCollectionName { // in mock server, assume testCollection exists only
-			return badRequestStatus()
+			return BadRequestStatus()
 		}
-		return successStatus()
+		return SuccessStatus()
 	})
 
 	t.Run("Test Normal drop", func(t *testing.T) {
@@ -329,15 +329,15 @@ func TestGrpcClientDropCollection(t *testing.T) {
 func TestGrpcClientLoadCollection(t *testing.T) {
 	ctx := context.Background()
 	c := testClient(ctx, t)
-	mock.setInjection(mHasCollection, hasCollectionDefault)
+	mock.SetInjection(MHasCollection, hasCollectionDefault)
 	// injection check collection name equals
-	mock.setInjection(mLoadCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+	mock.SetInjection(MLoadCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 		req, ok := raw.(*server.LoadCollectionRequest)
 		if !ok {
-			return badRequestStatus()
+			return BadRequestStatus()
 		}
 		assert.Equal(t, testCollectionName, req.GetCollectionName())
-		return successStatus()
+		return SuccessStatus()
 	})
 	t.Run("Load collection normal async", func(t *testing.T) {
 		assert.Nil(t, c.LoadCollection(ctx, testCollectionName, true))
@@ -348,15 +348,15 @@ func TestGrpcClientLoadCollection(t *testing.T) {
 		passed := false                  // ### flag variable
 		start := time.Now()
 
-		mock.setInjection(mShowCollections, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		mock.SetInjection(MShowCollections, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			req, ok := raw.(*server.ShowCollectionsRequest)
 			r := &server.ShowCollectionsResponse{}
 			if !ok || req == nil {
-				s, err := badRequestStatus()
+				s, err := BadRequestStatus()
 				r.Status = s
 				return r, err
 			}
-			s, err := successStatus()
+			s, err := SuccessStatus()
 			r.Status = s
 			r.CollectionIds = []int64{1}
 			var perc int64
@@ -378,34 +378,34 @@ func TestGrpcClientLoadCollection(t *testing.T) {
 		assert.NotNil(t, c.LoadCollection(quickCtx, testCollectionName, false))
 
 		// remove injection
-		mock.delInjection(mShowCollections)
+		mock.DelInjection(MShowCollections)
 	})
 	t.Run("Load default replica", func(t *testing.T) {
-		mock.setInjection(mLoadCollection, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
+		mock.SetInjection(MLoadCollection, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
 			req, ok := raw.(*server.LoadCollectionRequest)
 			if !ok {
-				return badRequestStatus()
+				return BadRequestStatus()
 			}
 			assert.Equal(t, testDefaultReplicaNumber, req.GetReplicaNumber())
 			assert.Equal(t, testCollectionName, req.GetCollectionName())
-			return successStatus()
+			return SuccessStatus()
 		})
-		defer mock.delInjection(mLoadCollection)
+		defer mock.DelInjection(MLoadCollection)
 		assert.Nil(t, c.LoadCollection(ctx, testCollectionName, true))
 	})
 	t.Run("Load multiple replica", func(t *testing.T) {
-		mock.delInjection(mLoadCollection)
+		mock.DelInjection(MLoadCollection)
 
-		mock.setInjection(mLoadCollection, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
+		mock.SetInjection(MLoadCollection, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
 			req, ok := raw.(*server.LoadCollectionRequest)
 			if !ok {
-				return badRequestStatus()
+				return BadRequestStatus()
 			}
 			assert.Equal(t, testMultiReplicaNumber, req.GetReplicaNumber())
 			assert.Equal(t, testCollectionName, req.GetCollectionName())
-			return successStatus()
+			return SuccessStatus()
 		})
-		defer mock.delInjection(mLoadCollection)
+		defer mock.DelInjection(MLoadCollection)
 		assert.Nil(t, c.LoadCollection(ctx, testCollectionName, true, WithReplicaNumber(testMultiReplicaNumber)))
 	})
 }
@@ -415,13 +415,13 @@ func TestReleaseCollection(t *testing.T) {
 
 	c := testClient(ctx, t)
 
-	mock.setInjection(mReleaseCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+	mock.SetInjection(MReleaseCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 		req, ok := raw.(*server.ReleaseCollectionRequest)
 		if !ok {
-			return badRequestStatus()
+			return BadRequestStatus()
 		}
 		assert.Equal(t, testCollectionName, req.GetCollectionName())
-		return successStatus()
+		return SuccessStatus()
 	})
 
 	c.ReleaseCollection(ctx, testCollectionName)
@@ -432,18 +432,18 @@ func TestGrpcClientHasCollection(t *testing.T) {
 
 	c := testClient(ctx, t)
 
-	mock.setInjection(mHasCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+	mock.SetInjection(MHasCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 		req, ok := raw.(*server.HasCollectionRequest)
 		resp := &server.BoolResponse{}
 		if !ok {
-			s, err := badRequestStatus()
+			s, err := BadRequestStatus()
 			assert.Fail(t, err.Error())
 			resp.Status = s
 			return resp, err
 		}
 		assert.Equal(t, req.CollectionName, testCollectionName)
 
-		s, err := successStatus()
+		s, err := SuccessStatus()
 		resp.Status, resp.Value = s, true
 		return resp, err
 	})
@@ -460,7 +460,7 @@ func hasCollectionInjection(t *testing.T, mustIn bool, collNames ...string) func
 		req, ok := raw.(*server.HasCollectionRequest)
 		resp := &server.BoolResponse{}
 		if !ok {
-			s, err := badRequestStatus()
+			s, err := BadRequestStatus()
 			resp.Status = s
 			return resp, err
 		}
@@ -473,7 +473,7 @@ func hasCollectionInjection(t *testing.T, mustIn bool, collNames ...string) func
 				}
 			}
 		}
-		s, err := successStatus()
+		s, err := SuccessStatus()
 		resp.Status = s
 		return resp, err
 	}
@@ -484,7 +484,7 @@ func describeCollectionInjection(t *testing.T, collID int64, collName string, sc
 		req, ok := raw.(*server.DescribeCollectionRequest)
 		resp := &server.DescribeCollectionResponse{}
 		if !ok {
-			s, err := badRequestStatus()
+			s, err := BadRequestStatus()
 			resp.Status = s
 			return resp, err
 		}
@@ -495,7 +495,7 @@ func describeCollectionInjection(t *testing.T, collID int64, collName string, sc
 		resp.Schema = sch.ProtoMessage()
 		resp.CollectionID = collID
 
-		s, err := successStatus()
+		s, err := SuccessStatus()
 		resp.Status = s
 
 		return resp, err
@@ -509,7 +509,7 @@ func TestGrpcClientDescribeCollection(t *testing.T) {
 
 	collectionID := rand.Int63()
 
-	mock.setInjection(mDescribeCollection, describeCollectionInjection(t, collectionID, testCollectionName, defaultSchema()))
+	mock.SetInjection(MDescribeCollection, describeCollectionInjection(t, collectionID, testCollectionName, defaultSchema()))
 
 	collection, err := c.DescribeCollection(ctx, testCollectionName)
 	assert.Nil(t, err)
@@ -526,16 +526,16 @@ func TestGrpcClientGetCollectionStatistics(t *testing.T) {
 	stat := make(map[string]string)
 	stat["row_count"] = "0"
 
-	mock.setInjection(mGetCollectionStatistics, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+	mock.SetInjection(MGetCollectionStatistics, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 		req, ok := raw.(*server.GetCollectionStatisticsRequest)
 		resp := &server.GetCollectionStatisticsResponse{}
 		if !ok {
-			s, err := badRequestStatus()
+			s, err := BadRequestStatus()
 			resp.Status = s
 			return resp, err
 		}
 		assert.Equal(t, testCollectionName, req.GetCollectionName())
-		s, err := successStatus()
+		s, err := SuccessStatus()
 		resp.Status, resp.Stats = s, entity.MapKvPairs(stat)
 		return resp, err
 	})
@@ -557,11 +557,11 @@ func TestGrpcClientGetReplicas(t *testing.T) {
 
 	replicaID := rand.Int63()
 	nodeIds := []int64{1, 2, 3, 4}
-	mock.setInjection(mHasCollection, hasCollectionDefault)
-	defer mock.delInjection(mHasCollection)
+	mock.SetInjection(MHasCollection, hasCollectionDefault)
+	defer mock.DelInjection(MHasCollection)
 
-	mock.setInjection(mShowCollections, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-		s, err := successStatus()
+	mock.SetInjection(MShowCollections, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		s, err := SuccessStatus()
 		resp := &server.ShowCollectionsResponse{
 			Status:              s,
 			CollectionIds:       []int64{testCollectionID},
@@ -570,20 +570,20 @@ func TestGrpcClientGetReplicas(t *testing.T) {
 		}
 		return resp, err
 	})
-	defer mock.delInjection(mShowCollections)
+	defer mock.DelInjection(MShowCollections)
 
-	mock.setInjection(mGetReplicas, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
+	mock.SetInjection(MGetReplicas, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
 		req, ok := raw.(*server.GetReplicasRequest)
 		resp := &server.GetReplicasResponse{}
 		if !ok {
-			s, err := badRequestStatus()
+			s, err := BadRequestStatus()
 			resp.Status = s
 			return resp, err
 		}
 
 		assert.Equal(t, testCollectionID, req.CollectionID)
 
-		s, err := successStatus()
+		s, err := SuccessStatus()
 		resp.Status = s
 		resp.Replicas = []*server.ReplicaInfo{{
 			ReplicaID: replicaID,
@@ -619,7 +619,7 @@ func TestGrpcClientGetReplicas(t *testing.T) {
 	})
 
 	t.Run("get replicas grpc error", func(t *testing.T) {
-		mock.setInjection(mGetReplicas, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
+		mock.SetInjection(MGetReplicas, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
 			return &server.GetReplicasResponse{}, errors.New("mocked grpc error")
 		})
 		_, err := c.GetReplicas(ctx, testCollectionName)
@@ -627,11 +627,11 @@ func TestGrpcClientGetReplicas(t *testing.T) {
 	})
 
 	t.Run("get replicas server error", func(t *testing.T) {
-		mock.setInjection(mGetReplicas, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
+		mock.SetInjection(MGetReplicas, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
 			return &server.GetReplicasResponse{
 				Status: &common.Status{
 					ErrorCode: common.ErrorCode_UnexpectedError,
-					Reason:    "service is not healthy",
+					Reason:    "Service is not healthy",
 				},
 				Replicas: nil,
 			}, nil
@@ -640,5 +640,5 @@ func TestGrpcClientGetReplicas(t *testing.T) {
 		assert.Error(t, err)
 	})
 
-	mock.delInjection(mGetReplicas)
+	mock.DelInjection(MGetReplicas)
 }

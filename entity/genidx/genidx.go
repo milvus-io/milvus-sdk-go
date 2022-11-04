@@ -331,34 +331,18 @@ func main() {
 		Indexes: []idxDef{
 			// FLAT
 			{
-				IdxName: "Flat",
-				IdxType: entity.Flat,
-				ConstructParams: []idxParam{
-					{
-						Name:           "nlist",
-						ValidationRule: "[1, 65536]",
-					},
-				},
-				SearchParams: []idxParam{
-					{
-						Name:           "nprobe",
-						ValidationRule: "[1, 65536]", //[1, nlist]
-					},
-				},
+				IdxName:         "Flat",
+				IdxType:         entity.Flat,
+				ConstructParams: []idxParam{},
+				SearchParams:    []idxParam{},
 				ValidExamples: []string{
-					"nlist = 2048",
+					"",
 				},
-				InvalidExamples: []string{
-					"nlist = 0",
-					"nlist = 65537",
-				},
+				InvalidExamples: []string{},
 				ValidSearchParams: []string{
-					"nprobe = 10",
+					"",
 				},
-				InvalidSearchParams: []string{
-					"nprobe = 0",
-					"nprobe = 65537",
-				},
+				InvalidSearchParams: []string{},
 			},
 			// BIN_FLAT
 			{

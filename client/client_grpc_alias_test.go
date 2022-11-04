@@ -33,7 +33,7 @@ func TestGrpcCreateAlias(t *testing.T) {
 
 	t.Run("normal create alias", func(t *testing.T) {
 
-		mock.setInjection(mCreateAlias, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		mock.SetInjection(MCreateAlias, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			req, ok := raw.(*server.CreateAliasRequest)
 			if !ok {
 				t.FailNow()
@@ -43,14 +43,14 @@ func TestGrpcCreateAlias(t *testing.T) {
 
 			return &common.Status{ErrorCode: common.ErrorCode_Success}, nil
 		})
-		defer mock.delInjection(mCreateAlias)
+		defer mock.DelInjection(MCreateAlias)
 		err := c.CreateAlias(ctx, "testcoll", "collAlias")
 		assert.NoError(t, err)
 	})
 
 	t.Run("alias duplicated", func(t *testing.T) {
 		m := make(map[string]struct{})
-		mock.setInjection(mCreateAlias, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		mock.SetInjection(MCreateAlias, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			req, ok := raw.(*server.CreateAliasRequest)
 			if !ok {
 				t.FailNow()
@@ -63,7 +63,7 @@ func TestGrpcCreateAlias(t *testing.T) {
 			m[req.GetAlias()] = struct{}{}
 			return &common.Status{ErrorCode: status}, nil
 		})
-		defer mock.delInjection(mCreateAlias)
+		defer mock.DelInjection(MCreateAlias)
 
 		collName := "testColl"
 		aliasName := "collAlias"
@@ -80,7 +80,7 @@ func TestGrpcDropAlias(t *testing.T) {
 	defer c.Close()
 
 	t.Run("normal drop alias", func(t *testing.T) {
-		mock.setInjection(mDropAlias, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		mock.SetInjection(MDropAlias, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			req, ok := raw.(*server.DropAliasRequest)
 			if !ok {
 				t.FailNow()
@@ -89,13 +89,13 @@ func TestGrpcDropAlias(t *testing.T) {
 
 			return &common.Status{ErrorCode: common.ErrorCode_Success}, nil
 		})
-		defer mock.delInjection(mDropAlias)
+		defer mock.DelInjection(MDropAlias)
 		err := c.DropAlias(ctx, "collAlias")
 		assert.NoError(t, err)
 	})
 
 	t.Run("drop alias error", func(t *testing.T) {
-		mock.setInjection(mDropAlias, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		mock.SetInjection(MDropAlias, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			req, ok := raw.(*server.DropAliasRequest)
 			if !ok {
 				t.FailNow()
@@ -104,7 +104,7 @@ func TestGrpcDropAlias(t *testing.T) {
 
 			return &common.Status{ErrorCode: common.ErrorCode_UnexpectedError}, nil
 		})
-		defer mock.delInjection(mDropAlias)
+		defer mock.DelInjection(MDropAlias)
 		err := c.DropAlias(ctx, "collAlias")
 		assert.Error(t, err)
 	})
@@ -119,7 +119,7 @@ func TestGrpcAlterAlias(t *testing.T) {
 	aliasName := "collAlias"
 
 	t.Run("normal alter alias", func(t *testing.T) {
-		mock.setInjection(mAlterAlias, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		mock.SetInjection(MAlterAlias, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			req, ok := raw.(*server.AlterAliasRequest)
 			if !ok {
 				t.FailNow()
@@ -129,13 +129,13 @@ func TestGrpcAlterAlias(t *testing.T) {
 
 			return &common.Status{ErrorCode: common.ErrorCode_Success}, nil
 		})
-		defer mock.delInjection(mAlterAlias)
+		defer mock.DelInjection(MAlterAlias)
 		err := c.AlterAlias(ctx, collName, aliasName)
 		assert.NoError(t, err)
 	})
 
 	t.Run("alter alias error", func(t *testing.T) {
-		mock.setInjection(mAlterAlias, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		mock.SetInjection(MAlterAlias, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			req, ok := raw.(*server.AlterAliasRequest)
 			if !ok {
 				t.FailNow()
@@ -145,7 +145,7 @@ func TestGrpcAlterAlias(t *testing.T) {
 
 			return &common.Status{ErrorCode: common.ErrorCode_UnexpectedError}, nil
 		})
-		defer mock.delInjection(mAlterAlias)
+		defer mock.DelInjection(MAlterAlias)
 		err := c.AlterAlias(ctx, collName, aliasName)
 		assert.Error(t, err)
 	})

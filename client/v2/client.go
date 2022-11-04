@@ -9,29 +9,28 @@
 // is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied. See the License for the specific language governing permissions and limitations under the License.
 
-// Package client provides milvus client functions
-package client
+package v2
 
 import (
 	"context"
-	"crypto/tls"
+	"fmt"
 	"math"
 	"time"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
+
+	server "github.com/milvus-io/milvus-proto/go-api/milvuspb"
+	"github.com/milvus-io/milvus-sdk-go/v2/client"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/backoff"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/keepalive"
 )
 
 // Client is the interface used to communicate with Milvus
 type Client interface {
-	// Close close the remaining connection resources
+	// Close the remaining connection resources
 	Close() error
 
 	// -- collection --
@@ -39,7 +38,7 @@ type Client interface {
 	// ListCollections list collections from connection
 	ListCollections(ctx context.Context) ([]*entity.Collection, error)
 	// CreateCollection create collection using provided schema
-	CreateCollection(ctx context.Context, schema *entity.Schema, shardsNum int32, opts ...CreateCollectionOption) error
+	CreateCollection(ctx context.Context, schema *entity.Schema, shardsNum int32, opts ...client.CreateCollectionOption) error
 	// DescribeCollection describe collection meta
 	DescribeCollection(ctx context.Context, collName string) (*entity.Collection, error)
 	// DropCollection drop the specified collection
@@ -47,7 +46,7 @@ type Client interface {
 	// GetCollectionStatistics get collection statistics
 	GetCollectionStatistics(ctx context.Context, collName string) (map[string]string, error)
 	// LoadCollection load collection into memory
-	LoadCollection(ctx context.Context, collName string, async bool, opts ...LoadCollectionOption) error
+	LoadCollection(ctx context.Context, collName string, async bool, opts ...client.LoadCollectionOption) error
 	// ReleaseCollection release loaded collection
 	ReleaseCollection(ctx context.Context, collName string) error
 	// HasCollection check whether collection exists
@@ -95,14 +94,15 @@ type Client interface {
 
 	// CreateIndex create index for field of specified collection
 	// currently index naming is not supported, so only one index on vector field is supported
-	CreateIndex(ctx context.Context, collName string, fieldName string, idx entity.Index, async bool) error
+	CreateIndex(ctx context.Context, async bool, idx entity.Index, opts ...CreateIndexRequestOption) error
 	// DescribeIndex describe index on collection
 	// currently index naming is not supported, so only one index on vector field is supported
-	DescribeIndex(ctx context.Context, collName string, fieldName string) ([]entity.Index, error)
+	DescribeIndex(ctx context.Context, opts ...DescribeIndexRequestOption) ([]*server.IndexDescription, error)
 	// DropIndex drop index from collection with specified field name
-	DropIndex(ctx context.Context, collName string, fieldName string) error
+	DropIndex(ctx context.Context, opts ...DropIndexOption) error
 	// GetIndexState get index state with specified collection and field name
 	// index naming is not supported yet
+	// Deprecated use DescribeIndexV2 instead.
 	GetIndexState(ctx context.Context, collName string, fieldName string) (entity.IndexState, error)
 
 	// -- basic operation --
@@ -115,9 +115,9 @@ type Client interface {
 	DeleteByPks(ctx context.Context, collName string, partitionName string, ids entity.Column) error
 	// Search search with bool expression
 	Search(ctx context.Context, collName string, partitions []string,
-		expr string, outputFields []string, vectors []entity.Vector, vectorField string, metricType entity.MetricType, topK int, sp entity.SearchParam, opts ...SearchQueryOptionFunc) ([]SearchResult, error)
+		expr string, outputFields []string, vectors []entity.Vector, vectorField string, metricType entity.MetricType, topK int, sp entity.SearchParam, opts ...client.SearchQueryOptionFunc) ([]client.SearchResult, error)
 	// QueryByPks query record by specified primary key(s)
-	QueryByPks(ctx context.Context, collectionName string, partitionNames []string, ids entity.Column, outputFields []string, opts ...SearchQueryOptionFunc) ([]entity.Column, error)
+	QueryByPks(ctx context.Context, collectionName string, partitionNames []string, ids entity.Column, outputFields []string, opts ...client.SearchQueryOptionFunc) ([]entity.Column, error)
 
 	// CalcDistance calculate the distance between vectors specified by ids or provided
 	CalcDistance(ctx context.Context, collName string, partitions []string,
@@ -138,48 +138,50 @@ type Client interface {
 	GetCompactionStateWithPlans(ctx context.Context, id int64) (entity.CompactionState, []entity.CompactionPlan, error)
 
 	// BulkInsert import data files(json, numpy, etc.) on MinIO/S3 storage, read and parse them into sealed segments
-	BulkInsert(ctx context.Context, collName string, partitionName string, rowBased bool, files []string, opts ...BulkInsertOption) ([]int64, error)
+	BulkInsert(ctx context.Context, collName string, partitionName string, rowBased bool, files []string, opts ...client.BulkInsertOption) ([]int64, error)
 	// GetBulkInsertState checks import task state
 	GetBulkInsertState(ctx context.Context, taskID int64) (*entity.BulkInsertTaskState, error)
 	// ListBulkInsertTasks list state of all import tasks
 	ListBulkInsertTasks(ctx context.Context, collName string, limit int64) ([]*entity.BulkInsertTaskState, error)
 }
 
-// SearchResult contains the result from Search api of client
-// IDs is the auto generated id values for the entities
-// Fields contains the data of `outputFieleds` specified or all columns if non
-// Scores is actually the distance between the vector current record contains and the search target vector
-type SearchResult struct {
-	ResultCount int             // the returning entry count
-	IDs         entity.Column   // auto generated id, can be mapped to the columns from `Insert` API
-	Fields      []entity.Column // output field data
-	Scores      []float32       // distance to the target vector
-	Err         error           // search error if any
+// grpcClient, uses default grpc service definition to connect with Milvus2.0
+type grpcClient struct {
+	client.GrpcClient
+	//conn    *grpc.ClientConn           // grpc connection instance
+	//service server.MilvusServiceClient // service client stub
 }
 
-var DefaultGrpcOpts = []grpc.DialOption{
-	grpc.WithBlock(),
-	grpc.WithKeepaliveParams(keepalive.ClientParameters{
-		Time:                5 * time.Second,
-		Timeout:             10 * time.Second,
-		PermitWithoutStream: true,
-	}),
-	grpc.WithConnectParams(grpc.ConnectParams{
-		Backoff: backoff.Config{
-			BaseDelay:  100 * time.Millisecond,
-			Multiplier: 1.6,
-			Jitter:     0.2,
-			MaxDelay:   3 * time.Second,
-		},
-		MinConnectTimeout: 3 * time.Second,
-	}),
+// connect connect to service
+func (c *grpcClient) connect(ctx context.Context, addr string, opts ...grpc.DialOption) error {
+	if addr == "" {
+		return fmt.Errorf("address is empty")
+	}
+	conn, err := grpc.Dial(addr, opts...)
+	if err != nil {
+		return err
+	}
+
+	c.Conn = conn
+	c.Service = server.NewMilvusServiceClient(c.Conn)
+	return nil
+}
+
+// Close the connection
+func (c *grpcClient) Close() error {
+	if c.Conn != nil {
+		err := c.Conn.Close()
+		c.Conn = nil
+		return err
+	}
+	return nil
 }
 
 // NewGrpcClient create client with grpc addr
 // the `Connect` API will be called for you
 // dialOptions contains the dial option(s) that control the grpc dialing process
 func NewGrpcClient(ctx context.Context, addr string, dialOptions ...grpc.DialOption) (Client, error) {
-	c := &GrpcClient{}
+	c := &grpcClient{}
 	if len(dialOptions) == 0 {
 		return NewDefaultGrpcClient(ctx, addr)
 	}
@@ -192,8 +194,8 @@ func NewGrpcClient(ctx context.Context, addr string, dialOptions ...grpc.DialOpt
 }
 
 func NewDefaultGrpcClient(ctx context.Context, addr string) (Client, error) {
-	c := &GrpcClient{}
-	defaultOpts := append(DefaultGrpcOpts,
+	c := &grpcClient{}
+	defaultOpts := append(client.DefaultGrpcOpts,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithUnaryInterceptor(
 			grpc_middleware.ChainUnaryClient(
@@ -203,7 +205,7 @@ func NewDefaultGrpcClient(ctx context.Context, addr string) (Client, error) {
 						return 60 * time.Millisecond * time.Duration(math.Pow(3, float64(attempt)))
 					}),
 					grpc_retry.WithCodes(codes.Unavailable, codes.ResourceExhausted)),
-				RetryOnRateLimitInterceptor(10, func(ctx context.Context, attempt uint) time.Duration {
+				client.RetryOnRateLimitInterceptor(10, func(ctx context.Context, attempt uint) time.Duration {
 					return 10 * time.Millisecond * time.Duration(math.Pow(3, float64(attempt)))
 				}),
 			),
@@ -214,40 +216,4 @@ func NewDefaultGrpcClient(ctx context.Context, addr string) (Client, error) {
 		return nil, err
 	}
 	return c, nil
-}
-
-// NewDefaultGrpcClientWithTLSAuth enable transport security
-func NewDefaultGrpcClientWithTLSAuth(ctx context.Context, addr, username, password string) (Client, error) {
-	defaultOpts := getDefaultAuthOpts(username, password, true)
-	return NewGrpcClient(ctx, addr, defaultOpts...)
-}
-
-// NewDefaultGrpcClientWithAuth  disable transport security
-func NewDefaultGrpcClientWithAuth(ctx context.Context, addr, username, password string) (Client, error) {
-	defaultOpts := getDefaultAuthOpts(username, password, false)
-	return NewGrpcClient(ctx, addr, defaultOpts...)
-}
-
-func getDefaultAuthOpts(username, password string, enableTLS bool) []grpc.DialOption {
-	var credential credentials.TransportCredentials
-	if enableTLS {
-		credential = credentials.NewTLS(&tls.Config{})
-	} else {
-		credential = insecure.NewCredentials()
-	}
-
-	defaultOpts := append(DefaultGrpcOpts,
-		grpc.WithTransportCredentials(credential),
-		grpc.WithChainUnaryInterceptor(
-			CreateAuthenticationUnaryInterceptor(username, password),
-			grpc_retry.UnaryClientInterceptor(
-				grpc_retry.WithMax(6),
-				grpc_retry.WithBackoff(func(attempt uint) time.Duration {
-					return 60 * time.Millisecond * time.Duration(math.Pow(3, float64(attempt)))
-				}),
-				grpc_retry.WithCodes(codes.Unavailable, codes.ResourceExhausted)),
-		),
-		grpc.WithStreamInterceptor(CreateAuthenticationStreamInterceptor(username, password)),
-	)
-	return defaultOpts
 }

@@ -8,15 +8,15 @@ import (
 )
 
 // CreateCredential create new user and password
-func (c *grpcClient) CreateCredential(ctx context.Context, username string, password string) error {
-	if c.service == nil {
+func (c *GrpcClient) CreateCredential(ctx context.Context, username string, password string) error {
+	if c.Service == nil {
 		return ErrClientNotReady
 	}
 	req := &server.CreateCredentialRequest{
 		Username: username,
 		Password: crypto.Base64Encode(password),
 	}
-	resp, err := c.service.CreateCredential(ctx, req)
+	resp, err := c.Service.CreateCredential(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -28,8 +28,8 @@ func (c *grpcClient) CreateCredential(ctx context.Context, username string, pass
 }
 
 // UpdateCredential update password for a user
-func (c *grpcClient) UpdateCredential(ctx context.Context, username string, oldPassword string, newPassword string) error {
-	if c.service == nil {
+func (c *GrpcClient) UpdateCredential(ctx context.Context, username string, oldPassword string, newPassword string) error {
+	if c.Service == nil {
 		return ErrClientNotReady
 	}
 	req := &server.UpdateCredentialRequest{
@@ -37,7 +37,7 @@ func (c *grpcClient) UpdateCredential(ctx context.Context, username string, oldP
 		OldPassword: crypto.Base64Encode(oldPassword),
 		NewPassword: crypto.Base64Encode(newPassword),
 	}
-	resp, err := c.service.UpdateCredential(ctx, req)
+	resp, err := c.Service.UpdateCredential(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -49,14 +49,14 @@ func (c *grpcClient) UpdateCredential(ctx context.Context, username string, oldP
 }
 
 // DeleteCredential delete a user
-func (c *grpcClient) DeleteCredential(ctx context.Context, username string) error {
-	if c.service == nil {
+func (c *GrpcClient) DeleteCredential(ctx context.Context, username string) error {
+	if c.Service == nil {
 		return ErrClientNotReady
 	}
 	req := &server.DeleteCredentialRequest{
 		Username: username,
 	}
-	resp, err := c.service.DeleteCredential(ctx, req)
+	resp, err := c.Service.DeleteCredential(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -68,12 +68,12 @@ func (c *grpcClient) DeleteCredential(ctx context.Context, username string) erro
 }
 
 // ListCredUsers list all usernames
-func (c *grpcClient) ListCredUsers(ctx context.Context) ([]string, error) {
-	if c.service == nil {
+func (c *GrpcClient) ListCredUsers(ctx context.Context) ([]string, error) {
+	if c.Service == nil {
 		return nil, ErrClientNotReady
 	}
 	req := &server.ListCredUsersRequest{}
-	resp, err := c.service.ListCredUsers(ctx, req)
+	resp, err := c.Service.ListCredUsers(ctx, req)
 	if err != nil {
 		return nil, err
 	}

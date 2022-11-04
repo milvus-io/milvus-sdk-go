@@ -13,8 +13,8 @@ import (
 )
 
 // CreateCollectionByRow create collection by row
-func (c *grpcClient) CreateCollectionByRow(ctx context.Context, row entity.Row, shardNum int32) error {
-	if c.service == nil {
+func (c *GrpcClient) CreateCollectionByRow(ctx context.Context, row entity.Row, shardNum int32) error {
+	if c.Service == nil {
 		return ErrClientNotReady
 	}
 	// parse schema from row definition
@@ -38,14 +38,14 @@ func (c *grpcClient) CreateCollectionByRow(ctx context.Context, row entity.Row, 
 	if err != nil {
 		return err
 	}
-	// compose request and invoke service
+	// compose request and invoke Service
 	req := &server.CreateCollectionRequest{
 		DbName:         "", // reserved fields, not used for now
 		CollectionName: sch.CollectionName,
 		Schema:         bs,
 		ShardsNum:      shardNum,
 	}
-	resp, err := c.service.CreateCollection(ctx, req)
+	resp, err := c.Service.CreateCollection(ctx, req)
 	// handles response
 	if err != nil {
 		return err
@@ -58,9 +58,9 @@ func (c *grpcClient) CreateCollectionByRow(ctx context.Context, row entity.Row, 
 }
 
 // InsertByRows insert by rows
-func (c *grpcClient) InsertByRows(ctx context.Context, collName string, partitionName string,
+func (c *GrpcClient) InsertByRows(ctx context.Context, collName string, partitionName string,
 	rows []entity.Row) (entity.Column, error) {
-	if c.service == nil {
+	if c.Service == nil {
 		return nil, ErrClientNotReady
 	}
 	if len(rows) == 0 {
@@ -92,7 +92,7 @@ func (c *grpcClient) InsertByRows(ctx context.Context, collName string, partitio
 	for _, column := range columns {
 		req.FieldsData = append(req.FieldsData, column.FieldData())
 	}
-	resp, err := c.service.Insert(ctx, req)
+	resp, err := c.Service.Insert(ctx, req)
 	if err != nil {
 		return nil, err
 	}

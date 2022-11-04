@@ -32,8 +32,8 @@ import (
 // collName is the collection name
 // partitionName is the partition to insert, if not specified(empty), default partition will be used
 // columns are slice of the column-based data
-func (c *grpcClient) Insert(ctx context.Context, collName string, partitionName string, columns ...entity.Column) (entity.Column, error) {
-	if c.service == nil {
+func (c *GrpcClient) Insert(ctx context.Context, collName string, partitionName string, columns ...entity.Column) (entity.Column, error) {
+	if c.Service == nil {
 		return nil, ErrClientNotReady
 	}
 	// 1. validation for all input params
@@ -108,7 +108,7 @@ func (c *grpcClient) Insert(ctx context.Context, collName string, partitionName 
 	for _, column := range columns {
 		req.FieldsData = append(req.FieldsData, column.FieldData())
 	}
-	resp, err := c.service.Insert(ctx, req)
+	resp, err := c.Service.Insert(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -122,8 +122,8 @@ func (c *grpcClient) Insert(ctx context.Context, collName string, partitionName 
 
 // Flush force collection to flush memory records into storage
 // in sync mode, flush will wait all segments to be flushed
-func (c *grpcClient) Flush(ctx context.Context, collName string, async bool) error {
-	if c.service == nil {
+func (c *GrpcClient) Flush(ctx context.Context, collName string, async bool) error {
+	if c.Service == nil {
 		return ErrClientNotReady
 	}
 	if err := c.checkCollectionExists(ctx, collName); err != nil {
@@ -133,7 +133,7 @@ func (c *grpcClient) Flush(ctx context.Context, collName string, async bool) err
 		DbName:          "", // reserved,
 		CollectionNames: []string{collName},
 	}
-	resp, err := c.service.Flush(ctx, req)
+	resp, err := c.Service.Flush(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -145,7 +145,7 @@ func (c *grpcClient) Flush(ctx context.Context, collName string, async bool) err
 		ids := segmentIDs.GetData()
 		if has && len(ids) > 0 {
 			flushed := func() bool {
-				resp, err := c.service.GetFlushState(ctx, &server.GetFlushStateRequest{
+				resp, err := c.Service.GetFlushState(ctx, &server.GetFlushStateRequest{
 					SegmentIDs: ids,
 				})
 				if err != nil {
@@ -169,8 +169,8 @@ func (c *grpcClient) Flush(ctx context.Context, collName string, async bool) err
 }
 
 // DeleteByPks deletes entries related to provided primary keys
-func (c *grpcClient) DeleteByPks(ctx context.Context, collName string, partitionName string, ids entity.Column) error {
-	if c.service == nil {
+func (c *GrpcClient) DeleteByPks(ctx context.Context, collName string, partitionName string, ids entity.Column) error {
+	if c.Service == nil {
 		return ErrClientNotReady
 	}
 
@@ -212,7 +212,7 @@ func (c *grpcClient) DeleteByPks(ctx context.Context, collName string, partition
 		Expr:           expr,
 	}
 
-	resp, err := c.service.Delete(ctx, req)
+	resp, err := c.Service.Delete(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -225,9 +225,9 @@ func (c *grpcClient) DeleteByPks(ctx context.Context, collName string, partition
 }
 
 // Search with bool expression
-func (c *grpcClient) Search(ctx context.Context, collName string, partitions []string,
+func (c *GrpcClient) Search(ctx context.Context, collName string, partitions []string,
 	expr string, outputFields []string, vectors []entity.Vector, vectorField string, metricType entity.MetricType, topK int, sp entity.SearchParam, opts ...SearchQueryOptionFunc) ([]SearchResult, error) {
-	if c.service == nil {
+	if c.Service == nil {
 		return []SearchResult{}, ErrClientNotReady
 	}
 	_, ok := MetaCache.getCollectionInfo(collName)
@@ -238,14 +238,14 @@ func (c *grpcClient) Search(ctx context.Context, collName string, partitions []s
 	if err != nil {
 		return nil, err
 	}
-	// 2. Request milvus service
+	// 2. Request milvus Service
 	req, err := prepareSearchRequest(collName, partitions, expr, outputFields, vectors, vectorField, metricType, topK, sp, option)
 	if err != nil {
 		return nil, err
 	}
 
 	sr := make([]SearchResult, 0, len(vectors))
-	resp, err := c.service.Search(ctx, req)
+	resp, err := c.Service.Search(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -298,8 +298,8 @@ func PKs2Expr(ids entity.Column) string {
 }
 
 // QueryByPks query record by specified primary key(s)
-func (c *grpcClient) QueryByPks(ctx context.Context, collectionName string, partitionNames []string, ids entity.Column, outputFields []string, opts ...SearchQueryOptionFunc) ([]entity.Column, error) {
-	if c.service == nil {
+func (c *GrpcClient) QueryByPks(ctx context.Context, collectionName string, partitionNames []string, ids entity.Column, outputFields []string, opts ...SearchQueryOptionFunc) ([]entity.Column, error) {
+	if c.Service == nil {
 		return nil, ErrClientNotReady
 	}
 	// check primary keys
@@ -331,7 +331,7 @@ func (c *grpcClient) QueryByPks(ctx context.Context, collectionName string, part
 		GuaranteeTimestamp: option.GuaranteeTimestamp,
 		TravelTimestamp:    option.TravelTimestamp,
 	}
-	resp, err := c.service.Query(ctx, req)
+	resp, err := c.Service.Query(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -403,15 +403,15 @@ func prepareSearchRequest(collName string, partitions []string,
 }
 
 // GetPersistentSegmentInfo get persistent segment info
-func (c *grpcClient) GetPersistentSegmentInfo(ctx context.Context, collName string) ([]*entity.Segment, error) {
-	if c.service == nil {
+func (c *GrpcClient) GetPersistentSegmentInfo(ctx context.Context, collName string) ([]*entity.Segment, error) {
+	if c.Service == nil {
 		return []*entity.Segment{}, ErrClientNotReady
 	}
 	req := &server.GetPersistentSegmentInfoRequest{
 		DbName:         "", // reserved
 		CollectionName: collName,
 	}
-	resp, err := c.service.GetPersistentSegmentInfo(ctx, req)
+	resp, err := c.Service.GetPersistentSegmentInfo(ctx, req)
 	if err != nil {
 		return []*entity.Segment{}, err
 	}
@@ -433,15 +433,15 @@ func (c *grpcClient) GetPersistentSegmentInfo(ctx context.Context, collName stri
 }
 
 // GetQuerySegmentInfo get query query cluster segment loaded info
-func (c *grpcClient) GetQuerySegmentInfo(ctx context.Context, collName string) ([]*entity.Segment, error) {
-	if c.service == nil {
+func (c *GrpcClient) GetQuerySegmentInfo(ctx context.Context, collName string) ([]*entity.Segment, error) {
+	if c.Service == nil {
 		return []*entity.Segment{}, ErrClientNotReady
 	}
 	req := &server.GetQuerySegmentInfoRequest{
 		DbName:         "", // reserved
 		CollectionName: collName,
 	}
-	resp, err := c.service.GetQuerySegmentInfo(ctx, req)
+	resp, err := c.Service.GetQuerySegmentInfo(ctx, req)
 	if err != nil {
 		return []*entity.Segment{}, err
 	}
@@ -463,9 +463,9 @@ func (c *grpcClient) GetQuerySegmentInfo(ctx context.Context, collName string) (
 	return segments, nil
 }
 
-func (c *grpcClient) CalcDistance(ctx context.Context, collName string, partitions []string,
+func (c *GrpcClient) CalcDistance(ctx context.Context, collName string, partitions []string,
 	metricType entity.MetricType, opLeft, opRight entity.Column) (entity.Column, error) {
-	if c.service == nil {
+	if c.Service == nil {
 		return nil, ErrClientNotReady
 	}
 	if opLeft == nil || opRight == nil {
@@ -499,7 +499,7 @@ func (c *grpcClient) CalcDistance(ctx context.Context, collName string, partitio
 		return nil, errors.New("invalid operator passed")
 	}
 
-	resp, err := c.service.CalcDistance(ctx, req)
+	resp, err := c.Service.CalcDistance(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -699,8 +699,8 @@ func estRowSize(sch *entity.Schema, selected []string) int64 {
 }
 
 // BulkInsert data files(json, numpy, etc.) on MinIO/S3 storage, read and parse them into sealed segments
-func (c *grpcClient) BulkInsert(ctx context.Context, collName string, partitionName string, rowBased bool, files []string, opts ...BulkInsertOption) ([]int64, error) {
-	if c.service == nil {
+func (c *GrpcClient) BulkInsert(ctx context.Context, collName string, partitionName string, rowBased bool, files []string, opts ...BulkInsertOption) ([]int64, error) {
+	if c.Service == nil {
 		return []int64{}, ErrClientNotReady
 	}
 	req := &server.ImportRequest{
@@ -714,7 +714,7 @@ func (c *grpcClient) BulkInsert(ctx context.Context, collName string, partitionN
 		opt(req)
 	}
 
-	resp, err := c.service.Import(ctx, req)
+	resp, err := c.Service.Import(ctx, req)
 	if err != nil {
 		return []int64{}, err
 	}
@@ -726,14 +726,14 @@ func (c *grpcClient) BulkInsert(ctx context.Context, collName string, partitionN
 }
 
 // GetBulkInsertState checks import task state
-func (c *grpcClient) GetBulkInsertState(ctx context.Context, taskID int64) (*entity.BulkInsertTaskState, error) {
-	if c.service == nil {
+func (c *GrpcClient) GetBulkInsertState(ctx context.Context, taskID int64) (*entity.BulkInsertTaskState, error) {
+	if c.Service == nil {
 		return nil, ErrClientNotReady
 	}
 	req := &server.GetImportStateRequest{
 		Task: taskID,
 	}
-	resp, err := c.service.GetImportState(ctx, req)
+	resp, err := c.Service.GetImportState(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -754,15 +754,15 @@ func (c *grpcClient) GetBulkInsertState(ctx context.Context, taskID int64) (*ent
 }
 
 // ListBulkInsertTasks list state of all import tasks
-func (c *grpcClient) ListBulkInsertTasks(ctx context.Context, collName string, limit int64) ([]*entity.BulkInsertTaskState, error) {
-	if c.service == nil {
+func (c *GrpcClient) ListBulkInsertTasks(ctx context.Context, collName string, limit int64) ([]*entity.BulkInsertTaskState, error) {
+	if c.Service == nil {
 		return nil, ErrClientNotReady
 	}
 	req := &server.ListImportTasksRequest{
 		CollectionName: collName,
 		Limit:          limit,
 	}
-	resp, err := c.service.ListImportTasks(ctx, req)
+	resp, err := c.Service.ListImportTasks(ctx, req)
 	if err != nil {
 		return nil, err
 	}

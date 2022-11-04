@@ -17,23 +17,23 @@ import (
 func TestGrpcClientCreateIndex(t *testing.T) {
 	ctx := context.Background()
 	c := testClient(ctx, t)
-	mock.setInjection(mHasCollection, hasCollectionDefault)
-	mock.setInjection(mDescribeCollection, describeCollectionInjection(t, 0, testCollectionName, defaultSchema()))
+	mock.SetInjection(MHasCollection, hasCollectionDefault)
+	mock.SetInjection(MDescribeCollection, describeCollectionInjection(t, 0, testCollectionName, defaultSchema()))
 
 	fieldName := `vector`
-	idx, err := entity.NewIndexFlat(entity.IP, 1024)
+	idx, err := entity.NewIndexFlat(entity.IP)
 	assert.Nil(t, err)
 	if !assert.NotNil(t, idx) {
 		t.FailNow()
 	}
-	mock.setInjection(mCreateIndex, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+	mock.SetInjection(MCreateIndex, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 		req, ok := raw.(*server.CreateIndexRequest)
 		if !ok {
-			return badRequestStatus()
+			return BadRequestStatus()
 		}
 		assert.Equal(t, testCollectionName, req.GetCollectionName())
 		assert.Equal(t, fieldName, req.GetFieldName())
-		return successStatus()
+		return SuccessStatus()
 	})
 
 	t.Run("test async create index", func(t *testing.T) {
@@ -41,13 +41,13 @@ func TestGrpcClientCreateIndex(t *testing.T) {
 	})
 
 	t.Run("test flush err", func(t *testing.T) {
-		mock.setInjection(mFlush, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		mock.SetInjection(MFlush, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			resp := &server.FlushResponse{}
-			s, err := badRequestStatus()
+			s, err := BadRequestStatus()
 			resp.Status = s
 			return resp, err
 		})
-		defer mock.delInjection(mFlush)
+		defer mock.DelInjection(MFlush)
 		assert.NotNil(t, c.CreateIndex(ctx, testCollectionName, fieldName, idx, false))
 	})
 
@@ -55,11 +55,11 @@ func TestGrpcClientCreateIndex(t *testing.T) {
 		buildTime := rand.Intn(900) + 100
 		start := time.Now()
 		flag := false
-		mock.setInjection(mGetIndexState, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		mock.SetInjection(MGetIndexState, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			req, ok := raw.(*server.GetIndexStateRequest)
 			resp := &server.GetIndexStateResponse{}
 			if !ok {
-				s, err := badRequestStatus()
+				s, err := BadRequestStatus()
 				resp.Status = s
 				return resp, err
 			}
@@ -71,7 +71,7 @@ func TestGrpcClientCreateIndex(t *testing.T) {
 				flag = true
 			}
 
-			s, err := successStatus()
+			s, err := SuccessStatus()
 			resp.Status = s
 			return resp, err
 		})
@@ -79,33 +79,33 @@ func TestGrpcClientCreateIndex(t *testing.T) {
 		assert.Nil(t, c.CreateIndex(ctx, testCollectionName, fieldName, idx, false))
 		assert.True(t, flag)
 
-		mock.delInjection(mGetIndexState)
+		mock.DelInjection(MGetIndexState)
 	})
 }
 
 func TestGrpcClientDropIndex(t *testing.T) {
 	ctx := context.Background()
 	c := testClient(ctx, t)
-	mock.setInjection(mHasCollection, hasCollectionDefault)
-	mock.setInjection(mDescribeCollection, describeCollectionInjection(t, 0, testCollectionName, defaultSchema()))
+	mock.SetInjection(MHasCollection, hasCollectionDefault)
+	mock.SetInjection(MDescribeCollection, describeCollectionInjection(t, 0, testCollectionName, defaultSchema()))
 	assert.Nil(t, c.DropIndex(ctx, testCollectionName, "vector"))
 }
 
 func TestGrpcClientDescribeIndex(t *testing.T) {
 	ctx := context.Background()
-	mock.setInjection(mHasCollection, hasCollectionDefault)
-	mock.setInjection(mDescribeCollection, describeCollectionInjection(t, 0, testCollectionName, defaultSchema()))
+	mock.SetInjection(MHasCollection, hasCollectionDefault)
+	mock.SetInjection(MDescribeCollection, describeCollectionInjection(t, 0, testCollectionName, defaultSchema()))
 
 	c := testClient(ctx, t)
 
 	fieldName := "vector"
 
 	t.Run("normal describe index", func(t *testing.T) {
-		mock.setInjection(mDescribeIndex, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		mock.SetInjection(MDescribeIndex, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			req, ok := raw.(*server.DescribeIndexRequest)
 			resp := &server.DescribeIndexResponse{}
 			if !ok {
-				s, err := badRequestStatus()
+				s, err := BadRequestStatus()
 				resp.Status = s
 				return resp, err
 			}
@@ -122,7 +122,7 @@ func TestGrpcClientDescribeIndex(t *testing.T) {
 					}),
 				},
 			}
-			s, err := successStatus()
+			s, err := SuccessStatus()
 			resp.Status = s
 			return resp, err
 		})
@@ -132,9 +132,9 @@ func TestGrpcClientDescribeIndex(t *testing.T) {
 		assert.NotNil(t, idxes)
 	})
 
-	t.Run("service return errors", func(t *testing.T) {
-		defer mock.delInjection(mDescribeIndex)
-		mock.setInjection(mDescribeIndex, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+	t.Run("Service return errors", func(t *testing.T) {
+		defer mock.DelInjection(MDescribeIndex)
+		mock.SetInjection(MDescribeIndex, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			resp := &server.DescribeIndexResponse{}
 
 			return resp, errors.New("mocked error")
@@ -143,7 +143,7 @@ func TestGrpcClientDescribeIndex(t *testing.T) {
 		_, err := c.DescribeIndex(ctx, testCollectionName, fieldName)
 		assert.Error(t, err)
 
-		mock.setInjection(mDescribeIndex, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		mock.SetInjection(MDescribeIndex, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			resp := &server.DescribeIndexResponse{}
 			resp.Status = &common.Status{ErrorCode: common.ErrorCode_UnexpectedError}
 			return resp, nil
@@ -156,16 +156,16 @@ func TestGrpcClientDescribeIndex(t *testing.T) {
 
 func TestGrpcGetIndexBuildProgress(t *testing.T) {
 	ctx := context.Background()
-	mock.setInjection(mHasCollection, hasCollectionDefault)
-	mock.setInjection(mDescribeCollection, describeCollectionInjection(t, 0, testCollectionName, defaultSchema()))
+	mock.SetInjection(MHasCollection, hasCollectionDefault)
+	mock.SetInjection(MDescribeCollection, describeCollectionInjection(t, 0, testCollectionName, defaultSchema()))
 
 	tc := testClient(ctx, t)
-	c := tc.(*grpcClient) // since GetIndexBuildProgress is not exposed
+	c := tc.(*GrpcClient) // since GetIndexBuildProgress is not exposed
 
 	t.Run("normal get index build progress", func(t *testing.T) {
 		var total, built int64
 
-		mock.setInjection(mGetIndexBuildProgress, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		mock.SetInjection(MGetIndexBuildProgress, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			req, ok := raw.(*server.GetIndexBuildProgressRequest)
 			if !ok {
 				t.FailNow()
@@ -175,7 +175,7 @@ func TestGrpcGetIndexBuildProgress(t *testing.T) {
 				TotalRows:   total,
 				IndexedRows: built,
 			}
-			s, err := successStatus()
+			s, err := SuccessStatus()
 			resp.Status = s
 			return resp, err
 		})
@@ -188,9 +188,9 @@ func TestGrpcGetIndexBuildProgress(t *testing.T) {
 		assert.Equal(t, built, rb)
 	})
 
-	t.Run("service return errors", func(t *testing.T) {
-		defer mock.delInjection(mGetIndexBuildProgress)
-		mock.setInjection(mGetIndexBuildProgress, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+	t.Run("Service return errors", func(t *testing.T) {
+		defer mock.DelInjection(MGetIndexBuildProgress)
+		mock.SetInjection(MGetIndexBuildProgress, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			_, ok := raw.(*server.GetIndexBuildProgressRequest)
 			if !ok {
 				t.FailNow()
@@ -202,7 +202,7 @@ func TestGrpcGetIndexBuildProgress(t *testing.T) {
 		_, _, err := c.GetIndexBuildProgress(ctx, testCollectionName, testVectorField)
 		assert.Error(t, err)
 
-		mock.setInjection(mGetIndexBuildProgress, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		mock.SetInjection(MGetIndexBuildProgress, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			_, ok := raw.(*server.GetIndexBuildProgressRequest)
 			if !ok {
 				t.FailNow()
