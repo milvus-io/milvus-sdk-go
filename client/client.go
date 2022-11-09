@@ -16,6 +16,8 @@ import (
 	"context"
 	"crypto/tls"
 	"math"
+	"net/url"
+	"strings"
 	"time"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
@@ -216,6 +218,19 @@ func NewDefaultGrpcClient(ctx context.Context, addr string) (Client, error) {
 	return c, nil
 }
 
+func NewDefaultGrpcClientWithURI(ctx context.Context, uri, username, password string) (Client, error) {
+	addr, inSecure, err := parseURI(uri)
+	if err != nil {
+		return nil, err
+	}
+
+	if inSecure {
+		return NewDefaultGrpcClientWithTLSAuth(ctx, addr, username, password)
+	}
+
+	return NewDefaultGrpcClientWithAuth(ctx, addr, username, password)
+}
+
 // NewDefaultGrpcClientWithTLSAuth enable transport security
 func NewDefaultGrpcClientWithTLSAuth(ctx context.Context, addr, username, password string) (Client, error) {
 	defaultOpts := getDefaultAuthOpts(username, password, true)
@@ -250,4 +265,28 @@ func getDefaultAuthOpts(username, password string, enableTLS bool) []grpc.DialOp
 		grpc.WithStreamInterceptor(CreateAuthenticationStreamInterceptor(username, password)),
 	)
 	return defaultOpts
+}
+
+func parseURI(uri string) (string, bool, error) {
+	hasPrefix := false
+	inSecure := false
+	if strings.HasPrefix(uri, "https://") {
+		inSecure = true
+		hasPrefix = true
+	}
+
+	if strings.HasPrefix(uri, "http://") {
+		inSecure = false
+		hasPrefix = true
+	}
+
+	if hasPrefix {
+		url, err := url.Parse(uri)
+		if err != nil {
+			return "", inSecure, err
+		}
+		return url.Host, inSecure, nil
+	}
+
+	return uri, inSecure, nil
 }

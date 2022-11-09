@@ -339,3 +339,57 @@ func TestClient_getDefaultAuthOpts(t *testing.T) {
 	defaultOpts = getDefaultAuthOpts(username, password, false)
 	assert.True(t, len(defaultOpts) == 6)
 }
+
+func TestClient_NewDefaultGrpcClientWithURI(t *testing.T) {
+	username := "u"
+	password := "p"
+	t.Run("create grpc client fail", func(t *testing.T) {
+		uri := "https://localhost:port"
+		ctx := context.Background()
+		client, err := NewDefaultGrpcClientWithURI(ctx, uri, username, password)
+		assert.Nil(t, client)
+		assert.Error(t, err)
+	})
+}
+
+func TestClient_parseURI(t *testing.T) {
+	t.Run("https uri parse ok", func(t *testing.T) {
+		uri := "https://localhost:8080"
+		addr, inSecure, err := parseURI(uri)
+		assert.Equal(t, "localhost:8080", addr)
+		assert.True(t, inSecure)
+		assert.Nil(t, err)
+	})
+
+	t.Run("https uri parse fail", func(t *testing.T) {
+		uri := "https://localhost:port"
+		addr, inSecure, err := parseURI(uri)
+		assert.Equal(t, "", addr)
+		assert.True(t, inSecure)
+		assert.NotNil(t, err)
+	})
+
+	t.Run("http uri parse ok", func(t *testing.T) {
+		uri := "http://localhost:8080"
+		addr, inSecure, err := parseURI(uri)
+		assert.Equal(t, "localhost:8080", addr)
+		assert.False(t, inSecure)
+		assert.Nil(t, err)
+	})
+
+	t.Run("http uri parse fail", func(t *testing.T) {
+		uri := "http://localhost:port"
+		addr, inSecure, err := parseURI(uri)
+		assert.Equal(t, "", addr)
+		assert.False(t, inSecure)
+		assert.NotNil(t, err)
+	})
+
+	t.Run("no prefix uri parse ok", func(t *testing.T) {
+		uri := "localhost:8080"
+		addr, inSecure, err := parseURI(uri)
+		assert.Equal(t, "localhost:8080", addr)
+		assert.False(t, inSecure)
+		assert.Nil(t, err)
+	})
+}
