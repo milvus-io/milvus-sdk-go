@@ -140,7 +140,7 @@ type Client interface {
 	GetCompactionStateWithPlans(ctx context.Context, id int64) (entity.CompactionState, []entity.CompactionPlan, error)
 
 	// BulkInsert import data files(json, numpy, etc.) on MinIO/S3 storage, read and parse them into sealed segments
-	BulkInsert(ctx context.Context, collName string, partitionName string, rowBased bool, files []string, opts ...BulkInsertOption) ([]int64, error)
+	BulkInsert(ctx context.Context, collName string, partitionName string, files []string, opts ...BulkInsertOption) (int64, error)
 	// GetBulkInsertState checks import task state
 	GetBulkInsertState(ctx context.Context, taskID int64) (*entity.BulkInsertTaskState, error)
 	// ListBulkInsertTasks list state of all import tasks
