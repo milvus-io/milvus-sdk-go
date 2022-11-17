@@ -3,6 +3,13 @@ on:
   push:
     branches:
       - master
+  pull_request:
+    paths:
+      - 'client/**'
+      - 'entity/**'
+      - 'internal/**'
+      - 'test/**'
+      - 'tests/**'
 jobs:
   test:
     name: Run Ci Test
