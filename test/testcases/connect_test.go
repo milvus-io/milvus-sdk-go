@@ -13,12 +13,12 @@ func TestConnectAndClose(t *testing.T) {
 	// connect
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*common.DefaultTimeout)
 	defer cancel()
-	mc, errConnect := base.NewMilvusClient(ctx, *addr)
-	common.CheckErr(t, errConnect, true, "")
+	mc, errConnect := base.NewDefaultMilvusClient(ctx, *addr)
+	common.CheckErr(t, errConnect, true)
 
 	// connect success
 	_, errList := mc.ListCollections(ctx)
-	common.CheckErr(t, errList, true, "")
+	common.CheckErr(t, errList, true)
 
 	// close success
 	mc.Close()

@@ -36,6 +36,42 @@ func NewMilvusClient(ctx context.Context, addr string, dialOptions ...grpc.DialO
 	}, err
 }
 
+func NewDefaultMilvusClient(ctx context.Context, addr string) (*MilvusClient, error) {
+	preRequest("NewDefaultGrpcClient", addr)
+	mClient, err := client.NewDefaultGrpcClient(ctx, addr)
+	postResponse("NewDefaultGrpcClient", err, mClient)
+	return &MilvusClient{
+		mClient,
+	}, err
+}
+
+func NewDefaultMilvusClientWithURI(ctx context.Context, uri, username, password string) (*MilvusClient, error) {
+	preRequest("NewDefaultGrpcClientWithURI", uri, username)
+	mClient, err := client.NewDefaultGrpcClientWithURI(ctx, uri, username, password)
+	postResponse("NewDefaultGrpcClientWithURI", err, mClient)
+	return &MilvusClient{
+		mClient,
+	}, err
+}
+
+func NewDefaultMilvusClientWithTLSAuth(ctx context.Context, addr, username, password string) (*MilvusClient, error) {
+	preRequest("NewDefaultGrpcClientWithTLSAuth", addr, username)
+	mClient, err := client.NewDefaultGrpcClientWithTLSAuth(ctx, addr, username, password)
+	postResponse("NewDefaultGrpcClientWithTLSAuth", err, mClient)
+	return &MilvusClient{
+		mClient,
+	}, err
+}
+
+func NewDefaultMilvusClientWithAuth(ctx context.Context, addr, username, password string) (*MilvusClient, error) {
+	preRequest("NewDefaultGrpcClientWithAuth", addr, username)
+	mClient, err := client.NewDefaultGrpcClientWithAuth(ctx, addr, username, password)
+	postResponse("NewDefaultGrpcClientWithAuth", err, mClient)
+	return &MilvusClient{
+		mClient,
+	}, err
+}
+
 func (mc *MilvusClient) Close() error {
 	preRequest("Close")
 	err := mc.mClient.Close()

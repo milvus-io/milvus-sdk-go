@@ -3,6 +3,7 @@ package common
 import (
 	"fmt"
 	"math/rand"
+	"strings"
 	"time"
 
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
@@ -15,13 +16,18 @@ const (
 
 	DefaultFloatFieldName = "float"
 
+	DefaultVarcharFieldName = "varchar"
+
 	DefaultFloatVecFieldName = "float_vec"
 
 	DefaultBinaryVecFieldName = "binary_vec"
 
 	DefaultPartition = "_default"
 
-	DefaultDim = 128
+	DefaultDim    = 128
+	DefaultDimStr = "128"
+
+	DefaultMaxLength = "65535"
 
 	DefaultShards = int32(2)
 
@@ -32,6 +38,8 @@ const (
 	DefaultNq = 5
 
 	DefaultTopK = 10
+
+	MaxCollectionNameLen = 255
 )
 
 var r *rand.Rand
@@ -51,24 +59,85 @@ func GenRandomString(n int) string {
 	return string(b)
 }
 
+func GenScalaField(name string, fieldType entity.FieldType, primaryKey bool, autoID bool) *entity.Field {
+	var scaleField = new(entity.Field)
+	scaleField.Name = name
+	scaleField.PrimaryKey = primaryKey
+	scaleField.AutoID = autoID
+	scaleField.DataType = fieldType
+	return scaleField
+}
+
+func GenVectorField(name string, fieldType entity.FieldType, dim string) *entity.Field {
+	if fieldType == entity.FieldTypeFloatVector || fieldType == entity.FieldTypeBinaryVector {
+		var vecField = new(entity.Field)
+		vecField.Name = name
+		vecField.DataType = fieldType
+		vecField.PrimaryKey = false
+		vecField.TypeParams = map[string]string{entity.TypeParamDim: dim}
+		return vecField
+	}
+	return nil
+}
+
 // gen default fields with int64, float, floatVector field
-func GenDefaultFields() []*entity.Field {
+func GenDefaultFields(autoID bool) []*entity.Field {
 	var fields = []*entity.Field{
 		{
 			Name:       DefaultIntFieldName,
 			DataType:   entity.FieldTypeInt64,
 			PrimaryKey: true,
+			AutoID:     autoID,
 		},
 		{
 			Name:     DefaultFloatFieldName,
 			DataType: entity.FieldTypeFloat,
 		},
 		{
-			Name:     DefaultFloatVecFieldName,
-			DataType: entity.FieldTypeFloatVector,
-			TypeParams: map[string]string{
-				entity.TypeParamDim: fmt.Sprintf("%d", DefaultDim),
-			},
+			Name:       DefaultFloatVecFieldName,
+			DataType:   entity.FieldTypeFloatVector,
+			TypeParams: map[string]string{entity.TypeParamDim: fmt.Sprintf("%d", DefaultDim)},
+		},
+	}
+	return fields
+}
+
+// gen default binary fields with int64, float, binaryVector field
+func GenDefaultBinaryFields(autoID bool) []*entity.Field {
+	var fields = []*entity.Field{
+		{
+			Name:       DefaultIntFieldName,
+			DataType:   entity.FieldTypeInt64,
+			PrimaryKey: true,
+			AutoID:     autoID,
+		},
+		{
+			Name:     DefaultFloatFieldName,
+			DataType: entity.FieldTypeFloat,
+		},
+		{
+			Name:       DefaultBinaryVecFieldName,
+			DataType:   entity.FieldTypeBinaryVector,
+			TypeParams: map[string]string{entity.TypeParamDim: DefaultDimStr},
+		},
+	}
+	return fields
+}
+
+//gen default fields with varchar, floatVector field
+func GenDefaultVarcharFields(autoID bool) []*entity.Field {
+	var fields = []*entity.Field{
+		{
+			Name:       DefaultVarcharFieldName,
+			DataType:   entity.FieldTypeVarChar,
+			PrimaryKey: true,
+			AutoID:     autoID,
+			TypeParams: map[string]string{entity.TypeParamMaxLength: DefaultMaxLength},
+		},
+		{
+			Name:       DefaultBinaryVecFieldName,
+			DataType:   entity.FieldTypeBinaryVector,
+			TypeParams: map[string]string{entity.TypeParamDim: DefaultDimStr},
 		},
 	}
 	return fields
@@ -129,4 +198,14 @@ func GenSearchVectors(nq int, dim int) []entity.Vector {
 		vectors = append(vectors, entity.FloatVector(vector))
 	}
 	return vectors
+}
+
+// gen invalid long string
+func GenLongString(n int) string {
+	var builder strings.Builder
+	longString := "a"
+	for i := 0; i < n; i++ {
+		builder.WriteString(longString)
+	}
+	return builder.String()
 }
