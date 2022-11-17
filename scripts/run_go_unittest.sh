@@ -8,9 +8,10 @@ for d in $(go list ./... | grep -v vendor/examples/tests); do
     if [[ "$d" == *examples*  ]]; then
         continue
     fi
-    if [[ "$d" == *tests* ]]; then
+    if [[ "$d" == *test* ]]; then
         continue
     fi
+
     echo $d
     go test -race -coverprofile=coverage.out -covermode=atomic "$d"
     if [[ -f coverage.out ]]; then

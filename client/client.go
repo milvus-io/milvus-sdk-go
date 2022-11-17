@@ -97,15 +97,15 @@ type Client interface {
 
 	// CreateIndex create index for field of specified collection
 	// currently index naming is not supported, so only one index on vector field is supported
-	CreateIndex(ctx context.Context, collName string, fieldName string, idx entity.Index, async bool) error
+	CreateIndex(ctx context.Context, collName string, fieldName string, idx entity.Index, async bool, opts ...IndexOption) error
 	// DescribeIndex describe index on collection
 	// currently index naming is not supported, so only one index on vector field is supported
-	DescribeIndex(ctx context.Context, collName string, fieldName string) ([]entity.Index, error)
+	DescribeIndex(ctx context.Context, collName string, fieldName string, opts ...IndexOption) ([]entity.Index, error)
 	// DropIndex drop index from collection with specified field name
-	DropIndex(ctx context.Context, collName string, fieldName string) error
+	DropIndex(ctx context.Context, collName string, fieldName string, opts ...IndexOption) error
 	// GetIndexState get index state with specified collection and field name
 	// index naming is not supported yet
-	GetIndexState(ctx context.Context, collName string, fieldName string) (entity.IndexState, error)
+	GetIndexState(ctx context.Context, collName string, fieldName string, opts ...IndexOption) (entity.IndexState, error)
 
 	// -- basic operation --
 
