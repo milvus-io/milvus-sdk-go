@@ -64,6 +64,7 @@ func TestGrpcClientCreateIndex(t *testing.T) {
 				return resp, err
 			}
 			assert.Equal(t, testCollectionName, req.CollectionName)
+			assert.Equal(t, "test-index", req.IndexName)
 
 			resp.State = common.IndexState_InProgress
 			if time.Since(start) > time.Duration(buildTime)*time.Millisecond {
@@ -76,7 +77,7 @@ func TestGrpcClientCreateIndex(t *testing.T) {
 			return resp, err
 		})
 
-		assert.Nil(t, c.CreateIndex(ctx, testCollectionName, fieldName, idx, false))
+		assert.Nil(t, c.CreateIndex(ctx, testCollectionName, fieldName, idx, false, WithIndexName("test-index")))
 		assert.True(t, flag)
 
 		mock.DelInjection(MGetIndexState)

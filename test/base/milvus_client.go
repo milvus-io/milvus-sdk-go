@@ -4,9 +4,7 @@ import (
 	"context"
 	"log"
 
-	server "github.com/milvus-io/milvus-proto/go-api/milvuspb"
 	"github.com/milvus-io/milvus-sdk-go/v2/client"
-	v2 "github.com/milvus-io/milvus-sdk-go/v2/client/v2"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 
 	"google.golang.org/grpc"
@@ -26,12 +24,12 @@ func postResponse(funcName string, err error, res ...interface{}) {
 }
 
 type MilvusClient struct {
-	mClient v2.Client
+	mClient client.Client
 }
 
 func NewMilvusClient(ctx context.Context, addr string, dialOptions ...grpc.DialOption) (*MilvusClient, error) {
 	preRequest("NewGrpcClient", addr, dialOptions)
-	mClient, err := v2.NewGrpcClient(ctx, addr, dialOptions...)
+	mClient, err := client.NewGrpcClient(ctx, addr, dialOptions...)
 	postResponse("NewGrpcClient", err, mClient)
 	return &MilvusClient{
 		mClient,
@@ -120,18 +118,18 @@ func (mc *MilvusClient) GetPersistentSegmentInfo(ctx context.Context, collName s
 
 // TODO collName, indexName, fieldName in CreateIndexRequestOption
 // Create Index
-func (mc *MilvusClient) CreateIndex(ctx context.Context, async bool, idx entity.Index, opts ...v2.CreateIndexRequestOption) error {
+func (mc *MilvusClient) CreateIndex(ctx context.Context, collectionName string, fieldName string, async bool, idx entity.Index, opts ...client.IndexOption) error {
 	preRequest("CreateIndex", async, idx, opts)
-	err := mc.mClient.CreateIndex(ctx, async, idx, opts...)
+	err := mc.mClient.CreateIndex(ctx, collectionName, fieldName, idx, async, opts...)
 	postResponse("CreateIndex", err)
 	return err
 }
 
 // TODO milvuspb server IndexDescription
 //Describe Index
-func (mc *MilvusClient) DescribeIndex(ctx context.Context, opts ...v2.DescribeIndexRequestOption) ([]*server.IndexDescription, error) {
+func (mc *MilvusClient) DescribeIndex(ctx context.Context, collectionName string, fieldName string, opts ...client.IndexOption) ([]entity.Index, error) {
 	preRequest("DescribeIndex", opts)
-	indexes, err := mc.mClient.DescribeIndex(ctx, opts...)
+	indexes, err := mc.mClient.DescribeIndex(ctx, collectionName, fieldName, opts...)
 	postResponse("DescribeIndex", err, indexes)
 	return indexes, err
 }
