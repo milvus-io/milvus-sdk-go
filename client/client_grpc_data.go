@@ -699,14 +699,13 @@ func estRowSize(sch *entity.Schema, selected []string) int64 {
 }
 
 // BulkInsert data files(json, numpy, etc.) on MinIO/S3 storage, read and parse them into sealed segments
-func (c *GrpcClient) BulkInsert(ctx context.Context, collName string, partitionName string, rowBased bool, files []string, opts ...BulkInsertOption) ([]int64, error) {
+func (c *GrpcClient) BulkInsert(ctx context.Context, collName string, partitionName string, files []string, opts ...BulkInsertOption) (int64, error) {
 	if c.Service == nil {
-		return []int64{}, ErrClientNotReady
+		return 0, ErrClientNotReady
 	}
 	req := &server.ImportRequest{
 		CollectionName: collName,
 		PartitionName:  partitionName,
-		RowBased:       rowBased,
 		Files:          files,
 	}
 
@@ -716,13 +715,13 @@ func (c *GrpcClient) BulkInsert(ctx context.Context, collName string, partitionN
 
 	resp, err := c.Service.Import(ctx, req)
 	if err != nil {
-		return []int64{}, err
+		return 0, err
 	}
 	if err := handleRespStatus(resp.GetStatus()); err != nil {
-		return []int64{}, err
+		return 0, err
 	}
 
-	return resp.Tasks, nil
+	return resp.Tasks[0], nil
 }
 
 // GetBulkInsertState checks import task state
