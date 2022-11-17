@@ -1,0 +1,82 @@
+name: Test CI
+on:
+  push:
+    branches:
+      - master
+jobs:
+  test:
+    name: Run Ci Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      matrix:
+        mode: [standalone, cluster]
+    env:
+      IMAGE_REPO: "milvusdb/milvus"
+      TAG_PREFIX: "2.2.0-"
+      RELEASE_NAME: "go-test"
+      IMAGE_TAG: "2.2.0-latest"
+      QA_NAMESPACE: "qa"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: '0'
+
+      - name: Get the latest of Milvus image tag
+        shell: bash
+        working-directory: ci/scripts
+        run: |
+          echo "IMAGE_TAG=$(./docker_image_find_tag.sh -n ${IMAGE_REPO} -t ${TAG_PREFIX}latest -f ${TAG_PREFIX} -F -L -q)" >> $GITHUB_ENV
+#          export IMAGE_TAG=$IMAGE_TAG
+#          export IMAGE_REPO=$IMAGE_REPO
+#          export RELEASE_NAME=$RELEASE_NAME
+
+      - name: Creating kind cluster
+        uses: helm/kind-action@v1.3.0
+
+      - name: Deploy milvus operator
+        shell: bash
+        run: |
+          kubectl get sc
+          helm install milvus-operator -n milvus-operator --create-namespace https://github.com/milvus-io/milvus-operator/releases/download/v0.6.9/milvus-operator-0.6.9.tgz
+          kubectl --timeout 20m wait --for=condition=ready pod -l app.kubernetes.io/instance=milvus-operator -n milvus-operator
+          kubectl get pods -n milvus-operator
+
+      - name: Install Milvus
+        shell: bash
+        working-directory: ci/milvus-operator
+        run: |
+          echo "IMAGE_REPO=$IMAGE_REPO, IMAGE_TAG=$IMAGE_TAG, RELEASE_NAME=$RELEASE_NAME"
+          kubectl create namespace ${QA_NAMESPACE}
+          envsubst < milvus-${{ matrix.mode }}.yaml | cat - | kubectl apply -f - -n ${QA_NAMESPACE}
+          kubectl -n ${QA_NAMESPACE} wait --for=condition=MilvusReady milvus/${RELEASE_NAME} --timeout 20m
+          kubectl --timeout 20m wait --for=condition=ready pod -l app.kubernetes.io/instance=${RELEASE_NAME} -n ${QA_NAMESPACE}
+          kubectl describe milvus ${RELEASE_NAME} -n ${QA_NAMESPACE}
+          kubectl get pod -o wide -n ${QA_NAMESPACE} | grep -E "NAME|${RELEASE_NAME}"
+          kubectl get svc -n ${QA_NAMESPACE}
+          kubectl port-forward service/${RELEASE_NAME}-milvus 19530 -n ${QA_NAMESPACE} >/dev/null 2>&1 & sleep 10s
+
+      - name: Run Ci Test
+        shell: bash
+        working-directory: test/
+        run: |
+          nc -vz 127.0.0.1 19530
+          curl -sSL "https://github.com/gotestyourself/gotestsum/releases/download/v1.8.2/gotestsum_1.8.2_linux_amd64.tar.gz" | sudo tar -xz -C /usr/local/bin gotestsum
+          gotestsum --format testname --hide-summary=output ./testcases/... --addr=127.0.0.1:19530
+
+      - name: Export logs
+        if: ${{ always() }}
+        shell: bash
+        working-directory: ci/scripts/
+        run: |
+          bash ./export_log_k8s_for_operator.sh ${QA_NAMESPACE} ${RELEASE_NAME} milvus_logs/
+
+      - name: Archive logs
+        if: ${{ !success() }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: milvus-logs-${{ matrix.mode }}
+          path: |
+            ci/scripts/milvus_logs/
+

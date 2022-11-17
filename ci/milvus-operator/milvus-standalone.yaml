@@ -1,0 +1,23 @@
+apiVersion: milvus.io/v1beta1
+kind: Milvus
+metadata:
+  name: ${RELEASE_NAME}
+spec:
+  mode: standalone
+  dependencies:
+    etcd:
+      inCluster:
+        deletionPolicy: Delete
+        pvcDeletion: true
+    storage:
+      inCluster:
+        deletionPolicy: Delete
+        pvcDeletion: true
+    rocksmq:
+      persistence:
+        enabled: true
+  components:
+    image: ${IMAGE_REPO}:${IMAGE_TAG}
+  config:
+    log:
+      level: debug
