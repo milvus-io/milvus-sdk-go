@@ -19,7 +19,7 @@ func TestCreateIndex(t *testing.T) {
 
 	// flush
 	errFlush := mc.Flush(ctx, collName, false)
-	common.CheckErr(t, errFlush, true, "")
+	common.CheckErr(t, errFlush, true)
 
 	//create index
 	//idx, _ := entity.NewIndexHNSW(   // NewIndex func

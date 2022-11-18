@@ -29,7 +29,7 @@ func TestInsert(t *testing.T) {
 		floatColumn,          // columnarData
 		vecColumn,            // columnarData
 	)
-	common.CheckErr(t, errInsert, true, "")
+	common.CheckErr(t, errInsert, true)
 	common.CheckInsertResult(t, ids, intColumn)
 	log.Println(ids.Len())
 }
@@ -54,6 +54,6 @@ func TestInsertAutoId(t *testing.T) {
 		floatColumn,          // columnarData
 		vecColumn,            // columnarData
 	)
-	common.CheckErr(t, errInsert, true, "")
+	common.CheckErr(t, errInsert, true)
 	require.Equal(t, common.DefaultNb, ids.Len())
 }

@@ -10,11 +10,15 @@ import (
 )
 
 // check err and errMsg
-func CheckErr(t *testing.T, actualErr error, expErrNil bool, expErrorMsg string) {
+func CheckErr(t *testing.T, actualErr error, expErrNil bool, expErrorMsg ...string) {
 	if expErrNil {
 		require.NoError(t, actualErr)
 	} else {
-		require.ErrorContains(t, actualErr, expErrorMsg)
+		if len(expErrorMsg) == 0 {
+			log.Fatal("expect error message should not be empty")
+		}
+		require.NotEmpty(t, expErrorMsg[0])
+		require.ErrorContains(t, actualErr, expErrorMsg[0])
 	}
 }
 
@@ -25,26 +29,28 @@ func EqualFields(t *testing.T, fieldA *entity.Field, fieldB *entity.Field) {
 	require.Equal(t, fieldA.PrimaryKey, fieldB.PrimaryKey)
 	require.Equal(t, fieldA.Description, fieldB.Description)
 	require.Equal(t, fieldA.DataType, fieldB.DataType)
-	// TODO default TypeParams and IndexParams
-	//Expected :map[string]string(nil)
-	//Actual   :map[string]string{}
 
 	// check vector field dim
 	switch fieldA.DataType {
 	case entity.FieldTypeFloatVector:
-		require.Equal(t, fieldA.TypeParams["dim"], fieldB.TypeParams["dim"])
+		require.Equal(t, fieldA.TypeParams[entity.TypeParamDim], fieldB.TypeParams[entity.TypeParamDim])
 	case entity.FieldTypeBinaryVector:
-		require.Equal(t, fieldA.TypeParams["dim"], fieldB.TypeParams["dim"])
+		require.Equal(t, fieldA.TypeParams[entity.TypeParamDim], fieldB.TypeParams[entity.TypeParamDim])
+	// check varchar field max_length
+	case entity.FieldTypeVarChar:
+		require.Equal(t, fieldA.TypeParams[entity.TypeParamMaxLength], fieldB.TypeParams[entity.TypeParamMaxLength])
+
 	}
+	require.Empty(t, fieldA.IndexParams)
+	require.Empty(t, fieldB.IndexParams)
 	//require.Equal(t, fieldA.IndexParams, fieldB.IndexParams)
 }
 
 // equal two schemas
-// TODO check
 func EqualSchema(t *testing.T, schemaA entity.Schema, schemaB entity.Schema) {
 	require.Equal(t, schemaA.CollectionName, schemaB.CollectionName)
 	require.Equal(t, schemaA.Description, schemaB.Description)
-	//require.Equal(t, schemaA.AutoID, schemaB.AutoID)
+	require.Equal(t, schemaA.AutoID, schemaB.AutoID)
 	require.Equal(t, len(schemaA.Fields), len(schemaB.Fields))
 	for i := 0; i < len(schemaA.Fields); i++ {
 		EqualFields(t, schemaA.Fields[i], schemaB.Fields[i])

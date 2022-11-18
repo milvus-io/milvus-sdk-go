@@ -22,7 +22,7 @@ func init() {
 func teardown() {
 	log.Println("Start to tear down all")
 	ctx := context.Background()
-	mc, err := base.NewMilvusClient(ctx, *addr)
+	mc, err := base.NewDefaultMilvusClient(ctx, *addr)
 	if err != nil {
 		log.Fatalf("teardown failed to connect milvus with error %v", err)
 	}
@@ -37,8 +37,8 @@ func teardown() {
 func createMilvusClient(ctx context.Context, t *testing.T) *base.MilvusClient {
 	t.Helper()
 
-	mc, err := base.NewMilvusClient(ctx, *addr)
-	common.CheckErr(t, err, true, "")
+	mc, err := base.NewDefaultMilvusClient(ctx, *addr)
+	common.CheckErr(t, err, true)
 
 	t.Cleanup(func() {
 		mc.Close()
@@ -53,12 +53,12 @@ func createDefaultCollection(ctx context.Context, t *testing.T, mc *base.MilvusC
 
 	// prepare schema
 	collName := common.GenRandomString(6)
-	fields := common.GenDefaultFields()
+	fields := common.GenDefaultFields(false)
 	schema := common.GenSchema(collName, autoID, fields)
 
 	// create default collection with fields: [int64, float, floatVector] and vector dim is default 128
 	errCreateCollection := mc.CreateCollection(ctx, schema, common.DefaultShards)
-	common.CheckErr(t, errCreateCollection, true, "")
+	common.CheckErr(t, errCreateCollection, true)
 
 	// close connect and drop collection after each case
 	t.Cleanup(func() {
@@ -82,7 +82,7 @@ func createCollectionWithDataAndIndex(ctx context.Context, t *testing.T, mc *bas
 		floatColumn,             // columnarData
 		vecColumn,               // columnarData
 	)
-	common.CheckErr(t, errInsert, true, "")
+	common.CheckErr(t, errInsert, true)
 	common.CheckInsertResult(t, ids, intColumn)
 
 	// flush
