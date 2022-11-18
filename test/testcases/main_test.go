@@ -53,7 +53,7 @@ func createDefaultCollection(ctx context.Context, t *testing.T, mc *base.MilvusC
 
 	// prepare schema
 	collName := common.GenRandomString(6)
-	fields := common.GenDefaultFields(false)
+	fields := common.GenDefaultFields(autoID)
 	schema := common.GenSchema(collName, autoID, fields)
 
 	// create default collection with fields: [int64, float, floatVector] and vector dim is default 128
@@ -68,12 +68,12 @@ func createDefaultCollection(ctx context.Context, t *testing.T, mc *base.MilvusC
 	return collName
 }
 
-func createCollectionWithDataAndIndex(ctx context.Context, t *testing.T, mc *base.MilvusClient, autoID bool, withIndex bool) (string, entity.Column) {
+func createCollectionWithDataIndex(ctx context.Context, t *testing.T, mc *base.MilvusClient, autoID bool, withIndex bool) (string, entity.Column) {
 	// collection
 	collName := createDefaultCollection(ctx, t, mc, autoID)
 
 	// insert data
-	intColumn, floatColumn, vecColumn := common.GenDefaultColumnData(common.DefaultNb)
+	intColumn, floatColumn, vecColumn := common.GenDefaultColumnData(common.DefaultNb, common.DefaultDim)
 	ids, errInsert := mc.Insert(
 		context.Background(),    // ctx
 		collName,                // CollectionName

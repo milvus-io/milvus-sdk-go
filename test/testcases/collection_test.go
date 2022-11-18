@@ -2,6 +2,7 @@ package testcases
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"testing"
 	"time"
@@ -23,7 +24,7 @@ func TestCreateCollection(t *testing.T) {
 	// prepare
 	defaultFields := [][]*entity.Field{
 		common.GenDefaultFields(false),
-		common.GenDefaultBinaryFields(false),
+		common.GenDefaultBinaryFields(false, common.DefaultDimStr),
 		common.GenDefaultVarcharFields(false),
 	}
 	for _, fields := range defaultFields {
@@ -55,7 +56,7 @@ func TestCreateAutoIdCollection(t *testing.T) {
 	// prepare
 	defaultFields := [][]*entity.Field{
 		common.GenDefaultFields(true),
-		common.GenDefaultBinaryFields(true),
+		common.GenDefaultBinaryFields(true, common.DefaultDimStr),
 		common.GenDefaultVarcharFields(true),
 	}
 	for _, fields := range defaultFields {
@@ -329,4 +330,35 @@ func TestCreateCollectionDescription(t *testing.T) {
 	collection, _ := mc.DescribeCollection(ctx, schema.CollectionName)
 	require.Equal(t, collection.Schema.Description, "schema")
 	require.Equal(t, collection.Schema.Fields[0].Description, "pk field")
+}
+
+// test create collection with invalid dim
+func TestCreateCollectionInvalidDim(t *testing.T) {
+	t.Parallel()
+	type invalidDimStruct struct {
+		dim    string
+		errMsg string
+	}
+	invalidDims := []invalidDimStruct{
+		{dim: "10", errMsg: "should be multiple of 8"},
+		{dim: "0", errMsg: "should be in range 1 ~ 32768"},
+		{dim: "", errMsg: "invalid syntax"},
+		{dim: "中文", errMsg: "invalid syntax"},
+		{dim: "%$#", errMsg: "invalid syntax"},
+		{dim: fmt.Sprintf("%d", common.MaxDim+1), errMsg: "should be in range 1 ~ 32768"},
+	}
+
+	// connect
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*common.DefaultTimeout)
+	defer cancel()
+	mc := createMilvusClient(ctx, t)
+
+	// create binary collection with autoID true
+	for _, invalidDim := range invalidDims {
+		collName := common.GenRandomString(6)
+		binaryFields := common.GenDefaultBinaryFields(true, invalidDim.dim)
+		schema := common.GenSchema(collName, true, binaryFields)
+		errCreate := mc.CreateCollection(ctx, schema, common.DefaultShards)
+		common.CheckErr(t, errCreate, false, invalidDim.errMsg)
+	}
 }

@@ -27,6 +27,8 @@ const (
 	DefaultDim    = 128
 	DefaultDimStr = "128"
 
+	MaxDim = 32768
+
 	DefaultMaxLength = "65535"
 
 	DefaultShards = int32(2)
@@ -40,6 +42,8 @@ const (
 	DefaultTopK = 10
 
 	MaxCollectionNameLen = 255
+
+	RowCount = "row_count"
 )
 
 var r *rand.Rand
@@ -59,15 +63,20 @@ func GenRandomString(n int) string {
 	return string(b)
 }
 
+// gen scala field
 func GenScalaField(name string, fieldType entity.FieldType, primaryKey bool, autoID bool) *entity.Field {
 	var scaleField = new(entity.Field)
 	scaleField.Name = name
 	scaleField.PrimaryKey = primaryKey
 	scaleField.AutoID = autoID
 	scaleField.DataType = fieldType
+	if fieldType == entity.FieldTypeVarChar {
+		scaleField.TypeParams = map[string]string{entity.TypeParamMaxLength: DefaultMaxLength}
+	}
 	return scaleField
 }
 
+// gen vector field
 func GenVectorField(name string, fieldType entity.FieldType, dim string) *entity.Field {
 	if fieldType == entity.FieldTypeFloatVector || fieldType == entity.FieldTypeBinaryVector {
 		var vecField = new(entity.Field)
@@ -103,7 +112,7 @@ func GenDefaultFields(autoID bool) []*entity.Field {
 }
 
 // gen default binary fields with int64, float, binaryVector field
-func GenDefaultBinaryFields(autoID bool) []*entity.Field {
+func GenDefaultBinaryFields(autoID bool, dim string) []*entity.Field {
 	var fields = []*entity.Field{
 		{
 			Name:       DefaultIntFieldName,
@@ -118,7 +127,7 @@ func GenDefaultBinaryFields(autoID bool) []*entity.Field {
 		{
 			Name:       DefaultBinaryVecFieldName,
 			DataType:   entity.FieldTypeBinaryVector,
-			TypeParams: map[string]string{entity.TypeParamDim: DefaultDimStr},
+			TypeParams: map[string]string{entity.TypeParamDim: dim},
 		},
 	}
 	return fields
@@ -154,21 +163,32 @@ func GenSchema(name string, autoID bool, fields []*entity.Field) *entity.Schema 
 }
 
 // gen float vector values
-func GenFloatVector(num, dim int) [][]float32 {
+func GenFloatVector(nb, dim int) [][]float32 {
 	rand.Seed(time.Now().Unix())
-	r := make([][]float32, 0, num)
-	for i := 0; i < num; i++ {
-		v := make([]float32, 0, dim)
+	floatVectors := make([][]float32, 0, nb)
+	for i := 0; i < nb; i++ {
+		vec := make([]float32, 0, dim)
 		for j := 0; j < dim; j++ {
-			v = append(v, rand.Float32())
+			vec = append(vec, rand.Float32())
 		}
-		r = append(r, v)
+		floatVectors = append(floatVectors, vec)
 	}
-	return r
+	return floatVectors
+}
+
+// gen binary vector values
+func GenBinaryVector(nb int, dim int) [][]byte {
+	binaryVectors := make([][]byte, 0, nb)
+	for i := 0; i < nb; i++ {
+		vec := make([]byte, dim/8)
+		rand.Read(vec)
+		binaryVectors = append(binaryVectors, vec)
+	}
+	return binaryVectors
 }
 
 // gen default column with data
-func GenDefaultColumnData(nb int) (*entity.ColumnInt64, *entity.ColumnFloat, *entity.ColumnFloatVector) {
+func GenDefaultColumnData(nb int, dim int) (*entity.ColumnInt64, *entity.ColumnFloat, *entity.ColumnFloatVector) {
 	int64Values := make([]int64, 0, nb)
 	floatValues := make([]float32, 0, nb)
 	vecFloatValues := make([][]float32, 0, nb)
@@ -176,7 +196,7 @@ func GenDefaultColumnData(nb int) (*entity.ColumnInt64, *entity.ColumnFloat, *en
 		int64Values = append(int64Values, int64(i))
 		floatValues = append(floatValues, float32(i))
 		vec := make([]float32, 0, DefaultDim)
-		for j := 0; j < DefaultDim; j++ {
+		for j := 0; j < dim; j++ {
 			vec = append(vec, rand.Float32())
 		}
 		vecFloatValues = append(vecFloatValues, vec)
@@ -184,6 +204,24 @@ func GenDefaultColumnData(nb int) (*entity.ColumnInt64, *entity.ColumnFloat, *en
 	intColumn := entity.NewColumnInt64(DefaultIntFieldName, int64Values)
 	floatColumn := entity.NewColumnFloat(DefaultFloatFieldName, floatValues)
 	vecColumn := entity.NewColumnFloatVector(DefaultFloatVecFieldName, DefaultDim, vecFloatValues)
+	return intColumn, floatColumn, vecColumn
+}
+
+// gen default binary collection data
+func GenDefaultBinaryData(nb int, dim int) (*entity.ColumnInt64, *entity.ColumnFloat, *entity.ColumnBinaryVector) {
+	int64Values := make([]int64, 0, nb)
+	floatValues := make([]float32, 0, nb)
+	vecBinaryValues := make([][]byte, 0, nb)
+	for i := 0; i < nb; i++ {
+		int64Values = append(int64Values, int64(i))
+		floatValues = append(floatValues, float32(i))
+		vec := make([]byte, dim/8)
+		rand.Read(vec)
+		vecBinaryValues = append(vecBinaryValues, vec)
+	}
+	intColumn := entity.NewColumnInt64(DefaultIntFieldName, int64Values)
+	floatColumn := entity.NewColumnFloat(DefaultFloatFieldName, floatValues)
+	vecColumn := entity.NewColumnBinaryVector(DefaultBinaryVecFieldName, dim, vecBinaryValues)
 	return intColumn, floatColumn, vecColumn
 }
 
@@ -208,4 +246,20 @@ func GenLongString(n int) string {
 		builder.WriteString(longString)
 	}
 	return builder.String()
+}
+
+// gen fields with all scala field types
+func GenAllFields() []*entity.Field {
+	allFields := []*entity.Field{
+		GenScalaField("int64", entity.FieldTypeInt64, true, false),                // int64
+		GenScalaField("bool", entity.FieldTypeBool, false, false),                 // bool
+		GenScalaField("int8", entity.FieldTypeInt8, false, false),                 // int8
+		GenScalaField("int16", entity.FieldTypeInt16, false, false),               // int16
+		GenScalaField("int32", entity.FieldTypeInt32, false, false),               // int32
+		GenScalaField("float", entity.FieldTypeFloat, false, false),               // float
+		GenScalaField("double", entity.FieldTypeDouble, false, false),             // double
+		GenScalaField("varChar", entity.FieldTypeVarChar, false, false),           // varchar
+		GenVectorField("floatVector", entity.FieldTypeFloatVector, DefaultDimStr), // float vector
+	}
+	return allFields
 }

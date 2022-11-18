@@ -87,7 +87,6 @@ func CheckInsertResult(t *testing.T, actualIds entity.Column, expIds entity.Colu
 	default:
 		log.Printf("The primary field only support type: [%v, %v]", entity.FieldTypeInt64, entity.FieldTypeVarChar)
 	}
-
 }
 
 // check index result, index type, metric type, index params

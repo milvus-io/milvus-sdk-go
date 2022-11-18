@@ -18,7 +18,7 @@ func TestLoadCollection(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create collection with data
-	collName, _ := createCollectionWithDataAndIndex(ctx, t, mc, false, false)
+	collName, _ := createCollectionWithDataIndex(ctx, t, mc, false, false)
 
 	errLoad := mc.LoadCollection(ctx, collName, false)
 	common.CheckErr(t, errLoad, true, "")
@@ -58,5 +58,4 @@ func TestLoadCollection(t *testing.T) {
 			log.Printf("search ids is %v", ids)
 		}
 	}
-
 }
