@@ -55,9 +55,9 @@ func TestGrpcClientCreateIndex(t *testing.T) {
 		buildTime := rand.Intn(900) + 100
 		start := time.Now()
 		flag := false
-		mock.SetInjection(MGetIndexState, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			req, ok := raw.(*server.GetIndexStateRequest)
-			resp := &server.GetIndexStateResponse{}
+		mock.SetInjection(MDescribeIndex, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+			req, ok := raw.(*server.DescribeIndexRequest)
+			resp := &server.DescribeIndexResponse{}
 			if !ok {
 				s, err := BadRequestStatus()
 				resp.Status = s
@@ -66,9 +66,15 @@ func TestGrpcClientCreateIndex(t *testing.T) {
 			assert.Equal(t, testCollectionName, req.CollectionName)
 			assert.Equal(t, "test-index", req.IndexName)
 
-			resp.State = common.IndexState_InProgress
+			resp.IndexDescriptions = []*server.IndexDescription{
+				{
+					IndexName: req.GetIndexName(),
+					FieldName: req.GetIndexName(),
+					State:     common.IndexState_InProgress,
+				},
+			}
 			if time.Since(start) > time.Duration(buildTime)*time.Millisecond {
-				resp.State = common.IndexState_Finished
+				resp.IndexDescriptions[0].State = common.IndexState_Finished
 				flag = true
 			}
 
@@ -80,7 +86,7 @@ func TestGrpcClientCreateIndex(t *testing.T) {
 		assert.Nil(t, c.CreateIndex(ctx, testCollectionName, fieldName, idx, false, WithIndexName("test-index")))
 		assert.True(t, flag)
 
-		mock.DelInjection(MGetIndexState)
+		mock.DelInjection(MDescribeIndex)
 	})
 }
 

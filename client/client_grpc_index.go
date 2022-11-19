@@ -13,7 +13,6 @@ package client
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -106,17 +105,21 @@ func (c *GrpcClient) CreateIndex(ctx context.Context, collName string, fieldName
 	}
 	if !async { // sync mode, wait index building result
 		for {
-			is, err := c.GetIndexState(ctx, collName, fieldName, opts...)
+			idxDesc, err := c.describeIndex(ctx, collName, fieldName, opts...)
 			if err != nil {
 				return err
 			}
-			switch is {
-			case entity.IndexState(common.IndexState_Failed):
-				return errors.New("index build failed")
-			case entity.IndexState(common.IndexState_Finished):
-				return nil
-			default:
+			for _, desc := range idxDesc {
+				if (idxDef.name == "" && desc.GetFieldName() == fieldName) || idxDef.name == desc.GetIndexName() {
+					switch desc.GetState() {
+					case common.IndexState_Finished:
+						return nil
+					case common.IndexState_Failed:
+						return fmt.Errorf("create index failed, reason: %s", desc.GetIndexStateFailReason())
+					}
+				}
 			}
+
 			time.Sleep(100 * time.Millisecond) // wait 100ms
 		}
 	}
@@ -133,22 +136,13 @@ func (c *GrpcClient) DescribeIndex(ctx context.Context, collName string, fieldNa
 		return []entity.Index{}, err
 	}
 
-	idxDef := getIndexDef(opts...)
-	req := &server.DescribeIndexRequest{
-		CollectionName: collName,
-		FieldName:      fieldName,
-		IndexName:      idxDef.name,
+	idxDesc, err := c.describeIndex(ctx, collName, fieldName, opts...)
+	if err != nil {
+		return nil, err
 	}
 
-	resp, err := c.Service.DescribeIndex(ctx, req)
-	if err != nil {
-		return []entity.Index{}, err
-	}
-	if err := handleRespStatus(resp.GetStatus()); err != nil {
-		return []entity.Index{}, err
-	}
-	indexes := make([]entity.Index, 0, len(resp.GetIndexDescriptions()))
-	for _, info := range resp.GetIndexDescriptions() {
+	indexes := make([]entity.Index, 0, len(idxDesc))
+	for _, info := range idxDesc {
 		params := entity.KvPairsMap(info.Params)
 		it := params["index_type"] // TODO change to const
 		idx := entity.NewGenericIndex(
@@ -242,4 +236,23 @@ func (c *GrpcClient) GetIndexBuildProgress(ctx context.Context, collName string,
 		return 0, 0, err
 	}
 	return resp.GetTotalRows(), resp.GetIndexedRows(), nil
+}
+
+func (c *GrpcClient) describeIndex(ctx context.Context, collName string, fieldName string, opts ...IndexOption) ([]*server.IndexDescription, error) {
+	idxDef := getIndexDef(opts...)
+	req := &server.DescribeIndexRequest{
+		CollectionName: collName,
+		FieldName:      fieldName,
+		IndexName:      idxDef.name,
+	}
+
+	resp, err := c.Service.DescribeIndex(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	if err := handleRespStatus(resp.GetStatus()); err != nil {
+		return nil, err
+	}
+
+	return resp.GetIndexDescriptions(), nil
 }
