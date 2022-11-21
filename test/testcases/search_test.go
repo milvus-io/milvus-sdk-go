@@ -1,7 +1,6 @@
 package testcases
 
 import (
-	"context"
 	"log"
 	"testing"
 	"time"
@@ -12,8 +11,7 @@ import (
 
 func TestLoadCollection(t *testing.T) {
 	t.Skip("Skip for index option and index return")
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*common.DefaultTimeout)
-	defer cancel()
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect
 	mc := createMilvusClient(ctx, t)
 

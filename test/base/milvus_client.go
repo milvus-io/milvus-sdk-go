@@ -84,7 +84,11 @@ func (mc *MilvusClient) Close() error {
 
 // Create Collection
 func (mc *MilvusClient) CreateCollection(ctx context.Context, collSchema *entity.Schema, shardsNum int32, opts ...client.CreateCollectionOption) error {
-	preRequest("CreateCollection", ctx, collSchema, shardsNum, opts)
+	if collSchema == nil {
+		preRequest("CreateCollection", ctx, collSchema, shardsNum, opts)
+	} else {
+		preRequest("CreateCollection", ctx, collSchema.CollectionName, collSchema, shardsNum, opts)
+	}
 	err := mc.mClient.CreateCollection(ctx, collSchema, shardsNum, opts...)
 	postResponse("CreateCollection", err)
 	return err
@@ -275,7 +279,7 @@ func (mc *MilvusClient) GetPersistentSegmentInfo(ctx context.Context, collName s
 
 // Create Index
 func (mc *MilvusClient) CreateIndex(ctx context.Context, collectionName string, fieldName string, async bool, idx entity.Index, opts ...client.IndexOption) error {
-	preRequest("CreateIndex", ctx, collectionName, fieldName, idx, async, opts)
+	preRequest("CreateIndex", ctx, collectionName, fieldName, async, idx, opts)
 	err := mc.mClient.CreateIndex(ctx, collectionName, fieldName, idx, async, opts...)
 	postResponse("CreateIndex", err)
 	return err

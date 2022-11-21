@@ -1,7 +1,6 @@
 package testcases
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"testing"
@@ -17,8 +16,7 @@ import (
 // test create default floatVec and binaryVec collection
 func TestCreateCollection(t *testing.T) {
 	t.Parallel()
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*common.DefaultTimeout)
-	defer cancel()
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	mc := createMilvusClient(ctx, t)
 
 	// prepare
@@ -49,8 +47,7 @@ func TestCreateCollection(t *testing.T) {
 func TestCreateAutoIdCollection(t *testing.T) {
 	t.Skipf("issue: %v", "https://github.com/milvus-io/milvus-sdk-go/issues/343")
 	t.Parallel()
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*common.DefaultTimeout)
-	defer cancel()
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	mc := createMilvusClient(ctx, t)
 
 	// prepare
@@ -83,8 +80,7 @@ func TestCreateAutoIdCollection(t *testing.T) {
 // test create collection with invalid collection and field name
 func TestCreateCollectionInvalidName(t *testing.T) {
 	t.Parallel()
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*common.DefaultTimeout)
-	defer cancel()
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	mc := createMilvusClient(ctx, t)
 
 	fields := common.GenDefaultFields(false)
@@ -129,8 +125,7 @@ func TestCreateCollectionInvalidName(t *testing.T) {
 
 // test create collection with nil fields and nil schema
 func TestCreateCollectionWithNil(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*common.DefaultTimeout)
-	defer cancel()
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	mc := createMilvusClient(ctx, t)
 
 	// create collection with nil schema
@@ -146,8 +141,7 @@ func TestCreateCollectionWithNil(t *testing.T) {
 // test create collection with invalid fields: without pk, without vec field, multi pk field, multi vector field
 func TestCreateCollectionInvalidFields(t *testing.T) {
 	t.Parallel()
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*common.DefaultTimeout)
-	defer cancel()
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	mc := createMilvusClient(ctx, t)
 
 	type invalidFieldsStruct struct {
@@ -187,8 +181,7 @@ func TestCreateCollectionInvalidFields(t *testing.T) {
 
 func TestCreateCollectionNonInt64AutoField(t *testing.T) {
 	t.Parallel()
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*common.DefaultTimeout)
-	defer cancel()
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	mc := createMilvusClient(ctx, t)
 
 	invalidPkFields := []entity.FieldType{
@@ -216,8 +209,7 @@ func TestCreateCollectionNonInt64AutoField(t *testing.T) {
 
 // test create collection with duplicate field name
 func TestCreateCollectionDuplicateField(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*common.DefaultTimeout)
-	defer cancel()
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	mc := createMilvusClient(ctx, t)
 
 	// duplicate field
@@ -236,8 +228,7 @@ func TestCreateCollectionDuplicateField(t *testing.T) {
 
 // test create collection with invalid pk field type
 func TestCreateCollectionInvalidPkType(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*common.DefaultTimeout)
-	defer cancel()
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	mc := createMilvusClient(ctx, t)
 
 	invalidPkFields := []entity.FieldType{
@@ -263,8 +254,7 @@ func TestCreateCollectionInvalidPkType(t *testing.T) {
 
 // test create collection with multi auto id
 func TestCreateCollectionMultiAutoId(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*common.DefaultTimeout)
-	defer cancel()
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	mc := createMilvusClient(ctx, t)
 
 	fields := []*entity.Field{
@@ -280,8 +270,7 @@ func TestCreateCollectionMultiAutoId(t *testing.T) {
 // test create collection with different autoId between pk field and schema
 func TestCreateCollectionInconsistentAutoId(t *testing.T) {
 	t.Skipf("Issue: %s", "https://github.com/milvus-io/milvus-sdk-go/issues/342")
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*common.DefaultTimeout)
-	defer cancel()
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	mc := createMilvusClient(ctx, t)
 
 	fields := []*entity.Field{
@@ -301,8 +290,7 @@ func TestCreateCollectionInconsistentAutoId(t *testing.T) {
 
 // test create collection with field description and schema description
 func TestCreateCollectionDescription(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*common.DefaultTimeout)
-	defer cancel()
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	mc := createMilvusClient(ctx, t)
 
 	var fields = []*entity.Field{
@@ -349,8 +337,7 @@ func TestCreateCollectionInvalidDim(t *testing.T) {
 	}
 
 	// connect
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*common.DefaultTimeout)
-	defer cancel()
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	mc := createMilvusClient(ctx, t)
 
 	// create binary collection with autoID true

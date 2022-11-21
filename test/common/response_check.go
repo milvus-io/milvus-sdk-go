@@ -90,11 +90,20 @@ func CheckInsertResult(t *testing.T, actualIds entity.Column, expIds entity.Colu
 }
 
 // check index result, index type, metric type, index params
-//func CheckIndexResult(t *testing.T, actualIndexes []entity.Index, expIndexes []entity.Index)  {
-//	for _, expIndex := range expIndexes {
-//
-//	}
-//}
+func CheckIndexResult(t *testing.T, actualIndexes []entity.Index, expIndexes ...entity.Index) {
+	mNameActualIndex := make(map[string]entity.Index)
+	allActualIndexNames := make([]string, 0, len(actualIndexes))
+	for _, actualIndex := range actualIndexes {
+		mNameActualIndex[actualIndex.Name()] = actualIndex
+		allActualIndexNames = append(allActualIndexNames, actualIndex.Name())
+	}
+	for _, expIndex := range expIndexes {
+		_, has := mNameActualIndex[expIndex.Name()]
+		require.Truef(t, has, "expIndex name %s not in actualIndexes %v", expIndex.Name(), allActualIndexNames)
+		require.Equal(t, mNameActualIndex[expIndex.Name()].IndexType(), expIndex.IndexType())
+		require.Equal(t, mNameActualIndex[expIndex.Name()].Params(), expIndex.Params())
+	}
+}
 
 // assert field data is equal of two columns
 func EqualColumn(t *testing.T, columnA entity.Column, columnB entity.Column) {
@@ -132,9 +141,8 @@ func EqualColumn(t *testing.T, columnA entity.Column, columnB entity.Column) {
 
 // check query result, column name, type and field date
 func CheckQueryResult(t *testing.T, actualColumns []entity.Column, expColumns []entity.Column) {
-	if len(actualColumns) <= len(expColumns) {
-		t.Fatalf("The len of actual columns should large or equal to the expcted columns")
-	}
+	require.LessOrEqualf(t, len(actualColumns), len(expColumns),
+		"The len of actual columns %d should large or equal to the expected columns %d", len(actualColumns), len(expColumns))
 	for _, expColumn := range expColumns {
 		for _, actualColumn := range actualColumns {
 			if expColumn.Name() == actualColumn.Name() {

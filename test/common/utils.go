@@ -3,6 +3,7 @@ package common
 import (
 	"fmt"
 	"math/rand"
+	"strconv"
 	"strings"
 	"time"
 
@@ -10,41 +11,36 @@ import (
 )
 
 const (
-	DefaultTimeout = 60
-
-	DefaultIntFieldName = "int64"
-
-	DefaultFloatFieldName = "float"
-
-	DefaultVarcharFieldName = "varchar"
-
-	DefaultFloatVecFieldName = "float_vec"
-
+	DefaultTimeout            = 60
+	DefaultIntFieldName       = "int64"
+	DefaultFloatFieldName     = "float"
+	DefaultVarcharFieldName   = "varchar"
+	DefaultFloatVecFieldName  = "float_vec"
 	DefaultBinaryVecFieldName = "binary_vec"
-
-	DefaultPartition = "_default"
-
-	DefaultDim    = 128
-	DefaultDimStr = "128"
-
-	MaxDim = 32768
-
-	DefaultMaxLength = "65535"
-
-	DefaultShards = int32(2)
-
-	DefaultConsistencyLevel = entity.ConsistencyLevel(0)
-
-	DefaultNb = 3000
-
-	DefaultNq = 5
-
-	DefaultTopK = 10
-
-	MaxCollectionNameLen = 255
-
-	RowCount = "row_count"
+	DefaultPartition          = "_default"
+	DefaultIndexName          = "_default_idx_102"
+	DefaultIndexNameBinary    = "_default_idx_100"
+	DefaultDim                = 128
+	DefaultDimStr             = "128"
+	MaxDim                    = 32768
+	DefaultMaxLength          = "65535"
+	DefaultShards             = int32(2)
+	DefaultConsistencyLevel   = entity.ConsistencyLevel(0)
+	DefaultNb                 = 3000
+	DefaultNq                 = 5
+	DefaultTopK               = 10
+	MaxCollectionNameLen      = 255
+	RowCount                  = "row_count"
 )
+
+var IndexStateValue = map[string]int32{
+	"IndexStateNone": 0,
+	"Unissued":       1,
+	"InProgress":     2,
+	"Finished":       3,
+	"Failed":         4,
+	"Retry":          5,
+}
 
 var r *rand.Rand
 
@@ -225,6 +221,20 @@ func GenDefaultBinaryData(nb int, dim int) (*entity.ColumnInt64, *entity.ColumnF
 	return intColumn, floatColumn, vecColumn
 }
 
+func GenDefaultVarcharData(nb int, dim int) (*entity.ColumnVarChar, *entity.ColumnBinaryVector) {
+	varcharValues := make([]string, 0, nb)
+	vecBinaryValues := make([][]byte, 0, nb)
+	for i := 0; i < nb; i++ {
+		varcharValues = append(varcharValues, strconv.Itoa(i))
+		vec := make([]byte, dim/8)
+		rand.Read(vec)
+		vecBinaryValues = append(vecBinaryValues, vec)
+	}
+	varcharColumn := entity.NewColumnVarChar(DefaultVarcharFieldName, varcharValues)
+	vecColumn := entity.NewColumnBinaryVector(DefaultBinaryVecFieldName, DefaultDim, vecBinaryValues)
+	return varcharColumn, vecColumn
+}
+
 // gen search vectors
 func GenSearchVectors(nq int, dim int) []entity.Vector {
 	vectors := make([]entity.Vector, 0, nq)
@@ -262,4 +272,38 @@ func GenAllFields() []*entity.Field {
 		GenVectorField("floatVector", entity.FieldTypeFloatVector, DefaultDimStr), // float vector
 	}
 	return allFields
+}
+
+// gen all float vector index
+func GenAllFloatIndex(metricType entity.MetricType) []entity.Index {
+	nlist := 128
+	idxFlat, _ := entity.NewIndexFlat(metricType)
+	idxIvfFlat, _ := entity.NewIndexIvfFlat(metricType, nlist)
+	idxIvfSq8, _ := entity.NewIndexIvfSQ8(metricType, nlist)
+	idxIvfPq, _ := entity.NewIndexIvfPQ(metricType, nlist, 16, 8)
+	idxHnsw, _ := entity.NewIndexHNSW(metricType, 8, 96)
+	idxAnnoy, _ := entity.NewIndexANNOY(metricType, 56)
+
+	allFloatIndex := []entity.Index{
+		idxFlat,
+		idxIvfFlat,
+		idxIvfSq8,
+		idxIvfPq,
+		idxHnsw,
+		idxAnnoy,
+	}
+	return allFloatIndex
+}
+
+// gen all binary vector index
+func GenAllBinaryIndex(metricType entity.MetricType) []entity.Index {
+	nlist := 128
+	idxBinFlat, _ := entity.NewIndexBinFlat(metricType, nlist)
+	idxBinIvfFlat, _ := entity.NewIndexBinIvfFlat(metricType, nlist)
+
+	allFloatIndex := []entity.Index{
+		idxBinFlat,
+		idxBinIvfFlat,
+	}
+	return allFloatIndex
 }
