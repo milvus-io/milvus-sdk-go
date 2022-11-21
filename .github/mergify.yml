@@ -4,7 +4,8 @@ pull_request_rules:
       - base=master
       - "status-success=Unittest AMD64 Ubuntu 18.04"
       - "status-success=lint"
-      - "status-success=Run Ci Test"
+      - "status-success=Run Ci Test (standalone)"
+      - "status-success=Run Ci Test (cluster)"
     actions:
       label:
         add:
