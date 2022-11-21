@@ -41,13 +41,31 @@ func WithReplicaNumber(rn int32) LoadCollectionOption {
 
 // SearchQueryOption is an option of search/query request
 type SearchQueryOption struct {
+	// Consistency Level & Time travel
 	ConsistencyLevel   entity.ConsistencyLevel
 	GuaranteeTimestamp uint64
 	TravelTimestamp    uint64
+	// Pagination
+	Limit  int64
+	Offset int64
 }
 
 // SearchQueryOptionFunc is a function which modifies SearchOption
 type SearchQueryOptionFunc func(option *SearchQueryOption)
+
+// WithOffset returns search/query option with offset.
+func WithOffset(offset int64) SearchQueryOptionFunc {
+	return func(option *SearchQueryOption) {
+		option.Offset = offset
+	}
+}
+
+// WithLimit returns search/query option with limit.
+func WithLimit(limit int64) SearchQueryOptionFunc {
+	return func(option *SearchQueryOption) {
+		option.Limit = limit
+	}
+}
 
 // WithSearchQueryConsistencyLevel specifies consistency level
 func WithSearchQueryConsistencyLevel(cl entity.ConsistencyLevel) SearchQueryOptionFunc {
@@ -70,7 +88,7 @@ func WithTravelTimestamp(tt uint64) SearchQueryOptionFunc {
 	}
 }
 
-func MakeSearchQueryOption(collName string, opts ...SearchQueryOptionFunc) (*SearchQueryOption, error) {
+func makeSearchQueryOption(collName string, opts ...SearchQueryOptionFunc) (*SearchQueryOption, error) {
 	opt := &SearchQueryOption{
 		ConsistencyLevel: entity.ClBounded, // default
 	}

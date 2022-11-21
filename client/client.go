@@ -118,8 +118,10 @@ type Client interface {
 	// Search search with bool expression
 	Search(ctx context.Context, collName string, partitions []string,
 		expr string, outputFields []string, vectors []entity.Vector, vectorField string, metricType entity.MetricType, topK int, sp entity.SearchParam, opts ...SearchQueryOptionFunc) ([]SearchResult, error)
-	// QueryByPks query record by specified primary key(s)
+	// QueryByPks query record by specified primary key(s).
 	QueryByPks(ctx context.Context, collectionName string, partitionNames []string, ids entity.Column, outputFields []string, opts ...SearchQueryOptionFunc) ([]entity.Column, error)
+	// Query performs query records with boolean expression.
+	Query(ctx context.Context, collectionName string, partitionNames []string, expr string, outputFields []string, opts ...SearchQueryOptionFunc) ([]entity.Column, error)
 
 	// CalcDistance calculate the distance between vectors specified by ids or provided
 	CalcDistance(ctx context.Context, collName string, partitions []string,

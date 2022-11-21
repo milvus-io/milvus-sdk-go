@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/milvus-io/milvus-proto/go-api/commonpb"
 	common "github.com/milvus-io/milvus-proto/go-api/commonpb"
 	server "github.com/milvus-io/milvus-proto/go-api/milvuspb"
 	schema "github.com/milvus-io/milvus-proto/go-api/schemapb"
@@ -348,6 +349,287 @@ func TestGrpcSearch(t *testing.T) {
 		assert.Nil(t, err)
 		assert.NotNil(t, results)
 	})
+}
+
+func TestGrpcQuery(t *testing.T) {
+	ctx := context.Background()
+	c := testClient(ctx, t)
+	partName := "testPart"
+
+	t.Run("normal query", func(t *testing.T) {
+		mock.SetInjection(MHasCollection, hasCollectionDefault)
+		mock.SetInjection(MHasPartition, hasPartitionInjection(t, testCollectionName, false, partName))
+		defer mock.DelInjection(MHasPartition)
+
+		mock.SetInjection(MQuery, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+			req, ok := raw.(*server.QueryRequest)
+			if !ok {
+				t.FailNow()
+			}
+			assert.Equal(t, testCollectionName, req.GetCollectionName())
+			if len(req.GetPartitionNames()) > 0 {
+				assert.Equal(t, partName, req.GetPartitionNames()[0])
+			}
+
+			resp := &server.QueryResults{}
+			s, err := SuccessStatus()
+			resp.Status = s
+			resp.FieldsData = []*schema.FieldData{
+				{
+					Type:      schema.DataType_Int64,
+					FieldName: "int64",
+					Field: &schema.FieldData_Scalars{
+						Scalars: &schema.ScalarField{
+							Data: &schema.ScalarField_LongData{
+								LongData: &schema.LongArray{
+									Data: []int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+								},
+							},
+						},
+					},
+				},
+				{
+					Type:      schema.DataType_FloatVector,
+					FieldName: testVectorField,
+					Field: &schema.FieldData_Vectors{
+						Vectors: &schema.VectorField{
+							Dim: 1,
+							Data: &schema.VectorField_FloatVector{
+								FloatVector: &schema.FloatArray{
+									Data: []float32{0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0},
+								},
+							},
+						},
+					},
+				},
+			}
+
+			return resp, err
+		})
+		defer mock.DelInjection(MQuery)
+
+		columns, err := c.Query(ctx, testCollectionName, []string{partName}, "int64 in {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}", []string{testPrimaryField, testVectorField}, WithOffset(1), WithLimit(10))
+		assert.NoError(t, err)
+		assert.Equal(t, 2, len(columns))
+		assert.Equal(t, entity.FieldTypeInt64, columns[0].Type())
+		assert.Equal(t, entity.FieldTypeFloatVector, columns[1].Type())
+		assert.Equal(t, 10, columns[0].Len())
+
+		colInt64, ok := columns[0].(*entity.ColumnInt64)
+		assert.True(t, ok)
+		assert.ElementsMatch(t, []int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, colInt64.Data())
+
+		// query with options
+		columns, err = c.Query(ctx, testCollectionName, []string{partName}, "int64 in {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}", []string{"int64", testVectorField}, WithSearchQueryConsistencyLevel(entity.ClSession), WithTravelTimestamp(0))
+		assert.NoError(t, err)
+		assert.Equal(t, 2, len(columns))
+		assert.Equal(t, entity.FieldTypeInt64, columns[0].Type())
+		assert.Equal(t, entity.FieldTypeFloatVector, columns[1].Type())
+		assert.Equal(t, 10, columns[0].Len())
+
+		colInt64, ok = columns[0].(*entity.ColumnInt64)
+		assert.True(t, ok)
+		assert.ElementsMatch(t, []int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, colInt64.Data())
+	})
+
+	t.Run("normal query varchar pks", func(t *testing.T) {
+		mock.SetInjection(MHasCollection, hasCollectionDefault)
+		mock.SetInjection(MHasPartition, hasPartitionInjection(t, testCollectionName, false, partName))
+		defer mock.DelInjection(MHasPartition)
+		mock.SetInjection(MDescribeCollection, describeCollectionInjection(t, testCollectionID, testCollectionName, varCharSchema()))
+		defer mock.SetInjection(MDescribeCollection, describeCollectionInjection(t, testCollectionID, testCollectionName, defaultSchema()))
+
+		mock.SetInjection(MQuery, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+			req, ok := raw.(*server.QueryRequest)
+			if !ok {
+				t.FailNow()
+			}
+			assert.Equal(t, testCollectionName, req.GetCollectionName())
+			if len(req.GetPartitionNames()) > 0 {
+				assert.Equal(t, partName, req.GetPartitionNames()[0])
+			}
+
+			resp := &server.QueryResults{}
+			s, err := SuccessStatus()
+			resp.Status = s
+			resp.FieldsData = []*schema.FieldData{
+				{
+					Type:      schema.DataType_VarChar,
+					FieldName: "varchar",
+					Field: &schema.FieldData_Scalars{
+						Scalars: &schema.ScalarField{
+							Data: &schema.ScalarField_StringData{
+								StringData: &schema.StringArray{
+									Data: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"},
+								},
+							},
+						},
+					},
+				},
+				{
+					Type:      schema.DataType_FloatVector,
+					FieldName: testVectorField,
+					Field: &schema.FieldData_Vectors{
+						Vectors: &schema.VectorField{
+							Dim: 1,
+							Data: &schema.VectorField_FloatVector{
+								FloatVector: &schema.FloatArray{
+									Data: []float32{0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0},
+								},
+							},
+						},
+					},
+				},
+			}
+
+			return resp, err
+		})
+		defer mock.DelInjection(MQuery)
+
+		columns, err := c.Query(ctx, testCollectionName, []string{partName}, `varchar in {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"}`, []string{"varchar", testVectorField})
+		assert.NoError(t, err)
+		assert.Equal(t, 2, len(columns))
+		assert.Equal(t, entity.FieldTypeVarChar, columns[0].Type())
+		assert.Equal(t, entity.FieldTypeFloatVector, columns[1].Type())
+		assert.Equal(t, 10, columns[0].Len())
+
+		colPK, ok := columns[0].(*entity.ColumnVarChar)
+		assert.True(t, ok)
+		assert.ElementsMatch(t, []string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"}, colPK.Data())
+	})
+
+	t.Run("Bad request querys", func(t *testing.T) {
+		mock.SetInjection(MHasCollection, hasCollectionDefault)
+		mock.SetInjection(MHasPartition, hasPartitionInjection(t, testCollectionName, false, partName))
+		defer mock.DelInjection(MHasPartition)
+		mock.SetInjection(MDescribeCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+			req, ok := raw.(*server.DescribeCollectionRequest)
+			resp := &server.DescribeCollectionResponse{}
+			if !ok {
+				s, err := BadRequestStatus()
+				resp.Status = s
+				return resp, err
+			}
+
+			if req.CollectionName != testCollectionName {
+				resp.Status = &commonpb.Status{
+					ErrorCode: commonpb.ErrorCode_CollectionNameNotFound,
+				}
+				return resp, nil
+			}
+			sch := defaultSchema()
+			resp.Schema = sch.ProtoMessage()
+			resp.CollectionID = testCollectionID
+
+			s, err := SuccessStatus()
+			resp.Status = s
+
+			return resp, err
+		})
+		defer mock.SetInjection(MDescribeCollection, describeCollectionInjection(t, testCollectionID, testCollectionName, defaultSchema()))
+
+		// non-exist collection
+		_, err := c.Query(ctx, "non-exists-collection", []string{}, "pk in {}", []string{})
+		assert.Error(t, err)
+	})
+
+	t.Run("Query Service error", func(t *testing.T) {
+		mock.SetInjection(MHasCollection, hasCollectionDefault)
+		mock.SetInjection(MHasPartition, hasPartitionInjection(t, testCollectionName, false, partName))
+		defer mock.DelInjection(MHasPartition)
+
+		mock.SetInjection(MQuery, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+			_, ok := raw.(*server.QueryRequest)
+			if !ok {
+				t.FailNow()
+			}
+
+			resp := &server.QueryResults{}
+			return resp, errors.New("mocked error")
+		})
+		defer mock.DelInjection(MQuery)
+
+		_, err := c.Query(ctx, testCollectionName, []string{}, "int64 in {1}", []string{"*"})
+		assert.Error(t, err)
+
+		mock.SetInjection(MQuery, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+			_, ok := raw.(*server.QueryRequest)
+			if !ok {
+				t.FailNow()
+			}
+
+			resp := &server.QueryResults{}
+			resp.Status = &common.Status{
+				ErrorCode: common.ErrorCode_UnexpectedError,
+				Reason:    "mocked error",
+			}
+			return resp, nil
+		})
+
+		_, err = c.Query(ctx, testCollectionName, []string{}, "int64 in {1}", []string{"*"})
+		assert.Error(t, err)
+
+		mock.SetInjection(MQuery, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+			_, ok := raw.(*server.QueryRequest)
+			if !ok {
+				t.FailNow()
+			}
+
+			resp := &server.QueryResults{}
+			s, err := SuccessStatus()
+			resp.Status = s
+			resp.FieldsData = []*schema.FieldData{
+				{
+					Type:      schema.DataType_String,
+					FieldName: "int64",
+					Field: &schema.FieldData_Scalars{
+						Scalars: &schema.ScalarField{
+							Data: &schema.ScalarField_LongData{
+								LongData: &schema.LongArray{
+									Data: []int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+								},
+							},
+						},
+					},
+				},
+			}
+
+			return resp, err
+		})
+		_, err = c.Query(ctx, testCollectionName, []string{}, "int64 in {1}", []string{"*"})
+		assert.Error(t, err)
+
+		mock.SetInjection(MQuery, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+			_, ok := raw.(*server.QueryRequest)
+			if !ok {
+				t.FailNow()
+			}
+
+			resp := &server.QueryResults{}
+			s, err := SuccessStatus()
+			resp.Status = s
+			resp.FieldsData = []*schema.FieldData{
+				{
+					Type:      schema.DataType_FloatVector,
+					FieldName: "int64",
+					Field: &schema.FieldData_Scalars{
+						Scalars: &schema.ScalarField{
+							Data: &schema.ScalarField_LongData{
+								LongData: &schema.LongArray{
+									Data: []int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+								},
+							},
+						},
+					},
+				},
+			}
+
+			return resp, err
+		})
+		_, err = c.Query(ctx, testCollectionName, []string{}, "int64 in {1}", []string{"*"})
+		assert.Error(t, err)
+	})
+
 }
 
 func TestGrpcQueryByPks(t *testing.T) {
