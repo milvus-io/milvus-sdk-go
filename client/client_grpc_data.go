@@ -28,6 +28,11 @@ import (
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )
 
+const (
+	offsetKey = `offset`
+	limitKey  = `limit`
+)
+
 // Insert Index  into collection with column-based format
 // collName is the collection name
 // partitionName is the partition to insert, if not specified(empty), default partition will be used
@@ -234,7 +239,7 @@ func (c *GrpcClient) Search(ctx context.Context, collName string, partitions []s
 	if !ok {
 		c.DescribeCollection(ctx, collName)
 	}
-	option, err := MakeSearchQueryOption(collName, opts...)
+	option, err := makeSearchQueryOption(collName, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -312,12 +317,24 @@ func (c *GrpcClient) QueryByPks(ctx context.Context, collectionName string, part
 
 	expr := PKs2Expr(ids)
 
-	_, ok := MetaCache.getCollectionInfo(collectionName)
-	if !ok {
-		c.DescribeCollection(ctx, collectionName)
+	return c.Query(ctx, collectionName, partitionNames, expr, outputFields, opts...)
+}
+
+// Query performs query by expression.
+func (c *GrpcClient) Query(ctx context.Context, collectionName string, partitionNames []string, expr string, outputFields []string, opts ...SearchQueryOptionFunc) ([]entity.Column, error) {
+	if c.Service == nil {
+		return nil, ErrClientNotReady
 	}
 
-	option, err := MakeSearchQueryOption(collectionName, opts...)
+	_, ok := MetaCache.getCollectionInfo(collectionName)
+	if !ok {
+		_, err := c.DescribeCollection(ctx, collectionName)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	option, err := makeSearchQueryOption(collectionName, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -331,6 +348,13 @@ func (c *GrpcClient) QueryByPks(ctx context.Context, collectionName string, part
 		GuaranteeTimestamp: option.GuaranteeTimestamp,
 		TravelTimestamp:    option.TravelTimestamp,
 	}
+	if option.Offset > 0 {
+		req.QueryParams = append(req.QueryParams, &common.KeyValuePair{Key: offsetKey, Value: strconv.FormatInt(option.Offset, 10)})
+	}
+	if option.Limit > 0 {
+		req.QueryParams = append(req.QueryParams, &common.KeyValuePair{Key: limitKey, Value: strconv.FormatInt(option.Limit, 10)})
+	}
+
 	resp, err := c.Service.Query(ctx, req)
 	if err != nil {
 		return nil, err
@@ -385,6 +409,7 @@ func prepareSearchRequest(collName string, partitions []string,
 		"params":        string(bs),
 		"metric_type":   string(metricType),
 		"round_decimal": "-1",
+		offsetKey:       fmt.Sprintf("%d", opt.Offset),
 	})
 	req := &server.SearchRequest{
 		DbName:             "",

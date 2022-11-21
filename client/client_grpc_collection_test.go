@@ -489,7 +489,7 @@ func describeCollectionInjection(t *testing.T, collID int64, collName string, sc
 			return resp, err
 		}
 
-		assert.Equal(t, testCollectionName, req.GetCollectionName())
+		assert.Equal(t, collName, req.GetCollectionName())
 
 		sch := sch
 		resp.Schema = sch.ProtoMessage()
