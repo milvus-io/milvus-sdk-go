@@ -147,6 +147,23 @@ type Client interface {
 	GetBulkInsertState(ctx context.Context, taskID int64) (*entity.BulkInsertTaskState, error)
 	// ListBulkInsertTasks list state of all import tasks
 	ListBulkInsertTasks(ctx context.Context, collName string, limit int64) ([]*entity.BulkInsertTaskState, error)
+
+	// CreateRole creates a role entity in Milvus.
+	CreateRole(ctx context.Context, name string) error
+	// DropRole drops a role entity in Milvus.
+	DropRole(ctx context.Context, name string) error
+	// AddUserRole adds one role for user.
+	AddUserRole(ctx context.Context, username string, role string) error
+	// RemoveUserRole removes one role from user.
+	RemoveUserRole(ctx context.Context, username string, role string) error
+	// ListRoles lists the role objects in system.
+	ListRoles(ctx context.Context) ([]entity.Role, error)
+	// ListUsers lists the user objects in system.
+	ListUsers(ctx context.Context) ([]entity.User, error)
+	// Grant adds object privileged for role.
+	Grant(ctx context.Context, role string, objectType entity.PriviledgeObjectType, object string) error
+	// Revoke removes privilege from role.
+	Revoke(ctx context.Context, role string, objectType entity.PriviledgeObjectType, object string) error
 }
 
 // SearchResult contains the result from Search api of client
