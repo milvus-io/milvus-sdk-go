@@ -11,6 +11,19 @@ pull_request_rules:
         add:
           - ci-passed
 
+  - name: Test passed for e2e changed
+    conditions:
+      - base=master
+      - -files~=^(?!test\/).+
+      - "status-success=lint"
+      - "status-success=Run Ci Test (standalone)"
+      - "status-success=Run Ci Test (cluster)"
+    actions:
+      label:
+        add:
+          - ci-passed
+          - "test\/ci"
+
   - name: Test passed for document changed
     conditions:
       - base=master
@@ -20,6 +33,7 @@ pull_request_rules:
       label:
         add:
           - ci-passed
+          - "kind\/documentation"
 
   - name: Test passed for mergify changed
     conditions:
@@ -36,7 +50,8 @@ pull_request_rules:
       - or:
         - "check-failure=Unittest AMD64 Ubuntu 18.04"
         - "check-failure=lint"
-        - "check-failure=Run Ci Test"
+        - "check-failure=Run Ci Test (standalone)"
+        - "check-failure=Run Ci Test (cluster)"
     actions:
       label:
         remove:
