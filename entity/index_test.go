@@ -29,12 +29,3 @@ func TestGenericIndex(t *testing.T) {
 	assert.Equal(t, name, gi.Name())
 	assert.EqualValues(t, IvfFlat, gi.Params()[tIndexType])
 }
-
-func TestFlatIndex(t *testing.T) {
-	rand.Seed(time.Now().UnixNano())
-	name := fmt.Sprintf("flat_index_%d", rand.Int())
-	fi := NewFlatIndex(name, L2)
-	assert.Equal(t, name, fi.Name())
-	assert.EqualValues(t, Flat, fi.Params()[tIndexType])
-	assert.EqualValues(t, L2, fi.Params()[tMetricType])
-}
