@@ -17,7 +17,7 @@ func TestQuery(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create collection with data
-	collName, ids := createCollectionWithDataAndIndex(ctx, t, mc, false, false)
+	collName, ids := createCollectionWithDataIndex(ctx, t, mc, false, false)
 
 	// TODO create index
 
