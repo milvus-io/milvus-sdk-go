@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	bufSzie = 1024 * 1024
+	bufSize = 1024 * 1024
 )
 
 var (
@@ -107,8 +107,9 @@ func (r defaultRow) Collection() string {
 
 // TestMain establishes mock grpc server to testing client behavior
 func TestMain(m *testing.M) {
+
 	rand.Seed(time.Now().Unix())
-	lis = bufconn.Listen(bufSzie)
+	lis = bufconn.Listen(bufSize)
 	s := grpc.NewServer()
 	mock = &MockServer{
 		Injections: make(map[ServiceMethod]TestInjection),

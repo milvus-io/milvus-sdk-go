@@ -13,7 +13,7 @@ for d in $(go list ./... | grep -v vendor/examples/tests); do
     fi
 
     echo $d
-    go test -race -coverprofile=coverage.out -covermode=atomic "$d"
+    go test -race -coverprofile=coverage.out -covermode=atomic "$d" -v
     if [[ -f coverage.out ]]; then
         cat coverage.out >> coverage.project.out
         rm coverage.out
