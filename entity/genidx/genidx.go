@@ -470,37 +470,6 @@ func main() {
 					"nprobe = 65537",
 				},
 			},
-			// IVF_SQ8H
-			{
-				IdxName: "IvfSQ8H",
-				IdxType: entity.IvfSQ8H,
-				ConstructParams: []idxParam{
-					{
-						Name:           "nlist",
-						ValidationRule: "[1, 65536]",
-					},
-				},
-				SearchParams: []idxParam{
-					{
-						Name:           "nprobe",
-						ValidationRule: "[1, 65536]", // [1, nlist], refer to index construct param, not supported yet
-					},
-				},
-				ValidExamples: []string{
-					"nlist = 10",
-				},
-				InvalidExamples: []string{
-					"nlist = 0",
-					"nlist = 65537",
-				},
-				ValidSearchParams: []string{
-					"nprobe = 10",
-				},
-				InvalidSearchParams: []string{
-					"nprobe = 0",
-					"nprobe = 65537",
-				},
-			},
 			// IVF_PQ
 			{
 				IdxName: "IvfPQ",
@@ -542,174 +511,10 @@ func main() {
 					"nprobe = 65537",
 				},
 			},
-			// RNSG
-			{
-				IdxName: "RNSG",
-				IdxType: entity.NSG,
-				ConstructParams: []idxParam{
-					{
-						Name:           "out_degree",
-						ValidationRule: "[5, 300]",
-					},
-					{
-						Name:           "candidate_pool_size",
-						ValidationRule: "[50, 1000]",
-					},
-					{
-						Name:           "search_length",
-						ValidationRule: "[10, 300]",
-					},
-					{
-						Name:           "knng",
-						ValidationRule: "[5, 300]",
-					},
-				},
-				SearchParams: []idxParam{
-					{
-						Name:           "search_length",
-						ValidationRule: "[10, 300]", // [1, nlist], refer to index construct param, not supported yet
-					},
-				},
-				ValidExamples: []string{
-					"out_degree, candidate_pool_size, search_length, knng = 30, 300, 60, 50",
-				},
-				InvalidExamples: []string{
-					"out_degree, candidate_pool_size, search_length, knng = 4, 300, 60, 50",
-					"out_degree, candidate_pool_size, search_length, knng = 301, 300, 60, 50",
-					"out_degree, candidate_pool_size, search_length, knng = 30, 49, 60, 50",
-					"out_degree, candidate_pool_size, search_length, knng = 30, 1001, 60, 50",
-					"out_degree, candidate_pool_size, search_length, knng = 30, 300, 9, 50",
-					"out_degree, candidate_pool_size, search_length, knng = 30, 300, 301, 50",
-					"out_degree, candidate_pool_size, search_length, knng = 30, 300, 60, 4",
-					"out_degree, candidate_pool_size, search_length, knng = 30, 300, 60, 301",
-				},
-				ValidSearchParams: []string{
-					"search_length = 100",
-				},
-				InvalidSearchParams: []string{
-					"search_length = 9",
-					"search_length = 301",
-				},
-			},
 			// HNSW
 			{
 				IdxName: "HNSW",
 				IdxType: entity.HNSW,
-				ConstructParams: []idxParam{
-					{
-						Name:           "M",
-						ValidationRule: "[4, 64]",
-					},
-					{
-						Name:           "efConstruction",
-						ValidationRule: "[8, 512]",
-					},
-				},
-				SearchParams: []idxParam{
-					{
-						Name:           "ef",
-						ValidationRule: "[1, 32768]", // [topK, 32768], refer to index construct param, not supported yet
-					},
-				},
-				ValidExamples: []string{
-					"M, efConstruction = 16, 40",
-				},
-				InvalidExamples: []string{
-					"M, efConstruction = 3, 40",
-					"M, efConstruction = 65, 40",
-					"M, efConstruction = 16, 7",
-					"M, efConstruction = 16, 513",
-				},
-				ValidSearchParams: []string{
-					"ef = 16",
-				},
-				InvalidSearchParams: []string{
-					"ef = 0",
-					"ef = 32769",
-				},
-			},
-			// RHNSW_FLAT
-			{
-				IdxName: "RHNSWFlat",
-				IdxType: entity.RHNSWFlat,
-				ConstructParams: []idxParam{
-					{
-						Name:           "M",
-						ValidationRule: "[4, 64]",
-					},
-					{
-						Name:           "efConstruction",
-						ValidationRule: "[8, 512]",
-					},
-				},
-				SearchParams: []idxParam{
-					{
-						Name:           "ef",
-						ValidationRule: "[1, 32768]", // [topK, 32768], refer to index construct param, not supported yet
-					},
-				},
-				ValidExamples: []string{
-					"M, efConstruction = 16, 40",
-				},
-				InvalidExamples: []string{
-					"M, efConstruction = 3, 40",
-					"M, efConstruction = 65, 40",
-					"M, efConstruction = 16, 7",
-					"M, efConstruction = 16, 513",
-				},
-				ValidSearchParams: []string{
-					"ef = 16",
-				},
-				InvalidSearchParams: []string{
-					"ef = 0",
-					"ef = 32769",
-				},
-			},
-			// RHNSW_PQ
-			{
-				IdxName: "RHNSW_PQ",
-				IdxType: entity.RHNSWPQ,
-				ConstructParams: []idxParam{
-					{
-						Name:           "M",
-						ValidationRule: "[4, 64]",
-					},
-					{
-						Name:           "efConstruction",
-						ValidationRule: "[8, 512]",
-					},
-					{
-						Name:           "PQM",
-						ValidationRule: "dim===0 (mod self)",
-					},
-				},
-				SearchParams: []idxParam{
-					{
-						Name:           "ef",
-						ValidationRule: "[1, 32768]", // [topK, 32768], refer to index construct param, not supported yet
-					},
-				},
-				ValidExamples: []string{
-					"M, efConstruction, PQM = 17, 40, 8",
-				},
-				InvalidExamples: []string{
-					"M, efConstruction, PQM = 3, 40, 8",
-					"M, efConstruction, PQM = 65, 40, 8",
-					"M, efConstruction, PQM = 16, 7, 8",
-					"M, efConstruction, PQM = 16, 513, 8",
-				},
-				ValidSearchParams: []string{
-					"ef = 16",
-				},
-				InvalidSearchParams: []string{
-					"ef = 0",
-					"ef = 32769",
-				},
-			},
-			// RHNSW_SQ
-			{
-				IdxName: "RHNSW_SQ",
-				IdxType: entity.RHNSWSQ,
 				ConstructParams: []idxParam{
 					{
 						Name:           "M",
@@ -820,106 +625,26 @@ func main() {
 					"search_k = 20", // if 20 greater than top k
 				},
 			},
-			// NGT_PANNG
 			{
-				IdxName: "NGTPANNG",
-				IdxType: entity.NGTPANNG,
-				ConstructParams: []idxParam{
-					{
-						Name:           "edge_size",
-						ValidationRule: "[1, 200]",
-					},
-					{
-						Name:           "forcedly_pruned_edge_size",
-						ValidationRule: "[selectively_pruned_edge_size + 1, 200]",
-					},
-					{
-						Name:           "selectively_pruned_edge_size",
-						ValidationRule: "[1, forcedly_pruned_edge_size -1 ]",
-					},
-				},
+				IdxName:         "DISKANN",
+				IdxType:         entity.DISKANN,
+				ConstructParams: []idxParam{},
 				SearchParams: []idxParam{
 					{
-						Name:           "max_search_edges",
-						ValidationRule: "[-1, 200]",
-					},
-					{
-						Name:           "epsilon",
-						Type:           "float64",
-						ValidationRule: "[-1.0, 1.0]",
+						Name:           "search_list",
+						ValidationRule: "[1, 65535]",
 					},
 				},
 				ValidExamples: []string{
-					"edge_size, forcedly_pruned_edge_size, selectively_pruned_edge_size = 20, 40, 10",
+					"",
 				},
-				InvalidExamples: []string{
-					"edge_size, forcedly_pruned_edge_size, selectively_pruned_edge_size = 0, 40, 10",
-					"edge_size, forcedly_pruned_edge_size, selectively_pruned_edge_size = 201, 40, 10",
-					"edge_size, forcedly_pruned_edge_size, selectively_pruned_edge_size = 20, 10, 10",
-					"edge_size, forcedly_pruned_edge_size, selectively_pruned_edge_size = 20, 201, 10",
-					"edge_size, forcedly_pruned_edge_size, selectively_pruned_edge_size = 20, 40, 40",
-					"edge_size, forcedly_pruned_edge_size, selectively_pruned_edge_size = 20, 40, 201",
-				},
+				InvalidExamples: []string{},
 				ValidSearchParams: []string{
-					"max_search_edges, epsilon = 40, 0.1",
-					"max_search_edges, epsilon = -1, -0.5",
+					"search_list = 30",
 				},
 				InvalidSearchParams: []string{
-					"max_search_edges, epsilon = -2, 0.1",
-					"max_search_edges, epsilon = 201, 0.1",
-					"max_search_edges, epsilon = 40, 1.2",
-					"max_search_edges, epsilon = 40, -1.1",
-				},
-			},
-			// NGT_ONNG
-			{
-				IdxName: "NGTONNG",
-				IdxType: entity.NGTONNG,
-				ConstructParams: []idxParam{
-					{
-						Name:           "edge_size",
-						ValidationRule: "[1, 200]",
-					},
-					{
-						Name:           "outgoing_edge_size",
-						ValidationRule: "[1, 200]",
-					},
-					{
-						Name:           "incoming_edge_size",
-						ValidationRule: "[1, 200]",
-					},
-				},
-				SearchParams: []idxParam{
-					{
-						Name:           "max_search_edges",
-						ValidationRule: "[-1, 200]",
-					},
-					{
-						Name:           "epsilon",
-						Type:           "float64",
-						ValidationRule: "[-1.0, 1.0]",
-					},
-				},
-				ValidExamples: []string{
-					"edge_size, outgoing_edge_size, incoming_edge_size = 20, 10, 40",
-				},
-				InvalidExamples: []string{
-					"edge_size, outgoing_edge_size, incoming_edge_size = 0, 10, 40",
-					"edge_size, outgoing_edge_size, incoming_edge_size = 201, 10, 40",
-					"edge_size, outgoing_edge_size, incoming_edge_size = 20, 0, 40",
-					"edge_size, outgoing_edge_size, incoming_edge_size = 20, 201, 40",
-					"edge_size, outgoing_edge_size, incoming_edge_size = 20, 10, 0",
-					"edge_size, outgoing_edge_size, incoming_edge_size = 20, 10, 201",
-				},
-				ValidSearchParams: []string{
-					"max_search_edges, epsilon = 40, 0.1",
-					"max_search_edges, epsilon = -1, -0.5",
-				},
-				InvalidSearchParams: []string{
-					"max_search_edges, epsilon = -2, 0.1",
-					"max_search_edges, epsilon = 201, 0.1",
-					"max_search_edges, epsilon = 40, 1.2",
-					"max_search_edges, epsilon = 40, -1.1",
+					"search_list = 0",
+					"search_list = 65537",
 				},
 			},
 			{

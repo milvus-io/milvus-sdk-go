@@ -32,17 +32,11 @@ const (
 	BinIvfFlat IndexType = "BIN_IVF_FLAT"
 	IvfPQ      IndexType = "IVF_PQ" //faiss
 	IvfSQ8     IndexType = "IVF_SQ8"
-	IvfSQ8H    IndexType = "IVF_SQ8_HYBRID"
-	NSG        IndexType = "NSG"
 	HNSW       IndexType = "HNSW"
-	RHNSWFlat  IndexType = "RHNSW_FLAT"
-	RHNSWPQ    IndexType = "RHNSW_PQ"
-	RHNSWSQ    IndexType = "RHNSW_SQ"
 	IvfHNSW    IndexType = "IVF_HNSW"
 	ANNOY      IndexType = "ANNOY"
-	NGTPANNG   IndexType = "NGT_PANNG"
-	NGTONNG    IndexType = "NGT_ONNG"
 	AUTOINDEX  IndexType = "AUTOINDEX"
+	DISKANN    IndexType = "DISKANN"
 )
 
 // Metric Constants
@@ -88,25 +82,6 @@ func (b baseIndex) Name() string {
 // IndexType implements Index
 func (b baseIndex) IndexType() IndexType {
 	return b.it
-}
-
-type flatIndex struct {
-	baseIndex
-	m MetricType
-}
-
-func (f flatIndex) Params() map[string]string {
-	return map[string]string{
-		tIndexType:  string(Flat),
-		tMetricType: string(f.m),
-	}
-}
-
-func NewFlatIndex(name string, m MetricType) Index {
-	return flatIndex{
-		baseIndex: baseIndex{it: Flat, name: name},
-		m:         m,
-	}
 }
 
 // GenericIndex index struct for general usage
