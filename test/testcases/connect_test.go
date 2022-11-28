@@ -1,7 +1,6 @@
 package testcases
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -12,8 +11,7 @@ import (
 // test connect and close, connect again
 func TestConnectClose(t *testing.T) {
 	// connect
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*common.DefaultTimeout)
-	defer cancel()
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	mc, errConnect := base.NewDefaultMilvusClient(ctx, *addr)
 	common.CheckErr(t, errConnect, true)
 
@@ -37,8 +35,7 @@ func TestConnectClose(t *testing.T) {
 func TestConnectInvalidAddr(t *testing.T) {
 	t.Skipf("Issue: %s", "https://github.com/milvus-io/milvus-sdk-go/issues/345")
 	// connect
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx := createContext(t, time.Second*10)
 
 	_, errConnect := base.NewDefaultMilvusClient(ctx, "aa")
 	common.CheckErr(t, errConnect, false, "xxx")
@@ -47,8 +44,7 @@ func TestConnectInvalidAddr(t *testing.T) {
 // test connect repeatedly
 func TestConnectRepeat(t *testing.T) {
 	// connect
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx := createContext(t, time.Second*10)
 
 	_, errConnect := base.NewDefaultMilvusClient(ctx, *addr)
 	common.CheckErr(t, errConnect, true)
@@ -64,8 +60,7 @@ func TestConnectRepeat(t *testing.T) {
 // test close repeatedly
 func TestCloseRepeat(t *testing.T) {
 	// connect
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx := createContext(t, time.Second*10)
 	mc, errConnect2 := base.NewDefaultMilvusClient(ctx, *addr)
 	common.CheckErr(t, errConnect2, true)
 

@@ -1,7 +1,6 @@
 package testcases
 
 import (
-	"context"
 	"math/rand"
 	"strconv"
 	"testing"
@@ -15,8 +14,7 @@ import (
 
 // test insert
 func TestInsert(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*common.DefaultTimeout)
-	defer cancel()
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect
 	mc := createMilvusClient(ctx, t)
 
@@ -38,8 +36,7 @@ func TestInsert(t *testing.T) {
 
 // test insert with autoID collection
 func TestInsertAutoId(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*common.DefaultTimeout)
-	defer cancel()
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
 
 	// connect
 	mc := createMilvusClient(ctx, t)
@@ -64,10 +61,30 @@ func TestInsertAutoId(t *testing.T) {
 	require.Equal(t, strconv.Itoa(common.DefaultNb), stats[common.RowCount])
 }
 
+func TestInsertAutoIdPkData(t *testing.T) {
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+
+	// connect
+	mc := createMilvusClient(ctx, t)
+
+	// create default collection with autoID true
+	collName := createDefaultCollection(ctx, t, mc, true)
+
+	// insert
+	pkColumn, floatColumn, vecColumn := common.GenDefaultColumnData(common.DefaultNb, common.DefaultDim)
+	_, errInsert := mc.Insert(ctx, collName, "", pkColumn, floatColumn, vecColumn)
+	common.CheckErr(t, errInsert, false, "can not assign primary field data when auto id enabled")
+
+	// flush and check row count
+	errFlush := mc.Flush(ctx, collName, false)
+	common.CheckErr(t, errFlush, true)
+	stats, _ := mc.GetCollectionStatistics(ctx, collName)
+	require.Equal(t, "0", stats[common.RowCount])
+}
+
 // test insert binary vectors
 func TestInsertBinaryCollection(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*common.DefaultTimeout)
-	defer cancel()
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
 
 	// connect
 	mc := createMilvusClient(ctx, t)
@@ -95,10 +112,22 @@ func TestInsertBinaryCollection(t *testing.T) {
 	require.Equal(t, strconv.Itoa(common.DefaultNb), stats[common.RowCount])
 }
 
+// test insert not exist collection
+func TestInsertNotExistCollection(t *testing.T) {
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+
+	// connect
+	mc := createMilvusClient(ctx, t)
+
+	// insert
+	intColumn, floatColumn, vecColumn := common.GenDefaultColumnData(common.DefaultNb, common.DefaultDim)
+	_, errInsert := mc.Insert(ctx, "notExist", "", intColumn, floatColumn, vecColumn)
+	common.CheckErr(t, errInsert, false, "does not exist")
+}
+
 // test insert into an not existed partition
 func TestInsertNotExistPartition(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*common.DefaultTimeout)
-	defer cancel()
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
 
 	// connect
 	mc := createMilvusClient(ctx, t)
@@ -115,8 +144,7 @@ func TestInsertNotExistPartition(t *testing.T) {
 // test insert data into collection that has all scala fields
 func TestInsertAllFieldsData(t *testing.T) {
 	t.Parallel()
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*common.DefaultTimeout)
-	defer cancel()
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	mc := createMilvusClient(ctx, t)
 
 	// prepare fields, name, schema
@@ -181,8 +209,7 @@ func TestInsertAllFieldsData(t *testing.T) {
 
 // test insert data columns len, order mismatch fields
 func TestInsertColumnsMismatchFields(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*common.DefaultTimeout)
-	defer cancel()
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
 
 	// connect
 	mc := createMilvusClient(ctx, t)
@@ -204,9 +231,9 @@ func TestInsertColumnsMismatchFields(t *testing.T) {
 	common.CheckErr(t, errInsert3, true)
 }
 
+// test insert with columns which has different len
 func TestInsertColumnsDifferentLen(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*common.DefaultTimeout)
-	defer cancel()
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
 
 	// connect
 	mc := createMilvusClient(ctx, t)
