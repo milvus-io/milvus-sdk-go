@@ -22,7 +22,7 @@ func TestInsert(t *testing.T) {
 	collName := createDefaultCollection(ctx, t, mc, false)
 
 	// insert
-	intColumn, floatColumn, vecColumn := common.GenDefaultColumnData(common.DefaultNb, common.DefaultDim)
+	intColumn, floatColumn, vecColumn := common.GenDefaultColumnData(0, common.DefaultNb, common.DefaultDim)
 	ids, errInsert := mc.Insert(ctx, collName, "", intColumn, floatColumn, vecColumn)
 	common.CheckErr(t, errInsert, true)
 	common.CheckInsertResult(t, ids, intColumn)
@@ -45,7 +45,7 @@ func TestInsertAutoId(t *testing.T) {
 	collName := createDefaultCollection(ctx, t, mc, true)
 
 	// insert
-	_, floatColumn, vecColumn := common.GenDefaultColumnData(common.DefaultNb, common.DefaultDim)
+	_, floatColumn, vecColumn := common.GenDefaultColumnData(0, common.DefaultNb, common.DefaultDim)
 	ids, errInsert := mc.Insert(ctx, collName, "", floatColumn, vecColumn)
 	common.CheckErr(t, errInsert, true)
 	require.Equal(t, common.DefaultNb, ids.Len())
@@ -71,7 +71,7 @@ func TestInsertAutoIdPkData(t *testing.T) {
 	collName := createDefaultCollection(ctx, t, mc, true)
 
 	// insert
-	pkColumn, floatColumn, vecColumn := common.GenDefaultColumnData(common.DefaultNb, common.DefaultDim)
+	pkColumn, floatColumn, vecColumn := common.GenDefaultColumnData(0, common.DefaultNb, common.DefaultDim)
 	_, errInsert := mc.Insert(ctx, collName, "", pkColumn, floatColumn, vecColumn)
 	common.CheckErr(t, errInsert, false, "can not assign primary field data when auto id enabled")
 
@@ -96,7 +96,7 @@ func TestInsertBinaryCollection(t *testing.T) {
 	mc.CreateCollection(ctx, schema, common.DefaultShards)
 
 	// insert
-	_, floatColumn, vecColumn := common.GenDefaultBinaryData(common.DefaultNb, common.DefaultDim)
+	_, floatColumn, vecColumn := common.GenDefaultBinaryData(0, common.DefaultNb, common.DefaultDim)
 	ids, errInsert := mc.Insert(ctx, collName, "", floatColumn, vecColumn)
 	common.CheckErr(t, errInsert, true)
 	require.Equal(t, common.DefaultNb, ids.Len())
@@ -120,7 +120,7 @@ func TestInsertNotExistCollection(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// insert
-	intColumn, floatColumn, vecColumn := common.GenDefaultColumnData(common.DefaultNb, common.DefaultDim)
+	intColumn, floatColumn, vecColumn := common.GenDefaultColumnData(0, common.DefaultNb, common.DefaultDim)
 	_, errInsert := mc.Insert(ctx, "notExist", "", intColumn, floatColumn, vecColumn)
 	common.CheckErr(t, errInsert, false, "does not exist")
 }
@@ -136,7 +136,7 @@ func TestInsertNotExistPartition(t *testing.T) {
 	collName := createDefaultCollection(ctx, t, mc, true)
 
 	// insert
-	_, floatColumn, vecColumn := common.GenDefaultColumnData(common.DefaultNb, common.DefaultDim)
+	_, floatColumn, vecColumn := common.GenDefaultColumnData(0, common.DefaultNb, common.DefaultDim)
 	_, errInsert := mc.Insert(ctx, collName, "aaa", floatColumn, vecColumn)
 	common.CheckErr(t, errInsert, false, "does not exist")
 }
@@ -194,8 +194,8 @@ func TestInsertAllFieldsData(t *testing.T) {
 		entity.NewColumnInt32("int32", int32Values),
 		entity.NewColumnFloat("float", floatValues),
 		entity.NewColumnDouble("double", doubleValues),
-		entity.NewColumnVarChar("varChar", varcharValues),
-		entity.NewColumnFloatVector("floatVector", common.DefaultDim, floatVectors),
+		entity.NewColumnVarChar("varchar", varcharValues),
+		entity.NewColumnFloatVector("floatVec", common.DefaultDim, floatVectors),
 	)
 	common.CheckErr(t, errInsert, true)
 	require.Equal(t, common.DefaultNb, ids.Len())
@@ -216,7 +216,7 @@ func TestInsertColumnsMismatchFields(t *testing.T) {
 
 	// create default collection
 	collName := createDefaultCollection(ctx, t, mc, false)
-	intColumn, floatColumn, vecColumn := common.GenDefaultColumnData(common.DefaultNb, common.DefaultDim)
+	intColumn, floatColumn, vecColumn := common.GenDefaultColumnData(0, common.DefaultNb, common.DefaultDim)
 
 	// len(column) < len(fields)
 	_, errInsert := mc.Insert(ctx, collName, "", intColumn, floatColumn)

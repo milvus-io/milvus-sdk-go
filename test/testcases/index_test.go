@@ -24,7 +24,7 @@ func TestCreateIndex(t *testing.T) {
 		mc := createMilvusClient(ctx, t)
 		// create default collection with flush data
 		collName, _ := createCollectionWithDataIndex(ctx, t, mc, false, false)
-		err := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, false, idx, client.WithIndexName("my_index"))
+		err := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false, client.WithIndexName("my_index"))
 		common.CheckErr(t, err, true)
 
 		// describe index
@@ -41,7 +41,7 @@ func TestCreateIndexString(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	collName, _ := createVarcharCollectionWithDataIndex(ctx, t, mc, true)
-	err := mc.CreateIndex(ctx, collName, common.DefaultVarcharFieldName, false, nil, client.WithIndexName("my_index"))
+	err := mc.CreateIndex(ctx, collName, common.DefaultVarcharFieldName, nil, false, client.WithIndexName("my_index"))
 	common.CheckErr(t, err, true)
 }
 
@@ -57,7 +57,7 @@ func TestCreateIndexIp(t *testing.T) {
 		mc := createMilvusClient(ctx, t)
 		// create default collection with flush data
 		collName, _ := createCollectionWithDataIndex(ctx, t, mc, false, false)
-		err := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, false, idx, client.WithIndexName("my_index"))
+		err := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false, client.WithIndexName("my_index"))
 		common.CheckErr(t, err, true)
 
 		// describe index
@@ -87,7 +87,7 @@ func TestCreateIndexBinary(t *testing.T) {
 			mc := createMilvusClient(ctx, t)
 			// create default collection with flush data
 			collName, _ := createBinaryCollectionWithDataIndex(ctx, t, mc, false, false)
-			err := mc.CreateIndex(ctx, collName, common.DefaultBinaryVecFieldName, false, idx, client.WithIndexName("my_index"))
+			err := mc.CreateIndex(ctx, collName, common.DefaultBinaryVecFieldName, idx, false, client.WithIndexName("my_index"))
 			common.CheckErr(t, err, true)
 
 			// describe index
@@ -109,7 +109,7 @@ func TestCreateIndexWithoutName(t *testing.T) {
 
 	// create index
 	idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
-	err := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, false, idx)
+	err := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false)
 	common.CheckErr(t, err, true)
 
 	// describe index return index with default name
@@ -131,7 +131,7 @@ func TestCreateIndexGeneric(t *testing.T) {
 	// create index
 	IvfFlatParams := map[string]string{"nlist": "128"}
 	idx := entity.NewGenericIndex("my_index", entity.IvfFlat, IvfFlatParams)
-	err := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, false, idx)
+	err := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false)
 	common.CheckErr(t, err, true)
 
 	// describe index
@@ -148,7 +148,7 @@ func TestCreateIndexNotExistCollName(t *testing.T) {
 
 	// create index
 	idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
-	err := mc.CreateIndex(ctx, "haha", common.DefaultFloatVecFieldName, false, idx)
+	err := mc.CreateIndex(ctx, "haha", common.DefaultFloatVecFieldName, idx, false)
 	common.CheckErr(t, err, false, "collection haha does not exist")
 }
 
@@ -162,7 +162,7 @@ func TestCreateIndexNotExistField(t *testing.T) {
 
 	// create index
 	idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
-	err := mc.CreateIndex(ctx, collName, "exist", false, idx)
+	err := mc.CreateIndex(ctx, collName, "exist", idx, false)
 	common.CheckErr(t, err, false, "does not exist")
 }
 
@@ -177,7 +177,7 @@ func TestCreateIndexNotSupportedField(t *testing.T) {
 
 	// create index
 	idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
-	err := mc.CreateIndex(ctx, collName, common.DefaultFloatFieldName, false, idx)
+	err := mc.CreateIndex(ctx, collName, common.DefaultFloatFieldName, idx, false)
 	common.CheckErr(t, err, false, "is not vector field")
 }
 
@@ -214,7 +214,7 @@ func TestCreateIndexInvalidParams(t *testing.T) {
 	common.CheckErr(t, errIvfPqNbits2, false, "nbits not valid")
 	// TODO unclear error message
 	idxInvalidm, _ := entity.NewIndexIvfPQ(entity.L2, 128, 7, 8)
-	errm := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, false, idxInvalidm)
+	errm := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idxInvalidm, false)
 	common.CheckErr(t, errm, false, "invalid index params")
 
 	// invalid Hnsw M [4, 64], efConstruction [8, 512]
@@ -236,7 +236,7 @@ func TestCreateIndexInvalidParams(t *testing.T) {
 	// invalid flat metric type jaccard
 	// TODO unclear error message
 	idx, _ := entity.NewIndexFlat(entity.JACCARD)
-	errMetricType := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, false, idx)
+	errMetricType := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false)
 	common.CheckErr(t, errMetricType, false, "invalid index params")
 }
 
@@ -247,7 +247,7 @@ func TestCreateIndexNil(t *testing.T) {
 	// connect
 	mc := createMilvusClient(ctx, t)
 	collName, _ := createCollectionWithDataIndex(ctx, t, mc, false, false)
-	err := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, false, nil)
+	err := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, nil, false)
 	common.CheckErr(t, err, false, "invalid index")
 }
 
@@ -263,7 +263,7 @@ func TestCreateIndexAsync(t *testing.T) {
 
 	// create index
 	idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
-	mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, true, idx)
+	mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, true)
 
 	cost, _ := time.ParseDuration("60s")
 	start := time.Now()
@@ -292,7 +292,7 @@ func TestIndexState(t *testing.T) {
 
 	// create index
 	idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
-	err := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, false, idx)
+	err := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false)
 	common.CheckErr(t, err, true)
 
 	// get index state
@@ -311,7 +311,7 @@ func TestIndexStateNotExistCollection(t *testing.T) {
 
 	// create index
 	idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
-	err := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, false, idx)
+	err := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false)
 	common.CheckErr(t, err, true)
 
 	// get index state
@@ -329,7 +329,7 @@ func TestDropIndex(t *testing.T) {
 
 	// create index
 	idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
-	err := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, false, idx)
+	err := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false)
 	common.CheckErr(t, err, true)
 
 	// drop index

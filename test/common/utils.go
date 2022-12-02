@@ -15,8 +15,8 @@ const (
 	DefaultIntFieldName       = "int64"
 	DefaultFloatFieldName     = "float"
 	DefaultVarcharFieldName   = "varchar"
-	DefaultFloatVecFieldName  = "float_vec"
-	DefaultBinaryVecFieldName = "binary_vec"
+	DefaultFloatVecFieldName  = "floatVec"
+	DefaultBinaryVecFieldName = "binaryVec"
 	DefaultPartition          = "_default"
 	DefaultIndexName          = "_default_idx_102"
 	DefaultIndexNameBinary    = "_default_idx_100"
@@ -184,11 +184,11 @@ func GenBinaryVector(nb int, dim int) [][]byte {
 }
 
 // gen default column with data
-func GenDefaultColumnData(nb int, dim int) (*entity.ColumnInt64, *entity.ColumnFloat, *entity.ColumnFloatVector) {
+func GenDefaultColumnData(start int, nb int, dim int) (*entity.ColumnInt64, *entity.ColumnFloat, *entity.ColumnFloatVector) {
 	int64Values := make([]int64, 0, nb)
 	floatValues := make([]float32, 0, nb)
 	vecFloatValues := make([][]float32, 0, nb)
-	for i := 0; i < nb; i++ {
+	for i := start; i < start+nb; i++ {
 		int64Values = append(int64Values, int64(i))
 		floatValues = append(floatValues, float32(i))
 		vec := make([]float32, 0, DefaultDim)
@@ -204,11 +204,11 @@ func GenDefaultColumnData(nb int, dim int) (*entity.ColumnInt64, *entity.ColumnF
 }
 
 // gen default binary collection data
-func GenDefaultBinaryData(nb int, dim int) (*entity.ColumnInt64, *entity.ColumnFloat, *entity.ColumnBinaryVector) {
+func GenDefaultBinaryData(start int, nb int, dim int) (*entity.ColumnInt64, *entity.ColumnFloat, *entity.ColumnBinaryVector) {
 	int64Values := make([]int64, 0, nb)
 	floatValues := make([]float32, 0, nb)
 	vecBinaryValues := make([][]byte, 0, nb)
-	for i := 0; i < nb; i++ {
+	for i := start; i < nb+start; i++ {
 		int64Values = append(int64Values, int64(i))
 		floatValues = append(floatValues, float32(i))
 		vec := make([]byte, dim/8)
@@ -221,10 +221,10 @@ func GenDefaultBinaryData(nb int, dim int) (*entity.ColumnInt64, *entity.ColumnF
 	return intColumn, floatColumn, vecColumn
 }
 
-func GenDefaultVarcharData(nb int, dim int) (*entity.ColumnVarChar, *entity.ColumnBinaryVector) {
+func GenDefaultVarcharData(start int, nb int, dim int) (*entity.ColumnVarChar, *entity.ColumnBinaryVector) {
 	varcharValues := make([]string, 0, nb)
 	vecBinaryValues := make([][]byte, 0, nb)
-	for i := 0; i < nb; i++ {
+	for i := start; i < start+nb; i++ {
 		varcharValues = append(varcharValues, strconv.Itoa(i))
 		vec := make([]byte, dim/8)
 		rand.Read(vec)
@@ -261,15 +261,15 @@ func GenLongString(n int) string {
 // gen fields with all scala field types
 func GenAllFields() []*entity.Field {
 	allFields := []*entity.Field{
-		GenScalaField("int64", entity.FieldTypeInt64, true, false),                // int64
-		GenScalaField("bool", entity.FieldTypeBool, false, false),                 // bool
-		GenScalaField("int8", entity.FieldTypeInt8, false, false),                 // int8
-		GenScalaField("int16", entity.FieldTypeInt16, false, false),               // int16
-		GenScalaField("int32", entity.FieldTypeInt32, false, false),               // int32
-		GenScalaField("float", entity.FieldTypeFloat, false, false),               // float
-		GenScalaField("double", entity.FieldTypeDouble, false, false),             // double
-		GenScalaField("varChar", entity.FieldTypeVarChar, false, false),           // varchar
-		GenVectorField("floatVector", entity.FieldTypeFloatVector, DefaultDimStr), // float vector
+		GenScalaField("int64", entity.FieldTypeInt64, true, false),             // int64
+		GenScalaField("bool", entity.FieldTypeBool, false, false),              // bool
+		GenScalaField("int8", entity.FieldTypeInt8, false, false),              // int8
+		GenScalaField("int16", entity.FieldTypeInt16, false, false),            // int16
+		GenScalaField("int32", entity.FieldTypeInt32, false, false),            // int32
+		GenScalaField("float", entity.FieldTypeFloat, false, false),            // float
+		GenScalaField("double", entity.FieldTypeDouble, false, false),          // double
+		GenScalaField("varchar", entity.FieldTypeVarChar, false, false),        // varchar
+		GenVectorField("floatVec", entity.FieldTypeFloatVector, DefaultDimStr), // float vector
 	}
 	return allFields
 }
@@ -283,6 +283,7 @@ func GenAllFloatIndex(metricType entity.MetricType) []entity.Index {
 	idxIvfPq, _ := entity.NewIndexIvfPQ(metricType, nlist, 16, 8)
 	idxHnsw, _ := entity.NewIndexHNSW(metricType, 8, 96)
 	idxAnnoy, _ := entity.NewIndexANNOY(metricType, 56)
+	idxDiskAnn, _ := entity.NewIndexDISKANN(metricType)
 
 	allFloatIndex := []entity.Index{
 		idxFlat,
@@ -291,6 +292,7 @@ func GenAllFloatIndex(metricType entity.MetricType) []entity.Index {
 		idxIvfPq,
 		idxHnsw,
 		idxAnnoy,
+		idxDiskAnn,
 	}
 	return allFloatIndex
 }
