@@ -140,9 +140,10 @@ func EqualColumn(t *testing.T, columnA entity.Column, columnB entity.Column) {
 }
 
 // check query result, column name, type and field date
+// expColumns are
 func CheckQueryResult(t *testing.T, actualColumns []entity.Column, expColumns []entity.Column) {
-	require.LessOrEqualf(t, len(actualColumns), len(expColumns),
-		"The len of actual columns %d should large or equal to the expected columns %d", len(actualColumns), len(expColumns))
+	require.GreaterOrEqual(t, len(actualColumns), len(expColumns),
+		"The len of actual columns %d should greater or equal to the expected columns %d", len(actualColumns), len(expColumns))
 	for _, expColumn := range expColumns {
 		for _, actualColumn := range actualColumns {
 			if expColumn.Name() == actualColumn.Name() {

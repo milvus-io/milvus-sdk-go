@@ -4,9 +4,13 @@ import (
 	"context"
 	"flag"
 	"log"
+	"math/rand"
 	"os"
+	"strconv"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/milvus-io/milvus-sdk-go/v2/client"
 
@@ -128,7 +132,7 @@ func createCollectionWithDataIndex(ctx context.Context, t *testing.T, mc *base.M
 
 	// insert data
 	var ids entity.Column
-	intColumn, floatColumn, vecColumn := common.GenDefaultColumnData(common.DefaultNb, common.DefaultDim)
+	intColumn, floatColumn, vecColumn := common.GenDefaultColumnData(0, common.DefaultNb, common.DefaultDim)
 	if autoID {
 		pk, errInsert := mc.Insert(ctx, collName, common.DefaultPartition, floatColumn, vecColumn)
 		common.CheckErr(t, errInsert, true)
@@ -147,7 +151,7 @@ func createCollectionWithDataIndex(ctx context.Context, t *testing.T, mc *base.M
 	// create index
 	if withIndex {
 		idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
-		err := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, false, idx, client.WithIndexName(""))
+		err := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false, client.WithIndexName(""))
 		common.CheckErr(t, err, true)
 	}
 	return collName, ids
@@ -159,7 +163,7 @@ func createBinaryCollectionWithDataIndex(ctx context.Context, t *testing.T, mc *
 
 	// insert data
 	var ids entity.Column
-	intColumn, floatColumn, vecColumn := common.GenDefaultBinaryData(common.DefaultNb, common.DefaultDim)
+	intColumn, floatColumn, vecColumn := common.GenDefaultBinaryData(0, common.DefaultNb, common.DefaultDim)
 	if autoID {
 		pk, errInsert := mc.Insert(ctx, collName, common.DefaultPartition, floatColumn, vecColumn)
 		common.CheckErr(t, errInsert, true)
@@ -178,7 +182,7 @@ func createBinaryCollectionWithDataIndex(ctx context.Context, t *testing.T, mc *
 	// create index
 	if withIndex {
 		idx, _ := entity.NewIndexBinIvfFlat(entity.JACCARD, 128)
-		err := mc.CreateIndex(ctx, collName, common.DefaultBinaryVecFieldName, false, idx, client.WithIndexName(""))
+		err := mc.CreateIndex(ctx, collName, common.DefaultBinaryVecFieldName, idx, false, client.WithIndexName(""))
 		common.CheckErr(t, err, true)
 	}
 	return collName, ids
@@ -189,7 +193,7 @@ func createVarcharCollectionWithDataIndex(ctx context.Context, t *testing.T, mc 
 	collName := createDefaultVarcharCollection(ctx, t, mc)
 
 	// insert data
-	varcharColumn, vecColumn := common.GenDefaultVarcharData(common.DefaultNb, common.DefaultDim)
+	varcharColumn, vecColumn := common.GenDefaultVarcharData(0, common.DefaultNb, common.DefaultDim)
 	ids, errInsert := mc.Insert(ctx, collName, common.DefaultPartition, varcharColumn, vecColumn)
 	common.CheckErr(t, errInsert, true)
 	common.CheckInsertResult(t, ids, varcharColumn)
@@ -201,9 +205,68 @@ func createVarcharCollectionWithDataIndex(ctx context.Context, t *testing.T, mc 
 	// create index
 	if withIndex {
 		idx, _ := entity.NewIndexBinIvfFlat(entity.JACCARD, 128)
-		err := mc.CreateIndex(ctx, collName, common.DefaultBinaryVecFieldName, false, idx, client.WithIndexName(""))
+		err := mc.CreateIndex(ctx, collName, common.DefaultBinaryVecFieldName, idx, false, client.WithIndexName(""))
 		common.CheckErr(t, err, true)
 	}
+	return collName, ids
+}
+
+// create collection with all scala fields and insert data without flush
+func createCollectionAllFields(ctx context.Context, t *testing.T, mc *base.MilvusClient, nb int, start int) (string, entity.Column) {
+	t.Helper()
+
+	// prepare fields, name, schema
+	allFields := common.GenAllFields()
+	collName := common.GenRandomString(6)
+	schema := common.GenSchema(collName, false, allFields)
+
+	// create collection
+	errCreateCollection := mc.CreateCollection(ctx, schema, common.DefaultShards)
+	common.CheckErr(t, errCreateCollection, true)
+
+	// prepare data
+	int64Values := make([]int64, 0, nb)
+	boolValues := make([]bool, 0, nb)
+	int8Values := make([]int8, 0, nb)
+	int16Values := make([]int16, 0, nb)
+	int32Values := make([]int32, 0, nb)
+	floatValues := make([]float32, 0, nb)
+	doubleValues := make([]float64, 0, nb)
+	varcharValues := make([]string, 0, nb)
+	floatVectors := make([][]float32, 0, nb)
+	for i := start; i < nb+start; i++ {
+		int64Values = append(int64Values, int64(i))
+		boolValues = append(boolValues, i/2 == 0)
+		int8Values = append(int8Values, int8(i))
+		int16Values = append(int16Values, int16(i))
+		int32Values = append(int32Values, int32(i))
+		floatValues = append(floatValues, float32(i))
+		doubleValues = append(doubleValues, float64(i))
+		varcharValues = append(varcharValues, strconv.Itoa(i))
+		vec := make([]float32, 0, common.DefaultDim)
+		for j := 0; j < common.DefaultDim; j++ {
+			vec = append(vec, rand.Float32())
+		}
+		floatVectors = append(floatVectors, vec)
+	}
+
+	// insert data
+	ids, errInsert := mc.Insert(
+		ctx,
+		collName,
+		"",
+		entity.NewColumnInt64("int64", int64Values),
+		entity.NewColumnBool("bool", boolValues),
+		entity.NewColumnInt8("int8", int8Values),
+		entity.NewColumnInt16("int16", int16Values),
+		entity.NewColumnInt32("int32", int32Values),
+		entity.NewColumnFloat("float", floatValues),
+		entity.NewColumnDouble("double", doubleValues),
+		entity.NewColumnVarChar("varchar", varcharValues),
+		entity.NewColumnFloatVector("floatVec", common.DefaultDim, floatVectors),
+	)
+	common.CheckErr(t, errInsert, true)
+	require.Equal(t, nb, ids.Len())
 	return collName, ids
 }
 

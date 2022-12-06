@@ -278,9 +278,9 @@ func (mc *MilvusClient) GetPersistentSegmentInfo(ctx context.Context, collName s
 }
 
 // Create Index
-func (mc *MilvusClient) CreateIndex(ctx context.Context, collectionName string, fieldName string, async bool, idx entity.Index, opts ...client.IndexOption) error {
-	preRequest("CreateIndex", ctx, collectionName, fieldName, async, idx, opts)
-	err := mc.mClient.CreateIndex(ctx, collectionName, fieldName, idx, async, opts...)
+func (mc *MilvusClient) CreateIndex(ctx context.Context, collName string, fieldName string, idx entity.Index, async bool, opts ...client.IndexOption) error {
+	preRequest("CreateIndex", ctx, collName, fieldName, async, idx, opts)
+	err := mc.mClient.CreateIndex(ctx, collName, fieldName, idx, async, opts...)
 	postResponse("CreateIndex", err)
 	return err
 }
