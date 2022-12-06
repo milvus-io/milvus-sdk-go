@@ -13,6 +13,7 @@ import (
 	"github.com/milvus-io/milvus-sdk-go/v2/test/common"
 )
 
+// test query from default partition
 func TestQueryDefaultPartition(t *testing.T) {
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect
@@ -157,17 +158,9 @@ func TestQueryMultiPartitions(t *testing.T) {
 	// connect
 	mc := createMilvusClient(ctx, t)
 
-	// create collection and insert data into default partition, pks from 0 to DefaultNb
-	collName, _ := createCollectionWithDataIndex(ctx, t, mc, false, false)
-
-	// creat new partition and insert data, pks from DefaultNb to 2*DefaultNb
-	partitionName := "new"
-	mc.CreatePartition(ctx, collName, partitionName)
-	intColumn, floatColumn, vecColumn := common.GenDefaultColumnData(common.DefaultNb, common.DefaultNb, common.DefaultDim)
-	mc.Insert(ctx, collName, partitionName, intColumn, floatColumn, vecColumn)
-	mc.Flush(ctx, collName, false)
-	stats, _ := mc.GetCollectionStatistics(ctx, collName)
-	require.Equal(t, strconv.Itoa(common.DefaultNb*2), stats[common.RowCount])
+	// create collection and insert [0, nb) into default partition, [nb, nb*2) into new partition
+	collName := createDefaultCollection(ctx, t, mc, false)
+	partitionName, _, _ := createInsertTwoPartitions(ctx, t, mc, collName, common.DefaultNb)
 
 	// create index
 	idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
@@ -375,6 +368,7 @@ func TestQueryOutputBinaryAndVarchar(t *testing.T) {
 	common.CheckOutputFields(t, queryResult, []string{common.DefaultBinaryVecFieldName, common.DefaultVarcharFieldName})
 }
 
+// test query output all scalar fields
 func TestOutputAllScalarFields(t *testing.T) {
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect
@@ -409,6 +403,7 @@ func TestOutputAllScalarFields(t *testing.T) {
 	common.CheckOutputFields(t, queryResultAllScalar, []string{"int64", "bool", "int8", "int16", "int32", "float", "double"})
 }
 
+// test query with an not existed field
 func TestQueryNotExistField(t *testing.T) {
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect

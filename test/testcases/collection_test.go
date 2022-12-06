@@ -349,3 +349,15 @@ func TestCreateCollectionInvalidDim(t *testing.T) {
 		common.CheckErr(t, errCreate, false, invalidDim.errMsg)
 	}
 }
+
+// -- Get Collection Statistics --
+
+func TestGetStaticsCollectionNotExisted(t *testing.T) {
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	// connect
+	mc := createMilvusClient(ctx, t)
+
+	// flush and check row count
+	_, errStatist := mc.GetCollectionStatistics(ctx, "collName")
+	common.CheckErr(t, errStatist, false, "collection collName does not exist")
+}

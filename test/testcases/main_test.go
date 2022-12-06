@@ -270,6 +270,28 @@ func createCollectionAllFields(ctx context.Context, t *testing.T, mc *base.Milvu
 	return collName, ids
 }
 
+func createInsertTwoPartitions(ctx context.Context, t *testing.T, mc *base.MilvusClient, collName string, nb int) (string, entity.Column, entity.Column) {
+	// create new partition
+	partitionName := "new"
+	mc.CreatePartition(ctx, collName, partitionName)
+
+	// insert nb into default partition, pks from 0 to nb
+	intColumn, floatColumn, vecColumn := common.GenDefaultColumnData(0, nb, common.DefaultDim)
+	idsDefault, _ := mc.Insert(ctx, collName, common.DefaultPartition, intColumn, floatColumn, vecColumn)
+
+	// insert nb into new partition, pks from nb to nb*2
+	intColumnNew, floatColumnNew, vecColumnNew := common.GenDefaultColumnData(nb, nb, common.DefaultDim)
+	idsPartition, _ := mc.Insert(ctx, collName, partitionName, intColumnNew, floatColumnNew, vecColumnNew)
+
+	// flush
+	errFlush := mc.Flush(ctx, collName, false)
+	common.CheckErr(t, errFlush, true)
+	stats, _ := mc.GetCollectionStatistics(ctx, collName)
+	require.Equal(t, strconv.Itoa(nb*2), stats[common.RowCount])
+
+	return partitionName, idsDefault, idsPartition
+}
+
 func TestMain(m *testing.M) {
 	flag.Parse()
 	log.Printf("parse addr=%s", *addr)
