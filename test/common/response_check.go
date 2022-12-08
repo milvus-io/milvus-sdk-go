@@ -169,3 +169,12 @@ func CheckSearchResult(t *testing.T, actualSearchResults []client.SearchResult, 
 		require.Equal(t, actualSearchResult.ResultCount, expTopk)
 	}
 }
+
+// check persistent segments
+func CheckPersistentSegments(t *testing.T, actualSegments []*entity.Segment, expNb int64) {
+	actualNb := int64(0)
+	for _, segment := range actualSegments {
+		actualNb = segment.NumRows + actualNb
+	}
+	require.Equal(t, actualNb, expNb)
+}

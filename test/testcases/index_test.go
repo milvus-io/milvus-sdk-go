@@ -1,3 +1,5 @@
+//go:build L0
+
 package testcases
 
 import (
@@ -265,17 +267,15 @@ func TestCreateIndexAsync(t *testing.T) {
 	idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
 	mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, true)
 
-	cost, _ := time.ParseDuration("60s")
-	start := time.Now()
 	for {
 		time.Sleep(time.Second * 10)
-		indexState, err := mc.GetIndexState(ctx, collName, common.DefaultFloatVecFieldName)
-		common.CheckErr(t, err, true)
-		if indexState == 3 {
-			break
-		}
-		if time.Now().After(start.Add(cost)) {
-			t.Fatal("Create index cost more than 60s")
+		indexState, errState := mc.GetIndexState(ctx, collName, common.DefaultFloatVecFieldName)
+		if errState == nil {
+			if indexState == 3 {
+				break
+			}
+		} else {
+			t.FailNow()
 		}
 	}
 }

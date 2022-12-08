@@ -20,9 +20,9 @@ jobs:
         mode: [standalone, cluster]
     env:
       IMAGE_REPO: "milvusdb/milvus"
-      TAG_PREFIX: "2.2.0-"
+      TAG_PREFIX: "master-"
       RELEASE_NAME: "go-test"
-      IMAGE_TAG: "2.2.0-latest"
+      IMAGE_TAG: "master-latest"
       QA_NAMESPACE: "qa"
     steps:
       - name: Checkout code
@@ -70,7 +70,7 @@ jobs:
         run: |
           nc -vz 127.0.0.1 19530
           curl -sSL "https://github.com/gotestyourself/gotestsum/releases/download/v1.8.2/gotestsum_1.8.2_linux_amd64.tar.gz" | sudo tar -xz -C /usr/local/bin gotestsum
-          gotestsum --format testname --hide-summary=output ./testcases/... --addr=127.0.0.1:19530
+          gotestsum --format testname --hide-summary=output ./testcases/... --tags L0 --addr=127.0.0.1:19530
 
       - name: Export logs
         if: ${{ always() }}

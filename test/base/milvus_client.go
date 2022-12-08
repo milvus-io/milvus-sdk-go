@@ -255,7 +255,7 @@ func (mc *MilvusClient) HasPartition(ctx context.Context, collName string, parti
 
 // Load Partitions
 func (mc *MilvusClient) LoadPartitions(ctx context.Context, collName string, partitionNames []string, async bool) error {
-	preRequest("LoadPartitions", ctx, collName)
+	preRequest("LoadPartitions", ctx, collName, partitionNames, async)
 	err := mc.mClient.LoadPartitions(ctx, collName, partitionNames, async)
 	postResponse("LoadPartitions", err)
 	return err

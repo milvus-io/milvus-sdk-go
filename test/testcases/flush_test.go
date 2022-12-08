@@ -1,3 +1,5 @@
+//go:build L0
+
 package testcases
 
 import (

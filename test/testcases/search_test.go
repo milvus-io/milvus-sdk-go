@@ -1,3 +1,5 @@
+//go:build L0
+
 package testcases
 
 import (
@@ -9,14 +11,14 @@ import (
 	"github.com/milvus-io/milvus-sdk-go/v2/test/common"
 )
 
-func TestLoadCollection(t *testing.T) {
+func TestSearch(t *testing.T) {
 	t.Skip("Skip for index option and index return")
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect
 	mc := createMilvusClient(ctx, t)
 
 	// create collection with data
-	collName, _ := createCollectionWithDataIndex(ctx, t, mc, false, false)
+	collName, _ := createCollectionWithDataIndex(ctx, t, mc, false, true)
 
 	errLoad := mc.LoadCollection(ctx, collName, false)
 	common.CheckErr(t, errLoad, true, "")
