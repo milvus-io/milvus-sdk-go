@@ -186,10 +186,10 @@ func TestDeletePartitionIdsNotMatch(t *testing.T) {
 
 	// create collection and insert [0, nb) into default partition, [nb, nb*2) into new partition
 	collName := createDefaultCollection(ctx, t, mc, false)
-	partitionName, idsDefault, _ := createInsertTwoPartitions(ctx, t, mc, collName, common.DefaultNb)
+	partitionName, defaultPartition, _ := createInsertTwoPartitions(ctx, t, mc, collName, common.DefaultNb)
 
 	// delete [0:10) from new partition -> delete nothing
-	deleteIds := entity.NewColumnInt64(common.DefaultIntFieldName, idsDefault.(*entity.ColumnInt64).Data()[:10])
+	deleteIds := entity.NewColumnInt64(common.DefaultIntFieldName, defaultPartition.IdsColumn.(*entity.ColumnInt64).Data()[:10])
 	errDelete := mc.DeleteByPks(ctx, collName, partitionName, deleteIds)
 	common.CheckErr(t, errDelete, true)
 

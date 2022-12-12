@@ -236,14 +236,23 @@ func GenDefaultVarcharData(start int, nb int, dim int) (*entity.ColumnVarChar, *
 }
 
 // gen search vectors
-func GenSearchVectors(nq int, dim int) []entity.Vector {
+func GenSearchVectors(nq int, dim int, dataType entity.FieldType) []entity.Vector {
 	vectors := make([]entity.Vector, 0, nq)
-	for i := 0; i < nq; i++ {
-		vector := make([]float32, 0, dim)
-		for j := 0; j < dim; j++ {
-			vector = append(vector, rand.Float32())
+	switch dataType {
+	case entity.FieldTypeFloatVector:
+		for i := 0; i < nq; i++ {
+			vector := make([]float32, 0, dim)
+			for j := 0; j < dim; j++ {
+				vector = append(vector, rand.Float32())
+			}
+			vectors = append(vectors, entity.FloatVector(vector))
 		}
-		vectors = append(vectors, entity.FloatVector(vector))
+	case entity.FieldTypeBinaryVector:
+		for i := 0; i < nq; i++ {
+			vector := make([]byte, dim/8)
+			rand.Read(vector)
+			vectors = append(vectors, entity.BinaryVector(vector))
+		}
 	}
 	return vectors
 }
