@@ -76,7 +76,7 @@ func TestSearchEmptyCollection(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// empty collection
-	collName := createDefaultCollection(ctx, t, mc, false)
+	collName := createDefaultCollection(ctx, t, mc, false, 2)
 
 	idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
 	mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false, client.WithIndexName(""))
@@ -109,7 +109,7 @@ func TestSearchEmptyPartitions(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create collection and insert [0, nb) into default partition, [nb, nb*2) into new partition
-	collName := createDefaultCollection(ctx, t, mc, false)
+	collName := createDefaultCollection(ctx, t, mc, false, 2)
 	_, vecColumnDefault, vecColumnPartition := createInsertTwoPartitions(ctx, t, mc, collName, 500)
 
 	// create index
@@ -197,7 +197,7 @@ func TestSearchPartitions(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create collection and insert [0, nb) into default partition, [nb, nb*2) into new partition
-	collName := createDefaultCollection(ctx, t, mc, false)
+	collName := createDefaultCollection(ctx, t, mc, false, 2)
 	partitionName, vecColumnDefault, vecColumnPartition := createInsertTwoPartitions(ctx, t, mc, collName, 500)
 
 	// create index

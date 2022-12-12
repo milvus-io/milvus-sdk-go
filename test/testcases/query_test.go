@@ -126,7 +126,7 @@ func TestQueryEmptyPartitionName(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create
-	collName := createDefaultCollection(ctx, t, mc, false)
+	collName := createDefaultCollection(ctx, t, mc, false, 2)
 
 	// insert "" partition and flush
 	intColumn, floatColumn, vecColumn := common.GenDefaultColumnData(0, common.DefaultNb, common.DefaultDim)
@@ -161,7 +161,7 @@ func TestQueryMultiPartitions(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create collection and insert [0, nb) into default partition, [nb, nb*2) into new partition
-	collName := createDefaultCollection(ctx, t, mc, false)
+	collName := createDefaultCollection(ctx, t, mc, false, 2)
 	partitionName, _, _ := createInsertTwoPartitions(ctx, t, mc, collName, common.DefaultNb)
 
 	// create index
@@ -298,7 +298,7 @@ func TestQueryOutputFields(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create collection and insert data into default partition, pks from 0 to DefaultNb
-	collName := createDefaultCollection(ctx, t, mc, false)
+	collName := createDefaultCollection(ctx, t, mc, false, 2)
 	intColumn, floatColumn, vecColumn := common.GenDefaultColumnData(common.DefaultNb, common.DefaultNb, common.DefaultDim)
 	_, errInsert := mc.Insert(ctx, collName, "", intColumn, floatColumn, vecColumn)
 	common.CheckErr(t, errInsert, true)

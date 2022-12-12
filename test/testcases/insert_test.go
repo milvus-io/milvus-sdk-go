@@ -21,7 +21,7 @@ func TestInsert(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create default collection
-	collName := createDefaultCollection(ctx, t, mc, false)
+	collName := createDefaultCollection(ctx, t, mc, false, 2)
 
 	// insert
 	intColumn, floatColumn, vecColumn := common.GenDefaultColumnData(0, common.DefaultNb, common.DefaultDim)
@@ -44,7 +44,7 @@ func TestInsertAutoId(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create default collection with autoID true
-	collName := createDefaultCollection(ctx, t, mc, true)
+	collName := createDefaultCollection(ctx, t, mc, true, 2)
 
 	// insert
 	_, floatColumn, vecColumn := common.GenDefaultColumnData(0, common.DefaultNb, common.DefaultDim)
@@ -70,7 +70,7 @@ func TestInsertAutoIdPkData(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create default collection with autoID true
-	collName := createDefaultCollection(ctx, t, mc, true)
+	collName := createDefaultCollection(ctx, t, mc, true, 2)
 
 	// insert
 	pkColumn, floatColumn, vecColumn := common.GenDefaultColumnData(0, common.DefaultNb, common.DefaultDim)
@@ -135,7 +135,7 @@ func TestInsertNotExistPartition(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create default collection with autoID true
-	collName := createDefaultCollection(ctx, t, mc, true)
+	collName := createDefaultCollection(ctx, t, mc, true, 2)
 
 	// insert
 	_, floatColumn, vecColumn := common.GenDefaultColumnData(0, common.DefaultNb, common.DefaultDim)
@@ -217,7 +217,7 @@ func TestInsertColumnsMismatchFields(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create default collection
-	collName := createDefaultCollection(ctx, t, mc, false)
+	collName := createDefaultCollection(ctx, t, mc, false, 2)
 	intColumn, floatColumn, vecColumn := common.GenDefaultColumnData(0, common.DefaultNb, common.DefaultDim)
 
 	// len(column) < len(fields)
@@ -241,7 +241,7 @@ func TestInsertColumnsDifferentLen(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create default collection
-	collName := createDefaultCollection(ctx, t, mc, false)
+	collName := createDefaultCollection(ctx, t, mc, false, 2)
 
 	// data, different column has different len
 	int64Values := make([]int64, 0, 100)

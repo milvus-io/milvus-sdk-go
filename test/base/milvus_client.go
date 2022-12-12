@@ -425,3 +425,17 @@ func (mc *MilvusClient) ListBulkInsertTasks(ctx context.Context, collName string
 	postResponse("ListBulkInsertTasks", err, bulkInsertTaskStates)
 	return bulkInsertTaskStates, err
 }
+
+// *** self-hosted
+func (mc *MilvusClient) WaitForCompactionCompleted(ctx context.Context, compactionID int64) error {
+	for {
+		time.Sleep(time.Millisecond * 500)
+		compactionState, err := mc.GetCompactionState(ctx, compactionID)
+		if err != nil {
+			return err
+		}
+		if compactionState == entity.CompactionStateCompleted {
+			return nil
+		}
+	}
+}

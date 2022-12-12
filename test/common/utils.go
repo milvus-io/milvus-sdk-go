@@ -31,6 +31,7 @@ const (
 	DefaultTopK               = 10
 	MaxCollectionNameLen      = 255
 	RowCount                  = "row_count"
+	RetentionDuration         = 40 // common.retentionDuration
 )
 
 var IndexStateValue = map[string]int32{
