@@ -73,7 +73,7 @@ jobs:
           gotestsum --format testname --hide-summary=output ./testcases/... --tags L0 --addr=127.0.0.1:19530
 
       - name: Export logs
-        if: ${{ always() }}
+        if: ${{ !success() }}
         shell: bash
         working-directory: ci/scripts/
         run: |
