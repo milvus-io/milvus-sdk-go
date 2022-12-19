@@ -2,7 +2,7 @@ name: Test CI
 on:
   push:
     branches:
-      - master
+      - v2.2.0
   pull_request:
     paths:
       - 'client/**'
@@ -20,9 +20,9 @@ jobs:
         mode: [standalone, cluster]
     env:
       IMAGE_REPO: "milvusdb/milvus"
-      TAG_PREFIX: "master-"
+      TAG_PREFIX: "2.2.0-"
       RELEASE_NAME: "go-test"
-      IMAGE_TAG: "master-latest"
+      IMAGE_TAG: "2.2.0-latest"
       QA_NAMESPACE: "qa"
     steps:
       - name: Checkout code
@@ -73,7 +73,7 @@ jobs:
           gotestsum --format testname --hide-summary=output ./testcases/... --tags L0 --addr=127.0.0.1:19530
 
       - name: Export logs
-        if: ${{ always() }}
+        if: ${{ !success() }}
         shell: bash
         working-directory: ci/scripts/
         run: |
