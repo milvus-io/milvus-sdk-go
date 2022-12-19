@@ -162,12 +162,14 @@ func CheckOutputFields(t *testing.T, actualColumns []entity.Column, expFields []
 	require.ElementsMatch(t, actualFields, expFields)
 }
 
-// check search result, check nq, topk, ids, score
-func CheckSearchResult(t *testing.T, actualSearchResults []client.SearchResult, expNq int64, expTopk int64) {
+// check search result, check nq, topK, ids, score
+func CheckSearchResult(t *testing.T, actualSearchResults []client.SearchResult, expNq int, expTopK int) {
 	require.Equal(t, len(actualSearchResults), expNq)
 	for _, actualSearchResult := range actualSearchResults {
-		require.Equal(t, actualSearchResult.ResultCount, expTopk)
+		require.Equal(t, actualSearchResult.ResultCount, expTopK)
 	}
+	//expContainedIds entity.Column
+
 }
 
 // check persistent segments
