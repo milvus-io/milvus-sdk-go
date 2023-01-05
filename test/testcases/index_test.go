@@ -3,6 +3,7 @@
 package testcases
 
 import (
+	"log"
 	"testing"
 	"time"
 
@@ -338,4 +339,47 @@ func TestDropIndex(t *testing.T) {
 	indexes, errDescribe := mc.DescribeIndex(ctx, collName, common.DefaultFloatVecFieldName)
 	common.CheckErr(t, errDescribe, false, "index doesn't exist, collectionID")
 	require.Nil(t, indexes)
+}
+
+func TestDropIndexCreateIndex(t *testing.T)  {
+	t.Skip("Issue: https://github.com/milvus-io/milvus-sdk-go/issues/385")
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	// connect
+	mc := createMilvusClient(ctx, t)
+
+	// create default collection with flush data
+	collName, _ := createCollectionWithDataIndex(ctx, t, mc, false, false)
+
+	// create index
+	idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
+	err := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false)
+	common.CheckErr(t, err, true)
+
+	// describe collection
+	collection, _ := mc.DescribeCollection(ctx, collName)
+	for _, field := range collection.Schema.Fields{
+		log.Printf("field name: %v, field TypeParams: %v, field IndexParams: %v)", field.Name, field.TypeParams, field.IndexParams)
+	}
+
+	// drop index
+	errDrop := mc.DropIndex(ctx, collName, common.DefaultFloatVecFieldName)
+	common.CheckErr(t, errDrop, true)
+	indexes, errDescribe := mc.DescribeIndex(ctx, collName, common.DefaultFloatVecFieldName)
+	common.CheckErr(t, errDescribe, false, "index doesn't exist, collectionID")
+	require.Nil(t, indexes)
+
+	// create IP index
+	ipIdx, _ := entity.NewIndexHNSW(entity.IP, 8, 96)
+	err2 := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, ipIdx, false)
+	common.CheckErr(t, err2, true)
+
+	// describe index
+	ipIndexes, _ := mc.DescribeIndex(ctx, collName, common.DefaultFloatVecFieldName)
+	log.Println(ipIndexes[0].Params())
+
+	// describe collection
+	collection2, _ := mc.DescribeCollection(ctx, collName)
+	for _, field := range collection2.Schema.Fields{
+		log.Printf("field name: %v, field TypeParams: %v, field IndexParams: %v)", field.Name, field.TypeParams, field.IndexParams)
+	}
 }
