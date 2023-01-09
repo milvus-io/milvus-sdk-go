@@ -642,3 +642,61 @@ func TestGrpcClientGetReplicas(t *testing.T) {
 
 	mock.DelInjection(MGetReplicas)
 }
+
+func TestGrpcClientGetLoadingProgress(t *testing.T) {
+	ctx := context.Background()
+	c := testClient(ctx, t)
+
+	mock.SetInjection(MHasCollection, hasCollectionDefault)
+
+	mock.SetInjection(MGetLoadingProgress, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		req, ok := raw.(*server.GetLoadingProgressRequest)
+		if !ok {
+			return BadRequestStatus()
+		}
+		resp := &server.GetLoadingProgressResponse{}
+		if !ok {
+			s, err := BadRequestStatus()
+			resp.Status = s
+			return resp, err
+		}
+		assert.Equal(t, testCollectionName, req.GetCollectionName())
+		s, err := SuccessStatus()
+		resp.Status, resp.Progress = s, 100
+		return resp, err
+	})
+
+	progress, err := c.GetLoadingProgress(ctx, testCollectionName, []string{})
+	assert.NoError(t, err)
+	assert.Equal(t, int64(100), progress)
+
+}
+
+func TestGrpcClientGetLoadState(t *testing.T) {
+	ctx := context.Background()
+	c := testClient(ctx, t)
+
+	mock.SetInjection(MHasCollection, hasCollectionDefault)
+
+	mock.SetInjection(MGetLoadState, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		req, ok := raw.(*server.GetLoadStateRequest)
+		if !ok {
+			return BadRequestStatus()
+		}
+		resp := &server.GetLoadStateResponse{}
+		if !ok {
+			s, err := BadRequestStatus()
+			resp.Status = s
+			return resp, err
+		}
+		assert.Equal(t, testCollectionName, req.GetCollectionName())
+		s, err := SuccessStatus()
+		resp.Status, resp.State = s, common.LoadState_LoadStateLoaded
+		return resp, err
+	})
+
+	state, err := c.GetLoadState(ctx, testCollectionName, []string{})
+	assert.NoError(t, err)
+	assert.Equal(t, entity.LoadStateLoaded, state)
+
+}

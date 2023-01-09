@@ -164,6 +164,14 @@ type Client interface {
 	Grant(ctx context.Context, role string, objectType entity.PriviledgeObjectType, object string) error
 	// Revoke removes privilege from role.
 	Revoke(ctx context.Context, role string, objectType entity.PriviledgeObjectType, object string) error
+
+	// GetLoadingProgress get the collection or partitions loading progress
+	GetLoadingProgress(ctx context.Context, collectionName string, partitionNames []string) (int64, error)
+	// GetLoadState get the collection or partitions load state
+	GetLoadState(ctx context.Context, collectionName string, partitionNames []string) (entity.LoadState, error)
+
+	// GetVersion get milvus version
+	GetVersion(ctx context.Context) (string, error)
 }
 
 // SearchResult contains the result from Search api of client

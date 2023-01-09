@@ -30,6 +30,7 @@ const (
 	MGetCollectionStatistics ServiceMethod = 108
 	MAlterCollection         ServiceMethod = 109
 	MGetLoadingProgress      ServiceMethod = 110
+	MGetLoadState            ServiceMethod = 111
 
 	MCreatePartition   ServiceMethod = 201
 	MDropPartition     ServiceMethod = 202
@@ -62,6 +63,7 @@ const (
 	MGetFlushState ServiceMethod = 604
 	MDelete        ServiceMethod = 605
 	MQuery         ServiceMethod = 606
+	MUpsert        ServiceMethod = 607
 
 	MManualCompaction            ServiceMethod = 700
 	MGetCompactionState          ServiceMethod = 701
@@ -269,6 +271,16 @@ func (m *MockServer) GetLoadingProgress(ctx context.Context, req *server.GetLoad
 	}
 	s, err := SuccessStatus()
 	return &server.GetLoadingProgressResponse{Status: s}, err
+}
+
+func (m *MockServer) GetLoadState(ctx context.Context, req *server.GetLoadStateRequest) (*server.GetLoadStateResponse, error) {
+	f := m.GetInjection(MGetLoadState)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*server.GetLoadStateResponse), err
+	}
+	s, err := SuccessStatus()
+	return &server.GetLoadStateResponse{Status: s}, err
 }
 
 func (m *MockServer) CreateIndex(ctx context.Context, req *server.CreateIndexRequest) (*common.Status, error) {
@@ -643,4 +655,14 @@ func BadStatus() (*common.Status, error) {
 		ErrorCode: common.ErrorCode_UnexpectedError,
 		Reason:    "fail reason",
 	}, nil
+}
+
+func (m *MockServer) Upsert(ctx context.Context, req *server.UpsertRequest) (*server.MutationResult, error) {
+	f := m.GetInjection(MUpsert)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*server.MutationResult), err
+	}
+	s, err := SuccessStatus()
+	return &server.MutationResult{Status: s}, err
 }
