@@ -448,3 +448,45 @@ func (c *GrpcClient) GetReplicas(ctx context.Context, collName string) ([]*entit
 	}
 	return groups, nil
 }
+
+// GetLoadingProgress get the collection or partitions loading progress
+func (c *GrpcClient) GetLoadingProgress(ctx context.Context, collName string, partitionNames []string) (int64, error) {
+	if c.Service == nil {
+		return 0, ErrClientNotReady
+	}
+	if err := c.checkCollectionExists(ctx, collName); err != nil {
+		return 0, err
+	}
+
+	req := &server.GetLoadingProgressRequest{
+		CollectionName: collName,
+		PartitionNames: partitionNames,
+	}
+	resp, err := c.Service.GetLoadingProgress(ctx, req)
+	if err != nil {
+		return 0, err
+	}
+
+	return resp.GetProgress(), nil
+}
+
+// GetLoadState get the collection or partitions load state
+func (c *GrpcClient) GetLoadState(ctx context.Context, collName string, partitionNames []string) (entity.LoadState, error) {
+	if c.Service == nil {
+		return 0, ErrClientNotReady
+	}
+	if err := c.checkCollectionExists(ctx, collName); err != nil {
+		return 0, err
+	}
+
+	req := &server.GetLoadStateRequest{
+		CollectionName: collName,
+		PartitionNames: partitionNames,
+	}
+	resp, err := c.Service.GetLoadState(ctx, req)
+	if err != nil {
+		return 0, err
+	}
+
+	return entity.LoadState(resp.GetState()), nil
+}
