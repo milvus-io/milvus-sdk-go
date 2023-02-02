@@ -1,5 +1,7 @@
 package entity
 
+import "strconv"
+
 type BulkInsertState int32
 
 const (
@@ -9,6 +11,8 @@ const (
 	BulkInsertPersisted        BulkInsertState = 5 // all data files have been parsed and data already persisted
 	BulkInsertCompleted        BulkInsertState = 6 // all indexes are successfully built and segments are able to be compacted as normal.
 	BulkInsertFailedAndCleaned BulkInsertState = 7 // the task failed and all segments it generated are cleaned up.
+
+	ImportProgress = "progress_percent"
 )
 
 type BulkInsertTaskState struct {
@@ -20,4 +24,15 @@ type BulkInsertTaskState struct {
 	CollectionID int64             // collection ID of the import task.
 	SegmentIDs   []int64           // a list of segment IDs created by the import task.
 	CreateTs     int64             //timestamp when the import task is created.
+}
+
+func (state BulkInsertTaskState) Progress() int {
+	if val, ok := state.Infos[ImportProgress]; ok {
+		progress, err := strconv.Atoi(val)
+		if err != nil {
+			return 0
+		}
+		return progress
+	}
+	return 0
 }
