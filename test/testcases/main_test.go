@@ -270,9 +270,15 @@ func createCollectionAllFields(ctx context.Context, t *testing.T, mc *base.Milvu
 	return collName, ids
 }
 
-func createInsertTwoPartitions(ctx context.Context, t *testing.T, mc *base.MilvusClient, collName string, nb int) (string, entity.Column, entity.Column) {
+type HelpPartitionColumns struct {
+	PartitionName string
+	IdsColumn     entity.Column
+	VectorColumn  *entity.ColumnFloatVector
+}
+
+func createInsertTwoPartitions(ctx context.Context, t *testing.T, mc *base.MilvusClient, collName string, nb int) (partitionName string, defaultPartition HelpPartitionColumns, newPartition HelpPartitionColumns) {
 	// create new partition
-	partitionName := "new"
+	partitionName = "new"
 	mc.CreatePartition(ctx, collName, partitionName)
 
 	// insert nb into default partition, pks from 0 to nb
@@ -289,7 +295,19 @@ func createInsertTwoPartitions(ctx context.Context, t *testing.T, mc *base.Milvu
 	stats, _ := mc.GetCollectionStatistics(ctx, collName)
 	require.Equal(t, strconv.Itoa(nb*2), stats[common.RowCount])
 
-	return partitionName, idsDefault, idsPartition
+	defaultPartition = HelpPartitionColumns{
+		PartitionName: common.DefaultPartition,
+		IdsColumn:     idsDefault,
+		VectorColumn:  vecColumn,
+	}
+
+	newPartition = HelpPartitionColumns{
+		PartitionName: partitionName,
+		IdsColumn:     idsPartition,
+		VectorColumn:  vecColumnNew,
+	}
+
+	return partitionName, defaultPartition, newPartition
 }
 
 func TestMain(m *testing.M) {

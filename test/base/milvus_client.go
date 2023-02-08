@@ -2,6 +2,7 @@ package base
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"time"
 
@@ -339,7 +340,7 @@ func (mc *MilvusClient) DeleteByPks(ctx context.Context, collName string, partit
 func (mc *MilvusClient) Search(ctx context.Context, collName string, partitions []string, expr string,
 	outputFields []string, vectors []entity.Vector, vectorField string, metricType entity.MetricType, topK int, sp entity.SearchParam, opts ...client.SearchQueryOptionFunc) ([]client.SearchResult, error) {
 	var funcName = "Search"
-	preRequest(funcName, ctx, collName, partitions, expr, outputFields, vectors, vectorField, metricType, topK, sp, opts)
+	preRequest(funcName, ctx, collName, partitions, expr, outputFields, fmt.Sprintf("nq=%d", len(vectors)), vectorField, metricType, topK, sp, opts)
 
 	searchResult, err := mc.mClient.Search(ctx, collName, partitions, expr, outputFields, vectors, vectorField, metricType, topK, sp, opts...)
 	postResponse(funcName, err, searchResult)
