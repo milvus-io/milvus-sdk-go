@@ -39,6 +39,23 @@ func WithReplicaNumber(rn int32) LoadCollectionOption {
 	}
 }
 
+// EnableLoadCollectionRefreshMode enable refresh mode in load, default false.
+func EnableLoadCollectionRefreshMode() LoadCollectionOption {
+	return func(req *server.LoadCollectionRequest) {
+		req.Refresh = true
+	}
+}
+
+// LoadPartitionsOption is an option that is used to modify LoadPartitionsRequest
+type LoadPartitionsOption func(request *server.LoadPartitionsRequest)
+
+// EnableLoadPartitionsRefreshMode enable refresh mode in load, default false.
+func EnableLoadPartitionsRefreshMode() LoadPartitionsOption {
+	return func(req *server.LoadPartitionsRequest) {
+		req.Refresh = true
+	}
+}
+
 // SearchQueryOption is an option of search/query request
 type SearchQueryOption struct {
 	// Consistency Level & Time travel
