@@ -448,6 +448,53 @@ func (_c *MilvusServiceServer_CreatePartition_Call) Return(_a0 *commonpb.Status,
 	return _c
 }
 
+// CreateResourceGroup provides a mock function with given fields: _a0, _a1
+func (_m *MilvusServiceServer) CreateResourceGroup(_a0 context.Context, _a1 *milvuspb.CreateResourceGroupRequest) (*commonpb.Status, error) {
+	ret := _m.Called(_a0, _a1)
+
+	var r0 *commonpb.Status
+	if rf, ok := ret.Get(0).(func(context.Context, *milvuspb.CreateResourceGroupRequest) *commonpb.Status); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*commonpb.Status)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *milvuspb.CreateResourceGroupRequest) error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MilvusServiceServer_CreateResourceGroup_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateResourceGroup'
+type MilvusServiceServer_CreateResourceGroup_Call struct {
+	*mock.Call
+}
+
+// CreateResourceGroup is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - _a1 *milvuspb.CreateResourceGroupRequest
+func (_e *MilvusServiceServer_Expecter) CreateResourceGroup(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_CreateResourceGroup_Call {
+	return &MilvusServiceServer_CreateResourceGroup_Call{Call: _e.mock.On("CreateResourceGroup", _a0, _a1)}
+}
+
+func (_c *MilvusServiceServer_CreateResourceGroup_Call) Run(run func(_a0 context.Context, _a1 *milvuspb.CreateResourceGroupRequest)) *MilvusServiceServer_CreateResourceGroup_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*milvuspb.CreateResourceGroupRequest))
+	})
+	return _c
+}
+
+func (_c *MilvusServiceServer_CreateResourceGroup_Call) Return(_a0 *commonpb.Status, _a1 error) *MilvusServiceServer_CreateResourceGroup_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
 // CreateRole provides a mock function with given fields: _a0, _a1
 func (_m *MilvusServiceServer) CreateRole(_a0 context.Context, _a1 *milvuspb.CreateRoleRequest) (*commonpb.Status, error) {
 	ret := _m.Called(_a0, _a1)
@@ -683,6 +730,53 @@ func (_c *MilvusServiceServer_DescribeIndex_Call) Return(_a0 *milvuspb.DescribeI
 	return _c
 }
 
+// DescribeResourceGroup provides a mock function with given fields: _a0, _a1
+func (_m *MilvusServiceServer) DescribeResourceGroup(_a0 context.Context, _a1 *milvuspb.DescribeResourceGroupRequest) (*milvuspb.DescribeResourceGroupResponse, error) {
+	ret := _m.Called(_a0, _a1)
+
+	var r0 *milvuspb.DescribeResourceGroupResponse
+	if rf, ok := ret.Get(0).(func(context.Context, *milvuspb.DescribeResourceGroupRequest) *milvuspb.DescribeResourceGroupResponse); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*milvuspb.DescribeResourceGroupResponse)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *milvuspb.DescribeResourceGroupRequest) error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MilvusServiceServer_DescribeResourceGroup_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DescribeResourceGroup'
+type MilvusServiceServer_DescribeResourceGroup_Call struct {
+	*mock.Call
+}
+
+// DescribeResourceGroup is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - _a1 *milvuspb.DescribeResourceGroupRequest
+func (_e *MilvusServiceServer_Expecter) DescribeResourceGroup(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_DescribeResourceGroup_Call {
+	return &MilvusServiceServer_DescribeResourceGroup_Call{Call: _e.mock.On("DescribeResourceGroup", _a0, _a1)}
+}
+
+func (_c *MilvusServiceServer_DescribeResourceGroup_Call) Run(run func(_a0 context.Context, _a1 *milvuspb.DescribeResourceGroupRequest)) *MilvusServiceServer_DescribeResourceGroup_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*milvuspb.DescribeResourceGroupRequest))
+	})
+	return _c
+}
+
+func (_c *MilvusServiceServer_DescribeResourceGroup_Call) Return(_a0 *milvuspb.DescribeResourceGroupResponse, _a1 error) *MilvusServiceServer_DescribeResourceGroup_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
 // DropAlias provides a mock function with given fields: _a0, _a1
 func (_m *MilvusServiceServer) DropAlias(_a0 context.Context, _a1 *milvuspb.DropAliasRequest) (*commonpb.Status, error) {
 	ret := _m.Called(_a0, _a1)
@@ -867,6 +961,53 @@ func (_c *MilvusServiceServer_DropPartition_Call) Run(run func(_a0 context.Conte
 }
 
 func (_c *MilvusServiceServer_DropPartition_Call) Return(_a0 *commonpb.Status, _a1 error) *MilvusServiceServer_DropPartition_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+// DropResourceGroup provides a mock function with given fields: _a0, _a1
+func (_m *MilvusServiceServer) DropResourceGroup(_a0 context.Context, _a1 *milvuspb.DropResourceGroupRequest) (*commonpb.Status, error) {
+	ret := _m.Called(_a0, _a1)
+
+	var r0 *commonpb.Status
+	if rf, ok := ret.Get(0).(func(context.Context, *milvuspb.DropResourceGroupRequest) *commonpb.Status); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*commonpb.Status)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *milvuspb.DropResourceGroupRequest) error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MilvusServiceServer_DropResourceGroup_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DropResourceGroup'
+type MilvusServiceServer_DropResourceGroup_Call struct {
+	*mock.Call
+}
+
+// DropResourceGroup is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - _a1 *milvuspb.DropResourceGroupRequest
+func (_e *MilvusServiceServer_Expecter) DropResourceGroup(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_DropResourceGroup_Call {
+	return &MilvusServiceServer_DropResourceGroup_Call{Call: _e.mock.On("DropResourceGroup", _a0, _a1)}
+}
+
+func (_c *MilvusServiceServer_DropResourceGroup_Call) Run(run func(_a0 context.Context, _a1 *milvuspb.DropResourceGroupRequest)) *MilvusServiceServer_DropResourceGroup_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*milvuspb.DropResourceGroupRequest))
+	})
+	return _c
+}
+
+func (_c *MilvusServiceServer_DropResourceGroup_Call) Return(_a0 *commonpb.Status, _a1 error) *MilvusServiceServer_DropResourceGroup_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
@@ -2046,6 +2187,53 @@ func (_c *MilvusServiceServer_ListImportTasks_Call) Return(_a0 *milvuspb.ListImp
 	return _c
 }
 
+// ListResourceGroups provides a mock function with given fields: _a0, _a1
+func (_m *MilvusServiceServer) ListResourceGroups(_a0 context.Context, _a1 *milvuspb.ListResourceGroupsRequest) (*milvuspb.ListResourceGroupsResponse, error) {
+	ret := _m.Called(_a0, _a1)
+
+	var r0 *milvuspb.ListResourceGroupsResponse
+	if rf, ok := ret.Get(0).(func(context.Context, *milvuspb.ListResourceGroupsRequest) *milvuspb.ListResourceGroupsResponse); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*milvuspb.ListResourceGroupsResponse)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *milvuspb.ListResourceGroupsRequest) error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MilvusServiceServer_ListResourceGroups_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ListResourceGroups'
+type MilvusServiceServer_ListResourceGroups_Call struct {
+	*mock.Call
+}
+
+// ListResourceGroups is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - _a1 *milvuspb.ListResourceGroupsRequest
+func (_e *MilvusServiceServer_Expecter) ListResourceGroups(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_ListResourceGroups_Call {
+	return &MilvusServiceServer_ListResourceGroups_Call{Call: _e.mock.On("ListResourceGroups", _a0, _a1)}
+}
+
+func (_c *MilvusServiceServer_ListResourceGroups_Call) Run(run func(_a0 context.Context, _a1 *milvuspb.ListResourceGroupsRequest)) *MilvusServiceServer_ListResourceGroups_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*milvuspb.ListResourceGroupsRequest))
+	})
+	return _c
+}
+
+func (_c *MilvusServiceServer_ListResourceGroups_Call) Return(_a0 *milvuspb.ListResourceGroupsResponse, _a1 error) *MilvusServiceServer_ListResourceGroups_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
 // LoadBalance provides a mock function with given fields: _a0, _a1
 func (_m *MilvusServiceServer) LoadBalance(_a0 context.Context, _a1 *milvuspb.LoadBalanceRequest) (*commonpb.Status, error) {
 	ret := _m.Called(_a0, _a1)
@@ -2516,6 +2704,53 @@ func (_c *MilvusServiceServer_ReleasePartitions_Call) Return(_a0 *commonpb.Statu
 	return _c
 }
 
+// RenameCollection provides a mock function with given fields: _a0, _a1
+func (_m *MilvusServiceServer) RenameCollection(_a0 context.Context, _a1 *milvuspb.RenameCollectionRequest) (*commonpb.Status, error) {
+	ret := _m.Called(_a0, _a1)
+
+	var r0 *commonpb.Status
+	if rf, ok := ret.Get(0).(func(context.Context, *milvuspb.RenameCollectionRequest) *commonpb.Status); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*commonpb.Status)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *milvuspb.RenameCollectionRequest) error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MilvusServiceServer_RenameCollection_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RenameCollection'
+type MilvusServiceServer_RenameCollection_Call struct {
+	*mock.Call
+}
+
+// RenameCollection is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - _a1 *milvuspb.RenameCollectionRequest
+func (_e *MilvusServiceServer_Expecter) RenameCollection(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_RenameCollection_Call {
+	return &MilvusServiceServer_RenameCollection_Call{Call: _e.mock.On("RenameCollection", _a0, _a1)}
+}
+
+func (_c *MilvusServiceServer_RenameCollection_Call) Run(run func(_a0 context.Context, _a1 *milvuspb.RenameCollectionRequest)) *MilvusServiceServer_RenameCollection_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*milvuspb.RenameCollectionRequest))
+	})
+	return _c
+}
+
+func (_c *MilvusServiceServer_RenameCollection_Call) Return(_a0 *commonpb.Status, _a1 error) *MilvusServiceServer_RenameCollection_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
 // Search provides a mock function with given fields: _a0, _a1
 func (_m *MilvusServiceServer) Search(_a0 context.Context, _a1 *milvuspb.SearchRequest) (*milvuspb.SearchResults, error) {
 	ret := _m.Called(_a0, _a1)
@@ -2794,6 +3029,100 @@ func (_c *MilvusServiceServer_ShowPartitions_Call) Run(run func(_a0 context.Cont
 }
 
 func (_c *MilvusServiceServer_ShowPartitions_Call) Return(_a0 *milvuspb.ShowPartitionsResponse, _a1 error) *MilvusServiceServer_ShowPartitions_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+// TransferNode provides a mock function with given fields: _a0, _a1
+func (_m *MilvusServiceServer) TransferNode(_a0 context.Context, _a1 *milvuspb.TransferNodeRequest) (*commonpb.Status, error) {
+	ret := _m.Called(_a0, _a1)
+
+	var r0 *commonpb.Status
+	if rf, ok := ret.Get(0).(func(context.Context, *milvuspb.TransferNodeRequest) *commonpb.Status); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*commonpb.Status)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *milvuspb.TransferNodeRequest) error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MilvusServiceServer_TransferNode_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TransferNode'
+type MilvusServiceServer_TransferNode_Call struct {
+	*mock.Call
+}
+
+// TransferNode is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - _a1 *milvuspb.TransferNodeRequest
+func (_e *MilvusServiceServer_Expecter) TransferNode(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_TransferNode_Call {
+	return &MilvusServiceServer_TransferNode_Call{Call: _e.mock.On("TransferNode", _a0, _a1)}
+}
+
+func (_c *MilvusServiceServer_TransferNode_Call) Run(run func(_a0 context.Context, _a1 *milvuspb.TransferNodeRequest)) *MilvusServiceServer_TransferNode_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*milvuspb.TransferNodeRequest))
+	})
+	return _c
+}
+
+func (_c *MilvusServiceServer_TransferNode_Call) Return(_a0 *commonpb.Status, _a1 error) *MilvusServiceServer_TransferNode_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+// TransferReplica provides a mock function with given fields: _a0, _a1
+func (_m *MilvusServiceServer) TransferReplica(_a0 context.Context, _a1 *milvuspb.TransferReplicaRequest) (*commonpb.Status, error) {
+	ret := _m.Called(_a0, _a1)
+
+	var r0 *commonpb.Status
+	if rf, ok := ret.Get(0).(func(context.Context, *milvuspb.TransferReplicaRequest) *commonpb.Status); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*commonpb.Status)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *milvuspb.TransferReplicaRequest) error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MilvusServiceServer_TransferReplica_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TransferReplica'
+type MilvusServiceServer_TransferReplica_Call struct {
+	*mock.Call
+}
+
+// TransferReplica is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - _a1 *milvuspb.TransferReplicaRequest
+func (_e *MilvusServiceServer_Expecter) TransferReplica(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_TransferReplica_Call {
+	return &MilvusServiceServer_TransferReplica_Call{Call: _e.mock.On("TransferReplica", _a0, _a1)}
+}
+
+func (_c *MilvusServiceServer_TransferReplica_Call) Run(run func(_a0 context.Context, _a1 *milvuspb.TransferReplicaRequest)) *MilvusServiceServer_TransferReplica_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*milvuspb.TransferReplicaRequest))
+	})
+	return _c
+}
+
+func (_c *MilvusServiceServer_TransferReplica_Call) Return(_a0 *commonpb.Status, _a1 error) *MilvusServiceServer_TransferReplica_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }

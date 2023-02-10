@@ -136,7 +136,7 @@ func (c *GrpcClient) ShowPartitions(ctx context.Context, collName string) ([]*en
 }
 
 // LoadPartitions load collection paritions into memory
-func (c *GrpcClient) LoadPartitions(ctx context.Context, collName string, partitionNames []string, async bool) error {
+func (c *GrpcClient) LoadPartitions(ctx context.Context, collName string, partitionNames []string, async bool, opts ...LoadPartitionsOption) error {
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
@@ -171,6 +171,10 @@ func (c *GrpcClient) LoadPartitions(ctx context.Context, collName string, partit
 		CollectionName: collName,
 		PartitionNames: partitionNames,
 	}
+	for _, opt := range opts {
+		opt(req)
+	}
+
 	resp, err := c.Service.LoadPartitions(ctx, req)
 	if err != nil {
 		return err
