@@ -15,6 +15,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -267,20 +268,24 @@ func (c *GrpcClient) HasCollection(ctx context.Context, collName string) (bool, 
 		return false, ErrClientNotReady
 	}
 
-	req := &server.HasCollectionRequest{
+	req := &server.DescribeCollectionRequest{
 		DbName:         "", // reserved
 		CollectionName: collName,
 		TimeStamp:      0, // 0 for now
 	}
 
-	resp, err := c.Service.HasCollection(ctx, req)
+	resp, err := c.Service.DescribeCollection(ctx, req)
 	if err != nil {
 		return false, err
 	}
-	if err := handleRespStatus(resp.GetStatus()); err != nil {
-		return false, err
+	if resp.GetStatus().GetErrorCode() == common.ErrorCode_Success {
+		return true, nil
+	} else if resp.GetStatus().GetErrorCode() == common.ErrorCode_UnexpectedError &&
+		strings.Contains(resp.GetStatus().GetReason(), "can't find collection") {
+		return false, nil
 	}
-	return resp.GetValue(), nil
+	err = handleRespStatus(resp.GetStatus())
+	return false, err
 }
 
 // GetCollectionStatistcis show collection statistics

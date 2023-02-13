@@ -92,6 +92,7 @@ func TestGrpcClientCreateCollection(t *testing.T) {
 	c := testClient(ctx, t)
 	// default, all collection name returns false
 	mock.DelInjection(MHasCollection)
+	mock.SetInjection(MDescribeCollection, describeCollectionDefault)
 	t.Run("Test normal creation", func(t *testing.T) {
 		ds := defaultSchema()
 		shardsNum := int32(1)
@@ -245,20 +246,28 @@ func TestGrpcClientCreateCollection(t *testing.T) {
 			return SuccessStatus()
 		})
 		defer mock.DelInjection(MCreateCollection)
-		mock.SetInjection(MHasCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			req, ok := raw.(*server.HasCollectionRequest)
-			resp := &server.BoolResponse{}
+		mock.SetInjection(MDescribeCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+			req, ok := raw.(*server.DescribeCollectionRequest)
+			resp := &server.DescribeCollectionResponse{}
 			if !ok {
-				return BadRequestStatus()
+				s, err := BadRequestStatus()
+				resp.Status = s
+				return resp, err
 			}
 
 			_, has := m[req.GetCollectionName()]
-			resp.Value = has
-			s, err := SuccessStatus()
+			var err error
+			var s *common.Status
+			if has {
+				s, err = SuccessStatus()
+			} else {
+				s, err = BadStatus()
+				s.Reason = "can't find collection " + req.GetCollectionName()
+			}
 			resp.Status = s
 			return resp, err
 		})
-		defer mock.DelInjection(MHasCollection)
+		defer mock.DelInjection(MDescribeCollection)
 
 		assert.Nil(t, c.CreateCollection(ctx, defaultSchema(), 1))
 		assert.NotNil(t, c.CreateCollection(ctx, defaultSchema(), 1))
@@ -288,15 +297,38 @@ func TestGrpcClientCreateCollection(t *testing.T) {
 
 // default HasCollection injection, returns true only when collection name is `testCollectionName`
 var hasCollectionDefault = func(_ context.Context, raw proto.Message) (proto.Message, error) {
-	req, ok := raw.(*server.HasCollectionRequest)
-	resp := &server.BoolResponse{}
+	req, ok := raw.(*server.DescribeCollectionRequest)
+	resp := &server.DescribeCollectionResponse{}
 	if !ok {
 		s, err := BadRequestStatus()
 		resp.Status = s
-		return s, err
+		return resp, err
 	}
-	resp.Value = req.GetCollectionName() == testCollectionName
-	s, err := SuccessStatus()
+
+	has := req.GetCollectionName() == testCollectionName
+	var err error
+	var s *common.Status
+	if has {
+		s, err = SuccessStatus()
+	} else {
+		s, err = BadStatus()
+		s.Reason = "can't find collection " + req.GetCollectionName()
+	}
+	resp.Status = s
+	return resp, err
+}
+
+var describeCollectionDefault = func(ctx context.Context, raw proto.Message) (proto.Message, error) {
+	req, ok := raw.(*server.DescribeCollectionRequest)
+	resp := &server.DescribeCollectionResponse{}
+	if !ok {
+		s, err := BadRequestStatus()
+		resp.Status = s
+		return resp, err
+	}
+
+	s, err := BadStatus()
+	s.Reason = "can't find collection " + req.GetCollectionName()
 	resp.Status = s
 	return resp, err
 }
@@ -510,6 +542,7 @@ func TestGrpcClientDescribeCollection(t *testing.T) {
 	collectionID := rand.Int63()
 
 	mock.SetInjection(MDescribeCollection, describeCollectionInjection(t, collectionID, testCollectionName, defaultSchema()))
+	defer mock.DelInjection(MDescribeCollection)
 
 	collection, err := c.DescribeCollection(ctx, testCollectionName)
 	assert.Nil(t, err)
@@ -557,8 +590,8 @@ func TestGrpcClientGetReplicas(t *testing.T) {
 
 	replicaID := rand.Int63()
 	nodeIds := []int64{1, 2, 3, 4}
-	mock.SetInjection(MHasCollection, hasCollectionDefault)
-	defer mock.DelInjection(MHasCollection)
+	mock.SetInjection(MDescribeCollection, hasCollectionDefault)
+	defer mock.DelInjection(MDescribeCollection)
 
 	mock.SetInjection(MShowCollections, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 		s, err := SuccessStatus()

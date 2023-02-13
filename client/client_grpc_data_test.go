@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/milvus-io/milvus-proto/go-api/commonpb"
 	common "github.com/milvus-io/milvus-proto/go-api/commonpb"
 	server "github.com/milvus-io/milvus-proto/go-api/milvuspb"
 	schema "github.com/milvus-io/milvus-proto/go-api/schemapb"
@@ -215,8 +214,10 @@ func TestGrpcDeleteByPks(t *testing.T) {
 		defer mock.DelInjection(MHasPartition)
 
 		// non-exist collection
+		mock.SetInjection(MDescribeCollection, hasCollectionDefault)
 		err := c.DeleteByPks(ctx, "non-exists-collection", "", entity.NewColumnInt64("pk", []int64{}))
 		assert.Error(t, err)
+		mock.SetInjection(MDescribeCollection, describeCollectionInjection(t, 1, testCollectionName, defaultSchema()))
 
 		// non-exist parition
 		err = c.DeleteByPks(ctx, testCollectionName, "non-exists-part", entity.NewColumnInt64("pk", []int64{}))
@@ -499,33 +500,34 @@ func TestGrpcQuery(t *testing.T) {
 	})
 
 	t.Run("Bad request querys", func(t *testing.T) {
-		mock.SetInjection(MHasCollection, hasCollectionDefault)
+		mock.DelInjection(MQuery)
 		mock.SetInjection(MHasPartition, hasPartitionInjection(t, testCollectionName, false, partName))
 		defer mock.DelInjection(MHasPartition)
-		mock.SetInjection(MDescribeCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			req, ok := raw.(*server.DescribeCollectionRequest)
-			resp := &server.DescribeCollectionResponse{}
-			if !ok {
-				s, err := BadRequestStatus()
-				resp.Status = s
-				return resp, err
-			}
-
-			if req.CollectionName != testCollectionName {
-				resp.Status = &commonpb.Status{
-					ErrorCode: commonpb.ErrorCode_CollectionNameNotFound,
-				}
-				return resp, nil
-			}
-			sch := defaultSchema()
-			resp.Schema = sch.ProtoMessage()
-			resp.CollectionID = testCollectionID
-
-			s, err := SuccessStatus()
-			resp.Status = s
-
-			return resp, err
-		})
+		//mock.SetInjection(MDescribeCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		//	req, ok := raw.(*server.DescribeCollectionRequest)
+		//	resp := &server.DescribeCollectionResponse{}
+		//	if !ok {
+		//		s, err := BadRequestStatus()
+		//		resp.Status = s
+		//		return resp, err
+		//	}
+		//
+		//	if req.CollectionName != testCollectionName {
+		//		resp.Status = &commonpb.Status{
+		//			ErrorCode: commonpb.ErrorCode_CollectionNameNotFound,
+		//		}
+		//		return resp, nil
+		//	}
+		//	sch := defaultSchema()
+		//	resp.Schema = sch.ProtoMessage()
+		//	resp.CollectionID = testCollectionID
+		//
+		//	s, err := SuccessStatus()
+		//	resp.Status = s
+		//
+		//	return resp, err
+		//})
+		mock.SetInjection(MDescribeCollection, hasCollectionDefault)
 		defer mock.SetInjection(MDescribeCollection, describeCollectionInjection(t, testCollectionID, testCollectionName, defaultSchema()))
 
 		// non-exist collection

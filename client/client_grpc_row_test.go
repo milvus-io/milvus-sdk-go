@@ -30,7 +30,7 @@ func TestCreateCollectionByRow(t *testing.T) {
 		Vector []float32 `milvus:"dim:4"`
 	}
 	t.Run("Test normal creation", func(t *testing.T) {
-		mock.DelInjection(MHasCollection)
+		mock.SetInjection(MDescribeCollection, hasCollectionDefault)
 		shardsNum := int32(1)
 		mock.SetInjection(MCreateCollection, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
 			req, ok := raw.(*server.CreateCollectionRequest)
@@ -61,19 +61,28 @@ func TestCreateCollectionByRow(t *testing.T) {
 
 			return SuccessStatus()
 		})
-		mock.SetInjection(MHasCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			req, ok := raw.(*server.HasCollectionRequest)
-			resp := &server.BoolResponse{}
+		mock.SetInjection(MDescribeCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+			req, ok := raw.(*server.DescribeCollectionRequest)
+			resp := &server.DescribeCollectionResponse{}
 			if !ok {
-				return BadRequestStatus()
+				s, err := BadRequestStatus()
+				resp.Status = s
+				return resp, err
 			}
 
 			_, has := m[req.GetCollectionName()]
-			resp.Value = has
-			s, err := SuccessStatus()
+			var err error
+			var s *common.Status
+			if has {
+				s, err = SuccessStatus()
+			} else {
+				s, err = BadStatus()
+				s.Reason = "can't find collection " + req.GetCollectionName()
+			}
 			resp.Status = s
 			return resp, err
 		})
+		defer mock.DelInjection(MDescribeCollection)
 		assert.Nil(t, c.CreateCollectionByRow(ctx, &ValidStruct{}, 1))
 		assert.NotNil(t, c.CreateCollectionByRow(ctx, &ValidStruct{}, 1))
 		// Invalid struct
@@ -91,13 +100,13 @@ func TestInsertByRows(t *testing.T) {
 	c := testClient(ctx, t)
 
 	t.Run("test create failure due to meta", func(t *testing.T) {
-		mock.DelInjection(MHasCollection) // collection does not exist
+		mock.SetInjection(MDescribeCollection, describeCollectionDefault) // collection does not exist
 		ids, err := c.InsertByRows(ctx, testCollectionName, "", []entity.Row{})
 		assert.Nil(t, ids)
 		assert.NotNil(t, err)
 
 		// partition not exists
-		mock.SetInjection(MHasCollection, hasCollectionDefault)
+		mock.SetInjection(MDescribeCollection, hasCollectionDefault)
 		ids, err = c.InsertByRows(ctx, testCollectionName, "_part_not_exists", []entity.Row{})
 		assert.Nil(t, ids)
 		assert.NotNil(t, err)
