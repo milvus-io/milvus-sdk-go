@@ -117,6 +117,8 @@ type Client interface {
 	Flush(ctx context.Context, collName string, async bool) error
 	// DeleteByPks deletes entries related to provided primary keys
 	DeleteByPks(ctx context.Context, collName string, partitionName string, ids entity.Column) error
+	// Upsert column-based data of collection, returns id column values
+	Upsert(ctx context.Context, collName string, partitionName string, columns ...entity.Column) (entity.Column, error)
 	// Search search with bool expression
 	Search(ctx context.Context, collName string, partitions []string,
 		expr string, outputFields []string, vectors []entity.Vector, vectorField string, metricType entity.MetricType, topK int, sp entity.SearchParam, opts ...SearchQueryOptionFunc) ([]SearchResult, error)

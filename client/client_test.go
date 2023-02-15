@@ -180,7 +180,7 @@ func TestGrpcClientNil(t *testing.T) {
 				m.Name == "Search" || // type alias MetricType treated as string
 				m.Name == "CalcDistance" ||
 				m.Name == "ManualCompaction" || // time.Duration hard to detect in reflect
-				m.Name == "Insert" { // complex methods with ...
+				m.Name == "Insert" || m.Name == "Upsert" { // complex methods with ...
 				t.Skip("method", m.Name, "skipped")
 			}
 			ins := make([]reflect.Value, 0, mt.NumIn())
