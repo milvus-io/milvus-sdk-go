@@ -15,6 +15,7 @@ import (
 	"errors"
 	"fmt"
 
+	common "github.com/milvus-io/milvus-proto/go-api/commonpb"
 	server "github.com/milvus-io/milvus-proto/go-api/milvuspb"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )
@@ -26,6 +27,12 @@ type CreateCollectionOption func(*server.CreateCollectionRequest)
 func WithConsistencyLevel(cl entity.ConsistencyLevel) CreateCollectionOption {
 	return func(req *server.CreateCollectionRequest) {
 		req.ConsistencyLevel = cl.CommonConsistencyLevel()
+	}
+}
+
+func WithCollectionProperty(key string, value string) CreateCollectionOption {
+	return func(req *server.CreateCollectionRequest) {
+		req.Properties = append(req.Properties, &common.KeyValuePair{Key: key, Value: value})
 	}
 }
 
