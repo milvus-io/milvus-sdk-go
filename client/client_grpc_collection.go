@@ -36,7 +36,7 @@ func (c *GrpcClient) connect(ctx context.Context, addr string, opts ...grpc.Dial
 	if addr == "" {
 		return fmt.Errorf("address is empty")
 	}
-	conn, err := grpc.Dial(addr, opts...)
+	conn, err := grpc.DialContext(ctx, addr, opts...)
 	if err != nil {
 		return err
 	}

@@ -204,11 +204,11 @@ func (c *GrpcClient) DeleteByPks(ctx context.Context, collName string, partition
 
 	pkf := getPKField(coll.Schema)
 	// pkf shall not be nil since is returned from milvus
-	if pkf.Name != ids.Name() {
+	if ids.Name() != "" && pkf.Name != ids.Name() {
 		return errors.New("only delete by primary key is supported now")
 	}
 
-	expr := PKs2Expr(ids)
+	expr := PKs2Expr(pkf.Name, ids)
 
 	req := &server.DeleteRequest{
 		DbName:         "",
@@ -287,17 +287,21 @@ func (c *GrpcClient) Search(ctx context.Context, collName string, partitions []s
 	return sr, nil
 }
 
-func PKs2Expr(ids entity.Column) string {
+func PKs2Expr(backName string, ids entity.Column) string {
 	var expr string
+	var pkName = ids.Name()
+	if ids.Name() == "" {
+		pkName = backName
+	}
 	switch ids.Type() {
 	case entity.FieldTypeInt64:
-		expr = fmt.Sprintf("%s in %s", ids.Name(), strings.Join(strings.Fields(fmt.Sprint(ids.FieldData().GetScalars().GetLongData().GetData())), ","))
+		expr = fmt.Sprintf("%s in %s", pkName, strings.Join(strings.Fields(fmt.Sprint(ids.FieldData().GetScalars().GetLongData().GetData())), ","))
 	case entity.FieldTypeVarChar:
 		data := ids.FieldData().GetScalars().GetData().(*schema.ScalarField_StringData).StringData.Data
 		for i := range data {
 			data[i] = fmt.Sprintf("\"%s\"", data[i])
 		}
-		expr = fmt.Sprintf("%s in %s", ids.Name(), strings.Join(strings.Fields(fmt.Sprint(data)), ","))
+		expr = fmt.Sprintf("%s in %s", pkName, strings.Join(strings.Fields(fmt.Sprint(data)), ","))
 	}
 	return expr
 }
@@ -315,7 +319,7 @@ func (c *GrpcClient) QueryByPks(ctx context.Context, collectionName string, part
 		return nil, errors.New("only int64 and varchar column can be primary key for now")
 	}
 
-	expr := PKs2Expr(ids)
+	expr := PKs2Expr("", ids)
 
 	return c.Query(ctx, collectionName, partitionNames, expr, outputFields, opts...)
 }
