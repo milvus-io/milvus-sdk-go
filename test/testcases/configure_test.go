@@ -10,9 +10,11 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/milvus-io/milvus-sdk-go/v2/client"
+	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 	"github.com/milvus-io/milvus-sdk-go/v2/test/common"
 )
 
+// config queryNode.replicas >=2 -> test load with multi replicas
 func TestLoadCollectionReplicas(t *testing.T) {
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect
@@ -43,4 +45,38 @@ func TestLoadCollectionReplicas(t *testing.T) {
 		log.Printf("segmentId: %d, NumRows: %d, CollectionID: %d, ParititionID %d, IndexId: %d, State %v",
 			segment.ID, segment.NumRows, segment.CollectionID, segment.ParititionID, segment.IndexID, segment.State)
 	}
+}
+
+// config common.retentionDuration=40 -> test compact after delete half
+func TestCompactAfterDelete(t *testing.T) {
+	t.Skip("Issue: https://github.com/milvus-io/milvus-sdk-go/issues/379")
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	// connect
+	mc := createMilvusClient(ctx, t)
+
+	// create collection with 1 shard
+	collName := createDefaultCollection(ctx, t, mc, true, 1)
+
+	// insert
+	_, floatColumn, vecColumn := common.GenDefaultColumnData(0, common.DefaultNb, common.DefaultDim)
+	ids, errInsert := mc.Insert(ctx, collName, common.DefaultPartition, floatColumn, vecColumn)
+	common.CheckErr(t, errInsert, true)
+
+	// flush
+	errFlush := mc.Flush(ctx, collName, false)
+	common.CheckErr(t, errFlush, true)
+
+	// delete half ids
+	deleteIds := entity.NewColumnInt64(common.DefaultIntFieldName, ids.(*entity.ColumnInt64).Data()[:common.DefaultNb/2])
+	errDelete := mc.DeleteByPks(ctx, collName, "", deleteIds)
+	common.CheckErr(t, errDelete, true)
+
+	// compact
+	time.Sleep(common.RetentionDuration + 1)
+	compactionID, _ := mc.Compact(ctx, collName, 0)
+	mc.WaitForCompactionCompleted(ctx, compactionID)
+
+	// get compaction plans
+	_, plans, _ := mc.GetCompactionStateWithPlans(ctx, compactionID)
+	log.Println(plans)
 }

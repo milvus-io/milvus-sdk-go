@@ -71,7 +71,7 @@ func TestDeleteEmptyCollection(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create
-	collName := createDefaultCollection(ctx, t, mc, false)
+	collName := createDefaultCollection(ctx, t, mc, false, 2)
 
 	// delete
 	deleteIds := entity.NewColumnInt64(common.DefaultIntFieldName, []int64{0})
@@ -119,7 +119,7 @@ func TestDeleteEmptyPartitionNames(t *testing.T) {
 
 	emptyPartitionName := ""
 	// create
-	collName := createDefaultCollection(ctx, t, mc, false)
+	collName := createDefaultCollection(ctx, t, mc, false, 2)
 
 	// insert "" partition and flush
 	intColumn, floatColumn, vecColumn := common.GenDefaultColumnData(0, common.DefaultNb, common.DefaultDim)
@@ -185,7 +185,7 @@ func TestDeletePartitionIdsNotMatch(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create collection and insert [0, nb) into default partition, [nb, nb*2) into new partition
-	collName := createDefaultCollection(ctx, t, mc, false)
+	collName := createDefaultCollection(ctx, t, mc, false, 2)
 	partitionName, defaultPartition, _ := createInsertTwoPartitions(ctx, t, mc, collName, common.DefaultNb)
 
 	// delete [0:10) from new partition -> delete nothing
@@ -220,7 +220,7 @@ func TestDeleteNilIds(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create
-	collName := createDefaultCollection(ctx, t, mc, false)
+	collName := createDefaultCollection(ctx, t, mc, false, 2)
 
 	// delete
 	errDelete := mc.DeleteByPks(ctx, collName, common.DefaultPartition, nil)
