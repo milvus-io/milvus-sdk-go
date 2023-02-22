@@ -44,6 +44,30 @@ func TestLoadCollectionWithReplicaNumber(t *testing.T) {
 	assert.Equal(t, testMultiReplicaNumber, req.GetReplicaNumber())
 }
 
+func TestLoadCollectionWithRefreshMode(t *testing.T) {
+	opt := EnableLoadCollectionRefreshMode()
+	assert.NotNil(t, opt)
+	req := &server.LoadCollectionRequest{}
+
+	assert.NotPanics(t, func() {
+		opt(req)
+	})
+
+	assert.Equal(t, true, req.GetRefresh())
+}
+
+func TestLoadPartitionsWithRefreshMode(t *testing.T) {
+	opt := EnableLoadPartitionsRefreshMode()
+	assert.NotNil(t, opt)
+	req := &server.LoadPartitionsRequest{}
+
+	assert.NotPanics(t, func() {
+		opt(req)
+	})
+
+	assert.Equal(t, true, req.GetRefresh())
+}
+
 func TestMakeSearchQueryOption(t *testing.T) {
 	c := &entity.Collection{
 		Name:             "999",
