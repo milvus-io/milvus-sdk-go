@@ -338,6 +338,12 @@ func TestGrpcSearch(t *testing.T) {
 		assert.Nil(t, err)
 		assert.NotNil(t, results)
 
+		// search with ignore growing
+		results, err = c.Search(ctx, testCollectionName, []string{}, expr, []string{"int64"}, []entity.Vector{entity.FloatVector(vectors[0])},
+			testVectorField, entity.L2, 10, sp, WithIgnoreGrowing())
+		assert.Nil(t, err)
+		assert.NotNil(t, results)
+
 		// search with session consistency level
 		results, err = c.Search(ctx, testCollectionName, []string{}, expr, []string{"int64"}, []entity.Vector{entity.FloatVector(vectors[0])},
 			testVectorField, entity.L2, 10, sp, WithSearchQueryConsistencyLevel(entity.ClSession), WithTravelTimestamp(0))
@@ -422,6 +428,18 @@ func TestGrpcQuery(t *testing.T) {
 
 		// query with options
 		columns, err = c.Query(ctx, testCollectionName, []string{partName}, "int64 in {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}", []string{"int64", testVectorField}, WithSearchQueryConsistencyLevel(entity.ClSession), WithTravelTimestamp(0))
+		assert.NoError(t, err)
+		assert.Equal(t, 2, len(columns))
+		assert.Equal(t, entity.FieldTypeInt64, columns[0].Type())
+		assert.Equal(t, entity.FieldTypeFloatVector, columns[1].Type())
+		assert.Equal(t, 10, columns[0].Len())
+
+		colInt64, ok = columns[0].(*entity.ColumnInt64)
+		assert.True(t, ok)
+		assert.ElementsMatch(t, []int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, colInt64.Data())
+
+		// query with ignore growing options
+		columns, err = c.Query(ctx, testCollectionName, []string{partName}, "int64 in {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}", []string{"int64", testVectorField}, WithIgnoreGrowing())
 		assert.NoError(t, err)
 		assert.Equal(t, 2, len(columns))
 		assert.Equal(t, entity.FieldTypeInt64, columns[0].Type())

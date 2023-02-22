@@ -63,6 +63,19 @@ func TestMakeSearchQueryOption(t *testing.T) {
 		expected := &SearchQueryOption{
 			ConsistencyLevel:   entity.ClStrong,
 			GuaranteeTimestamp: StrongTimestamp,
+			IgnoreGrowing:      false,
+		}
+		assert.Equal(t, expected, opt)
+	})
+
+	t.Run("ignore growing", func(t *testing.T) {
+		opt, err := makeSearchQueryOption(c.Name, WithIgnoreGrowing())
+		assert.Nil(t, err)
+		assert.NotNil(t, opt)
+		expected := &SearchQueryOption{
+			ConsistencyLevel:   entity.ClStrong,
+			GuaranteeTimestamp: StrongTimestamp,
+			IgnoreGrowing:      true,
 		}
 		assert.Equal(t, expected, opt)
 	})
@@ -74,6 +87,7 @@ func TestMakeSearchQueryOption(t *testing.T) {
 		expected := &SearchQueryOption{
 			ConsistencyLevel:   entity.ClSession,
 			GuaranteeTimestamp: EventuallyTimestamp,
+			IgnoreGrowing:      false,
 		}
 		assert.Equal(t, expected, opt)
 
@@ -84,6 +98,7 @@ func TestMakeSearchQueryOption(t *testing.T) {
 		expected = &SearchQueryOption{
 			ConsistencyLevel:   entity.ClSession,
 			GuaranteeTimestamp: 99,
+			IgnoreGrowing:      false,
 		}
 		assert.Equal(t, expected, opt)
 	})
@@ -95,6 +110,7 @@ func TestMakeSearchQueryOption(t *testing.T) {
 		expected := &SearchQueryOption{
 			ConsistencyLevel:   entity.ClBounded,
 			GuaranteeTimestamp: BoundedTimestamp,
+			IgnoreGrowing:      false,
 		}
 		assert.Equal(t, expected, opt)
 	})
@@ -106,6 +122,7 @@ func TestMakeSearchQueryOption(t *testing.T) {
 		expected := &SearchQueryOption{
 			ConsistencyLevel:   entity.ClEventually,
 			GuaranteeTimestamp: EventuallyTimestamp,
+			IgnoreGrowing:      false,
 		}
 		assert.Equal(t, expected, opt)
 	})
@@ -117,6 +134,7 @@ func TestMakeSearchQueryOption(t *testing.T) {
 		expected := &SearchQueryOption{
 			ConsistencyLevel:   entity.ClCustomized,
 			GuaranteeTimestamp: 100,
+			IgnoreGrowing:      false,
 		}
 		assert.Equal(t, expected, opt)
 	})
