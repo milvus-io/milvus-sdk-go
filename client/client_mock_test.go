@@ -2,13 +2,70 @@ package client
 
 import (
 	"context"
-	"errors"
+	"net"
 	"sync"
+
+	"github.com/cockroachdb/errors"
 
 	"github.com/golang/protobuf/proto"
 	common "github.com/milvus-io/milvus-proto/go-api/commonpb"
 	server "github.com/milvus-io/milvus-proto/go-api/milvuspb"
+	"github.com/milvus-io/milvus-sdk-go/v2/mocks"
+	"github.com/stretchr/testify/suite"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/test/bufconn"
 )
+
+type MockSuiteBase struct {
+	suite.Suite
+
+	lis  *bufconn.Listener
+	svr  *grpc.Server
+	mock *mocks.MilvusServiceServer
+
+	client Client
+}
+
+func (s *MockSuiteBase) SetupSuite() {
+	s.lis = bufconn.Listen(bufSize)
+	s.svr = grpc.NewServer()
+
+	s.mock = &mocks.MilvusServiceServer{}
+
+	server.RegisterMilvusServiceServer(s.svr, s.mock)
+
+	go func() {
+		s.T().Log("start mock server")
+		if err := s.svr.Serve(s.lis); err != nil {
+			s.Fail("failed to server mock server", err.Error())
+		}
+	}()
+}
+
+func (s *MockSuiteBase) TearDownSuite() {
+	s.svr.Stop()
+	s.lis.Close()
+}
+
+func (s *MockSuiteBase) mockDialer(context.Context, string) (net.Conn, error) {
+	return s.lis.Dial()
+}
+
+func (s *MockSuiteBase) SetupTest() {
+	c, err := NewGrpcClient(context.Background(), "bufnet2",
+		grpc.WithBlock(),
+		grpc.WithInsecure(),
+		grpc.WithContextDialer(s.mockDialer),
+	)
+	s.Require().NoError(err)
+
+	s.client = c
+}
+
+func (s *MockSuiteBase) TearDownTest() {
+	s.client.Close()
+	s.client = nil
+}
 
 // ref https://stackoverflow.com/questions/42102496/testing-a-grpc-service
 

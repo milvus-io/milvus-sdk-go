@@ -13,9 +13,10 @@ package client
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
+
+	"github.com/cockroachdb/errors"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"

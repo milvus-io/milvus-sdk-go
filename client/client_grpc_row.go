@@ -2,9 +2,10 @@ package client
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"reflect"
+
+	"github.com/cockroachdb/errors"
 
 	"github.com/golang/protobuf/proto"
 	server "github.com/milvus-io/milvus-proto/go-api/milvuspb"

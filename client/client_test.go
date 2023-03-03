@@ -30,8 +30,8 @@ const (
 )
 
 var (
-	lis  *bufconn.Listener
-	mock *MockServer
+	lis        *bufconn.Listener
+	mockServer *MockServer
 )
 
 const (
@@ -111,10 +111,10 @@ func TestMain(m *testing.M) {
 	rand.Seed(time.Now().Unix())
 	lis = bufconn.Listen(bufSize)
 	s := grpc.NewServer()
-	mock = &MockServer{
+	mockServer = &MockServer{
 		Injections: make(map[ServiceMethod]TestInjection),
 	}
-	server.RegisterMilvusServiceServer(s, mock)
+	server.RegisterMilvusServiceServer(s, mockServer)
 	go func() {
 		if err := s.Serve(lis); err != nil {
 			log.Fatalf("Server exited with error: %v", err)
