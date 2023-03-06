@@ -12,8 +12,9 @@
 package client
 
 import (
-	"errors"
 	"fmt"
+
+	"github.com/cockroachdb/errors"
 )
 
 // ErrServiceFailed indicates error returns from milvus Service
