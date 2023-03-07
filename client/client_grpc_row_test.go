@@ -30,9 +30,9 @@ func TestCreateCollectionByRow(t *testing.T) {
 		Vector []float32 `milvus:"dim:4"`
 	}
 	t.Run("Test normal creation", func(t *testing.T) {
-		mock.DelInjection(MHasCollection)
+		mockServer.DelInjection(MHasCollection)
 		shardsNum := int32(1)
-		mock.SetInjection(MCreateCollection, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
+		mockServer.SetInjection(MCreateCollection, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
 			req, ok := raw.(*server.CreateCollectionRequest)
 			if !ok {
 				return &common.Status{ErrorCode: common.ErrorCode_IllegalArgument}, errors.New("illegal request type")
@@ -52,7 +52,7 @@ func TestCreateCollectionByRow(t *testing.T) {
 	t.Run("Invalid cases", func(t *testing.T) {
 		//Duplicated
 		m := make(map[string]struct{})
-		mock.SetInjection(MCreateCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		mockServer.SetInjection(MCreateCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			req, ok := raw.(*server.CreateCollectionRequest)
 			if !ok {
 				return BadRequestStatus()
@@ -61,7 +61,7 @@ func TestCreateCollectionByRow(t *testing.T) {
 
 			return SuccessStatus()
 		})
-		mock.SetInjection(MHasCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		mockServer.SetInjection(MHasCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			req, ok := raw.(*server.HasCollectionRequest)
 			resp := &server.BoolResponse{}
 			if !ok {
@@ -91,19 +91,19 @@ func TestInsertByRows(t *testing.T) {
 	c := testClient(ctx, t)
 
 	t.Run("test create failure due to meta", func(t *testing.T) {
-		mock.DelInjection(MHasCollection) // collection does not exist
+		mockServer.DelInjection(MHasCollection) // collection does not exist
 		ids, err := c.InsertByRows(ctx, testCollectionName, "", []entity.Row{})
 		assert.Nil(t, ids)
 		assert.NotNil(t, err)
 
 		// partition not exists
-		mock.SetInjection(MHasCollection, hasCollectionDefault)
+		mockServer.SetInjection(MHasCollection, hasCollectionDefault)
 		ids, err = c.InsertByRows(ctx, testCollectionName, "_part_not_exists", []entity.Row{})
 		assert.Nil(t, ids)
 		assert.NotNil(t, err)
 
 		// field not in collection
-		mock.SetInjection(MDescribeCollection, describeCollectionInjection(t, 0, testCollectionName, defaultSchema()))
+		mockServer.SetInjection(MDescribeCollection, describeCollectionInjection(t, 0, testCollectionName, defaultSchema()))
 		type ExtraFieldRow struct {
 			entity.RowBase
 			Int64      int64 `milvus:"primary_key"`
@@ -115,7 +115,7 @@ func TestInsertByRows(t *testing.T) {
 		assert.NotNil(t, err)
 
 		// field type not match
-		mock.SetInjection(MDescribeCollection, describeCollectionInjection(t, 0, testCollectionName, defaultSchema()))
+		mockServer.SetInjection(MDescribeCollection, describeCollectionInjection(t, 0, testCollectionName, defaultSchema()))
 		type OtherFieldRow struct {
 			entity.RowBase
 			Int64  int32     `milvus:"primary_key;name:int64"`
@@ -155,11 +155,11 @@ func TestInsertByRows(t *testing.T) {
 		t.Log(err.Error())
 	})
 
-	mock.SetInjection(MHasCollection, hasCollectionDefault)
-	mock.SetInjection(MDescribeCollection, describeCollectionInjection(t, 0, testCollectionName, defaultSchema()))
+	mockServer.SetInjection(MHasCollection, hasCollectionDefault)
+	mockServer.SetInjection(MDescribeCollection, describeCollectionInjection(t, 0, testCollectionName, defaultSchema()))
 
 	vector := generateFloatVector(4096, testVectorDim)
-	mock.SetInjection(MInsert, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+	mockServer.SetInjection(MInsert, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 		req, ok := raw.(*server.InsertRequest)
 		resp := &server.MutationResult{}
 		if !ok {

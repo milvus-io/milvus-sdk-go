@@ -170,6 +170,19 @@ type Client interface {
 	// GetLoadState get the collection or partitions load state
 	GetLoadState(ctx context.Context, collectionName string, partitionNames []string) (entity.LoadState, error)
 
+	// ListResourceGroups returns list of resource group names in current Milvus instance.
+	ListResourceGroups(ctx context.Context) ([]string, error)
+	// CreateResourceGroup creates a resource group with provided name.
+	CreateResourceGroup(ctx context.Context, rgName string) error
+	// DescribeResourceGroup returns resource groups information.
+	DescribeResourceGroup(ctx context.Context, rgName string) (*entity.ResourceGroup, error)
+	// DropResourceGroup drops the resource group with provided name.
+	DropResourceGroup(ctx context.Context, rgName string) error
+	// TransferNode transfers querynodes between resource groups.
+	TransferNode(ctx context.Context, sourceRg, targetRg string, nodesNum int32) error
+	// TransferReplica transfer collection replicas between source,target resource group.
+	TransferReplica(ctx context.Context, sourceRg, targetRg string, collectionName string, replicaNum int64) error
+
 	// GetVersion get milvus version
 	GetVersion(ctx context.Context) (string, error)
 }

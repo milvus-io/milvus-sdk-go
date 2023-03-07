@@ -24,19 +24,19 @@ func TestGrpcClientInsert(t *testing.T) {
 	c := testClient(ctx, t)
 
 	t.Run("test create failure due to meta", func(t *testing.T) {
-		mock.DelInjection(MHasCollection) // collection does not exist
+		mockServer.DelInjection(MHasCollection) // collection does not exist
 		ids, err := c.Insert(ctx, testCollectionName, "")
 		assert.Nil(t, ids)
 		assert.NotNil(t, err)
 
 		// partition not exists
-		mock.SetInjection(MHasCollection, hasCollectionDefault)
+		mockServer.SetInjection(MHasCollection, hasCollectionDefault)
 		ids, err = c.Insert(ctx, testCollectionName, "_part_not_exists")
 		assert.Nil(t, ids)
 		assert.NotNil(t, err)
 
 		// field not in collection
-		mock.SetInjection(MDescribeCollection, describeCollectionInjection(t, 0, testCollectionName, defaultSchema()))
+		mockServer.SetInjection(MDescribeCollection, describeCollectionInjection(t, 0, testCollectionName, defaultSchema()))
 		vectors := generateFloatVector(10, testVectorDim)
 		ids, err = c.Insert(ctx, testCollectionName, "",
 			entity.NewColumnInt64("extra_field", []int64{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}), entity.NewColumnFloatVector(testVectorField, testVectorDim, vectors))
@@ -44,7 +44,7 @@ func TestGrpcClientInsert(t *testing.T) {
 		assert.NotNil(t, err)
 
 		// field type not match
-		mock.SetInjection(MDescribeCollection, describeCollectionInjection(t, 0, testCollectionName, defaultSchema()))
+		mockServer.SetInjection(MDescribeCollection, describeCollectionInjection(t, 0, testCollectionName, defaultSchema()))
 		ids, err = c.Insert(ctx, testCollectionName, "",
 			entity.NewColumnInt32("int64", []int32{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}), entity.NewColumnFloatVector(testVectorField, testVectorDim, vectors))
 		assert.Nil(t, ids)
@@ -74,11 +74,11 @@ func TestGrpcClientInsert(t *testing.T) {
 		assert.NotNil(t, err)
 	})
 
-	mock.SetInjection(MHasCollection, hasCollectionDefault)
-	mock.SetInjection(MDescribeCollection, describeCollectionInjection(t, 0, testCollectionName, defaultSchema()))
+	mockServer.SetInjection(MHasCollection, hasCollectionDefault)
+	mockServer.SetInjection(MDescribeCollection, describeCollectionInjection(t, 0, testCollectionName, defaultSchema()))
 
 	vector := generateFloatVector(4096, testVectorDim)
-	mock.SetInjection(MInsert, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+	mockServer.SetInjection(MInsert, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 		req, ok := raw.(*server.InsertRequest)
 		resp := &server.MutationResult{}
 		if !ok {
@@ -103,7 +103,7 @@ func TestGrpcClientInsert(t *testing.T) {
 	_, err := c.Insert(ctx, testCollectionName, "", // use default partition
 		entity.NewColumnFloatVector(testVectorField, testVectorDim, vector))
 	assert.Nil(t, err)
-	mock.DelInjection(MInsert)
+	mockServer.DelInjection(MInsert)
 }
 
 func TestGrpcClientFlush(t *testing.T) {
@@ -127,7 +127,7 @@ func TestGrpcClientFlush(t *testing.T) {
 		flushTime := 510 + rand.Intn(1500)
 		start := time.Now()
 		flag := false
-		mock.SetInjection(MFlush, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		mockServer.SetInjection(MFlush, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			req, ok := raw.(*server.FlushRequest)
 			resp := &server.FlushResponse{}
 			if !ok {
@@ -147,7 +147,7 @@ func TestGrpcClientFlush(t *testing.T) {
 			return resp, err
 		})
 
-		mock.SetInjection(MGetFlushState, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		mockServer.SetInjection(MGetFlushState, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			req, ok := raw.(*server.GetFlushStateRequest)
 			resp := &server.GetFlushStateResponse{}
 			if !ok {
@@ -183,14 +183,14 @@ func TestGrpcDeleteByPks(t *testing.T) {
 	c := testClient(ctx, t)
 	defer c.Close()
 
-	mock.SetInjection(MDescribeCollection, describeCollectionInjection(t, 1, testCollectionName, defaultSchema()))
-	defer mock.DelInjection(MDescribeCollection)
+	mockServer.SetInjection(MDescribeCollection, describeCollectionInjection(t, 1, testCollectionName, defaultSchema()))
+	defer mockServer.DelInjection(MDescribeCollection)
 
 	t.Run("normal delete by pks", func(t *testing.T) {
 		partName := "testPart"
-		mock.SetInjection(MHasPartition, hasPartitionInjection(t, testCollectionName, true, partName))
-		defer mock.DelInjection(MHasPartition)
-		mock.SetInjection(MDelete, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		mockServer.SetInjection(MHasPartition, hasPartitionInjection(t, testCollectionName, true, partName))
+		defer mockServer.DelInjection(MHasPartition)
+		mockServer.SetInjection(MDelete, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			req, ok := raw.(*server.DeleteRequest)
 			if !ok {
 				t.FailNow()
@@ -203,7 +203,7 @@ func TestGrpcDeleteByPks(t *testing.T) {
 			resp.Status = s
 			return resp, err
 		})
-		defer mock.DelInjection(MDelete)
+		defer mockServer.DelInjection(MDelete)
 
 		err := c.DeleteByPks(ctx, testCollectionName, partName, entity.NewColumnInt64(testPrimaryField, []int64{1, 2, 3}))
 		assert.NoError(t, err)
@@ -211,8 +211,8 @@ func TestGrpcDeleteByPks(t *testing.T) {
 
 	t.Run("Bad request deletes", func(t *testing.T) {
 		partName := "testPart"
-		mock.SetInjection(MHasPartition, hasPartitionInjection(t, testCollectionName, false, partName))
-		defer mock.DelInjection(MHasPartition)
+		mockServer.SetInjection(MHasPartition, hasPartitionInjection(t, testCollectionName, false, partName))
+		defer mockServer.DelInjection(MHasPartition)
 
 		// non-exist collection
 		err := c.DeleteByPks(ctx, "non-exists-collection", "", entity.NewColumnInt64("pk", []int64{}))
@@ -236,7 +236,7 @@ func TestGrpcDeleteByPks(t *testing.T) {
 	})
 
 	t.Run("delete services fail", func(t *testing.T) {
-		mock.SetInjection(MDelete, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		mockServer.SetInjection(MDelete, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			resp := &server.MutationResult{}
 			return resp, errors.New("mocked error")
 		})
@@ -244,7 +244,7 @@ func TestGrpcDeleteByPks(t *testing.T) {
 		err := c.DeleteByPks(ctx, testCollectionName, "", entity.NewColumnInt64(testPrimaryField, []int64{1}))
 		assert.Error(t, err)
 
-		mock.SetInjection(MDelete, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		mockServer.SetInjection(MDelete, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			resp := &server.MutationResult{}
 			resp.Status = &common.Status{
 				ErrorCode: common.ErrorCode_UnexpectedError,
@@ -276,12 +276,12 @@ func TestGrpcSearch(t *testing.T) {
 	})
 
 	t.Run("ok search", func(t *testing.T) {
-		mock.SetInjection(MHasCollection, hasCollectionDefault)
-		mock.SetInjection(MDescribeCollection, describeCollectionInjection(t, 0, testCollectionName, defaultSchema()))
+		mockServer.SetInjection(MHasCollection, hasCollectionDefault)
+		mockServer.SetInjection(MDescribeCollection, describeCollectionInjection(t, 0, testCollectionName, defaultSchema()))
 
 		expr := `int64 > 0`
 
-		mock.SetInjection(MSearch, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		mockServer.SetInjection(MSearch, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			req, ok := raw.(*server.SearchRequest)
 			resp := &server.SearchResults{}
 			if !ok {
@@ -357,11 +357,11 @@ func TestGrpcQuery(t *testing.T) {
 	partName := "testPart"
 
 	t.Run("normal query", func(t *testing.T) {
-		mock.SetInjection(MHasCollection, hasCollectionDefault)
-		mock.SetInjection(MHasPartition, hasPartitionInjection(t, testCollectionName, false, partName))
-		defer mock.DelInjection(MHasPartition)
+		mockServer.SetInjection(MHasCollection, hasCollectionDefault)
+		mockServer.SetInjection(MHasPartition, hasPartitionInjection(t, testCollectionName, false, partName))
+		defer mockServer.DelInjection(MHasPartition)
 
-		mock.SetInjection(MQuery, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		mockServer.SetInjection(MQuery, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			req, ok := raw.(*server.QueryRequest)
 			if !ok {
 				t.FailNow()
@@ -406,7 +406,7 @@ func TestGrpcQuery(t *testing.T) {
 
 			return resp, err
 		})
-		defer mock.DelInjection(MQuery)
+		defer mockServer.DelInjection(MQuery)
 
 		columns, err := c.Query(ctx, testCollectionName, []string{partName}, "int64 in {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}", []string{testPrimaryField, testVectorField}, WithOffset(1), WithLimit(10))
 		assert.NoError(t, err)
@@ -433,13 +433,13 @@ func TestGrpcQuery(t *testing.T) {
 	})
 
 	t.Run("normal query varchar pks", func(t *testing.T) {
-		mock.SetInjection(MHasCollection, hasCollectionDefault)
-		mock.SetInjection(MHasPartition, hasPartitionInjection(t, testCollectionName, false, partName))
-		defer mock.DelInjection(MHasPartition)
-		mock.SetInjection(MDescribeCollection, describeCollectionInjection(t, testCollectionID, testCollectionName, varCharSchema()))
-		defer mock.SetInjection(MDescribeCollection, describeCollectionInjection(t, testCollectionID, testCollectionName, defaultSchema()))
+		mockServer.SetInjection(MHasCollection, hasCollectionDefault)
+		mockServer.SetInjection(MHasPartition, hasPartitionInjection(t, testCollectionName, false, partName))
+		defer mockServer.DelInjection(MHasPartition)
+		mockServer.SetInjection(MDescribeCollection, describeCollectionInjection(t, testCollectionID, testCollectionName, varCharSchema()))
+		defer mockServer.SetInjection(MDescribeCollection, describeCollectionInjection(t, testCollectionID, testCollectionName, defaultSchema()))
 
-		mock.SetInjection(MQuery, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		mockServer.SetInjection(MQuery, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			req, ok := raw.(*server.QueryRequest)
 			if !ok {
 				t.FailNow()
@@ -484,7 +484,7 @@ func TestGrpcQuery(t *testing.T) {
 
 			return resp, err
 		})
-		defer mock.DelInjection(MQuery)
+		defer mockServer.DelInjection(MQuery)
 
 		columns, err := c.Query(ctx, testCollectionName, []string{partName}, `varchar in {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"}`, []string{"varchar", testVectorField})
 		assert.NoError(t, err)
@@ -499,10 +499,10 @@ func TestGrpcQuery(t *testing.T) {
 	})
 
 	t.Run("Bad request querys", func(t *testing.T) {
-		mock.SetInjection(MHasCollection, hasCollectionDefault)
-		mock.SetInjection(MHasPartition, hasPartitionInjection(t, testCollectionName, false, partName))
-		defer mock.DelInjection(MHasPartition)
-		mock.SetInjection(MDescribeCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		mockServer.SetInjection(MHasCollection, hasCollectionDefault)
+		mockServer.SetInjection(MHasPartition, hasPartitionInjection(t, testCollectionName, false, partName))
+		defer mockServer.DelInjection(MHasPartition)
+		mockServer.SetInjection(MDescribeCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			req, ok := raw.(*server.DescribeCollectionRequest)
 			resp := &server.DescribeCollectionResponse{}
 			if !ok {
@@ -526,7 +526,7 @@ func TestGrpcQuery(t *testing.T) {
 
 			return resp, err
 		})
-		defer mock.SetInjection(MDescribeCollection, describeCollectionInjection(t, testCollectionID, testCollectionName, defaultSchema()))
+		defer mockServer.SetInjection(MDescribeCollection, describeCollectionInjection(t, testCollectionID, testCollectionName, defaultSchema()))
 
 		// non-exist collection
 		_, err := c.Query(ctx, "non-exists-collection", []string{}, "pk in {}", []string{})
@@ -534,11 +534,11 @@ func TestGrpcQuery(t *testing.T) {
 	})
 
 	t.Run("Query Service error", func(t *testing.T) {
-		mock.SetInjection(MHasCollection, hasCollectionDefault)
-		mock.SetInjection(MHasPartition, hasPartitionInjection(t, testCollectionName, false, partName))
-		defer mock.DelInjection(MHasPartition)
+		mockServer.SetInjection(MHasCollection, hasCollectionDefault)
+		mockServer.SetInjection(MHasPartition, hasPartitionInjection(t, testCollectionName, false, partName))
+		defer mockServer.DelInjection(MHasPartition)
 
-		mock.SetInjection(MQuery, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		mockServer.SetInjection(MQuery, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			_, ok := raw.(*server.QueryRequest)
 			if !ok {
 				t.FailNow()
@@ -547,12 +547,12 @@ func TestGrpcQuery(t *testing.T) {
 			resp := &server.QueryResults{}
 			return resp, errors.New("mocked error")
 		})
-		defer mock.DelInjection(MQuery)
+		defer mockServer.DelInjection(MQuery)
 
 		_, err := c.Query(ctx, testCollectionName, []string{}, "int64 in {1}", []string{"*"})
 		assert.Error(t, err)
 
-		mock.SetInjection(MQuery, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		mockServer.SetInjection(MQuery, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			_, ok := raw.(*server.QueryRequest)
 			if !ok {
 				t.FailNow()
@@ -569,7 +569,7 @@ func TestGrpcQuery(t *testing.T) {
 		_, err = c.Query(ctx, testCollectionName, []string{}, "int64 in {1}", []string{"*"})
 		assert.Error(t, err)
 
-		mock.SetInjection(MQuery, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		mockServer.SetInjection(MQuery, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			_, ok := raw.(*server.QueryRequest)
 			if !ok {
 				t.FailNow()
@@ -599,7 +599,7 @@ func TestGrpcQuery(t *testing.T) {
 		_, err = c.Query(ctx, testCollectionName, []string{}, "int64 in {1}", []string{"*"})
 		assert.Error(t, err)
 
-		mock.SetInjection(MQuery, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		mockServer.SetInjection(MQuery, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			_, ok := raw.(*server.QueryRequest)
 			if !ok {
 				t.FailNow()
@@ -638,11 +638,11 @@ func TestGrpcQueryByPks(t *testing.T) {
 	partName := "testPart"
 
 	t.Run("normal query by pks", func(t *testing.T) {
-		mock.SetInjection(MHasCollection, hasCollectionDefault)
-		mock.SetInjection(MHasPartition, hasPartitionInjection(t, testCollectionName, false, partName))
-		defer mock.DelInjection(MHasPartition)
+		mockServer.SetInjection(MHasCollection, hasCollectionDefault)
+		mockServer.SetInjection(MHasPartition, hasPartitionInjection(t, testCollectionName, false, partName))
+		defer mockServer.DelInjection(MHasPartition)
 
-		mock.SetInjection(MQuery, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		mockServer.SetInjection(MQuery, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			req, ok := raw.(*server.QueryRequest)
 			if !ok {
 				t.FailNow()
@@ -687,7 +687,7 @@ func TestGrpcQueryByPks(t *testing.T) {
 
 			return resp, err
 		})
-		defer mock.DelInjection(MQuery)
+		defer mockServer.DelInjection(MQuery)
 
 		columns, err := c.QueryByPks(ctx, testCollectionName, []string{partName}, entity.NewColumnInt64(testPrimaryField, []int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}), []string{"int64", testVectorField})
 		assert.NoError(t, err)
@@ -714,13 +714,13 @@ func TestGrpcQueryByPks(t *testing.T) {
 	})
 
 	t.Run("normal query by varchar pks", func(t *testing.T) {
-		mock.SetInjection(MHasCollection, hasCollectionDefault)
-		mock.SetInjection(MHasPartition, hasPartitionInjection(t, testCollectionName, false, partName))
-		defer mock.DelInjection(MHasPartition)
-		mock.SetInjection(MDescribeCollection, describeCollectionInjection(t, testCollectionID, testCollectionName, varCharSchema()))
-		defer mock.SetInjection(MDescribeCollection, describeCollectionInjection(t, testCollectionID, testCollectionName, defaultSchema()))
+		mockServer.SetInjection(MHasCollection, hasCollectionDefault)
+		mockServer.SetInjection(MHasPartition, hasPartitionInjection(t, testCollectionName, false, partName))
+		defer mockServer.DelInjection(MHasPartition)
+		mockServer.SetInjection(MDescribeCollection, describeCollectionInjection(t, testCollectionID, testCollectionName, varCharSchema()))
+		defer mockServer.SetInjection(MDescribeCollection, describeCollectionInjection(t, testCollectionID, testCollectionName, defaultSchema()))
 
-		mock.SetInjection(MQuery, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		mockServer.SetInjection(MQuery, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			req, ok := raw.(*server.QueryRequest)
 			if !ok {
 				t.FailNow()
@@ -765,7 +765,7 @@ func TestGrpcQueryByPks(t *testing.T) {
 
 			return resp, err
 		})
-		defer mock.DelInjection(MQuery)
+		defer mockServer.DelInjection(MQuery)
 
 		columns, err := c.QueryByPks(ctx, testCollectionName, []string{partName}, entity.NewColumnVarChar("varchar", []string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"}), []string{"varchar", testVectorField})
 		assert.NoError(t, err)
@@ -780,9 +780,9 @@ func TestGrpcQueryByPks(t *testing.T) {
 	})
 
 	t.Run("Bad request querys", func(t *testing.T) {
-		mock.SetInjection(MHasCollection, hasCollectionDefault)
-		mock.SetInjection(MHasPartition, hasPartitionInjection(t, testCollectionName, false, partName))
-		defer mock.DelInjection(MHasPartition)
+		mockServer.SetInjection(MHasCollection, hasCollectionDefault)
+		mockServer.SetInjection(MHasPartition, hasPartitionInjection(t, testCollectionName, false, partName))
+		defer mockServer.DelInjection(MHasPartition)
 
 		// non-exist collection
 		_, err := c.QueryByPks(ctx, "non-exists-collection", []string{}, entity.NewColumnInt64("pk", []int64{}), []string{})
@@ -802,11 +802,11 @@ func TestGrpcQueryByPks(t *testing.T) {
 	})
 
 	t.Run("Query Service error", func(t *testing.T) {
-		mock.SetInjection(MHasCollection, hasCollectionDefault)
-		mock.SetInjection(MHasPartition, hasPartitionInjection(t, testCollectionName, false, partName))
-		defer mock.DelInjection(MHasPartition)
+		mockServer.SetInjection(MHasCollection, hasCollectionDefault)
+		mockServer.SetInjection(MHasPartition, hasPartitionInjection(t, testCollectionName, false, partName))
+		defer mockServer.DelInjection(MHasPartition)
 
-		mock.SetInjection(MQuery, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		mockServer.SetInjection(MQuery, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			_, ok := raw.(*server.QueryRequest)
 			if !ok {
 				t.FailNow()
@@ -815,12 +815,12 @@ func TestGrpcQueryByPks(t *testing.T) {
 			resp := &server.QueryResults{}
 			return resp, errors.New("mocked error")
 		})
-		defer mock.DelInjection(MQuery)
+		defer mockServer.DelInjection(MQuery)
 
 		_, err := c.QueryByPks(ctx, testCollectionName, []string{}, entity.NewColumnInt64(testPrimaryField, []int64{1}), []string{"*"})
 		assert.Error(t, err)
 
-		mock.SetInjection(MQuery, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		mockServer.SetInjection(MQuery, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			_, ok := raw.(*server.QueryRequest)
 			if !ok {
 				t.FailNow()
@@ -837,7 +837,7 @@ func TestGrpcQueryByPks(t *testing.T) {
 		_, err = c.QueryByPks(ctx, testCollectionName, []string{}, entity.NewColumnInt64(testPrimaryField, []int64{1}), []string{"*"})
 		assert.Error(t, err)
 
-		mock.SetInjection(MQuery, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		mockServer.SetInjection(MQuery, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			_, ok := raw.(*server.QueryRequest)
 			if !ok {
 				t.FailNow()
@@ -867,7 +867,7 @@ func TestGrpcQueryByPks(t *testing.T) {
 		_, err = c.QueryByPks(ctx, testCollectionName, []string{}, entity.NewColumnInt64(testPrimaryField, []int64{1}), []string{"*"})
 		assert.Error(t, err)
 
-		mock.SetInjection(MQuery, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		mockServer.SetInjection(MQuery, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			_, ok := raw.(*server.QueryRequest)
 			if !ok {
 				t.FailNow()
@@ -910,7 +910,7 @@ func TestGrpcCalcDistanceWithIDs(t *testing.T) {
 	})
 
 	c := testClient(ctx, t)
-	mock.SetInjection(MDescribeCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+	mockServer.SetInjection(MDescribeCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 		req, ok := raw.(*server.DescribeCollectionRequest)
 		resp := &server.DescribeCollectionResponse{}
 		if !ok {
@@ -956,7 +956,7 @@ func TestGrpcCalcDistanceWithIDs(t *testing.T) {
 	})
 
 	t.Run("valid calls", func(t *testing.T) {
-		mock.SetInjection(MCalcDistance, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		mockServer.SetInjection(MCalcDistance, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			req, ok := raw.(*server.CalcDistanceRequest)
 			resp := &server.CalcDistanceResults{}
 			if !ok {
@@ -1021,7 +1021,7 @@ func TestGrpcCalcDistanceWithIDs(t *testing.T) {
 		assert.NotNil(t, r)
 
 		// test IntDistance,
-		mock.SetInjection(MCalcDistance, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		mockServer.SetInjection(MCalcDistance, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			req, ok := raw.(*server.CalcDistanceRequest)
 			resp := &server.CalcDistanceResults{}
 			if !ok {
@@ -1075,7 +1075,7 @@ func TestGrpcCalcDistanceWithIDs(t *testing.T) {
 		assert.NotNil(t, r)
 
 		// test str id
-		mock.SetInjection(MDescribeCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		mockServer.SetInjection(MDescribeCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			req, ok := raw.(*server.DescribeCollectionRequest)
 			resp := &server.DescribeCollectionResponse{}
 			if !ok {
@@ -1094,7 +1094,7 @@ func TestGrpcCalcDistanceWithIDs(t *testing.T) {
 			resp.Status = s
 			return resp, err
 		})
-		mock.SetInjection(MCalcDistance, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		mockServer.SetInjection(MCalcDistance, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			req, ok := raw.(*server.CalcDistanceRequest)
 			resp := &server.CalcDistanceResults{}
 			if !ok {
