@@ -29,8 +29,9 @@ import (
 )
 
 const (
-	offsetKey = `offset`
-	limitKey  = `limit`
+	offsetKey        = `offset`
+	limitKey         = `limit`
+	ignoreGrowingKey = `ignore_growing`
 )
 
 // Insert Index  into collection with column-based format
@@ -354,6 +355,9 @@ func (c *GrpcClient) Query(ctx context.Context, collectionName string, partition
 	if option.Limit > 0 {
 		req.QueryParams = append(req.QueryParams, &common.KeyValuePair{Key: limitKey, Value: strconv.FormatInt(option.Limit, 10)})
 	}
+	if option.IgnoreGrowing {
+		req.QueryParams = append(req.QueryParams, &common.KeyValuePair{Key: ignoreGrowingKey, Value: strconv.FormatBool(option.IgnoreGrowing)})
+	}
 
 	resp, err := c.Service.Query(ctx, req)
 	if err != nil {
@@ -403,13 +407,15 @@ func prepareSearchRequest(collName string, partitions []string,
 	if err != nil {
 		return nil, err
 	}
+
 	searchParams := entity.MapKvPairs(map[string]string{
-		"anns_field":    vectorField,
-		"topk":          fmt.Sprintf("%d", topK),
-		"params":        string(bs),
-		"metric_type":   string(metricType),
-		"round_decimal": "-1",
-		offsetKey:       fmt.Sprintf("%d", opt.Offset),
+		"anns_field":     vectorField,
+		"topk":           fmt.Sprintf("%d", topK),
+		"params":         string(bs),
+		"metric_type":    string(metricType),
+		"round_decimal":  "-1",
+		ignoreGrowingKey: strconv.FormatBool(opt.IgnoreGrowing),
+		offsetKey:        fmt.Sprintf("%d", opt.Offset),
 	})
 	req := &server.SearchRequest{
 		DbName:             "",
