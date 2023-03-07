@@ -30,8 +30,8 @@ const (
 )
 
 var (
-	lis  *bufconn.Listener
-	mock *MockServer
+	lis        *bufconn.Listener
+	mockServer *MockServer
 )
 
 const (
@@ -111,10 +111,10 @@ func TestMain(m *testing.M) {
 	rand.Seed(time.Now().Unix())
 	lis = bufconn.Listen(bufSize)
 	s := grpc.NewServer()
-	mock = &MockServer{
+	mockServer = &MockServer{
 		Injections: make(map[ServiceMethod]TestInjection),
 	}
-	server.RegisterMilvusServiceServer(s, mock)
+	server.RegisterMilvusServiceServer(s, mockServer)
 	go func() {
 		if err := s.Serve(lis); err != nil {
 			log.Fatalf("Server exited with error: %v", err)
@@ -394,4 +394,17 @@ func TestClient_parseURI(t *testing.T) {
 		assert.False(t, inSecure)
 		assert.Nil(t, err)
 	})
+}
+
+var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+func randStr(n int) string {
+	sb := strings.Builder{}
+	sb.Grow(n)
+
+	for i := 0; i < n; i++ {
+		sb.WriteRune(letters[rand.Intn(len(letters))])
+	}
+
+	return sb.String()
 }

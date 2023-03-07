@@ -35,15 +35,15 @@ func TestGrpcManualCompaction(t *testing.T) {
 	c := testClient(ctx, t)
 	defer c.Close()
 
-	mock.SetInjection(MHasCollection, hasCollectionDefault)
-	defer mock.DelInjection(MHasCollection)
+	mockServer.SetInjection(MHasCollection, hasCollectionDefault)
+	defer mockServer.DelInjection(MHasCollection)
 
 	compactionID := int64(1001)
 	t.Run("normal manual compaction", func(t *testing.T) {
 		now := time.Now()
-		mock.SetInjection(MDescribeCollection, describeCollectionInjection(t, testCollectionID, testCollectionName, defaultSchema()))
-		defer mock.DelInjection(MDescribeCollection)
-		mock.SetInjection(MManualCompaction, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
+		mockServer.SetInjection(MDescribeCollection, describeCollectionInjection(t, testCollectionID, testCollectionName, defaultSchema()))
+		defer mockServer.DelInjection(MDescribeCollection)
+		mockServer.SetInjection(MManualCompaction, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
 			req, ok := raw.(*server.ManualCompactionRequest)
 			if !ok {
 				t.FailNow()
@@ -60,7 +60,7 @@ func TestGrpcManualCompaction(t *testing.T) {
 			resp.Status = s
 			return resp, err
 		})
-		defer mock.DelInjection(MManualCompaction)
+		defer mockServer.DelInjection(MManualCompaction)
 
 		id, err := c.ManualCompaction(ctx, testCollectionName, 0)
 		assert.NoError(t, err)
@@ -75,19 +75,19 @@ func TestGrpcManualCompaction(t *testing.T) {
 	})
 
 	t.Run("describe collection fail", func(t *testing.T) {
-		mock.SetInjection(MDescribeCollection, func(_ context.Context, _ proto.Message) (proto.Message, error) {
+		mockServer.SetInjection(MDescribeCollection, func(_ context.Context, _ proto.Message) (proto.Message, error) {
 			return &server.DescribeCollectionResponse{}, errors.New("mocked error")
 		})
-		defer mock.DelInjection(MDescribeCollection)
+		defer mockServer.DelInjection(MDescribeCollection)
 
 		_, err := c.ManualCompaction(ctx, testCollectionName, 0)
 		assert.Error(t, err)
 	})
 
 	t.Run("compaction Service error", func(t *testing.T) {
-		mock.SetInjection(MDescribeCollection, describeCollectionInjection(t, testCollectionID, testCollectionName, defaultSchema()))
-		defer mock.DelInjection(MDescribeCollection)
-		mock.SetInjection(MManualCompaction, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
+		mockServer.SetInjection(MDescribeCollection, describeCollectionInjection(t, testCollectionID, testCollectionName, defaultSchema()))
+		defer mockServer.DelInjection(MDescribeCollection)
+		mockServer.SetInjection(MManualCompaction, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
 			resp := &server.ManualCompactionResponse{
 				CompactionID: 1001,
 			}
@@ -96,7 +96,7 @@ func TestGrpcManualCompaction(t *testing.T) {
 
 		_, err := c.ManualCompaction(ctx, testCollectionName, 0)
 		assert.Error(t, err)
-		mock.SetInjection(MManualCompaction, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
+		mockServer.SetInjection(MManualCompaction, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
 			resp := &server.ManualCompactionResponse{
 				CompactionID: 1001,
 			}
@@ -106,7 +106,7 @@ func TestGrpcManualCompaction(t *testing.T) {
 			return resp, nil
 		})
 
-		defer mock.DelInjection(MManualCompaction)
+		defer mockServer.DelInjection(MManualCompaction)
 
 		_, err = c.ManualCompaction(ctx, testCollectionName, 0)
 		assert.Error(t, err)
@@ -123,7 +123,7 @@ func TestGrpcGetCompactionState(t *testing.T) {
 	t.Run("normal get compaction state", func(t *testing.T) {
 		state := common.CompactionState_Executing
 
-		mock.SetInjection(MGetCompactionState, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		mockServer.SetInjection(MGetCompactionState, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			req, ok := raw.(*server.GetCompactionStateRequest)
 			if !ok {
 				t.FailNow()
@@ -138,7 +138,7 @@ func TestGrpcGetCompactionState(t *testing.T) {
 			resp.Status = s
 			return resp, err
 		})
-		defer mock.DelInjection(MGetCompactionState)
+		defer mockServer.DelInjection(MGetCompactionState)
 
 		result, err := c.GetCompactionState(ctx, compactionID)
 		assert.NoError(t, err)
@@ -151,14 +151,14 @@ func TestGrpcGetCompactionState(t *testing.T) {
 	})
 
 	t.Run("get compaction Service fail", func(t *testing.T) {
-		mock.SetInjection(MGetCompactionState, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		mockServer.SetInjection(MGetCompactionState, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			resp := &server.GetCompactionStateResponse{}
 			resp.Status = &common.Status{
 				ErrorCode: common.ErrorCode_UnexpectedError,
 			}
 			return resp, nil
 		})
-		defer mock.DelInjection(MGetCompactionState)
+		defer mockServer.DelInjection(MGetCompactionState)
 
 		_, err := c.GetCompactionState(ctx, compactionID)
 		assert.Error(t, err)
@@ -179,7 +179,7 @@ func TestGrpcGetCompactionStateWithPlans(t *testing.T) {
 			{Source: []int64{4, 5}, Target: 6, PlanType: entity.CompactionPlanMergeSegments},
 		}
 
-		mock.SetInjection(MGetCompactionStateWithPlans, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		mockServer.SetInjection(MGetCompactionStateWithPlans, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			req, ok := raw.(*server.GetCompactionPlansRequest)
 			if !ok {
 				t.FailNow()
@@ -202,7 +202,7 @@ func TestGrpcGetCompactionStateWithPlans(t *testing.T) {
 			resp.Status = s
 			return resp, err
 		})
-		defer mock.DelInjection(MGetCompactionStateWithPlans)
+		defer mockServer.DelInjection(MGetCompactionStateWithPlans)
 
 		result, rPlans, err := c.GetCompactionStateWithPlans(ctx, compactionID)
 		assert.NoError(t, err)
@@ -217,14 +217,14 @@ func TestGrpcGetCompactionStateWithPlans(t *testing.T) {
 	})
 
 	t.Run("get compaction Service fail", func(t *testing.T) {
-		mock.SetInjection(MGetCompactionStateWithPlans, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		mockServer.SetInjection(MGetCompactionStateWithPlans, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			resp := &server.GetCompactionPlansResponse{}
 			resp.Status = &common.Status{
 				ErrorCode: common.ErrorCode_UnexpectedError,
 			}
 			return resp, nil
 		})
-		defer mock.DelInjection(MGetCompactionStateWithPlans)
+		defer mockServer.DelInjection(MGetCompactionStateWithPlans)
 
 		_, _, err := c.GetCompactionStateWithPlans(ctx, compactionID)
 		assert.Error(t, err)

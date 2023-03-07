@@ -3,12 +3,75 @@ package client
 import (
 	"context"
 	"errors"
+	"net"
 	"sync"
 
 	"github.com/golang/protobuf/proto"
 	common "github.com/milvus-io/milvus-proto/go-api/commonpb"
 	server "github.com/milvus-io/milvus-proto/go-api/milvuspb"
+	"github.com/milvus-io/milvus-sdk-go/v2/mocks"
+	"github.com/stretchr/testify/suite"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/test/bufconn"
 )
+
+type MockSuiteBase struct {
+	suite.Suite
+
+	lis  *bufconn.Listener
+	svr  *grpc.Server
+	mock *mocks.MilvusServiceServer
+
+	client Client
+}
+
+func (s *MockSuiteBase) SetupSuite() {
+	s.lis = bufconn.Listen(bufSize)
+	s.svr = grpc.NewServer()
+
+	s.mock = &mocks.MilvusServiceServer{}
+
+	server.RegisterMilvusServiceServer(s.svr, s.mock)
+
+	go func() {
+		s.T().Log("start mock server")
+		if err := s.svr.Serve(s.lis); err != nil {
+			s.Fail("failed to server mock server", err.Error())
+		}
+	}()
+}
+
+func (s *MockSuiteBase) TearDownSuite() {
+	s.svr.Stop()
+	s.lis.Close()
+}
+
+func (s *MockSuiteBase) mockDialer(context.Context, string) (net.Conn, error) {
+	return s.lis.Dial()
+}
+
+func (s *MockSuiteBase) SetupTest() {
+	c, err := NewGrpcClient(context.Background(), "bufnet2",
+		grpc.WithBlock(),
+		grpc.WithInsecure(),
+		grpc.WithContextDialer(s.mockDialer),
+	)
+	s.Require().NoError(err)
+
+	s.client = c
+}
+
+func (s *MockSuiteBase) TearDownTest() {
+	s.client.Close()
+	s.client = nil
+}
+
+func (s *MockSuiteBase) resetMock() {
+	if s.mock != nil {
+		s.mock.Calls = nil
+		s.mock.ExpectedCalls = nil
+	}
+}
 
 // ref https://stackoverflow.com/questions/42102496/testing-a-grpc-service
 
@@ -63,7 +126,6 @@ const (
 	MGetFlushState ServiceMethod = 604
 	MDelete        ServiceMethod = 605
 	MQuery         ServiceMethod = 606
-	MUpsert        ServiceMethod = 607
 
 	MManualCompaction            ServiceMethod = 700
 	MGetCompactionState          ServiceMethod = 701
@@ -642,6 +704,34 @@ func (m *MockServer) CheckHealth(ctx context.Context, req *server.CheckHealthReq
 	return &server.CheckHealthResponse{Status: s}, err
 }
 
+func (m *MockServer) CreateResourceGroup(_ context.Context, _ *server.CreateResourceGroupRequest) (*common.Status, error) {
+	panic("not implemented") // TODO: Implement
+}
+
+func (m *MockServer) DropResourceGroup(_ context.Context, _ *server.DropResourceGroupRequest) (*common.Status, error) {
+	panic("not implemented") // TODO: Implement
+}
+
+func (m *MockServer) TransferNode(_ context.Context, _ *server.TransferNodeRequest) (*common.Status, error) {
+	panic("not implemented") // TODO: Implement
+}
+
+func (m *MockServer) TransferReplica(_ context.Context, _ *server.TransferReplicaRequest) (*common.Status, error) {
+	panic("not implemented") // TODO: Implement
+}
+
+func (m *MockServer) ListResourceGroups(_ context.Context, _ *server.ListResourceGroupsRequest) (*server.ListResourceGroupsResponse, error) {
+	panic("not implemented") // TODO: Implement
+}
+
+func (m *MockServer) DescribeResourceGroup(_ context.Context, _ *server.DescribeResourceGroupRequest) (*server.DescribeResourceGroupResponse, error) {
+	panic("not implemented") // TODO: Implement
+}
+
+func (m *MockServer) RenameCollection(_ context.Context, _ *server.RenameCollectionRequest) (*common.Status, error) {
+	panic("not implemented") // TODO: Implement
+}
+
 func SuccessStatus() (*common.Status, error) {
 	return &common.Status{ErrorCode: common.ErrorCode_Success}, nil
 }
@@ -655,14 +745,4 @@ func BadStatus() (*common.Status, error) {
 		ErrorCode: common.ErrorCode_UnexpectedError,
 		Reason:    "fail reason",
 	}, nil
-}
-
-func (m *MockServer) Upsert(ctx context.Context, req *server.UpsertRequest) (*server.MutationResult, error) {
-	f := m.GetInjection(MUpsert)
-	if f != nil {
-		r, err := f(ctx, req)
-		return r.(*server.MutationResult), err
-	}
-	s, err := SuccessStatus()
-	return &server.MutationResult{Status: s}, err
 }

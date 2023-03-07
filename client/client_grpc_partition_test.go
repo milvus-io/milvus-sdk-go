@@ -49,8 +49,8 @@ func TestGrpcClientCreatePartition(t *testing.T) {
 
 	partitionName := fmt.Sprintf("_part_%d", rand.Int())
 
-	mock.SetInjection(MHasCollection, hasCollectionDefault)
-	mock.SetInjection(MHasPartition, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+	mockServer.SetInjection(MHasCollection, hasCollectionDefault)
+	mockServer.SetInjection(MHasPartition, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 		req, ok := raw.(*server.HasPartitionRequest)
 		resp := &server.BoolResponse{}
 		if !ok {
@@ -73,8 +73,8 @@ func TestGrpcClientDropPartition(t *testing.T) {
 	partitionName := fmt.Sprintf("_part_%d", rand.Int())
 	ctx := context.Background()
 	c := testClient(ctx, t)
-	mock.SetInjection(MHasCollection, hasCollectionDefault)
-	mock.SetInjection(MHasPartition, hasPartitionInjection(t, testCollectionName, true, partitionName)) // injection has assertion of collName & parition name
+	mockServer.SetInjection(MHasCollection, hasCollectionDefault)
+	mockServer.SetInjection(MHasPartition, hasPartitionInjection(t, testCollectionName, true, partitionName)) // injection has assertion of collName & parition name
 	assert.Nil(t, c.DropPartition(ctx, testCollectionName, partitionName))
 }
 
@@ -82,8 +82,8 @@ func TestGrpcClientHasPartition(t *testing.T) {
 	partitionName := fmt.Sprintf("_part_%d", rand.Int())
 	ctx := context.Background()
 	c := testClient(ctx, t)
-	mock.SetInjection(MHasCollection, hasCollectionDefault)
-	mock.SetInjection(MHasPartition, hasPartitionInjection(t, testCollectionName, false, partitionName)) // injection has assertion of collName & parition name
+	mockServer.SetInjection(MHasCollection, hasCollectionDefault)
+	mockServer.SetInjection(MHasPartition, hasPartitionInjection(t, testCollectionName, false, partitionName)) // injection has assertion of collName & parition name
 
 	r, err := c.HasPartition(ctx, testCollectionName, "_default_part")
 	assert.Nil(t, err)
@@ -149,7 +149,7 @@ func TestGrpcClientShowPartitions(t *testing.T) {
 		},
 	}
 	for _, tc := range cases {
-		mock.SetInjection(MShowPartitions, getPartitionsInterception(t, tc.collName, tc.partitions...))
+		mockServer.SetInjection(MShowPartitions, getPartitionsInterception(t, tc.collName, tc.partitions...))
 		r, err := c.ShowPartitions(ctx, tc.collName)
 		if tc.shouldSuccess {
 			assert.Nil(t, err)
@@ -170,8 +170,8 @@ func TestGrpcClientLoadPartitions(t *testing.T) {
 	ctx := context.Background()
 	c := testClient(ctx, t)
 
-	mock.SetInjection(MHasCollection, hasCollectionDefault)
-	mock.SetInjection(MHasPartition, hasPartitionInjection(t, testCollectionName, true, "_part1", "_part2", "_part3", "_part4"))
+	mockServer.SetInjection(MHasCollection, hasCollectionDefault)
+	mockServer.SetInjection(MHasPartition, hasPartitionInjection(t, testCollectionName, true, "_part1", "_part2", "_part3", "_part4"))
 
 	type testCase struct {
 		collName      string
@@ -224,7 +224,7 @@ func TestGrpcClientLoadPartitions(t *testing.T) {
 		start := time.Now()
 		loadTime := rand.Intn(1500) + 100
 		loaded := false
-		mock.SetInjection(MShowPartitions, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
+		mockServer.SetInjection(MShowPartitions, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
 			req, ok := raw.(*server.ShowPartitionsRequest)
 			resp := &server.ShowPartitionsResponse{}
 			if !ok {
@@ -280,7 +280,7 @@ func TestGrpcClientLoadPartitions(t *testing.T) {
 		}
 
 		// paritions will not be loaded
-		mock.SetInjection(MShowPartitions, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
+		mockServer.SetInjection(MShowPartitions, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
 			req, ok := raw.(*server.ShowPartitionsRequest)
 			resp := &server.ShowPartitionsResponse{}
 			if !ok {
@@ -305,21 +305,21 @@ func TestGrpcClientLoadPartitions(t *testing.T) {
 		defer cancel()
 		assert.NotNil(t, c.LoadPartitions(quickCtx, tc.collName, tc.loadNames, false))
 
-		mock.SetInjection(MShowPartitions, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		mockServer.SetInjection(MShowPartitions, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			return &server.ShowPartitionsResponse{}, errors.New("always fail")
 		})
-		defer mock.DelInjection(MShowPartitions)
+		defer mockServer.DelInjection(MShowPartitions)
 
 		err := c.LoadPartitions(ctx, tc.collName, tc.loadNames, false)
 		assert.NotNil(t, err)
 
-		mock.SetInjection(MLoadPartitions, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		mockServer.SetInjection(MLoadPartitions, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			return &common.Status{}, errors.New("has partition failed")
 		})
 		err = c.LoadPartitions(ctx, tc.collName, tc.loadNames, false)
 		assert.NotNil(t, err)
 
-		mock.SetInjection(MHasPartition, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		mockServer.SetInjection(MHasPartition, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			return &server.BoolResponse{}, errors.New("has partition failed")
 		})
 		err = c.LoadPartitions(ctx, tc.collName, tc.loadNames, false)
@@ -334,9 +334,9 @@ func TestGrpcClientReleasePartitions(t *testing.T) {
 	c := testClient(ctx, t)
 
 	parts := []string{"_part1", "_part2"}
-	mock.SetInjection(MHasCollection, hasCollectionDefault)
-	mock.SetInjection(MHasPartition, hasPartitionInjection(t, testCollectionName, true, "_part1", "_part2", "_part3", "_part4"))
-	mock.SetInjection(MReleasePartitions, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+	mockServer.SetInjection(MHasCollection, hasCollectionDefault)
+	mockServer.SetInjection(MHasPartition, hasPartitionInjection(t, testCollectionName, true, "_part1", "_part2", "_part3", "_part4"))
+	mockServer.SetInjection(MReleasePartitions, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 		req, ok := raw.(*server.ReleasePartitionsRequest)
 		if !ok {
 			return BadRequestStatus()
@@ -370,14 +370,14 @@ func TestGrpcShowPartitions(t *testing.T) {
 	}
 
 	t.Run("normal show partitions", func(t *testing.T) {
-		mock.SetInjection(MShowPartitions, getPartitionsInterception(t, testCollectionName, partitions...))
+		mockServer.SetInjection(MShowPartitions, getPartitionsInterception(t, testCollectionName, partitions...))
 		parts, err := c.ShowPartitions(ctx, testCollectionName)
 		assert.NoError(t, err)
 		assert.NotNil(t, parts)
 	})
 
 	t.Run("bad response", func(t *testing.T) {
-		mock.SetInjection(MShowPartitions, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
+		mockServer.SetInjection(MShowPartitions, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
 			resp := &server.ShowPartitionsResponse{}
 			resp.PartitionIDs = make([]int64, 0, len(partitions))
 			for _, part := range partitions {
@@ -392,15 +392,15 @@ func TestGrpcShowPartitions(t *testing.T) {
 	})
 
 	t.Run("Service error", func(t *testing.T) {
-		mock.SetInjection(MShowPartitions, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		mockServer.SetInjection(MShowPartitions, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			return &server.ShowPartitionsResponse{}, errors.New("always fail")
 		})
-		defer mock.DelInjection(MShowPartitions)
+		defer mockServer.DelInjection(MShowPartitions)
 
 		_, err := c.ShowPartitions(ctx, testCollectionName)
 		assert.Error(t, err)
 
-		mock.SetInjection(MShowPartitions, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+		mockServer.SetInjection(MShowPartitions, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			return &server.ShowPartitionsResponse{
 				Status: &common.Status{ErrorCode: common.ErrorCode_UnexpectedError},
 			}, nil
