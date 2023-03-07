@@ -672,6 +672,34 @@ func (m *MockServer) SelectGrant(_ context.Context, _ *server.SelectGrantRequest
 	panic("not implemented") // TODO: Implement
 }
 
+func (m *MockServer) CreateResourceGroup(_ context.Context, _ *server.CreateResourceGroupRequest) (*common.Status, error) {
+	panic("not implemented") // TODO: Implement
+}
+
+func (m *MockServer) DropResourceGroup(_ context.Context, _ *server.DropResourceGroupRequest) (*common.Status, error) {
+	panic("not implemented") // TODO: Implement
+}
+
+func (m *MockServer) TransferNode(_ context.Context, _ *server.TransferNodeRequest) (*common.Status, error) {
+	panic("not implemented") // TODO: Implement
+}
+
+func (m *MockServer) TransferReplica(_ context.Context, _ *server.TransferReplicaRequest) (*common.Status, error) {
+	panic("not implemented") // TODO: Implement
+}
+
+func (m *MockServer) ListResourceGroups(_ context.Context, _ *server.ListResourceGroupsRequest) (*server.ListResourceGroupsResponse, error) {
+	panic("not implemented") // TODO: Implement
+}
+
+func (m *MockServer) DescribeResourceGroup(_ context.Context, _ *server.DescribeResourceGroupRequest) (*server.DescribeResourceGroupResponse, error) {
+	panic("not implemented") // TODO: Implement
+}
+
+func (m *MockServer) RenameCollection(_ context.Context, _ *server.RenameCollectionRequest) (*common.Status, error) {
+	panic("not implemented") // TODO: Implement
+}
+
 //func (m *MockServer) DescribePartition(ctx context.Context, req *server.DescribePartitionRequest) (*server.DescribePartitionResponse, error) {
 //	panic("not implemented") // TODO: Implement
 //}
