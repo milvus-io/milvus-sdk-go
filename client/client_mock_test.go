@@ -67,6 +67,13 @@ func (s *MockSuiteBase) TearDownTest() {
 	s.client = nil
 }
 
+func (s *MockSuiteBase) resetMock() {
+	if s.mock != nil {
+		s.mock.Calls = nil
+		s.mock.ExpectedCalls = nil
+	}
+}
+
 // ref https://stackoverflow.com/questions/42102496/testing-a-grpc-service
 
 var (
