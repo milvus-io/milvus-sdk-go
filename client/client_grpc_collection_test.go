@@ -122,7 +122,7 @@ func (s *CollectionSuite) TestCreateCollection() {
 					s.EqualValues(fieldSchema.DataType, sschema.GetFields()[idx].GetDataType())
 				}
 				s.Equal(shardsNum, req.GetShardsNum())
-				s.Equal(common.ConsistencyLevel_Strong, req.GetConsistencyLevel())
+				s.Equal(common.ConsistencyLevel_Bounded, req.GetConsistencyLevel())
 			}).
 			Return(&common.Status{ErrorCode: common.ErrorCode_Success}, nil)
 		s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).Return(&server.BoolResponse{Status: &common.Status{}, Value: false}, nil)
