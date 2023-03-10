@@ -1,7 +1,9 @@
 pull_request_rules:
   - name: Test passed for code changed
     conditions:
-      - base=master
+      - or:
+        - base=master
+        - base=v2.2.x
       - "status-success=Unittest AMD64 Ubuntu 18.04"
       - "status-success=lint"
       - "status-success=Run Ci Test (standalone)"
@@ -10,10 +12,23 @@ pull_request_rules:
       label:
         add:
           - ci-passed
+          
+  - name: Test passed for code changed for branch
+    conditions:
+      - -base=master
+      - -base=v2.2.x
+      - "status-success=Unittest AMD64 Ubuntu 18.04"
+      - "status-success=lint"
+    actions:
+      label:
+        add:
+          - ci-passed
 
   - name: Test passed for e2e changed
     conditions:
-      - base=master
+      - or:
+        - base=master
+        - base=v2.2.x
       - -files~=^(?!test\/).+
       - "status-success=lint"
       - "status-success=Run Ci Test (standalone)"
@@ -26,7 +41,7 @@ pull_request_rules:
 
   - name: Test passed for document changed
     conditions:
-      - base=master
+      - base=.+
       - -files~=^[^\.]+$
       - -files~=\.(?!md|png)
     actions:
@@ -46,7 +61,21 @@ pull_request_rules:
 
   - name: Remove ci-passed when some test failed
     conditions:
-      - base=master
+      - or:
+        - base=master
+        - base=v2.2.x
+      - or:
+        - "check-failure=Unittest AMD64 Ubuntu 18.04"
+        - "check-failure=lint"
+    actions:
+      label:
+        remove:
+          - ci-passed
+          
+  - name: Remove ci-passed when some test failed for branch
+    conditions:
+      - -base=master
+      - -base=v2.2.x
       - or:
         - "check-failure=Unittest AMD64 Ubuntu 18.04"
         - "check-failure=lint"
@@ -59,7 +88,7 @@ pull_request_rules:
 
   - name: Blocking PR if missing a related issue or PR doesn't have kind/improvement label
     conditions:
-      - base=master
+      - base=.+
       - -body~=\#[0-9]{1,6}(\s+|$)
       - -label=kind/improvement
       - -title~=\[automated\]
@@ -76,10 +105,10 @@ pull_request_rules:
     conditions:
       - or:
         - and:
-          - base=master
+          - base=.+
           - body~=\#[0-9]{1,6}(\s+|$)
         - and:
-          - base=master
+          - base=.+
           - label=kind/improvement
     actions:
       label:
