@@ -35,10 +35,6 @@ func teardown() {
 		log.Fatalf("teardown failed to connect milvus with error %v", err)
 	}
 	defer mc.Close()
-	collections, _ := mc.ListCollections(ctx)
-	for _, collection := range collections {
-		mc.DropCollection(ctx, collection.Name)
-	}
 }
 
 //
