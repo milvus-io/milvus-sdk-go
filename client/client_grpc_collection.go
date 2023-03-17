@@ -17,13 +17,12 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
-
 	"github.com/golang/protobuf/proto"
-	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 	"google.golang.org/grpc"
 
 	common "github.com/milvus-io/milvus-proto/go-api/commonpb"
 	server "github.com/milvus-io/milvus-proto/go-api/milvuspb"
+	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )
 
 // GrpcClient, uses default grpc Service definition to connect with Milvus2.0
@@ -372,16 +371,14 @@ func (c *GrpcClient) LoadCollection(ctx context.Context, collName string, async 
 				return errors.New("context deadline exceeded")
 			default:
 			}
-
-			coll, err := c.ShowCollection(ctx, collName)
+			progress, err := c.GetLoadingProgress(ctx, collName, nil)
 			if err != nil {
 				return err
 			}
-			if coll.Loaded {
-				break
+			if progress == 100 {
+				return nil
 			}
-
-			time.Sleep(200 * time.Millisecond) // TODO change to configuration
+			time.Sleep(time.Millisecond * 500)
 		}
 	}
 	return nil
