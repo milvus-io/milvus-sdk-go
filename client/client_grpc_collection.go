@@ -338,6 +338,27 @@ func (c *GrpcClient) ShowCollection(ctx context.Context, collName string) (*enti
 	}, nil
 }
 
+// RenameCollection performs renaming for provided collection.
+func (c *GrpcClient) RenameCollection(ctx context.Context, collName, newName string) error {
+	if c.Service == nil {
+		return ErrClientNotReady
+	}
+
+	if err := c.checkCollectionExists(ctx, collName); err != nil {
+		return err
+	}
+
+	req := &server.RenameCollectionRequest{
+		OldName: collName,
+		NewName: newName,
+	}
+	resp, err := c.Service.RenameCollection(ctx, req)
+	if err != nil {
+		return err
+	}
+	return handleRespStatus(resp)
+}
+
 // LoadCollection load collection into memory
 func (c *GrpcClient) LoadCollection(ctx context.Context, collName string, async bool, opts ...LoadCollectionOption) error {
 	if c.Service == nil {
