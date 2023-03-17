@@ -322,6 +322,58 @@ func (s *CollectionSuite) TestCreateCollection() {
 	})
 }
 
+func (s *CollectionSuite) TestRenameCollection() {
+	c := s.client
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	s.Run("normal_run", func() {
+		defer s.resetMock()
+
+		newCollName := fmt.Sprintf("new_%s", randStr(6))
+
+		s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).Return(&server.BoolResponse{Status: &common.Status{}, Value: true}, nil)
+		s.mock.EXPECT().RenameCollection(mock.Anything, &server.RenameCollectionRequest{OldName: testCollectionName, NewName: newCollName}).Return(&common.Status{}, nil)
+
+		err := c.RenameCollection(ctx, testCollectionName, newCollName)
+		s.NoError(err)
+	})
+
+	s.Run("coll_not_exist", func() {
+		defer s.resetMock()
+
+		newCollName := fmt.Sprintf("new_%s", randStr(6))
+
+		s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).Return(&server.BoolResponse{Status: &common.Status{}, Value: false}, nil)
+
+		err := c.RenameCollection(ctx, testCollectionName, newCollName)
+		s.Error(err)
+	})
+
+	s.Run("rename_failed", func() {
+		defer s.resetMock()
+
+		newCollName := fmt.Sprintf("new_%s", randStr(6))
+
+		s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).Return(&server.BoolResponse{Status: &common.Status{}, Value: true}, nil)
+		s.mock.EXPECT().RenameCollection(mock.Anything, &server.RenameCollectionRequest{OldName: testCollectionName, NewName: newCollName}).Return(&common.Status{ErrorCode: common.ErrorCode_UnexpectedError, Reason: "mocked failure"}, nil)
+
+		err := c.RenameCollection(ctx, testCollectionName, newCollName)
+		s.Error(err)
+	})
+
+	s.Run("rename_error", func() {
+		defer s.resetMock()
+
+		newCollName := fmt.Sprintf("new_%s", randStr(6))
+
+		s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).Return(&server.BoolResponse{Status: &common.Status{}, Value: true}, nil)
+		s.mock.EXPECT().RenameCollection(mock.Anything, &server.RenameCollectionRequest{OldName: testCollectionName, NewName: newCollName}).Return(nil, errors.New("mocked error"))
+
+		err := c.RenameCollection(ctx, testCollectionName, newCollName)
+		s.Error(err)
+	})
+}
+
 func TestCollectionSuite(t *testing.T) {
 	suite.Run(t, new(CollectionSuite))
 }
