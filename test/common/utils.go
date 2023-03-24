@@ -31,6 +31,8 @@ const (
 	DefaultTopK               = 10
 	MaxCollectionNameLen      = 255
 	RowCount                  = "row_count"
+	DefaultRgName             = "__default_resource_group"
+	DefaultRgCapacity         = 1000000
 )
 
 var IndexStateValue = map[string]int32{
