@@ -303,7 +303,7 @@ func PKs2Expr(backName string, ids entity.Column) string {
 		for i := range data {
 			data[i] = fmt.Sprintf("\"%s\"", data[i])
 		}
-		expr = fmt.Sprintf("%s in %s", pkName, strings.Join(strings.Fields(fmt.Sprint(data)), ","))
+		expr = fmt.Sprintf("%s in [%s]", pkName, strings.Join(data, ","))
 	}
 	return expr
 }

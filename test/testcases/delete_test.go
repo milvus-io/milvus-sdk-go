@@ -64,6 +64,39 @@ func TestDeleteStringPks(t *testing.T) {
 	require.Empty(t, queryRes)
 }
 
+func TestDeleteStringPksWithSpaces(t *testing.T) {
+	t.Skip("Issue: https://github.com/milvus-io/milvus-sdk-go/issues/429")
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	// connect
+	mc := createMilvusClient(ctx, t)
+
+	// collection
+	collName := createDefaultVarcharCollection(ctx, t, mc)
+
+	// insert data
+	varcharColumn, vecColumn := common.GenDefaultVarcharData(0, 1, common.DefaultDim)
+	varcharValues := varcharColumn.Data()
+	varcharValues[0] = "test space"
+	varcharColumn = entity.NewColumnVarChar(DefaultVarcharFieldName, varcharValues)
+	ids, errInsert := mc.Insert(ctx, collName, common.DefaultPartition, varcharColumn, vecColumn)
+	common.CheckErr(t, errInsert, true)
+	common.CheckInsertResult(t, ids, varcharColumn)
+
+	// delete
+	deleteIds := entity.NewColumnVarChar(common.DefaultVarcharFieldName, ids.(*entity.ColumnVarChar).Data())
+	errDelete := mc.DeleteByPks(ctx, collName, common.DefaultPartition, deleteIds)
+	common.CheckErr(t, errDelete, true)
+
+	// Load collection
+	errLoad := mc.LoadCollection(ctx, collName, false)
+	common.CheckErr(t, errLoad, true)
+
+	// query, verify delete success
+	queryRes, errQuery := mc.Query(ctx, collName, []string{common.DefaultPartition}, deleteIds, []string{})
+	common.CheckErr(t, errQuery, true)
+	require.Empty(t, queryRes)
+}
+
 // test delete from empty collection
 func TestDeleteEmptyCollection(t *testing.T) {
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
