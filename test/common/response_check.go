@@ -178,3 +178,7 @@ func CheckPersistentSegments(t *testing.T, actualSegments []*entity.Segment, exp
 	}
 	require.Equal(t, actualNb, expNb)
 }
+
+func CheckResourceGroup(t *testing.T, actualRg *entity.ResourceGroup, expRg *entity.ResourceGroup) {
+	require.EqualValues(t, expRg, actualRg)
+}
