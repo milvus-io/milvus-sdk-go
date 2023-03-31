@@ -35,6 +35,19 @@ func teardown() {
 		log.Fatalf("teardown failed to connect milvus with error %v", err)
 	}
 	defer mc.Close()
+
+	// clear dbs
+	dbs, _ := mc.ListDatabases(ctx)
+	for _, db := range dbs {
+		if db.Name != common.DefaultDb {
+			_ = mc.UsingDatabase(ctx, db.Name)
+			collections, _ := mc.ListCollections(ctx)
+			for _, coll := range collections {
+				_ = mc.DropCollection(ctx, coll.Name)
+			}
+			_ = mc.DropDatabase(ctx, db.Name)
+		}
+	}
 }
 
 func createContext(t *testing.T, timeout time.Duration) context.Context {
@@ -69,7 +82,7 @@ func createMilvusClient(ctx context.Context, t *testing.T, cfg ...client.Config)
 }
 
 // create default collection
-func createDefaultCollection(ctx context.Context, t *testing.T, mc *base.MilvusClient, autoID bool, shards int32) string {
+func createDefaultCollection(ctx context.Context, t *testing.T, mc *base.MilvusClient, autoID bool, shards int32, opts ...client.CreateCollectionOption) string {
 	t.Helper()
 
 	// prepare schema
@@ -78,7 +91,7 @@ func createDefaultCollection(ctx context.Context, t *testing.T, mc *base.MilvusC
 	schema := common.GenSchema(collName, autoID, fields)
 
 	// create default collection with fields: [int64, float, floatVector] and vector dim is default 128
-	errCreateCollection := mc.CreateCollection(ctx, schema, shards)
+	errCreateCollection := mc.CreateCollection(ctx, schema, shards, opts...)
 	common.CheckErr(t, errCreateCollection, true)
 
 	// close connect and drop collection after each case
@@ -110,7 +123,7 @@ func createDefaultBinaryCollection(ctx context.Context, t *testing.T, mc *base.M
 }
 
 // create default varchar pk collection
-func createDefaultVarcharCollection(ctx context.Context, t *testing.T, mc *base.MilvusClient) string {
+func createDefaultVarcharCollection(ctx context.Context, t *testing.T, mc *base.MilvusClient, opts ...client.CreateCollectionOption) string {
 	t.Helper()
 
 	// prepare schema
@@ -119,7 +132,7 @@ func createDefaultVarcharCollection(ctx context.Context, t *testing.T, mc *base.
 	schema := common.GenSchema(collName, false, fields)
 
 	// create default collection with fields: [int64, float, floatVector] and vector dim is default 128
-	errCreateCollection := mc.CreateCollection(ctx, schema, common.DefaultShards)
+	errCreateCollection := mc.CreateCollection(ctx, schema, common.DefaultShards, opts...)
 	common.CheckErr(t, errCreateCollection, true)
 
 	// close connect and drop collection after each case
@@ -130,9 +143,9 @@ func createDefaultVarcharCollection(ctx context.Context, t *testing.T, mc *base.
 	return collName
 }
 
-func createCollectionWithDataIndex(ctx context.Context, t *testing.T, mc *base.MilvusClient, autoID bool, withIndex bool) (string, entity.Column) {
+func createCollectionWithDataIndex(ctx context.Context, t *testing.T, mc *base.MilvusClient, autoID bool, withIndex bool, opts ...client.CreateCollectionOption) (string, entity.Column) {
 	// collection
-	collName := createDefaultCollection(ctx, t, mc, autoID, common.DefaultShards)
+	collName := createDefaultCollection(ctx, t, mc, autoID, common.DefaultShards, opts...)
 
 	// insert data
 	var ids entity.Column
@@ -192,9 +205,9 @@ func createBinaryCollectionWithDataIndex(ctx context.Context, t *testing.T, mc *
 	return collName, ids
 }
 
-func createVarcharCollectionWithDataIndex(ctx context.Context, t *testing.T, mc *base.MilvusClient, withIndex bool) (string, entity.Column) {
+func createVarcharCollectionWithDataIndex(ctx context.Context, t *testing.T, mc *base.MilvusClient, withIndex bool, opts ...client.CreateCollectionOption) (string, entity.Column) {
 	// collection
-	collName := createDefaultVarcharCollection(ctx, t, mc)
+	collName := createDefaultVarcharCollection(ctx, t, mc, opts...)
 
 	// insert data
 	varcharColumn, vecColumn := common.GenDefaultVarcharData(0, common.DefaultNb, common.DefaultDim)

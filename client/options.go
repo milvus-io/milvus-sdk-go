@@ -111,6 +111,13 @@ func WithReplicaNumber(rn int32) LoadCollectionOption {
 	}
 }
 
+// WithResourceGroups specifies some specific ResourceGroup(s) to load the replica(s), rather than using the default ResourceGroup.
+func WithResourceGroups(rgs []string) LoadCollectionOption {
+	return func(req *server.LoadCollectionRequest) {
+		req.ResourceGroups = rgs
+	}
+}
+
 // SearchQueryOption is an option of search/query request
 type SearchQueryOption struct {
 	// Consistency Level & Time travel
