@@ -231,6 +231,98 @@ func (c *GrpcClient) DeleteByPks(ctx context.Context, collName string, partition
 	return nil
 }
 
+// Upsert Index into collection with column-based format
+// collName is the collection name
+// partitionName is the partition to upsert, if not specified(empty), default partition will be used
+// columns are slice of the column-based data
+func (c *GrpcClient) Upsert(ctx context.Context, collName string, partitionName string, columns ...entity.Column) (entity.Column, error) {
+	if c.Service == nil {
+		return nil, ErrClientNotReady
+	}
+	// 1. validation for all input params
+	// collection
+	if err := c.checkCollectionExists(ctx, collName); err != nil {
+		return nil, err
+	}
+	if partitionName != "" {
+		err := c.checkPartitionExists(ctx, collName, partitionName)
+		if err != nil {
+			return nil, err
+		}
+	}
+	// fields
+	var rowSize int
+	coll, err := c.DescribeCollection(ctx, collName)
+	if err != nil {
+		return nil, err
+	}
+	mNameField := make(map[string]*entity.Field)
+	for _, field := range coll.Schema.Fields {
+		mNameField[field.Name] = field
+	}
+	mNameColumn := make(map[string]entity.Column)
+	for _, column := range columns {
+		mNameColumn[column.Name()] = column
+		l := column.Len()
+		if rowSize == 0 {
+			rowSize = l
+		} else {
+			if rowSize != l {
+				return nil, errors.New("column size not match")
+			}
+		}
+		field, has := mNameField[column.Name()]
+		if !has {
+			return nil, fmt.Errorf("field %s does not exist in collection %s", column.Name(), collName)
+		}
+		if column.Type() != field.DataType {
+			return nil, fmt.Errorf("param column %s has type %v but collection field definition is %v", column.Name(), column.FieldData(), field.DataType)
+		}
+		if field.DataType == entity.FieldTypeFloatVector || field.DataType == entity.FieldTypeBinaryVector {
+			dim := 0
+			switch column := column.(type) {
+			case *entity.ColumnFloatVector:
+				dim = column.Dim()
+			case *entity.ColumnBinaryVector:
+				dim = column.Dim()
+			}
+			if fmt.Sprintf("%d", dim) != field.TypeParams[entity.TypeParamDim] {
+				return nil, fmt.Errorf("params column %s vector dim %d not match collection definition, which has dim of %s", field.Name, dim, field.TypeParams[entity.TypeParamDim])
+			}
+		}
+	}
+	for _, field := range coll.Schema.Fields {
+		_, has := mNameColumn[field.Name]
+		if !has && !field.AutoID {
+			return nil, fmt.Errorf("field %s not passed", field.Name)
+		}
+	}
+
+	// 2. do upsert request
+	req := &server.UpsertRequest{
+		DbName:         "", // reserved
+		CollectionName: collName,
+		PartitionName:  partitionName,
+	}
+	if req.PartitionName == "" {
+		req.PartitionName = "_default" // use default partition
+	}
+	req.NumRows = uint32(rowSize)
+	for _, column := range columns {
+		req.FieldsData = append(req.FieldsData, column.FieldData())
+	}
+	resp, err := c.Service.Upsert(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	if err := handleRespStatus(resp.GetStatus()); err != nil {
+		return nil, err
+	}
+	MetaCache.setSessionTs(collName, resp.Timestamp)
+	// 3. parse id column
+	return entity.IDColumns(resp.GetIDs(), 0, -1)
+}
+
 // Search with bool expression
 func (c *GrpcClient) Search(ctx context.Context, collName string, partitions []string,
 	expr string, outputFields []string, vectors []entity.Vector, vectorField string, metricType entity.MetricType, topK int, sp entity.SearchParam, opts ...SearchQueryOptionFunc) ([]SearchResult, error) {
