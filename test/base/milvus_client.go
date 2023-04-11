@@ -323,7 +323,7 @@ func (mc *MilvusClient) Insert(ctx context.Context, collName string, partitionNa
 // Flush
 func (mc *MilvusClient) Flush(ctx context.Context, collName string, async bool) error {
 	preRequest("Flush", ctx, collName, async)
-	err := mc.mClient.Flush(ctx, collName, async)
+	_, _, _, err := mc.mClient.Flush(ctx, collName, async)
 	postResponse("Flush", err)
 	return err
 }

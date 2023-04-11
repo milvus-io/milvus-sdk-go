@@ -21,7 +21,8 @@ import (
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )
 
-func (c *GrpcClient) checkCollField(ctx context.Context, collName string, fieldName string) error {
+// check if the collection and vector field exist
+func (c *GrpcClient) checkCollVecField(ctx context.Context, collName string, fieldName string) error {
 	if err := c.checkCollectionExists(ctx, collName); err != nil {
 		return err
 	}
@@ -36,6 +37,28 @@ func (c *GrpcClient) checkCollField(ctx context.Context, collName string, fieldN
 			if f.DataType != entity.FieldTypeFloatVector && f.DataType != entity.FieldTypeBinaryVector {
 				return fmt.Errorf("field %s of collection %s is not vector field", fieldName, collName)
 			}
+			break
+		}
+	}
+	if f == nil {
+		return fmt.Errorf("field %s of collection %s does not exist", fieldName, collName)
+	}
+	return nil
+}
+
+// check if the collection and field exist
+func (c *GrpcClient) checkCollField(ctx context.Context, collName string, fieldName string) error {
+	if err := c.checkCollectionExists(ctx, collName); err != nil {
+		return err
+	}
+	coll, err := c.DescribeCollection(ctx, collName)
+	if err != nil {
+		return err
+	}
+	var f *entity.Field
+	for _, field := range coll.Schema.Fields {
+		if field.Name == fieldName {
+			f = field
 			break
 		}
 	}
@@ -71,7 +94,6 @@ func getIndexDef(opts ...IndexOption) indexDef {
 }
 
 // CreateIndex create index for collection
-// Deprecated please use CreateIndexV2 instead.
 func (c *GrpcClient) CreateIndex(ctx context.Context, collName string, fieldName string,
 	idx entity.Index, async bool, opts ...IndexOption) error {
 	if c.Service == nil {
@@ -127,7 +149,6 @@ func (c *GrpcClient) CreateIndex(ctx context.Context, collName string, fieldName
 }
 
 // DescribeIndex describe index
-// Deprecate please use DescribeIndexV2 instead.
 func (c *GrpcClient) DescribeIndex(ctx context.Context, collName string, fieldName string, opts ...IndexOption) ([]entity.Index, error) {
 	if c.Service == nil {
 		return []entity.Index{}, ErrClientNotReady
@@ -146,8 +167,9 @@ func (c *GrpcClient) DescribeIndex(ctx context.Context, collName string, fieldNa
 		params := entity.KvPairsMap(info.Params)
 		it := params["index_type"] // TODO change to const
 		idx := entity.NewGenericIndex(
-			info.IndexName,
+			info.GetIndexName(),
 			entity.IndexType(it),
+			info.GetFieldName(),
 			params,
 		)
 		indexes = append(indexes, idx)
@@ -156,7 +178,6 @@ func (c *GrpcClient) DescribeIndex(ctx context.Context, collName string, fieldNa
 }
 
 // DropIndex drop index from collection
-// Deprecate please use DropIndexV2 instead.
 func (c *GrpcClient) DropIndex(ctx context.Context, collName string, fieldName string, opts ...IndexOption) error {
 	if c.Service == nil {
 		return ErrClientNotReady
@@ -184,7 +205,6 @@ func (c *GrpcClient) DropIndex(ctx context.Context, collName string, fieldName s
 }
 
 // GetIndexState get index state
-// Deprecate please use DescribeIndexV2 instead.
 func (c *GrpcClient) GetIndexState(ctx context.Context, collName string, fieldName string, opts ...IndexOption) (entity.IndexState, error) {
 	if c.Service == nil {
 		return entity.IndexState(common.IndexState_Failed), ErrClientNotReady
@@ -212,7 +232,6 @@ func (c *GrpcClient) GetIndexState(ctx context.Context, collName string, fieldNa
 }
 
 // GetIndexBuildProgress get index building progress
-// Deprecate please use DescribeIndexV2 instead.
 func (c *GrpcClient) GetIndexBuildProgress(ctx context.Context, collName string, fieldName string, opts ...IndexOption) (total, indexed int64, err error) {
 	if c.Service == nil {
 		return 0, 0, ErrClientNotReady
