@@ -54,6 +54,8 @@ type Client interface {
 	ReleaseCollection(ctx context.Context, collName string) error
 	// HasCollection check whether collection exists
 	HasCollection(ctx context.Context, collName string) (bool, error)
+	// AlterCollection
+	AlterCollection(ctx context.Context, collName string, attrs ...entity.CollectionAttribute) error
 
 	// CreateAlias creates an alias for collection
 	CreateAlias(ctx context.Context, collName string, alias string) error

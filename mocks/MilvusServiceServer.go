@@ -1153,6 +1153,53 @@ func (_c *MilvusServiceServer_Flush_Call) Return(_a0 *milvuspb.FlushResponse, _a
 	return _c
 }
 
+// FlushAll provides a mock function with given fields: _a0, _a1
+func (_m *MilvusServiceServer) FlushAll(_a0 context.Context, _a1 *milvuspb.FlushAllRequest) (*milvuspb.FlushAllResponse, error) {
+	ret := _m.Called(_a0, _a1)
+
+	var r0 *milvuspb.FlushAllResponse
+	if rf, ok := ret.Get(0).(func(context.Context, *milvuspb.FlushAllRequest) *milvuspb.FlushAllResponse); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*milvuspb.FlushAllResponse)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *milvuspb.FlushAllRequest) error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MilvusServiceServer_FlushAll_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FlushAll'
+type MilvusServiceServer_FlushAll_Call struct {
+	*mock.Call
+}
+
+// FlushAll is a helper method to define mock.On call
+//  - _a0 context.Context
+//  - _a1 *milvuspb.FlushAllRequest
+func (_e *MilvusServiceServer_Expecter) FlushAll(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_FlushAll_Call {
+	return &MilvusServiceServer_FlushAll_Call{Call: _e.mock.On("FlushAll", _a0, _a1)}
+}
+
+func (_c *MilvusServiceServer_FlushAll_Call) Run(run func(_a0 context.Context, _a1 *milvuspb.FlushAllRequest)) *MilvusServiceServer_FlushAll_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*milvuspb.FlushAllRequest))
+	})
+	return _c
+}
+
+func (_c *MilvusServiceServer_FlushAll_Call) Return(_a0 *milvuspb.FlushAllResponse, _a1 error) *MilvusServiceServer_FlushAll_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
 // GetCollectionStatistics provides a mock function with given fields: _a0, _a1
 func (_m *MilvusServiceServer) GetCollectionStatistics(_a0 context.Context, _a1 *milvuspb.GetCollectionStatisticsRequest) (*milvuspb.GetCollectionStatisticsResponse, error) {
 	ret := _m.Called(_a0, _a1)
@@ -1337,6 +1384,53 @@ func (_c *MilvusServiceServer_GetComponentStates_Call) Run(run func(_a0 context.
 }
 
 func (_c *MilvusServiceServer_GetComponentStates_Call) Return(_a0 *milvuspb.ComponentStates, _a1 error) *MilvusServiceServer_GetComponentStates_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+// GetFlushAllState provides a mock function with given fields: _a0, _a1
+func (_m *MilvusServiceServer) GetFlushAllState(_a0 context.Context, _a1 *milvuspb.GetFlushAllStateRequest) (*milvuspb.GetFlushAllStateResponse, error) {
+	ret := _m.Called(_a0, _a1)
+
+	var r0 *milvuspb.GetFlushAllStateResponse
+	if rf, ok := ret.Get(0).(func(context.Context, *milvuspb.GetFlushAllStateRequest) *milvuspb.GetFlushAllStateResponse); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*milvuspb.GetFlushAllStateResponse)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *milvuspb.GetFlushAllStateRequest) error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MilvusServiceServer_GetFlushAllState_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetFlushAllState'
+type MilvusServiceServer_GetFlushAllState_Call struct {
+	*mock.Call
+}
+
+// GetFlushAllState is a helper method to define mock.On call
+//  - _a0 context.Context
+//  - _a1 *milvuspb.GetFlushAllStateRequest
+func (_e *MilvusServiceServer_Expecter) GetFlushAllState(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_GetFlushAllState_Call {
+	return &MilvusServiceServer_GetFlushAllState_Call{Call: _e.mock.On("GetFlushAllState", _a0, _a1)}
+}
+
+func (_c *MilvusServiceServer_GetFlushAllState_Call) Run(run func(_a0 context.Context, _a1 *milvuspb.GetFlushAllStateRequest)) *MilvusServiceServer_GetFlushAllState_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*milvuspb.GetFlushAllStateRequest))
+	})
+	return _c
+}
+
+func (_c *MilvusServiceServer_GetFlushAllState_Call) Return(_a0 *milvuspb.GetFlushAllStateResponse, _a1 error) *MilvusServiceServer_GetFlushAllState_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }

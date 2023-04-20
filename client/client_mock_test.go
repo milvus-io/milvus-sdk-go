@@ -10,6 +10,7 @@ import (
 	common "github.com/milvus-io/milvus-proto/go-api/commonpb"
 	server "github.com/milvus-io/milvus-proto/go-api/milvuspb"
 	"github.com/milvus-io/milvus-sdk-go/v2/mocks"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
@@ -71,6 +72,17 @@ func (s *MockSuiteBase) resetMock() {
 		s.mock.Calls = nil
 		s.mock.ExpectedCalls = nil
 	}
+}
+
+func (s *MockSuiteBase) setupHasCollection(collName string) {
+	s.mock.EXPECT().HasCollection(mock.Anything, mock.AnythingOfType("*milvuspb.HasCollectionRequest")).
+		Call.Return(func(ctx context.Context, req *server.HasCollectionRequest) *server.BoolResponse {
+		resp := &server.BoolResponse{Status: &common.Status{}}
+		if req.GetCollectionName() == collName {
+			resp.Value = true
+		}
+		return resp
+	}, nil)
 }
 
 // ref https://stackoverflow.com/questions/42102496/testing-a-grpc-service
@@ -730,6 +742,14 @@ func (m *MockServer) DescribeResourceGroup(_ context.Context, _ *server.Describe
 
 func (m *MockServer) RenameCollection(_ context.Context, _ *server.RenameCollectionRequest) (*common.Status, error) {
 	panic("not implemented") // TODO: Implement
+}
+
+func (m *MockServer) FlushAll(_a0 context.Context, _a1 *server.FlushAllRequest) (*server.FlushAllResponse, error) {
+	panic("not implemented")
+}
+
+func (m *MockServer) GetFlushAllState(_a0 context.Context, _a1 *server.GetFlushAllStateRequest) (*server.GetFlushAllStateResponse, error) {
+	panic("not implemented")
 }
 
 func SuccessStatus() (*common.Status, error) {
