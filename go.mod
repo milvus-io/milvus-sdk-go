@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/golang/protobuf v1.5.2
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
-	github.com/milvus-io/milvus-proto/go-api v0.0.0-20230301092744-7efc6eec15fd
+	github.com/milvus-io/milvus-proto/go-api v0.0.0-20230324025554-5bbe6698c2b0
 	github.com/stretchr/testify v1.8.1
 	google.golang.org/grpc v1.48.0
 	google.golang.org/grpc/examples v0.0.0-20220617181431-3e7b97febc7f
@@ -13,8 +13,17 @@ require (
 )
 
 require (
+	github.com/cockroachdb/errors v1.9.1 // indirect
+	github.com/cockroachdb/logtags v0.0.0-20211118104740-dabe8e521a4f // indirect
+	github.com/cockroachdb/redact v1.1.3 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/getsentry/sentry-go v0.12.0 // indirect
+	github.com/gogo/protobuf v1.3.2 // indirect
+	github.com/kr/pretty v0.3.0 // indirect
+	github.com/kr/text v0.2.0 // indirect
+	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/rogpeppe/go-internal v1.8.1 // indirect
 	github.com/samber/lo v1.37.0 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
 	golang.org/x/exp v0.0.0-20220303212507-bbda1eaf7a17 // indirect

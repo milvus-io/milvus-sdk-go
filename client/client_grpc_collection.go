@@ -13,10 +13,10 @@ package client
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/golang/protobuf/proto"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 	"google.golang.org/grpc"
@@ -489,4 +489,44 @@ func (c *GrpcClient) GetLoadState(ctx context.Context, collName string, partitio
 	}
 
 	return entity.LoadState(resp.GetState()), nil
+}
+
+// AlterCollection changes the collection attribute.
+func (c *GrpcClient) AlterCollection(ctx context.Context, collName string, attrs ...entity.CollectionAttribute) error {
+	if c.Service == nil {
+		return ErrClientNotReady
+	}
+	if err := c.checkCollectionExists(ctx, collName); err != nil {
+		return err
+	}
+
+	if len(attrs) == 0 {
+		return errors.New("no collection attribute provided")
+	}
+
+	keys := make(map[string]struct{})
+
+	props := make([]*common.KeyValuePair, 0, len(attrs))
+	for _, attr := range attrs {
+		k, v := attr.KeyValue()
+		if _, exists := keys[k]; exists {
+			return errors.New("duplicated attributed received")
+		}
+		keys[k] = struct{}{}
+		props = append(props, &common.KeyValuePair{
+			Key:   k,
+			Value: v,
+		})
+	}
+
+	req := &server.AlterCollectionRequest{
+		CollectionName: collName,
+		Properties:     props,
+	}
+
+	resp, err := c.Service.AlterCollection(ctx, req)
+	if err != nil {
+		return err
+	}
+	return handleRespStatus(resp)
 }
