@@ -374,6 +374,72 @@ func (s *CollectionSuite) TestRenameCollection() {
 	})
 }
 
+func (s *CollectionSuite) TestAlterCollection() {
+	c := s.client
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	s.Run("normal_run", func() {
+		defer s.resetMock()
+
+		s.setupHasCollection(testCollectionName)
+		s.mock.EXPECT().AlterCollection(mock.Anything, mock.AnythingOfType("*milvuspb.AlterCollectionRequest")).
+			Return(&common.Status{}, nil)
+
+		err := c.AlterCollection(ctx, testCollectionName, entity.CollectionTTL(100000))
+		s.NoError(err)
+	})
+
+	s.Run("collection_not_exist", func() {
+		defer s.resetMock()
+
+		s.mock.EXPECT().HasCollection(mock.Anything, mock.AnythingOfType("*milvuspb.HasCollectionRequest")).
+			Return(&server.BoolResponse{
+				Status: &common.Status{},
+				Value:  false,
+			}, nil)
+
+		err := c.AlterCollection(ctx, testCollectionName, entity.CollectionTTL(100000))
+		s.Error(err)
+	})
+
+	s.Run("no_attributes", func() {
+		defer s.resetMock()
+
+		s.setupHasCollection(testCollectionName)
+		err := c.AlterCollection(ctx, testCollectionName)
+		s.Error(err)
+	})
+
+	s.Run("request_fails", func() {
+		defer s.resetMock()
+
+		s.setupHasCollection(testCollectionName)
+		s.mock.EXPECT().AlterCollection(mock.Anything, mock.AnythingOfType("*milvuspb.AlterCollectionRequest")).
+			Return(nil, errors.New("mocked"))
+
+		err := c.AlterCollection(ctx, testCollectionName, entity.CollectionTTL(100000))
+		s.Error(err)
+	})
+
+	s.Run("server_return_error", func() {
+		defer s.resetMock()
+
+		s.setupHasCollection(testCollectionName)
+		s.mock.EXPECT().AlterCollection(mock.Anything, mock.AnythingOfType("*milvuspb.AlterCollectionRequest")).
+			Return(&common.Status{ErrorCode: common.ErrorCode_UnexpectedError}, nil)
+
+		err := c.AlterCollection(ctx, testCollectionName, entity.CollectionTTL(100000))
+		s.Error(err)
+	})
+
+	s.Run("service_not_ready", func() {
+		c := &GrpcClient{}
+		err := c.AlterCollection(ctx, testCollectionName, entity.CollectionTTL(100000))
+		s.ErrorIs(err, ErrClientNotReady)
+	})
+}
+
 func TestCollectionSuite(t *testing.T) {
 	suite.Run(t, new(CollectionSuite))
 }

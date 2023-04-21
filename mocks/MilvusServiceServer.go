@@ -7,6 +7,8 @@ import (
 
 	commonpb "github.com/milvus-io/milvus-proto/go-api/commonpb"
 
+	federpb "github.com/milvus-io/milvus-proto/go-api/federpb"
+
 	milvuspb "github.com/milvus-io/milvus-proto/go-api/milvuspb"
 
 	mock "github.com/stretchr/testify/mock"
@@ -636,6 +638,53 @@ func (_c *MilvusServiceServer_DeleteCredential_Call) Return(_a0 *commonpb.Status
 	return _c
 }
 
+// DescribeAlias provides a mock function with given fields: _a0, _a1
+func (_m *MilvusServiceServer) DescribeAlias(_a0 context.Context, _a1 *milvuspb.DescribeAliasRequest) (*milvuspb.DescribeAliasResponse, error) {
+	ret := _m.Called(_a0, _a1)
+
+	var r0 *milvuspb.DescribeAliasResponse
+	if rf, ok := ret.Get(0).(func(context.Context, *milvuspb.DescribeAliasRequest) *milvuspb.DescribeAliasResponse); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*milvuspb.DescribeAliasResponse)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *milvuspb.DescribeAliasRequest) error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MilvusServiceServer_DescribeAlias_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DescribeAlias'
+type MilvusServiceServer_DescribeAlias_Call struct {
+	*mock.Call
+}
+
+// DescribeAlias is a helper method to define mock.On call
+//  - _a0 context.Context
+//  - _a1 *milvuspb.DescribeAliasRequest
+func (_e *MilvusServiceServer_Expecter) DescribeAlias(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_DescribeAlias_Call {
+	return &MilvusServiceServer_DescribeAlias_Call{Call: _e.mock.On("DescribeAlias", _a0, _a1)}
+}
+
+func (_c *MilvusServiceServer_DescribeAlias_Call) Run(run func(_a0 context.Context, _a1 *milvuspb.DescribeAliasRequest)) *MilvusServiceServer_DescribeAlias_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*milvuspb.DescribeAliasRequest))
+	})
+	return _c
+}
+
+func (_c *MilvusServiceServer_DescribeAlias_Call) Return(_a0 *milvuspb.DescribeAliasResponse, _a1 error) *MilvusServiceServer_DescribeAlias_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
 // DescribeCollection provides a mock function with given fields: _a0, _a1
 func (_m *MilvusServiceServer) DescribeCollection(_a0 context.Context, _a1 *milvuspb.DescribeCollectionRequest) (*milvuspb.DescribeCollectionResponse, error) {
 	ret := _m.Called(_a0, _a1)
@@ -773,6 +822,53 @@ func (_c *MilvusServiceServer_DescribeResourceGroup_Call) Run(run func(_a0 conte
 }
 
 func (_c *MilvusServiceServer_DescribeResourceGroup_Call) Return(_a0 *milvuspb.DescribeResourceGroupResponse, _a1 error) *MilvusServiceServer_DescribeResourceGroup_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+// DescribeSegmentIndexData provides a mock function with given fields: _a0, _a1
+func (_m *MilvusServiceServer) DescribeSegmentIndexData(_a0 context.Context, _a1 *federpb.DescribeSegmentIndexDataRequest) (*federpb.DescribeSegmentIndexDataResponse, error) {
+	ret := _m.Called(_a0, _a1)
+
+	var r0 *federpb.DescribeSegmentIndexDataResponse
+	if rf, ok := ret.Get(0).(func(context.Context, *federpb.DescribeSegmentIndexDataRequest) *federpb.DescribeSegmentIndexDataResponse); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*federpb.DescribeSegmentIndexDataResponse)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *federpb.DescribeSegmentIndexDataRequest) error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MilvusServiceServer_DescribeSegmentIndexData_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DescribeSegmentIndexData'
+type MilvusServiceServer_DescribeSegmentIndexData_Call struct {
+	*mock.Call
+}
+
+// DescribeSegmentIndexData is a helper method to define mock.On call
+//  - _a0 context.Context
+//  - _a1 *federpb.DescribeSegmentIndexDataRequest
+func (_e *MilvusServiceServer_Expecter) DescribeSegmentIndexData(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_DescribeSegmentIndexData_Call {
+	return &MilvusServiceServer_DescribeSegmentIndexData_Call{Call: _e.mock.On("DescribeSegmentIndexData", _a0, _a1)}
+}
+
+func (_c *MilvusServiceServer_DescribeSegmentIndexData_Call) Run(run func(_a0 context.Context, _a1 *federpb.DescribeSegmentIndexDataRequest)) *MilvusServiceServer_DescribeSegmentIndexData_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*federpb.DescribeSegmentIndexDataRequest))
+	})
+	return _c
+}
+
+func (_c *MilvusServiceServer_DescribeSegmentIndexData_Call) Return(_a0 *federpb.DescribeSegmentIndexDataResponse, _a1 error) *MilvusServiceServer_DescribeSegmentIndexData_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
@@ -1153,6 +1249,53 @@ func (_c *MilvusServiceServer_Flush_Call) Return(_a0 *milvuspb.FlushResponse, _a
 	return _c
 }
 
+// FlushAll provides a mock function with given fields: _a0, _a1
+func (_m *MilvusServiceServer) FlushAll(_a0 context.Context, _a1 *milvuspb.FlushAllRequest) (*milvuspb.FlushAllResponse, error) {
+	ret := _m.Called(_a0, _a1)
+
+	var r0 *milvuspb.FlushAllResponse
+	if rf, ok := ret.Get(0).(func(context.Context, *milvuspb.FlushAllRequest) *milvuspb.FlushAllResponse); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*milvuspb.FlushAllResponse)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *milvuspb.FlushAllRequest) error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MilvusServiceServer_FlushAll_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FlushAll'
+type MilvusServiceServer_FlushAll_Call struct {
+	*mock.Call
+}
+
+// FlushAll is a helper method to define mock.On call
+//  - _a0 context.Context
+//  - _a1 *milvuspb.FlushAllRequest
+func (_e *MilvusServiceServer_Expecter) FlushAll(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_FlushAll_Call {
+	return &MilvusServiceServer_FlushAll_Call{Call: _e.mock.On("FlushAll", _a0, _a1)}
+}
+
+func (_c *MilvusServiceServer_FlushAll_Call) Run(run func(_a0 context.Context, _a1 *milvuspb.FlushAllRequest)) *MilvusServiceServer_FlushAll_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*milvuspb.FlushAllRequest))
+	})
+	return _c
+}
+
+func (_c *MilvusServiceServer_FlushAll_Call) Return(_a0 *milvuspb.FlushAllResponse, _a1 error) *MilvusServiceServer_FlushAll_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
 // GetCollectionStatistics provides a mock function with given fields: _a0, _a1
 func (_m *MilvusServiceServer) GetCollectionStatistics(_a0 context.Context, _a1 *milvuspb.GetCollectionStatisticsRequest) (*milvuspb.GetCollectionStatisticsResponse, error) {
 	ret := _m.Called(_a0, _a1)
@@ -1337,6 +1480,53 @@ func (_c *MilvusServiceServer_GetComponentStates_Call) Run(run func(_a0 context.
 }
 
 func (_c *MilvusServiceServer_GetComponentStates_Call) Return(_a0 *milvuspb.ComponentStates, _a1 error) *MilvusServiceServer_GetComponentStates_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+// GetFlushAllState provides a mock function with given fields: _a0, _a1
+func (_m *MilvusServiceServer) GetFlushAllState(_a0 context.Context, _a1 *milvuspb.GetFlushAllStateRequest) (*milvuspb.GetFlushAllStateResponse, error) {
+	ret := _m.Called(_a0, _a1)
+
+	var r0 *milvuspb.GetFlushAllStateResponse
+	if rf, ok := ret.Get(0).(func(context.Context, *milvuspb.GetFlushAllStateRequest) *milvuspb.GetFlushAllStateResponse); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*milvuspb.GetFlushAllStateResponse)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *milvuspb.GetFlushAllStateRequest) error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MilvusServiceServer_GetFlushAllState_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetFlushAllState'
+type MilvusServiceServer_GetFlushAllState_Call struct {
+	*mock.Call
+}
+
+// GetFlushAllState is a helper method to define mock.On call
+//  - _a0 context.Context
+//  - _a1 *milvuspb.GetFlushAllStateRequest
+func (_e *MilvusServiceServer_Expecter) GetFlushAllState(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_GetFlushAllState_Call {
+	return &MilvusServiceServer_GetFlushAllState_Call{Call: _e.mock.On("GetFlushAllState", _a0, _a1)}
+}
+
+func (_c *MilvusServiceServer_GetFlushAllState_Call) Run(run func(_a0 context.Context, _a1 *milvuspb.GetFlushAllStateRequest)) *MilvusServiceServer_GetFlushAllState_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*milvuspb.GetFlushAllStateRequest))
+	})
+	return _c
+}
+
+func (_c *MilvusServiceServer_GetFlushAllState_Call) Return(_a0 *milvuspb.GetFlushAllStateResponse, _a1 error) *MilvusServiceServer_GetFlushAllState_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
@@ -2093,6 +2283,53 @@ func (_c *MilvusServiceServer_Insert_Call) Return(_a0 *milvuspb.MutationResult, 
 	return _c
 }
 
+// ListAliases provides a mock function with given fields: _a0, _a1
+func (_m *MilvusServiceServer) ListAliases(_a0 context.Context, _a1 *milvuspb.ListAliasesRequest) (*milvuspb.ListAliasesResponse, error) {
+	ret := _m.Called(_a0, _a1)
+
+	var r0 *milvuspb.ListAliasesResponse
+	if rf, ok := ret.Get(0).(func(context.Context, *milvuspb.ListAliasesRequest) *milvuspb.ListAliasesResponse); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*milvuspb.ListAliasesResponse)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *milvuspb.ListAliasesRequest) error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MilvusServiceServer_ListAliases_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ListAliases'
+type MilvusServiceServer_ListAliases_Call struct {
+	*mock.Call
+}
+
+// ListAliases is a helper method to define mock.On call
+//  - _a0 context.Context
+//  - _a1 *milvuspb.ListAliasesRequest
+func (_e *MilvusServiceServer_Expecter) ListAliases(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_ListAliases_Call {
+	return &MilvusServiceServer_ListAliases_Call{Call: _e.mock.On("ListAliases", _a0, _a1)}
+}
+
+func (_c *MilvusServiceServer_ListAliases_Call) Run(run func(_a0 context.Context, _a1 *milvuspb.ListAliasesRequest)) *MilvusServiceServer_ListAliases_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*milvuspb.ListAliasesRequest))
+	})
+	return _c
+}
+
+func (_c *MilvusServiceServer_ListAliases_Call) Return(_a0 *milvuspb.ListAliasesResponse, _a1 error) *MilvusServiceServer_ListAliases_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
 // ListCredUsers provides a mock function with given fields: _a0, _a1
 func (_m *MilvusServiceServer) ListCredUsers(_a0 context.Context, _a1 *milvuspb.ListCredUsersRequest) (*milvuspb.ListCredUsersResponse, error) {
 	ret := _m.Called(_a0, _a1)
@@ -2183,6 +2420,53 @@ func (_c *MilvusServiceServer_ListImportTasks_Call) Run(run func(_a0 context.Con
 }
 
 func (_c *MilvusServiceServer_ListImportTasks_Call) Return(_a0 *milvuspb.ListImportTasksResponse, _a1 error) *MilvusServiceServer_ListImportTasks_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+// ListIndexedSegment provides a mock function with given fields: _a0, _a1
+func (_m *MilvusServiceServer) ListIndexedSegment(_a0 context.Context, _a1 *federpb.ListIndexedSegmentRequest) (*federpb.ListIndexedSegmentResponse, error) {
+	ret := _m.Called(_a0, _a1)
+
+	var r0 *federpb.ListIndexedSegmentResponse
+	if rf, ok := ret.Get(0).(func(context.Context, *federpb.ListIndexedSegmentRequest) *federpb.ListIndexedSegmentResponse); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*federpb.ListIndexedSegmentResponse)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *federpb.ListIndexedSegmentRequest) error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MilvusServiceServer_ListIndexedSegment_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ListIndexedSegment'
+type MilvusServiceServer_ListIndexedSegment_Call struct {
+	*mock.Call
+}
+
+// ListIndexedSegment is a helper method to define mock.On call
+//  - _a0 context.Context
+//  - _a1 *federpb.ListIndexedSegmentRequest
+func (_e *MilvusServiceServer_Expecter) ListIndexedSegment(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_ListIndexedSegment_Call {
+	return &MilvusServiceServer_ListIndexedSegment_Call{Call: _e.mock.On("ListIndexedSegment", _a0, _a1)}
+}
+
+func (_c *MilvusServiceServer_ListIndexedSegment_Call) Run(run func(_a0 context.Context, _a1 *federpb.ListIndexedSegmentRequest)) *MilvusServiceServer_ListIndexedSegment_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*federpb.ListIndexedSegmentRequest))
+	})
+	return _c
+}
+
+func (_c *MilvusServiceServer_ListIndexedSegment_Call) Return(_a0 *federpb.ListIndexedSegmentResponse, _a1 error) *MilvusServiceServer_ListIndexedSegment_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
