@@ -34,7 +34,6 @@ const (
 	IvfSQ8     IndexType = "IVF_SQ8"
 	HNSW       IndexType = "HNSW"
 	IvfHNSW    IndexType = "IVF_HNSW"
-	ANNOY      IndexType = "ANNOY"
 	AUTOINDEX  IndexType = "AUTOINDEX"
 	DISKANN    IndexType = "DISKANN"
 )

@@ -230,12 +230,6 @@ func TestCreateIndexInvalidParams(t *testing.T) {
 	_, errHnswEf2 := entity.NewIndexHNSW(entity.L2, 8, 515)
 	common.CheckErr(t, errHnswEf2, false, "efConstruction not valid")
 
-	// invalid Annoy n_trees [1, 1024]
-	_, errAnnoyNTrees := entity.NewIndexANNOY(entity.L2, 0)
-	common.CheckErr(t, errAnnoyNTrees, false, "n_trees not valid")
-	_, errAnnoyNTrees2 := entity.NewIndexANNOY(entity.L2, 2048)
-	common.CheckErr(t, errAnnoyNTrees2, false, "n_trees not valid")
-
 	// invalid flat metric type jaccard
 	// TODO unclear error message
 	idx, _ := entity.NewIndexFlat(entity.JACCARD)
@@ -341,7 +335,7 @@ func TestDropIndex(t *testing.T) {
 	require.Nil(t, indexes)
 }
 
-func TestDropIndexCreateIndex(t *testing.T)  {
+func TestDropIndexCreateIndex(t *testing.T) {
 	t.Skip("Issue: https://github.com/milvus-io/milvus-sdk-go/issues/385")
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect
@@ -357,7 +351,7 @@ func TestDropIndexCreateIndex(t *testing.T)  {
 
 	// describe collection
 	collection, _ := mc.DescribeCollection(ctx, collName)
-	for _, field := range collection.Schema.Fields{
+	for _, field := range collection.Schema.Fields {
 		log.Printf("field name: %v, field TypeParams: %v, field IndexParams: %v)", field.Name, field.TypeParams, field.IndexParams)
 	}
 
@@ -379,7 +373,7 @@ func TestDropIndexCreateIndex(t *testing.T)  {
 
 	// describe collection
 	collection2, _ := mc.DescribeCollection(ctx, collName)
-	for _, field := range collection2.Schema.Fields{
+	for _, field := range collection2.Schema.Fields {
 		log.Printf("field name: %v, field TypeParams: %v, field IndexParams: %v)", field.Name, field.TypeParams, field.IndexParams)
 	}
 }
