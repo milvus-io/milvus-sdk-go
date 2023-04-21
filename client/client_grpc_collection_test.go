@@ -441,8 +441,8 @@ func TestGrpcClientLoadCollection(t *testing.T) {
 		start := time.Now()
 
 		mockServer.SetInjection(MShowCollections, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			req, ok := raw.(*server.ShowCollectionsRequest)
-			r := &server.ShowCollectionsResponse{}
+			req, ok := raw.(*server.GetLoadingProgressRequest)
+			r := &server.GetLoadingProgressResponse{}
 			if !ok || req == nil {
 				s, err := BadRequestStatus()
 				r.Status = s
@@ -450,16 +450,16 @@ func TestGrpcClientLoadCollection(t *testing.T) {
 			}
 			s, err := SuccessStatus()
 			r.Status = s
-			r.CollectionIds = []int64{1}
 			var perc int64
 			if time.Since(start) > time.Duration(loadTime)*time.Millisecond {
 				t.Log("passed")
 				perc = 100
 				passed = true
 			}
-			r.InMemoryPercentages = []int64{perc}
+			r.Progress = perc
 			return r, err
 		})
+
 		assert.Nil(t, c.LoadCollection(ctx, testCollectionName, false))
 		assert.True(t, passed)
 
@@ -470,7 +470,7 @@ func TestGrpcClientLoadCollection(t *testing.T) {
 		assert.NotNil(t, c.LoadCollection(quickCtx, testCollectionName, false))
 
 		// remove injection
-		mockServer.DelInjection(MShowCollections)
+		mockServer.DelInjection(MGetLoadingProgress)
 	})
 	t.Run("Load default replica", func(t *testing.T) {
 		mockServer.SetInjection(MLoadCollection, func(ctx context.Context, raw proto.Message) (proto.Message, error) {

@@ -394,15 +394,15 @@ func (c *GrpcClient) LoadCollection(ctx context.Context, collName string, async 
 			default:
 			}
 
-			coll, err := c.ShowCollection(ctx, collName)
+			progress, err := c.GetLoadingProgress(ctx, collName, nil)
 			if err != nil {
 				return err
 			}
-			if coll.Loaded {
-				break
+			if progress == 100 {
+				return nil
 			}
 
-			time.Sleep(200 * time.Millisecond) // TODO change to configuration
+			time.Sleep(500 * time.Millisecond)
 		}
 	}
 	return nil
