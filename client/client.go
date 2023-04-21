@@ -56,6 +56,8 @@ type Client interface {
 	HasCollection(ctx context.Context, collName string) (bool, error)
 	// RenameCollection performs renaming for provided collection.
 	RenameCollection(ctx context.Context, collName, newName string) error
+	// AlterCollection changes collection attributes.
+	AlterCollection(ctx context.Context, collName string, attrs ...entity.CollectionAttribute) error
 
 	// CreateAlias creates an alias for collection
 	CreateAlias(ctx context.Context, collName string, alias string) error
