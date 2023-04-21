@@ -599,8 +599,6 @@ func TestSearchInvalidSearchParams(t *testing.T) {
 		common.CheckErr(t, errHnsw, false, "ef not valid")
 	}
 
-	// TODO annoy {-1} ∪ [top_k, top_k × n_trees]
-
 	// bin ivf flat
 	for _, nprobe := range invalidNprobe {
 		_, errBinIvfFlat := entity.NewIndexBinIvfFlatSearchParam(nprobe)
@@ -636,44 +634,6 @@ func TestSearchTopKHnsw(t *testing.T) {
 		sp,
 	)
 	common.CheckErr(t, errSearchEmpty, false, "Param 'ef'(7) is not in range [10, 32768] err")
-}
-
-// test search invalid annoy search params about topK
-func TestSearchTopKAnnoy(t *testing.T) {
-	t.Skip("Issue: https://github.com/milvus-io/milvus-sdk-go/issues/378")
-	ctx := createContext(t, time.Second*common.DefaultTimeout*2)
-	// connect
-	mc := createMilvusClient(ctx, t)
-
-	// create collection with data
-	collName, _ := createCollectionWithDataIndex(ctx, t, mc, false, false)
-
-	// create annoy index
-	idx, _ := entity.NewIndexANNOY(entity.L2, 56)
-	err := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false)
-	common.CheckErr(t, err, true)
-
-	// load collection
-	errLoad := mc.LoadCollection(ctx, collName, false)
-	common.CheckErr(t, errLoad, true)
-
-	// search_k {-1} ∪ [top_k, top_k × n_trees]
-	invalidSearchK := []int{-5, 9, 1000}
-	for _, searchK := range invalidSearchK {
-		sp, _ := entity.NewIndexANNOYSearchParam(searchK)
-		_, errSearchEmpty := mc.Search(
-			ctx, collName,
-			[]string{},
-			"",
-			[]string{common.DefaultIntFieldName},
-			common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeFloatVector),
-			common.DefaultFloatVecFieldName,
-			entity.L2,
-			common.DefaultTopK,
-			sp,
-		)
-		common.CheckErr(t, errSearchEmpty, false, "Param is not in range err")
-	}
 }
 
 // test search params mismatch index type, hnsw index and ivf sq8 search param

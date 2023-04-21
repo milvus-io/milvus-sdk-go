@@ -292,7 +292,6 @@ func GenAllFloatIndex(metricType entity.MetricType) []entity.Index {
 	idxIvfSq8, _ := entity.NewIndexIvfSQ8(metricType, nlist)
 	idxIvfPq, _ := entity.NewIndexIvfPQ(metricType, nlist, 16, 8)
 	idxHnsw, _ := entity.NewIndexHNSW(metricType, 8, 96)
-	idxAnnoy, _ := entity.NewIndexANNOY(metricType, 56)
 	idxDiskAnn, _ := entity.NewIndexDISKANN(metricType)
 
 	allFloatIndex := []entity.Index{
@@ -301,7 +300,6 @@ func GenAllFloatIndex(metricType entity.MetricType) []entity.Index {
 		idxIvfSq8,
 		idxIvfPq,
 		idxHnsw,
-		idxAnnoy,
 		idxDiskAnn,
 	}
 	return allFloatIndex

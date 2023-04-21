@@ -104,27 +104,6 @@ Searching with most indexes that Milvus supported requires specifying constructi
 		<td><code>nprobe</code>&isin;[1, <code>nlist</code>]<br/><code>ef</code>&isin;[topK, 32768]</td>
 		<td>&nbsp;</td>
 	</tr>
-	<tr>
-		<td>ANNOY</td>
-		<td>entity.ANNOY</td>
-		<td><code>n_trees</code>&isin;[1, 1024]</td>
-		<td><code>search_k</code>&isin;-1 or [topk, n * n_trees]</td>
-		<td>&nbsp;</td>
-	</tr>
-	<tr>
-		<td>NGTPANNG</td>
-		<td>entity.NGTPANNG</td>
-		<td><code>edge_size</code>&isin;[1, 200]<br/><code>forcedly_pruned_edge_size</code>&isin;[selectively_pruned_edge_size + 1, 200]<br/><code>selectively_pruned_edge_size</code>&isin;[1, forcedly_pruned_edge_size -1 ]</td>
-		<td><code>max_search_edges</code>&isin;[-1, 200]<br/><code>epsilon</code>&isin;[-1.0, 1.0]</td>
-		<td>Search parameter epsilon type is float64.</td>
-	</tr>
-	<tr>
-		<td>NGTONNG</td>
-		<td>entity.NGTONNG</td>
-		<td><code>edge_size</code>&isin;[1, 200]<br/><code>outgoing_edge_size</code>&isin;[1, 200]<br/><code>incoming_edge_size</code>&isin;[1, 200]</td>
-		<td><code>max_search_edges</code>&isin;[-1, 200]<br/><code>epsilon</code>&isin;[-1.0, 1.0]</td>
-		<td>Search parameter epsilon type is float64.</td>
-	</tr>
 	</tbody>
 </table>
 
