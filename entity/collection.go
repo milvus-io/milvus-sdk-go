@@ -12,6 +12,9 @@
 // Package entity defines entities used in sdk
 package entity
 
+// DefaultShardNumber const value for using Milvus default shard number.
+const DefaultShardNumber int32 = 0
+
 // Collection represent collection meta in Milvus
 type Collection struct {
 	ID               int64   // collection id
