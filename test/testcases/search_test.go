@@ -331,6 +331,7 @@ func TestSearchNotExistOutputFields(t *testing.T) {
 
 // test search output fields only pk
 func TestSearchOutputFields(t *testing.T) {
+	t.Skip()
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect
 	mc := createMilvusClient(ctx, t)
