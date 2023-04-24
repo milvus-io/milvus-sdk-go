@@ -163,6 +163,8 @@ func (t FieldType) Name() string {
 		return "String"
 	case FieldTypeVarChar:
 		return "VarChar"
+	case FieldTypeJSON:
+		return "JSON"
 	case FieldTypeBinaryVector:
 		return "BinaryVector"
 	case FieldTypeFloatVector:
@@ -193,6 +195,8 @@ func (t FieldType) String() string {
 		return "string"
 	case FieldTypeVarChar:
 		return "string"
+	case FieldTypeJSON:
+		return "JSON"
 	case FieldTypeBinaryVector:
 		return "[]byte"
 	case FieldTypeFloatVector:
@@ -223,15 +227,15 @@ func (t FieldType) PbFieldType() (string, string) {
 		return "String", "string"
 	case FieldTypeVarChar:
 		return "VarChar", "string"
+	case FieldTypeJSON:
+		return "JSON", "JSON"
 	case FieldTypeBinaryVector:
 		return "[]byte", ""
 	case FieldTypeFloatVector:
 		return "[]float32", ""
 	default:
 		return "undefined", ""
-
 	}
-
 }
 
 // Match schema definition
@@ -256,6 +260,9 @@ const (
 	FieldTypeString FieldType = 20
 	// FieldTypeVarChar field type varchar
 	FieldTypeVarChar FieldType = 21 // variable-length strings with a specified maximum length
+	// FieldTypeArray FieldType = 22
+	// FieldTypeJSON field type JSON
+	FieldTypeJSON FieldType = 23
 	// FieldTypeBinaryVector field type binary vector
 	FieldTypeBinaryVector FieldType = 100
 	// FieldTypeFloatVector field type float vector
