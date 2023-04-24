@@ -70,7 +70,7 @@ func main() {
 	}
 
 	// create collection with consistency level, which serves as the default search/query consistency level
-	if err := c.CreateCollection(ctx, schema, 2, client.WithConsistencyLevel(entity.ClBounded)); err != nil {
+	if err := c.CreateCollection(ctx, schema, entity.DefaultShardNumber, client.WithConsistencyLevel(entity.ClBounded)); err != nil {
 		log.Fatalf("create collection failed, err: %v", err)
 	}
 

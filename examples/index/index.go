@@ -71,7 +71,7 @@ func main() {
 		},
 	}
 
-	err = c.CreateCollection(ctx, schema, 1) // only 1 shard
+	err = c.CreateCollection(ctx, schema, entity.DefaultShardNumber)
 	if err != nil {
 		log.Fatal("failed to create collection:", err.Error())
 	}
