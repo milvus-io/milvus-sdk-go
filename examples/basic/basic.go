@@ -61,7 +61,7 @@ func main() {
 			},
 		},
 	}
-	err = c.CreateCollection(ctx, schema, 2) // default shards num is 2
+	err = c.CreateCollection(ctx, schema, entity.DefaultShardNumber)
 	if err != nil {
 		log.Fatal("failed to create collection:", err.Error())
 	}

@@ -69,7 +69,7 @@ func main() {
 		},
 	}
 
-	if err := c.CreateCollection(ctx, schema, 2); err != nil { // defaults to 2 shards
+	if err := c.CreateCollection(ctx, schema, entity.DefaultShardNumber); err != nil { // use default shard number
 		log.Fatalf("create collection failed, err: %v", err)
 	}
 

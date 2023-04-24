@@ -8,7 +8,7 @@ API to create a collection according to the specified schema.
 | ------------ | ------------------------------------------------------------ | ------------------------ |
 | `ctx`        | Context to control API invocation process                    | context.Context          |
 | `collSchema` | Collection schema definition                                 | Pointer of entity.Schema |
-| `shardNum`   | Shard number of the collection to create. If the `shardNum` is set to 0, default shard number `2` will be used. | INT32   |
+| `shardNum`   | Shard number of the collection to create. If the `shardNum` is set to 0, default shard number will be used. | INT32   |
 
 
 ## Schema
