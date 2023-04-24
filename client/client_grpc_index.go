@@ -33,7 +33,8 @@ func (c *GrpcClient) checkCollField(ctx context.Context, collName string, fieldN
 	for _, field := range coll.Schema.Fields {
 		if field.Name == fieldName {
 			f = field
-			if f.DataType != entity.FieldTypeFloatVector && f.DataType != entity.FieldTypeBinaryVector {
+			if _, ok := f.TypeParams[entity.TypeParamDim]; ok &&
+				!(f.DataType == entity.FieldTypeFloatVector || f.DataType == entity.FieldTypeBinaryVector) {
 				return fmt.Errorf("field %s of collection %s is not vector field", fieldName, collName)
 			}
 			break
