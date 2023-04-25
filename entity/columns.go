@@ -213,6 +213,16 @@ func FieldDataColumn(fd *schema.FieldData, begin, end int) (Column, error) {
 			return NewColumnVarChar(fd.GetFieldName(), data.StringData.GetData()[begin:]), nil
 		}
 		return NewColumnVarChar(fd.GetFieldName(), data.StringData.GetData()[begin:end]), nil
+
+	case schema.DataType_JSON:
+		data, ok := fd.GetScalars().GetData().(*schema.ScalarField_JsonData)
+		if !ok {
+			return nil, errFieldDataTypeNotMatch
+		}
+		if end < 0 {
+			return NewColumnJSONBytes(fd.GetFieldName(), data.JsonData.GetData()[begin:]), nil
+		}
+		return NewColumnJSONBytes(fd.GetFieldName(), data.JsonData.GetData()[begin:end]), nil
 	default:
 		return nil, fmt.Errorf("unsupported data type %s", fd.GetType())
 	}
