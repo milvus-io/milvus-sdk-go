@@ -223,10 +223,11 @@ func FieldDataVector(fd *schema.FieldData) (Column, error) {
 	switch fd.GetType() {
 	case schema.DataType_FloatVector:
 		vectors := fd.GetVectors()
-		data := vectors.GetFloatVector().GetData()
-		if data == nil {
+		x, ok := vectors.GetData().(*schema.VectorField_FloatVector)
+		if !ok {
 			return nil, errFieldDataTypeNotMatch
 		}
+		data := x.FloatVector.GetData()
 		dim := int(vectors.GetDim())
 		vector := make([][]float32, 0, len(data)/dim) // shall not have remanunt
 		for i := 0; i < len(data)/dim; i++ {
@@ -237,10 +238,11 @@ func FieldDataVector(fd *schema.FieldData) (Column, error) {
 		return NewColumnFloatVector(fd.GetFieldName(), dim, vector), nil
 	case schema.DataType_BinaryVector:
 		vectors := fd.GetVectors()
-		data := vectors.GetBinaryVector()
-		if data == nil {
+		x, ok := vectors.GetData().(*schema.VectorField_BinaryVector)
+		if !ok {
 			return nil, errFieldDataTypeNotMatch
 		}
+		data := x.BinaryVector
 		dim := int(vectors.GetDim())
 		blen := dim / 8
 		vector := make([][]byte, 0, len(data)/blen)
