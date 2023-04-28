@@ -14,27 +14,33 @@ package client
 
 import (
 	"context"
-	"crypto/tls"
-	"math"
-	"net/url"
-	"strings"
+	"sync"
 	"time"
 
-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/backoff"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/keepalive"
 )
 
 // Client is the interface used to communicate with Milvus
 type Client interface {
+	// -- client --
 	// Close close the remaining connection resources
 	Close() error
+
+	// UsingDatabase for database operation after this function call.
+	// All request in any goroutine will be applied to new database on the same client. e.g.
+	// 1. goroutine A access DB1.
+	// 2. goroutine B call UsingDatabase(ctx, "DB2").
+	// 3. goroutine A access DB2 after 2.
+	UsingDatabase(ctx context.Context, dbName string)
+
+	// -- database --
+	// ListDatabases list all database in milvus cluster.
+	ListDatabases(ctx context.Context) ([]entity.Database, error)
+	// CreateDatabase create database with the given name.
+	CreateDatabase(ctx context.Context, dbName string) error
+	// DropDatabase drop database with the given db name.
+	DropDatabase(ctx context.Context, dbName string) error
 
 	// -- collection --
 
@@ -201,134 +207,91 @@ type SearchResult struct {
 	Err         error           // search error if any
 }
 
-var DefaultGrpcOpts = []grpc.DialOption{
-	grpc.WithBlock(),
-	grpc.WithKeepaliveParams(keepalive.ClientParameters{
-		Time:                5 * time.Second,
-		Timeout:             10 * time.Second,
-		PermitWithoutStream: true,
-	}),
-	grpc.WithConnectParams(grpc.ConnectParams{
-		Backoff: backoff.Config{
-			BaseDelay:  100 * time.Millisecond,
-			Multiplier: 1.6,
-			Jitter:     0.2,
-			MaxDelay:   3 * time.Second,
+// Check if GrpcClient implement Client.
+var _ Client = &GrpcClient{}
+
+// NewClient create a client connected to remote milvus cluster.
+// More connect option can be modified by Config.
+func NewClient(ctx context.Context, config Config) (Client, error) {
+	if err := config.parse(); err != nil {
+		return nil, err
+	}
+
+	c := &GrpcClient{
+		config: &syncConfig{
+			Mutex: sync.Mutex{},
+			cfg:   config,
 		},
-		MinConnectTimeout: 3 * time.Second,
-	}),
+	}
+
+	// Parse remote address.
+	addr := c.config.getParsedAddress()
+
+	// Parse grpc options
+	options := c.config.getDialOption()
+
+	// Connect the grpc server.
+	if err := c.connect(ctx, addr, options...); err != nil {
+		return nil, err
+	}
+
+	return c, nil
 }
 
 // NewGrpcClient create client with grpc addr
 // the `Connect` API will be called for you
 // dialOptions contains the dial option(s) that control the grpc dialing process
+// !!!Deprecated in future, use `NewClient` first.
 func NewGrpcClient(ctx context.Context, addr string, dialOptions ...grpc.DialOption) (Client, error) {
-	c := &GrpcClient{}
-	if len(dialOptions) == 0 {
-		return NewDefaultGrpcClient(ctx, addr)
-	}
-
-	if err := c.connect(ctx, addr, dialOptions...); err != nil {
-		return nil, err
-	}
-
-	return c, nil
+	return NewClient(ctx, Config{
+		Address:     addr,
+		DialOptions: dialOptions,
+	})
 }
 
+// NewDefaultGrpcClient creates a new gRPC client.
+// !!!Deprecated in future, use `NewClient` first.
 func NewDefaultGrpcClient(ctx context.Context, addr string) (Client, error) {
-	c := &GrpcClient{}
-	defaultOpts := append(DefaultGrpcOpts,
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithUnaryInterceptor(
-			grpc_middleware.ChainUnaryClient(
-				grpc_retry.UnaryClientInterceptor(
-					grpc_retry.WithMax(6),
-					grpc_retry.WithBackoff(func(attempt uint) time.Duration {
-						return 60 * time.Millisecond * time.Duration(math.Pow(3, float64(attempt)))
-					}),
-					grpc_retry.WithCodes(codes.Unavailable, codes.ResourceExhausted)),
-				RetryOnRateLimitInterceptor(10, func(ctx context.Context, attempt uint) time.Duration {
-					return 10 * time.Millisecond * time.Duration(math.Pow(3, float64(attempt)))
-				}),
-			),
-		),
+	return NewClient(
+		ctx, Config{
+			Address: addr,
+		},
 	)
-	err := c.connect(ctx, addr, defaultOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return c, nil
 }
 
+// NewDefaultGrpcClientWithURI creates a new gRPC client with URI.
+// !!!Deprecated in future, use `NewClient` first.
 func NewDefaultGrpcClientWithURI(ctx context.Context, uri, username, password string) (Client, error) {
-	addr, inSecure, err := parseURI(uri)
-	if err != nil {
-		return nil, err
-	}
-
-	if inSecure {
-		return NewDefaultGrpcClientWithTLSAuth(ctx, addr, username, password)
-	}
-
-	return NewDefaultGrpcClientWithAuth(ctx, addr, username, password)
+	return NewClient(ctx, Config{
+		Address:  uri,
+		Username: username,
+		Password: password,
+	})
 }
 
-// NewDefaultGrpcClientWithTLSAuth enable transport security
+// NewDefaultGrpcClientWithTLSAuth creates a new gRPC client with TLS authentication.
+// !!!Deprecated in future, use `NewClient` first.
 func NewDefaultGrpcClientWithTLSAuth(ctx context.Context, addr, username, password string) (Client, error) {
-	defaultOpts := getDefaultAuthOpts(username, password, true)
-	return NewGrpcClient(ctx, addr, defaultOpts...)
-}
-
-// NewDefaultGrpcClientWithAuth  disable transport security
-func NewDefaultGrpcClientWithAuth(ctx context.Context, addr, username, password string) (Client, error) {
-	defaultOpts := getDefaultAuthOpts(username, password, false)
-	return NewGrpcClient(ctx, addr, defaultOpts...)
-}
-
-func getDefaultAuthOpts(username, password string, enableTLS bool) []grpc.DialOption {
-	var credential credentials.TransportCredentials
-	if enableTLS {
-		credential = credentials.NewTLS(&tls.Config{})
-	} else {
-		credential = insecure.NewCredentials()
-	}
-
-	defaultOpts := append(DefaultGrpcOpts,
-		grpc.WithTransportCredentials(credential),
-		grpc.WithChainUnaryInterceptor(
-			CreateAuthenticationUnaryInterceptor(username, password),
-			grpc_retry.UnaryClientInterceptor(
-				grpc_retry.WithMax(6),
-				grpc_retry.WithBackoff(func(attempt uint) time.Duration {
-					return 60 * time.Millisecond * time.Duration(math.Pow(3, float64(attempt)))
-				}),
-				grpc_retry.WithCodes(codes.Unavailable, codes.ResourceExhausted)),
-		),
-		grpc.WithStreamInterceptor(CreateAuthenticationStreamInterceptor(username, password)),
+	return NewClient(
+		ctx,
+		Config{
+			Address:       addr,
+			Username:      username,
+			Password:      password,
+			EnableTLSAuth: true,
+		},
 	)
-	return defaultOpts
 }
 
-func parseURI(uri string) (string, bool, error) {
-	hasPrefix := false
-	inSecure := false
-	if strings.HasPrefix(uri, "https://") {
-		inSecure = true
-		hasPrefix = true
-	}
-
-	if strings.HasPrefix(uri, "http://") {
-		inSecure = false
-		hasPrefix = true
-	}
-
-	if hasPrefix {
-		url, err := url.Parse(uri)
-		if err != nil {
-			return "", inSecure, err
-		}
-		return url.Host, inSecure, nil
-	}
-
-	return uri, inSecure, nil
+// NewDefaultGrpcClientWithAuth creates a new gRPC client with authentication.
+// !!!Deprecated in future, use `NewClient` first.
+func NewDefaultGrpcClientWithAuth(ctx context.Context, addr, username, password string) (Client, error) {
+	return NewClient(
+		ctx,
+		Config{
+			Address:  addr,
+			Username: username,
+			Password: password,
+		},
+	)
 }

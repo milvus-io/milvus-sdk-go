@@ -42,7 +42,9 @@ Go 1.15 or higher
    import "github.com/milvus-io/milvus-sdk-go/v2/client"
 
    //...other snippet ...
-   client, err := client.NewGrpcClient(context.Background(), "address_of_milvus")
+   client, err := client.NewClient(context.Background(), client.Config{
+      Address: "localhost:19530",
+   })
    if err != nil {
        // handle error
    }

@@ -26,7 +26,9 @@ func main() {
 	ctx := context.Background()
 
 	fmt.Printf(msgFmt, "start connecting to Milvus")
-	c, err := client.NewGrpcClient(ctx, milvusAddr)
+	c, err := client.NewClient(ctx, client.Config{
+		Address: milvusAddr,
+	})
 	if err != nil {
 		log.Fatalf("failed to connect to milvus, err: %v", err)
 	}
