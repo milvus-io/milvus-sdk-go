@@ -124,7 +124,7 @@ func FieldDataColumn(fd *schema.FieldData, begin, end int) (Column, error) {
 		return NewColumnBool(fd.GetFieldName(), data.BoolData.GetData()[begin:end]), nil
 
 	case schema.DataType_Int8:
-		data, ok := fd.GetScalars().GetData().(*schema.ScalarField_IntData)
+		data, ok := getIntData(fd)
 		if !ok {
 			return nil, errFieldDataTypeNotMatch
 		}
@@ -140,7 +140,7 @@ func FieldDataColumn(fd *schema.FieldData, begin, end int) (Column, error) {
 		return NewColumnInt8(fd.GetFieldName(), values[begin:end]), nil
 
 	case schema.DataType_Int16:
-		data, ok := fd.GetScalars().GetData().(*schema.ScalarField_IntData)
+		data, ok := getIntData(fd)
 		if !ok {
 			return nil, errFieldDataTypeNotMatch
 		}
@@ -155,7 +155,7 @@ func FieldDataColumn(fd *schema.FieldData, begin, end int) (Column, error) {
 		return NewColumnInt16(fd.GetFieldName(), values[begin:end]), nil
 
 	case schema.DataType_Int32:
-		data, ok := fd.GetScalars().GetData().(*schema.ScalarField_IntData)
+		data, ok := getIntData(fd)
 		if !ok {
 			return nil, errFieldDataTypeNotMatch
 		}
@@ -215,6 +215,25 @@ func FieldDataColumn(fd *schema.FieldData, begin, end int) (Column, error) {
 		return NewColumnVarChar(fd.GetFieldName(), data.StringData.GetData()[begin:end]), nil
 	default:
 		return nil, fmt.Errorf("unsupported data type %s", fd.GetType())
+	}
+}
+
+// getIntData get int32 slice from result field data
+// also handles LongData bug (see also https://github.com/milvus-io/milvus/issues/23850)
+func getIntData(fd *schema.FieldData) (*schema.ScalarField_IntData, bool) {
+	switch data := fd.GetScalars().GetData().(type) {
+	case *schema.ScalarField_IntData:
+		return data, true
+	case *schema.ScalarField_LongData:
+		// only alway empty LongData for backward compatibility
+		if len(data.LongData.GetData()) == 0 {
+			return &schema.ScalarField_IntData{
+				IntData: &schema.IntArray{},
+			}, true
+		}
+		return nil, false
+	default:
+		return nil, false
 	}
 }
 
