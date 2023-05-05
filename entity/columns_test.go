@@ -95,3 +95,78 @@ func TestIDColumns(t *testing.T) {
 		assert.Equal(t, dataLen, column.Len())
 	})
 }
+
+func TestGetIntData(t *testing.T) {
+	type testCase struct {
+		tag      string
+		fd       *schema.FieldData
+		expectOK bool
+	}
+
+	cases := []testCase{
+		{
+			tag: "normal_IntData",
+			fd: &schema.FieldData{
+				Field: &schema.FieldData_Scalars{
+					Scalars: &schema.ScalarField{
+						Data: &schema.ScalarField_IntData{
+							IntData: &schema.IntArray{Data: []int32{1, 2, 3}},
+						},
+					},
+				},
+			},
+			expectOK: true,
+		},
+		{
+			tag: "empty_LongData",
+			fd: &schema.FieldData{
+				Field: &schema.FieldData_Scalars{
+					Scalars: &schema.ScalarField{
+						Data: &schema.ScalarField_LongData{
+							LongData: &schema.LongArray{Data: nil},
+						},
+					},
+				},
+			},
+			expectOK: true,
+		},
+		{
+			tag: "nonempty_LongData",
+			fd: &schema.FieldData{
+				Field: &schema.FieldData_Scalars{
+					Scalars: &schema.ScalarField{
+						Data: &schema.ScalarField_LongData{
+							LongData: &schema.LongArray{Data: []int64{1, 2, 3}},
+						},
+					},
+				},
+			},
+			expectOK: false,
+		},
+		{
+			tag: "other_data",
+			fd: &schema.FieldData{
+				Field: &schema.FieldData_Scalars{
+					Scalars: &schema.ScalarField{
+						Data: &schema.ScalarField_BoolData{},
+					},
+				},
+			},
+			expectOK: false,
+		},
+		{
+			tag: "vector_data",
+			fd: &schema.FieldData{
+				Field: &schema.FieldData_Vectors{},
+			},
+			expectOK: false,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.tag, func(t *testing.T) {
+			_, ok := getIntData(tc.fd)
+			assert.Equal(t, tc.expectOK, ok)
+		})
+	}
+}
