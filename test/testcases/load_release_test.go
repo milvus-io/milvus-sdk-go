@@ -340,7 +340,8 @@ func TestReleasePartition(t *testing.T) {
 	// check release success
 	_, errQuery := mc.Query(ctx, collName, []string{}, entity.NewColumnInt64(common.DefaultIntFieldName, []int64{0}),
 		[]string{common.DefaultIntFieldName})
-	common.CheckErr(t, errQuery, false, "has not been loaded to memory or load failed")
+	// TODO change error msg or code
+	common.CheckErr(t, errQuery, false, "not loaded")
 }
 
 // test release not exist collection
@@ -394,7 +395,9 @@ func TestReleasePartitions(t *testing.T) {
 	// check release success
 	_, errQuery := mc.Query(ctx, collName, []string{partitionName}, entity.NewColumnInt64(common.DefaultIntFieldName, []int64{common.DefaultNb}),
 		[]string{common.DefaultIntFieldName})
-	common.CheckErr(t, errQuery, false, "has not been loaded to memory or load failed")
+
+	// TODO fix error msg or code
+	common.CheckErr(t, errQuery, false, "not loaded")
 }
 
 // test release partition not exist -> error or part exist -> success

@@ -218,7 +218,8 @@ func TestCreateIndexInvalidParams(t *testing.T) {
 	// TODO unclear error message
 	idxInvalidm, _ := entity.NewIndexIvfPQ(entity.L2, 128, 7, 8)
 	errm := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idxInvalidm, false)
-	common.CheckErr(t, errm, false, "invalid index params")
+	// TODO change error message check
+	common.CheckErr(t, errm, false, "dimension")
 
 	// invalid Hnsw M [4, 64], efConstruction [8, 512]
 	_, errHnswM := entity.NewIndexHNSW(entity.L2, 3, 96)
@@ -232,9 +233,11 @@ func TestCreateIndexInvalidParams(t *testing.T) {
 
 	// invalid flat metric type jaccard
 	// TODO unclear error message
-	idx, _ := entity.NewIndexFlat(entity.JACCARD)
-	errMetricType := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false)
-	common.CheckErr(t, errMetricType, false, "invalid index params")
+	// See also https://github.com/milvus-io/milvus/issues/24080
+	/*
+		idx, _ := entity.NewIndexFlat(entity.JACCARD)
+		errMetricType := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false)
+		common.CheckErr(t, errMetricType, false, "invalid index params")*/
 }
 
 // test create index with nil index

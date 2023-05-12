@@ -20,6 +20,8 @@ import (
 const (
 	// cakTTL const for collection attribute key TTL in seconds.
 	cakTTL = `collection.ttl.seconds`
+	// cakAutoCompaction const for collection attribute key autom compaction enabled.
+	cakAutoCompaction = `collection.autocompaction.enabled`
 )
 
 // CollectionAttribute is the interface for altering collection attributes.
@@ -62,5 +64,28 @@ func CollectionTTL(ttl int64) ttlCollAttr {
 	ca := ttlCollAttr{}
 	ca.key = cakTTL
 	ca.value = strconv.FormatInt(ttl, 10)
+	return ca
+}
+
+type autoCompactionCollAttr struct {
+	collAttrBase
+}
+
+// Valid implements CollectionAttribute.
+// checks collection auto compaction is valid bool.
+func (ca autoCompactionCollAttr) Valid() error {
+	_, err := strconv.ParseBool(ca.value)
+	if err != nil {
+		return errors.Wrap(err, "auto compaction setting is not valid boolean")
+	}
+
+	return nil
+}
+
+// CollectionAutoCompactionEnabled returns collection attribute to set collection auto compaction enabled.
+func CollectionAutoCompactionEnabled(enabled bool) autoCompactionCollAttr {
+	ca := autoCompactionCollAttr{}
+	ca.key = cakAutoCompaction
+	ca.value = strconv.FormatBool(enabled)
 	return ca
 }
