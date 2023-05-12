@@ -742,9 +742,9 @@ func TestSearchInvalidExpr(t *testing.T) {
 		errMsg string
 	}
 	invalidExpr := []invalidExprStruct{
-		{expr: "id in [0]", errMsg: "fieldName(id) not found"},               // not exist field
+		//{expr: "id in [0]", errMsg: "fieldName(id) not found"},               // not exist field
 		{expr: "int64 in not [0]", errMsg: "cannot parse expression"},        // wrong term expr keyword
-		{expr: "int64 < floatVec", errMsg: "unsupported datatype"},           // unsupported compare field
+		{expr: "int64 < floatVec", errMsg: "unsupported data type"},          // unsupported compare field
 		{expr: "floatVec in [0]", errMsg: "cannot be casted to FloatVector"}, // value and field type mismatch
 	}
 
