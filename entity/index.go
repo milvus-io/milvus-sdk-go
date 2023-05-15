@@ -42,6 +42,7 @@ const (
 const (
 	L2             MetricType = "L2"
 	IP             MetricType = "IP"
+	COSINE         MetricType = "COSINE"
 	HAMMING        MetricType = "HAMMING"
 	JACCARD        MetricType = "JACCARD"
 	TANIMOTO       MetricType = "TANIMOTO"
