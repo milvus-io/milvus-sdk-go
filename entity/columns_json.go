@@ -31,6 +31,14 @@ func (c *ColumnJSONBytes) Len() int {
 	return len(c.values)
 }
 
+// Get returns value at index as interface{}.
+func (c *ColumnJSONBytes) Get(idx int) (interface{}, error) {
+	if idx < 0 || idx > c.Len() {
+		return nil, errors.New("index out of range")
+	}
+	return c.values[idx], nil
+}
+
 // FieldData return column data mapped to schema.FieldData.
 func (c *ColumnJSONBytes) FieldData() *schema.FieldData {
 	fd := &schema.FieldData{

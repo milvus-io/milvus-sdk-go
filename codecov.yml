@@ -38,3 +38,5 @@ ignore:
   - "**/*.pb.go"
   - "examples/*"
   - "tests/*"
+  - "mocks/*"
+  - "*_gen.go"

@@ -86,6 +86,7 @@ func (c *GrpcClient) InsertByRows(ctx context.Context, collName string, partitio
 		CollectionName: collName,
 		PartitionName:  partitionName,
 	}
+	//c.Service.
 	if req.PartitionName == "" {
 		req.PartitionName = "_default" // use default partition
 	}
