@@ -56,6 +56,15 @@ func (c *Column{{.TypeName}}) Len() int {
 	return len(c.values)
 }
 
+// Get returns value at index as interface{}.
+func (c *Column{{.TypeName}}) Get(idx int) (interface{}, error) {
+	var r {{.TypeDef}} // use default value
+	if idx < 0 || idx >= c.Len() {
+		return r, errors.New("index out of range")
+	}
+	return c.values[idx], nil
+}
+
 // FieldData return column data mapped to schema.FieldData
 func (c *Column{{.TypeName}}) FieldData() *schema.FieldData {
 	fd := &schema.FieldData{
@@ -121,6 +130,8 @@ import (
 	"fmt"
 
 	schema "github.com/milvus-io/milvus-proto/go-api/schemapb"
+
+	"github.com/cockroachdb/errors"
 )
 
 {{ range .Types }}{{with.}}
@@ -149,6 +160,14 @@ func (c * Column{{.TypeName}}) Len() int {
 // Dim returns vector dimension
 func (c *Column{{.TypeName}}) Dim() int {
 	return c.dim
+}
+
+// Get returns values at index as interface{}.
+func (c *Column{{.TypeName}}) Get(idx int) (interface{}, error) {
+	if idx < 0 || idx >= c.Len() {
+		return nil, errors.New("index out of range")
+	}
+	return c.values[idx], nil
 }
 
 // AppendValue append value into column

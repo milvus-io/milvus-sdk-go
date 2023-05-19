@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/golang/protobuf v1.5.2
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
-	github.com/milvus-io/milvus-proto/go-api v0.0.0-20230418025426-3735aafecc6c
+	github.com/milvus-io/milvus-proto/go-api v0.0.0-20230517025117-8ba62a3f3a63
 	github.com/stretchr/testify v1.8.1
 	google.golang.org/grpc v1.48.0
 	google.golang.org/grpc/examples v0.0.0-20220617181431-3e7b97febc7f

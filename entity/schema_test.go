@@ -21,22 +21,8 @@ func TestCL_CommonCL(t *testing.T) {
 
 func TestFieldSchema(t *testing.T) {
 	fields := []*Field{
-		{
-			Name:        "int_field",
-			DataType:    FieldTypeInt64,
-			AutoID:      true,
-			PrimaryKey:  true,
-			Description: "int_field desc",
-			TypeParams:  map[string]string{},
-		},
-		{
-			Name:        "string_field",
-			DataType:    FieldTypeString,
-			AutoID:      false,
-			PrimaryKey:  true,
-			Description: "false_field desc",
-			TypeParams:  map[string]string{"max_len": "32"}, // not applied, just testing value
-		},
+		NewField().WithName("int_field").WithDataType(FieldTypeInt64).WithIsAutoID(true).WithIsPrimaryKey(true).WithDescription("int_field desc"),
+		NewField().WithName("string_field").WithDataType(FieldTypeString).WithIsAutoID(false).WithIsPrimaryKey(true).WithIsDynamic(false).WithTypeParams("max_len", "32").WithDescription("string_field desc"),
 	}
 
 	for _, field := range fields {
@@ -57,23 +43,25 @@ func TestFieldSchema(t *testing.T) {
 		assert.Equal(t, field.AutoID, nf.AutoID)
 		assert.Equal(t, field.PrimaryKey, nf.PrimaryKey)
 		assert.Equal(t, field.Description, nf.Description)
-		assert.Equal(t, field.TypeParams, nf.TypeParams)
+		assert.EqualValues(t, field.TypeParams, nf.TypeParams)
 	}
+
+	assert.NotPanics(t, func() {
+		(&Field{}).WithTypeParams("a", "b")
+	})
 }
 
 func TestSchema(t *testing.T) {
 	schemas := []*Schema{
-		{
-			CollectionName: "test_collection_1",
-			AutoID:         false,
-			Description:    "test_collection_1 decription",
-		},
+		NewSchema().WithName("test_collection_1").WithDescription("test_collection_1 desc").WithAutoID(false),
+		NewSchema().WithName("dynamic_schema").WithDescription("dynamic_schema desc").WithAutoID(true).WithDynamicFieldEnabled(true),
 	}
 	for _, sch := range schemas {
 		p := sch.ProtoMessage()
 		assert.Equal(t, sch.CollectionName, p.GetName())
 		assert.Equal(t, sch.AutoID, p.GetAutoID())
 		assert.Equal(t, sch.Description, p.GetDescription())
+		assert.Equal(t, sch.EnableDynamicField, p.GetEnableDynamicField())
 
 		nsch := &Schema{}
 		nsch = nsch.ReadProto(p)
@@ -81,5 +69,6 @@ func TestSchema(t *testing.T) {
 		assert.Equal(t, sch.CollectionName, nsch.CollectionName)
 		assert.Equal(t, sch.AutoID, nsch.AutoID)
 		assert.Equal(t, sch.Description, nsch.Description)
+		assert.Equal(t, sch.EnableDynamicField, nsch.EnableDynamicField)
 	}
 }

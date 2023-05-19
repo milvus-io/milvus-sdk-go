@@ -10,7 +10,9 @@ import (
 	"github.com/golang/protobuf/proto"
 	common "github.com/milvus-io/milvus-proto/go-api/commonpb"
 	"github.com/milvus-io/milvus-proto/go-api/federpb"
+	"github.com/milvus-io/milvus-proto/go-api/milvuspb"
 	server "github.com/milvus-io/milvus-proto/go-api/milvuspb"
+	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 	"github.com/milvus-io/milvus-sdk-go/v2/mocks"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -76,14 +78,43 @@ func (s *MockSuiteBase) resetMock() {
 	}
 }
 
-func (s *MockSuiteBase) setupHasCollection(collName string) {
+func (s *MockSuiteBase) setupHasCollection(collNames ...string) {
 	s.mock.EXPECT().HasCollection(mock.Anything, mock.AnythingOfType("*milvuspb.HasCollectionRequest")).
 		Call.Return(func(ctx context.Context, req *server.HasCollectionRequest) *server.BoolResponse {
 		resp := &server.BoolResponse{Status: &common.Status{}}
-		if req.GetCollectionName() == collName {
-			resp.Value = true
+		for _, collName := range collNames {
+			if req.GetCollectionName() == collName {
+				resp.Value = true
+				break
+			}
 		}
 		return resp
+	}, nil)
+}
+
+func (s *MockSuiteBase) setupHasPartition(collName string, partNames ...string) {
+	s.mock.EXPECT().HasPartition(mock.Anything, mock.AnythingOfType("*milvuspb.HasPartitionRequest")).
+		Call.Return(func(ctx context.Context, req *server.HasPartitionRequest) *server.BoolResponse {
+		resp := &server.BoolResponse{Status: &common.Status{}}
+		if req.GetCollectionName() == collName {
+			for _, partName := range partNames {
+				if req.GetPartitionName() == partName {
+					resp.Value = true
+					break
+				}
+			}
+		}
+		return resp
+	}, nil)
+}
+
+func (s *MockSuiteBase) setupDescribeCollection(collName string, schema *entity.Schema) {
+	s.mock.EXPECT().DescribeCollection(mock.Anything, mock.AnythingOfType("*milvuspb.DescribeCollectionRequest")).
+		Call.Return(func(ctx context.Context, req *server.DescribeCollectionRequest) *server.DescribeCollectionResponse {
+		return &milvuspb.DescribeCollectionResponse{
+			Status: &common.Status{ErrorCode: common.ErrorCode_Success},
+			Schema: schema.ProtoMessage(),
+		}
 	}, nil)
 }
 
@@ -734,6 +765,14 @@ func (m *MockServer) ListIndexedSegment(_ context.Context, _ *federpb.ListIndexe
 }
 
 func (m *MockServer) DescribeSegmentIndexData(_ context.Context, _ *federpb.DescribeSegmentIndexDataRequest) (*federpb.DescribeSegmentIndexDataResponse, error) {
+	panic("not implemented") // TODO: Implement
+}
+
+func (m *MockServer) GetIndexStatistics(_ context.Context, _ *server.GetIndexStatisticsRequest) (*server.GetIndexStatisticsResponse, error) {
+	panic("not implemented") // TODO: Implement
+}
+
+func (m *MockServer) Connect(_ context.Context, _ *server.ConnectRequest) (*server.ConnectResponse, error) {
 	panic("not implemented") // TODO: Implement
 }
 

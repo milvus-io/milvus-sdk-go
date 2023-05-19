@@ -31,6 +31,15 @@ func (c *ColumnBool) Len() int {
 	return len(c.values)
 }
 
+// Get returns value at index as interface{}.
+func (c *ColumnBool) Get(idx int) (interface{}, error) {
+	var r bool // use default value
+	if idx < 0 || idx >= c.Len() {
+		return r, errors.New("index out of range")
+	}
+	return c.values[idx], nil
+}
+
 // FieldData return column data mapped to schema.FieldData
 func (c *ColumnBool) FieldData() *schema.FieldData {
 	fd := &schema.FieldData{
@@ -106,6 +115,15 @@ func (c *ColumnInt8) Type() FieldType {
 // Len returns column values length
 func (c *ColumnInt8) Len() int {
 	return len(c.values)
+}
+
+// Get returns value at index as interface{}.
+func (c *ColumnInt8) Get(idx int) (interface{}, error) {
+	var r int8 // use default value
+	if idx < 0 || idx >= c.Len() {
+		return r, errors.New("index out of range")
+	}
+	return c.values[idx], nil
 }
 
 // FieldData return column data mapped to schema.FieldData
@@ -185,6 +203,15 @@ func (c *ColumnInt16) Len() int {
 	return len(c.values)
 }
 
+// Get returns value at index as interface{}.
+func (c *ColumnInt16) Get(idx int) (interface{}, error) {
+	var r int16 // use default value
+	if idx < 0 || idx >= c.Len() {
+		return r, errors.New("index out of range")
+	}
+	return c.values[idx], nil
+}
+
 // FieldData return column data mapped to schema.FieldData
 func (c *ColumnInt16) FieldData() *schema.FieldData {
 	fd := &schema.FieldData{
@@ -260,6 +287,15 @@ func (c *ColumnInt32) Type() FieldType {
 // Len returns column values length
 func (c *ColumnInt32) Len() int {
 	return len(c.values)
+}
+
+// Get returns value at index as interface{}.
+func (c *ColumnInt32) Get(idx int) (interface{}, error) {
+	var r int32 // use default value
+	if idx < 0 || idx >= c.Len() {
+		return r, errors.New("index out of range")
+	}
+	return c.values[idx], nil
 }
 
 // FieldData return column data mapped to schema.FieldData
@@ -339,6 +375,15 @@ func (c *ColumnInt64) Len() int {
 	return len(c.values)
 }
 
+// Get returns value at index as interface{}.
+func (c *ColumnInt64) Get(idx int) (interface{}, error) {
+	var r int64 // use default value
+	if idx < 0 || idx >= c.Len() {
+		return r, errors.New("index out of range")
+	}
+	return c.values[idx], nil
+}
+
 // FieldData return column data mapped to schema.FieldData
 func (c *ColumnInt64) FieldData() *schema.FieldData {
 	fd := &schema.FieldData{
@@ -414,6 +459,15 @@ func (c *ColumnFloat) Type() FieldType {
 // Len returns column values length
 func (c *ColumnFloat) Len() int {
 	return len(c.values)
+}
+
+// Get returns value at index as interface{}.
+func (c *ColumnFloat) Get(idx int) (interface{}, error) {
+	var r float32 // use default value
+	if idx < 0 || idx >= c.Len() {
+		return r, errors.New("index out of range")
+	}
+	return c.values[idx], nil
 }
 
 // FieldData return column data mapped to schema.FieldData
@@ -493,6 +547,15 @@ func (c *ColumnDouble) Len() int {
 	return len(c.values)
 }
 
+// Get returns value at index as interface{}.
+func (c *ColumnDouble) Get(idx int) (interface{}, error) {
+	var r float64 // use default value
+	if idx < 0 || idx >= c.Len() {
+		return r, errors.New("index out of range")
+	}
+	return c.values[idx], nil
+}
+
 // FieldData return column data mapped to schema.FieldData
 func (c *ColumnDouble) FieldData() *schema.FieldData {
 	fd := &schema.FieldData{
@@ -568,6 +631,15 @@ func (c *ColumnString) Type() FieldType {
 // Len returns column values length
 func (c *ColumnString) Len() int {
 	return len(c.values)
+}
+
+// Get returns value at index as interface{}.
+func (c *ColumnString) Get(idx int) (interface{}, error) {
+	var r string // use default value
+	if idx < 0 || idx >= c.Len() {
+		return r, errors.New("index out of range")
+	}
+	return c.values[idx], nil
 }
 
 // FieldData return column data mapped to schema.FieldData

@@ -215,6 +215,53 @@ func (_c *MilvusServiceServer_CheckHealth_Call) Return(_a0 *milvuspb.CheckHealth
 	return _c
 }
 
+// Connect provides a mock function with given fields: _a0, _a1
+func (_m *MilvusServiceServer) Connect(_a0 context.Context, _a1 *milvuspb.ConnectRequest) (*milvuspb.ConnectResponse, error) {
+	ret := _m.Called(_a0, _a1)
+
+	var r0 *milvuspb.ConnectResponse
+	if rf, ok := ret.Get(0).(func(context.Context, *milvuspb.ConnectRequest) *milvuspb.ConnectResponse); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*milvuspb.ConnectResponse)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *milvuspb.ConnectRequest) error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MilvusServiceServer_Connect_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Connect'
+type MilvusServiceServer_Connect_Call struct {
+	*mock.Call
+}
+
+// Connect is a helper method to define mock.On call
+//  - _a0 context.Context
+//  - _a1 *milvuspb.ConnectRequest
+func (_e *MilvusServiceServer_Expecter) Connect(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_Connect_Call {
+	return &MilvusServiceServer_Connect_Call{Call: _e.mock.On("Connect", _a0, _a1)}
+}
+
+func (_c *MilvusServiceServer_Connect_Call) Run(run func(_a0 context.Context, _a1 *milvuspb.ConnectRequest)) *MilvusServiceServer_Connect_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*milvuspb.ConnectRequest))
+	})
+	return _c
+}
+
+func (_c *MilvusServiceServer_Connect_Call) Return(_a0 *milvuspb.ConnectResponse, _a1 error) *MilvusServiceServer_Connect_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
 // CreateAlias provides a mock function with given fields: _a0, _a1
 func (_m *MilvusServiceServer) CreateAlias(_a0 context.Context, _a1 *milvuspb.CreateAliasRequest) (*commonpb.Status, error) {
 	ret := _m.Called(_a0, _a1)
@@ -1715,6 +1762,53 @@ func (_c *MilvusServiceServer_GetIndexState_Call) Run(run func(_a0 context.Conte
 }
 
 func (_c *MilvusServiceServer_GetIndexState_Call) Return(_a0 *milvuspb.GetIndexStateResponse, _a1 error) *MilvusServiceServer_GetIndexState_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+// GetIndexStatistics provides a mock function with given fields: _a0, _a1
+func (_m *MilvusServiceServer) GetIndexStatistics(_a0 context.Context, _a1 *milvuspb.GetIndexStatisticsRequest) (*milvuspb.GetIndexStatisticsResponse, error) {
+	ret := _m.Called(_a0, _a1)
+
+	var r0 *milvuspb.GetIndexStatisticsResponse
+	if rf, ok := ret.Get(0).(func(context.Context, *milvuspb.GetIndexStatisticsRequest) *milvuspb.GetIndexStatisticsResponse); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*milvuspb.GetIndexStatisticsResponse)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *milvuspb.GetIndexStatisticsRequest) error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MilvusServiceServer_GetIndexStatistics_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetIndexStatistics'
+type MilvusServiceServer_GetIndexStatistics_Call struct {
+	*mock.Call
+}
+
+// GetIndexStatistics is a helper method to define mock.On call
+//  - _a0 context.Context
+//  - _a1 *milvuspb.GetIndexStatisticsRequest
+func (_e *MilvusServiceServer_Expecter) GetIndexStatistics(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_GetIndexStatistics_Call {
+	return &MilvusServiceServer_GetIndexStatistics_Call{Call: _e.mock.On("GetIndexStatistics", _a0, _a1)}
+}
+
+func (_c *MilvusServiceServer_GetIndexStatistics_Call) Run(run func(_a0 context.Context, _a1 *milvuspb.GetIndexStatisticsRequest)) *MilvusServiceServer_GetIndexStatistics_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*milvuspb.GetIndexStatisticsRequest))
+	})
+	return _c
+}
+
+func (_c *MilvusServiceServer_GetIndexStatistics_Call) Return(_a0 *milvuspb.GetIndexStatisticsResponse, _a1 error) *MilvusServiceServer_GetIndexStatistics_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }

@@ -75,7 +75,8 @@ func TestInsertAutoIdPkData(t *testing.T) {
 	// insert
 	pkColumn, floatColumn, vecColumn := common.GenDefaultColumnData(0, common.DefaultNb, common.DefaultDim)
 	_, errInsert := mc.Insert(ctx, collName, "", pkColumn, floatColumn, vecColumn)
-	common.CheckErr(t, errInsert, false, "can not assign primary field data when auto id enabled")
+	//TODO change to check error code
+	common.CheckErr(t, errInsert, false, "invalid parameter") //, "can not assign primary field data when auto id enabled")
 
 	// flush and check row count
 	errFlush := mc.Flush(ctx, collName, false)
@@ -226,7 +227,7 @@ func TestInsertColumnsMismatchFields(t *testing.T) {
 
 	// len(column) > len(fields)
 	_, errInsert2 := mc.Insert(ctx, collName, "", intColumn, floatColumn, vecColumn, floatColumn)
-	common.CheckErr(t, errInsert2, false, "len(columns) mismatch the len(fields), len(columns): 4, len(fields): 3")
+	common.CheckErr(t, errInsert2, false, "duplicated column")
 
 	// order(column) != order(fields)
 	_, errInsert3 := mc.Insert(ctx, collName, "", floatColumn, vecColumn, intColumn)

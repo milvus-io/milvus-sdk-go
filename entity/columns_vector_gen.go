@@ -6,6 +6,8 @@ import (
 	"fmt"
 
 	schema "github.com/milvus-io/milvus-proto/go-api/schemapb"
+
+	"github.com/cockroachdb/errors"
 )
 
 
@@ -34,6 +36,14 @@ func (c * ColumnBinaryVector) Len() int {
 // Dim returns vector dimension
 func (c *ColumnBinaryVector) Dim() int {
 	return c.dim
+}
+
+// Get returns values at index as interface{}.
+func (c *ColumnBinaryVector) Get(idx int) (interface{}, error) {
+	if idx < 0 || idx >= c.Len() {
+		return nil, errors.New("index out of range")
+	}
+	return c.values[idx], nil
 }
 
 // AppendValue append value into column
@@ -112,6 +122,14 @@ func (c * ColumnFloatVector) Len() int {
 // Dim returns vector dimension
 func (c *ColumnFloatVector) Dim() int {
 	return c.dim
+}
+
+// Get returns values at index as interface{}.
+func (c *ColumnFloatVector) Get(idx int) (interface{}, error) {
+	if idx < 0 || idx >= c.Len() {
+		return nil, errors.New("index out of range")
+	}
+	return c.values[idx], nil
 }
 
 // AppendValue append value into column

@@ -13,14 +13,27 @@ package entity
 
 import (
 	"encoding/binary"
-	"errors"
 	"fmt"
 	"math"
 
 	schema "github.com/milvus-io/milvus-proto/go-api/schemapb"
+
+	"github.com/cockroachdb/errors"
 )
 
+var ErrDataTypeNotMatch = errors.New("data type not matched")
+
 //go:generate go run gen/gen.go
+
+type ColumnBase struct{}
+
+func (b ColumnBase) GetInt64() (int64, error) {
+	return 0, ErrDataTypeNotMatch
+}
+
+func (b ColumnBase) GetFloat64() (float64, error) {
+	return 0, ErrDataTypeNotMatch
+}
 
 // Column interface field type for column-based data frame
 type Column interface {
@@ -29,6 +42,7 @@ type Column interface {
 	Len() int
 	FieldData() *schema.FieldData
 	AppendValue(interface{}) error
+	Get(int) (interface{}, error)
 }
 
 // Vector interface vector used int search

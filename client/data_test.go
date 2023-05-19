@@ -1,3 +1,14 @@
+// Copyright (C) 2019-2021 Zilliz. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance
+// with the License. You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software distributed under the License
+// is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+// or implied. See the License for the specific language governing permissions and limitations under the License.
+
 package client
 
 import (
@@ -19,96 +30,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestGrpcClientInsert(t *testing.T) {
-	ctx := context.Background()
-
-	c := testClient(ctx, t)
-
-	t.Run("test create failure due to meta", func(t *testing.T) {
-		mockServer.DelInjection(MHasCollection) // collection does not exist
-		ids, err := c.Insert(ctx, testCollectionName, "")
-		assert.Nil(t, ids)
-		assert.NotNil(t, err)
-
-		// partition not exists
-		mockServer.SetInjection(MHasCollection, hasCollectionDefault)
-		ids, err = c.Insert(ctx, testCollectionName, "_part_not_exists")
-		assert.Nil(t, ids)
-		assert.NotNil(t, err)
-
-		// field not in collection
-		mockServer.SetInjection(MDescribeCollection, describeCollectionInjection(t, 0, testCollectionName, defaultSchema()))
-		vectors := generateFloatVector(10, testVectorDim)
-		ids, err = c.Insert(ctx, testCollectionName, "",
-			entity.NewColumnInt64("extra_field", []int64{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}), entity.NewColumnFloatVector(testVectorField, testVectorDim, vectors))
-		assert.Nil(t, ids)
-		assert.NotNil(t, err)
-
-		// field type not match
-		mockServer.SetInjection(MDescribeCollection, describeCollectionInjection(t, 0, testCollectionName, defaultSchema()))
-		ids, err = c.Insert(ctx, testCollectionName, "",
-			entity.NewColumnInt32("int64", []int32{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}), entity.NewColumnFloatVector(testVectorField, testVectorDim, vectors))
-		assert.Nil(t, ids)
-		assert.NotNil(t, err)
-
-		// missing field
-		ids, err = c.Insert(ctx, testCollectionName, "")
-		assert.Nil(t, ids)
-		assert.NotNil(t, err)
-
-		// column len not match
-		ids, err = c.Insert(ctx, testCollectionName, "", entity.NewColumnInt64("int64", []int64{1, 2, 3, 4, 5, 6, 7, 8, 9}),
-			entity.NewColumnFloatVector(testVectorField, testVectorDim, vectors))
-		assert.Nil(t, ids)
-		assert.NotNil(t, err)
-
-		// column len not match
-		ids, err = c.Insert(ctx, testCollectionName, "", entity.NewColumnInt64("int64", []int64{1, 2, 3}),
-			entity.NewColumnFloatVector(testVectorField, testVectorDim, vectors))
-		assert.Nil(t, ids)
-		assert.NotNil(t, err)
-
-		// dim not match
-		ids, err = c.Insert(ctx, testCollectionName, "", entity.NewColumnInt64("int64", []int64{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}),
-			entity.NewColumnFloatVector(testVectorField, testVectorDim*2, vectors))
-		assert.Nil(t, ids)
-		assert.NotNil(t, err)
-	})
-
-	mockServer.SetInjection(MHasCollection, hasCollectionDefault)
-	mockServer.SetInjection(MDescribeCollection, describeCollectionInjection(t, 0, testCollectionName, defaultSchema()))
-
-	vector := generateFloatVector(4096, testVectorDim)
-	mockServer.SetInjection(MInsert, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-		req, ok := raw.(*server.InsertRequest)
-		resp := &server.MutationResult{}
-		if !ok {
-			s, err := BadRequestStatus()
-			resp.Status = s
-			return resp, err
-		}
-		assert.EqualValues(t, 4096, req.GetNumRows())
-		assert.Equal(t, testCollectionName, req.GetCollectionName())
-		intIds := &schema.IDs_IntId{
-			IntId: &schema.LongArray{
-				Data: make([]int64, 4096),
-			},
-		}
-		resp.IDs = &schema.IDs{
-			IdField: intIds,
-		}
-		s, err := SuccessStatus()
-		resp.Status = s
-		return resp, err
-	})
-	_, err := c.Insert(ctx, testCollectionName, "", // use default partition
-		entity.NewColumnFloatVector(testVectorField, testVectorDim, vector))
-	assert.Nil(t, err)
-	mockServer.DelInjection(MInsert)
-}
-
 func TestGrpcClientFlush(t *testing.T) {
-
 	ctx := context.Background()
 
 	c := testClient(ctx, t)
@@ -346,7 +268,6 @@ func TestGrpcDeleteByPks(t *testing.T) {
 }
 
 func TestGrpcSearch(t *testing.T) {
-
 	ctx := context.Background()
 
 	c := testClient(ctx, t)
