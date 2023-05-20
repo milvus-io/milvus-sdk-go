@@ -71,6 +71,12 @@ func (m *metaCache) getCollectionInfo(cName string) (*collInfo, bool) {
 	}, true
 }
 
+func (m *metaCache) reset() {
+	m.colMu.Lock()
+	defer m.colMu.Unlock()
+	m.collInfoMap = make(map[string]collInfo)
+}
+
 func max(x, y uint64) uint64 {
 	if x > y {
 		return x
