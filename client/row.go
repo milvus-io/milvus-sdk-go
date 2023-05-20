@@ -71,6 +71,9 @@ func (c *GrpcClient) InsertByRows(ctx context.Context, collName string, partitio
 	if err := c.checkCollectionExists(ctx, collName); err != nil {
 		return nil, err
 	}
+	if err := c.checkPartitionExists(ctx, collName, partitionName); err != nil {
+		return nil, err
+	}
 	coll, err := c.DescribeCollection(ctx, collName)
 	if err != nil {
 		return nil, err
@@ -80,6 +83,7 @@ func (c *GrpcClient) InsertByRows(ctx context.Context, collName string, partitio
 	if err != nil {
 		return nil, err
 	}
+	//fieldData
 	// 2. do insert request
 	req := &server.InsertRequest{
 		DbName:         "", // reserved

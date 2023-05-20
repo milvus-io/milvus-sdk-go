@@ -72,6 +72,7 @@ func (s *MockSuiteBase) TearDownTest() {
 }
 
 func (s *MockSuiteBase) resetMock() {
+	MetaCache.reset()
 	if s.mock != nil {
 		s.mock.Calls = nil
 		s.mock.ExpectedCalls = nil
@@ -92,6 +93,13 @@ func (s *MockSuiteBase) setupHasCollection(collNames ...string) {
 	}, nil)
 }
 
+func (s *MockSuiteBase) setupHasCollectionError(errorCode common.ErrorCode, err error) {
+	s.mock.EXPECT().HasCollection(mock.Anything, mock.AnythingOfType("*milvuspb.HasCollectionRequest")).
+		Return(&server.BoolResponse{
+			Status: &common.Status{ErrorCode: errorCode},
+		}, err)
+}
+
 func (s *MockSuiteBase) setupHasPartition(collName string, partNames ...string) {
 	s.mock.EXPECT().HasPartition(mock.Anything, mock.AnythingOfType("*milvuspb.HasPartitionRequest")).
 		Call.Return(func(ctx context.Context, req *server.HasPartitionRequest) *server.BoolResponse {
@@ -108,6 +116,13 @@ func (s *MockSuiteBase) setupHasPartition(collName string, partNames ...string) 
 	}, nil)
 }
 
+func (s *MockSuiteBase) setupHasPartitionError(errorCode common.ErrorCode, err error) {
+	s.mock.EXPECT().HasPartition(mock.Anything, mock.AnythingOfType("*milvuspb.HasPartitionRequest")).
+		Return(&server.BoolResponse{
+			Status: &common.Status{ErrorCode: errorCode},
+		}, err)
+}
+
 func (s *MockSuiteBase) setupDescribeCollection(collName string, schema *entity.Schema) {
 	s.mock.EXPECT().DescribeCollection(mock.Anything, mock.AnythingOfType("*milvuspb.DescribeCollectionRequest")).
 		Call.Return(func(ctx context.Context, req *server.DescribeCollectionRequest) *server.DescribeCollectionResponse {
@@ -116,6 +131,13 @@ func (s *MockSuiteBase) setupDescribeCollection(collName string, schema *entity.
 			Schema: schema.ProtoMessage(),
 		}
 	}, nil)
+}
+
+func (s *MockSuiteBase) setupDescirbeCollectionError(errorCode common.ErrorCode, err error) {
+	s.mock.EXPECT().DescribeCollection(mock.Anything, mock.AnythingOfType("*milvuspb.DescribeCollectionRequest")).
+		Return(&milvuspb.DescribeCollectionResponse{
+			Status: &common.Status{ErrorCode: errorCode},
+		}, err)
 }
 
 // ref https://stackoverflow.com/questions/42102496/testing-a-grpc-service
