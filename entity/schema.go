@@ -12,6 +12,8 @@
 package entity
 
 import (
+	"strconv"
+
 	common "github.com/milvus-io/milvus-proto/go-api/commonpb"
 	schema "github.com/milvus-io/milvus-proto/go-api/schemapb"
 )
@@ -52,15 +54,18 @@ type Schema struct {
 	EnableDynamicField bool
 }
 
+// NewSchema creates an empty schema object.
 func NewSchema() *Schema {
 	return &Schema{}
 }
 
+// WithName sets the name value of schema, returns schema itself.
 func (s *Schema) WithName(name string) *Schema {
 	s.CollectionName = name
 	return s
 }
 
+// WithDescription sets the description value of schema, returns schema itself.
 func (s *Schema) WithDescription(desc string) *Schema {
 	s.Description = desc
 	return s
@@ -80,6 +85,19 @@ func (s *Schema) WithDynamicFieldEnabled(dynamicEnabled bool) *Schema {
 func (s *Schema) WithField(f *Field) *Schema {
 	s.Fields = append(s.Fields, f)
 	return s
+}
+
+// GetDynamicField returns dynamic field when EnabledDynamicField is enabled.
+func (s *Schema) GetDynamicField() *Field {
+	if !s.EnableDynamicField {
+		return nil
+	}
+	for _, field := range s.Fields {
+		if field.IsDynamic {
+			return field
+		}
+	}
+	return nil
 }
 
 // ProtoMessage returns corresponding server.CollectionSchema
@@ -104,10 +122,20 @@ func (s *Schema) ReadProto(p *schema.CollectionSchema) *Schema {
 	s.CollectionName = p.GetName()
 	s.Fields = make([]*Field, 0, len(p.GetFields()))
 	for _, fp := range p.GetFields() {
-		s.Fields = append(s.Fields, (&Field{}).ReadProto(fp))
+		s.Fields = append(s.Fields, NewField().ReadProto(fp))
 	}
 	s.EnableDynamicField = p.GetEnableDynamicField()
 	return s
+}
+
+// PKFieldName returns pk field name for this schema.
+func (s *Schema) PKFieldName() string {
+	for _, field := range s.Fields {
+		if field.PrimaryKey {
+			return field.Name
+		}
+	}
+	return ""
 }
 
 // Field represent field schema in milvus
@@ -138,6 +166,7 @@ func (f *Field) ProtoMessage() *schema.FieldSchema {
 	}
 }
 
+// NewField creates a new Field with map initialized.
 func NewField() *Field {
 	return &Field{
 		TypeParams:  make(map[string]string),
@@ -180,6 +209,14 @@ func (f *Field) WithTypeParams(key string, value string) *Field {
 		f.TypeParams = make(map[string]string)
 	}
 	f.TypeParams[key] = value
+	return f
+}
+
+func (f *Field) WithDim(dim int64) *Field {
+	if f.TypeParams == nil {
+		f.TypeParams = make(map[string]string)
+	}
+	f.TypeParams[TypeParamDim] = strconv.FormatInt(dim, 10)
 	return f
 }
 
