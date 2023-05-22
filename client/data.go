@@ -39,10 +39,18 @@ func (c *GrpcClient) Search(ctx context.Context, collName string, partitions []s
 	if c.Service == nil {
 		return []SearchResult{}, ErrClientNotReady
 	}
-	_, ok := MetaCache.getCollectionInfo(collName)
+	var schema *entity.Schema
+	collInfo, ok := MetaCache.getCollectionInfo(collName)
 	if !ok {
-		c.DescribeCollection(ctx, collName)
+		coll, err := c.DescribeCollection(ctx, collName)
+		if err != nil {
+			return nil, err
+		}
+		schema = coll.Schema
+	} else {
+		schema = collInfo.Schema
 	}
+
 	option, err := makeSearchQueryOption(collName, opts...)
 	if err != nil {
 		return nil, err
@@ -76,19 +84,53 @@ func (c *GrpcClient) Search(ctx context.Context, collName string, partitions []s
 			offset += rc
 			continue
 		}
-		entry.Fields = make([]entity.Column, 0, len(fieldDataList))
-		for _, fieldData := range fieldDataList {
-			column, err := entity.FieldDataColumn(fieldData, offset, offset+rc)
-			if err != nil {
-				entry.Err = err
-				continue
-			}
-			entry.Fields = append(entry.Fields, column)
-		}
+		entry.Fields, entry.Err = c.parseSearchResult(schema, outputFields, fieldDataList, i, offset, offset+rc)
 		sr = append(sr, entry)
 		offset += rc
 	}
 	return sr, nil
+}
+
+func (c *GrpcClient) parseSearchResult(sch *entity.Schema, outputFields []string, fieldDataList []*schema.FieldData, idx, from, to int) ([]entity.Column, error) {
+	dynamicField := sch.GetDynamicField()
+	fields := make(map[string]*schema.FieldData)
+	var dynamicColumn *entity.ColumnJSONBytes
+	for _, fieldData := range fieldDataList {
+		fields[fieldData.GetFieldName()] = fieldData
+		if dynamicField != nil && fieldData.GetFieldName() == dynamicField.Name {
+			column, err := entity.FieldDataColumn(fieldData, from, to)
+			if err != nil {
+				return nil, err
+			}
+			var ok bool
+			dynamicColumn, ok = column.(*entity.ColumnJSONBytes)
+			if !ok {
+				return nil, errors.New("dynamic field not json")
+			}
+		}
+	}
+	columns := make([]entity.Column, 0, len(outputFields))
+	for _, outputField := range outputFields {
+		fieldData, ok := fields[outputField]
+		var column entity.Column
+		var err error
+		if !ok {
+			if dynamicField == nil {
+				return nil, errors.New("output fields not match when dynamic field disabled")
+			}
+			if dynamicColumn == nil {
+				return nil, errors.New("output fields not match and result field data does not contain dynamic field")
+			}
+			column = entity.NewColumnDynamic(dynamicColumn, outputField)
+		} else {
+			column, err = entity.FieldDataColumn(fieldData, from, to)
+		}
+		if err != nil {
+			return nil, err
+		}
+		columns = append(columns, column)
+	}
+	return columns, nil
 }
 
 func PKs2Expr(backName string, ids entity.Column) string {
@@ -111,7 +153,7 @@ func PKs2Expr(backName string, ids entity.Column) string {
 }
 
 // QueryByPks query record by specified primary key(s)
-func (c *GrpcClient) QueryByPks(ctx context.Context, collectionName string, partitionNames []string, ids entity.Column, outputFields []string, opts ...SearchQueryOptionFunc) ([]entity.Column, error) {
+func (c *GrpcClient) QueryByPks(ctx context.Context, collectionName string, partitionNames []string, ids entity.Column, outputFields []string, opts ...SearchQueryOptionFunc) (ResultSet, error) {
 	if c.Service == nil {
 		return nil, ErrClientNotReady
 	}
@@ -129,17 +171,21 @@ func (c *GrpcClient) QueryByPks(ctx context.Context, collectionName string, part
 }
 
 // Query performs query by expression.
-func (c *GrpcClient) Query(ctx context.Context, collectionName string, partitionNames []string, expr string, outputFields []string, opts ...SearchQueryOptionFunc) ([]entity.Column, error) {
+func (c *GrpcClient) Query(ctx context.Context, collectionName string, partitionNames []string, expr string, outputFields []string, opts ...SearchQueryOptionFunc) (ResultSet, error) {
 	if c.Service == nil {
 		return nil, ErrClientNotReady
 	}
 
-	_, ok := MetaCache.getCollectionInfo(collectionName)
+	var sch *entity.Schema
+	collInfo, ok := MetaCache.getCollectionInfo(collectionName)
 	if !ok {
-		_, err := c.DescribeCollection(ctx, collectionName)
+		coll, err := c.DescribeCollection(ctx, collectionName)
 		if err != nil {
 			return nil, err
 		}
+		sch = coll.Schema
+	} else {
+		sch = collInfo.Schema
 	}
 
 	option, err := makeSearchQueryOption(collectionName, opts...)
@@ -176,22 +222,22 @@ func (c *GrpcClient) Query(ctx context.Context, collectionName string, partition
 	}
 
 	fieldsData := resp.GetFieldsData()
-	columns := make([]entity.Column, 0, len(fieldsData))
-	for _, fieldData := range resp.GetFieldsData() {
-		if fieldData.GetType() == schema.DataType_FloatVector ||
-			fieldData.GetType() == schema.DataType_BinaryVector {
-			column, err := entity.FieldDataVector(fieldData)
-			if err != nil {
-				return nil, err
-			}
-			columns = append(columns, column)
-			continue
+	// query always has pk field as output
+	hasPK := false
+	pkName := sch.PKFieldName()
+	for _, output := range outputFields {
+		if output == pkName {
+			hasPK = true
+			break
 		}
-		column, err := entity.FieldDataColumn(fieldData, 0, -1)
-		if err != nil {
-			return nil, err
-		}
-		columns = append(columns, column)
+	}
+	if !hasPK {
+		outputFields = append(outputFields, pkName)
+	}
+
+	columns, err := c.parseSearchResult(sch, outputFields, fieldsData, 0, 0, -1) //entity.FieldDataColumn(fieldData, 0, -1)
+	if err != nil {
+		return nil, err
 	}
 
 	return columns, nil

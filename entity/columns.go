@@ -237,6 +237,49 @@ func FieldDataColumn(fd *schema.FieldData, begin, end int) (Column, error) {
 			return NewColumnJSONBytes(fd.GetFieldName(), data.JsonData.GetData()[begin:]), nil
 		}
 		return NewColumnJSONBytes(fd.GetFieldName(), data.JsonData.GetData()[begin:end]), nil
+
+	case schema.DataType_FloatVector:
+		vectors := fd.GetVectors()
+		x, ok := vectors.GetData().(*schema.VectorField_FloatVector)
+		if !ok {
+			return nil, errFieldDataTypeNotMatch
+		}
+		data := x.FloatVector.GetData()
+		dim := int(vectors.GetDim())
+		if end < 0 {
+			end = int(len(data) / dim)
+		}
+		vector := make([][]float32, 0, end-begin) // shall not have remanunt
+		for i := begin; i < end; i++ {
+			v := make([]float32, dim)
+			copy(v, data[i*dim:(i+1)*dim])
+			vector = append(vector, v)
+		}
+		return NewColumnFloatVector(fd.GetFieldName(), dim, vector), nil
+
+	case schema.DataType_BinaryVector:
+		vectors := fd.GetVectors()
+		x, ok := vectors.GetData().(*schema.VectorField_BinaryVector)
+		if !ok {
+			return nil, errFieldDataTypeNotMatch
+		}
+		data := x.BinaryVector
+		if data == nil {
+			return nil, errFieldDataTypeNotMatch
+		}
+		dim := int(vectors.GetDim())
+		blen := dim / 8
+		if end < 0 {
+			end = int(len(data) / blen)
+		}
+		vector := make([][]byte, 0, end-begin)
+		for i := begin; i < end; i++ {
+			v := make([]byte, blen)
+			copy(v, data[i*blen:(i+1)*blen])
+			vector = append(vector, v)
+		}
+		return NewColumnBinaryVector(fd.GetFieldName(), dim, vector), nil
+
 	default:
 		return nil, fmt.Errorf("unsupported data type %s", fd.GetType())
 	}

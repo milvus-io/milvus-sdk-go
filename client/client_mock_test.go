@@ -12,6 +12,7 @@ import (
 	"github.com/milvus-io/milvus-proto/go-api/federpb"
 	"github.com/milvus-io/milvus-proto/go-api/milvuspb"
 	server "github.com/milvus-io/milvus-proto/go-api/milvuspb"
+	schema "github.com/milvus-io/milvus-proto/go-api/schemapb"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 	"github.com/milvus-io/milvus-sdk-go/v2/mocks"
 	"github.com/stretchr/testify/mock"
@@ -133,11 +134,76 @@ func (s *MockSuiteBase) setupDescribeCollection(collName string, schema *entity.
 	}, nil)
 }
 
-func (s *MockSuiteBase) setupDescirbeCollectionError(errorCode common.ErrorCode, err error) {
+func (s *MockSuiteBase) setupDescribeCollectionError(errorCode common.ErrorCode, err error) {
 	s.mock.EXPECT().DescribeCollection(mock.Anything, mock.AnythingOfType("*milvuspb.DescribeCollectionRequest")).
 		Return(&milvuspb.DescribeCollectionResponse{
 			Status: &common.Status{ErrorCode: errorCode},
 		}, err)
+}
+
+func (s *MockSuiteBase) getInt64FieldData(name string, data []int64) *schema.FieldData {
+	return &schema.FieldData{
+		Type:      schema.DataType_Int64,
+		FieldName: name,
+		Field: &schema.FieldData_Scalars{
+			Scalars: &schema.ScalarField{
+				Data: &schema.ScalarField_LongData{
+					LongData: &schema.LongArray{
+						Data: data,
+					},
+				},
+			},
+		},
+	}
+}
+
+func (s *MockSuiteBase) getVarcharFieldData(name string, data []string) *schema.FieldData {
+	return &schema.FieldData{
+		Type:      schema.DataType_VarChar,
+		FieldName: name,
+		Field: &schema.FieldData_Scalars{
+			Scalars: &schema.ScalarField{
+				Data: &schema.ScalarField_StringData{
+					StringData: &schema.StringArray{
+						Data: data,
+					},
+				},
+			},
+		},
+	}
+}
+
+func (s *MockSuiteBase) getJSONBytesFieldData(name string, data [][]byte) *schema.FieldData {
+	return &schema.FieldData{
+		Type:      schema.DataType_JSON,
+		FieldName: name,
+		Field: &schema.FieldData_Scalars{
+			Scalars: &schema.ScalarField{
+				Data: &schema.ScalarField_JsonData{
+					JsonData: &schema.JSONArray{
+						Data: data,
+					},
+				},
+			},
+		},
+	}
+}
+
+func (s *MockSuiteBase) getFloatVectorFieldData(name string, dim int64, data []float32) *schema.FieldData {
+	return &schema.FieldData{
+		Type:      schema.DataType_FloatVector,
+		FieldName: name,
+		Field: &schema.FieldData_Vectors{
+			Vectors: &schema.VectorField{
+				Dim: dim,
+				Data: &schema.VectorField_FloatVector{
+					FloatVector: &schema.FloatArray{
+						Data: data,
+					},
+				},
+			},
+		},
+	}
 }
 
 // ref https://stackoverflow.com/questions/42102496/testing-a-grpc-service
@@ -830,6 +896,10 @@ func (m *MockServer) CheckHealth(ctx context.Context, req *server.CheckHealthReq
 	}
 	s, err := SuccessStatus()
 	return &server.CheckHealthResponse{Status: s}, err
+}
+
+func getSuccessStatus() *common.Status {
+	return &common.Status{ErrorCode: common.ErrorCode_Success}
 }
 
 func SuccessStatus() (*common.Status, error) {

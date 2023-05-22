@@ -125,9 +125,9 @@ type Client interface {
 	Search(ctx context.Context, collName string, partitions []string,
 		expr string, outputFields []string, vectors []entity.Vector, vectorField string, metricType entity.MetricType, topK int, sp entity.SearchParam, opts ...SearchQueryOptionFunc) ([]SearchResult, error)
 	// QueryByPks query record by specified primary key(s).
-	QueryByPks(ctx context.Context, collectionName string, partitionNames []string, ids entity.Column, outputFields []string, opts ...SearchQueryOptionFunc) ([]entity.Column, error)
+	QueryByPks(ctx context.Context, collectionName string, partitionNames []string, ids entity.Column, outputFields []string, opts ...SearchQueryOptionFunc) (ResultSet, error)
 	// Query performs query records with boolean expression.
-	Query(ctx context.Context, collectionName string, partitionNames []string, expr string, outputFields []string, opts ...SearchQueryOptionFunc) ([]entity.Column, error)
+	Query(ctx context.Context, collectionName string, partitionNames []string, expr string, outputFields []string, opts ...SearchQueryOptionFunc) (ResultSet, error)
 
 	// CalcDistance calculate the distance between vectors specified by ids or provided
 	CalcDistance(ctx context.Context, collName string, partitions []string,
@@ -198,11 +198,22 @@ type Client interface {
 // Fields contains the data of `outputFieleds` specified or all columns if non
 // Scores is actually the distance between the vector current record contains and the search target vector
 type SearchResult struct {
-	ResultCount int             // the returning entry count
-	IDs         entity.Column   // auto generated id, can be mapped to the columns from `Insert` API
-	Fields      []entity.Column // output field data
-	Scores      []float32       // distance to the target vector
-	Err         error           // search error if any
+	ResultCount int           // the returning entry count
+	IDs         entity.Column // auto generated id, can be mapped to the columns from `Insert` API
+	Fields      ResultSet     //[]entity.Column // output field data
+	Scores      []float32     // distance to the target vector
+	Err         error         // search error if any
+}
+
+type ResultSet []entity.Column
+
+func (rs ResultSet) GetColumn(fieldName string) entity.Column {
+	for _, column := range rs {
+		if column.Name() == fieldName {
+			return column
+		}
+	}
+	return nil
 }
 
 var DefaultGrpcOpts = []grpc.DialOption{

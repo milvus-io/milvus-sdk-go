@@ -5,6 +5,7 @@ import (
 
 	common "github.com/milvus-io/milvus-proto/go-api/commonpb"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 )
 
 func TestCL_CommonCL(t *testing.T) {
@@ -51,24 +52,90 @@ func TestFieldSchema(t *testing.T) {
 	})
 }
 
+type SchemaSuite struct {
+	suite.Suite
+}
+
+func (s *SchemaSuite) TestBasic() {
+	cases := []struct {
+		tag    string
+		input  *Schema
+		pkName string
+	}{
+		{
+			"test_collection",
+			NewSchema().WithName("test_collection_1").WithDescription("test_collection_1 desc").WithAutoID(false).
+				WithField(NewField().WithName("ID").WithDataType(FieldTypeInt64).WithIsPrimaryKey(true)),
+			"ID",
+		},
+		{
+			"dynamic_schema",
+			NewSchema().WithName("dynamic_schema").WithDescription("dynamic_schema desc").WithAutoID(true).WithDynamicFieldEnabled(true).
+				WithField(NewField().WithName("$meta").WithIsDynamic(true)),
+			"",
+		},
+	}
+
+	for _, c := range cases {
+		s.Run(c.tag, func() {
+			sch := c.input
+			p := sch.ProtoMessage()
+			s.Equal(sch.CollectionName, p.GetName())
+			s.Equal(sch.AutoID, p.GetAutoID())
+			s.Equal(sch.Description, p.GetDescription())
+			s.Equal(sch.EnableDynamicField, p.GetEnableDynamicField())
+			s.Equal(len(sch.Fields), len(p.GetFields()))
+
+			nsch := &Schema{}
+			nsch = nsch.ReadProto(p)
+
+			s.Equal(sch.CollectionName, nsch.CollectionName)
+			s.Equal(sch.AutoID, nsch.AutoID)
+			s.Equal(sch.Description, nsch.Description)
+			s.Equal(sch.EnableDynamicField, nsch.EnableDynamicField)
+			s.Equal(len(sch.Fields), len(nsch.Fields))
+			s.Equal(c.pkName, sch.PKFieldName())
+			s.Equal(c.pkName, nsch.PKFieldName())
+		})
+	}
+}
+
+func (s *SchemaSuite) TestGetDynamicField() {
+	testCases := []struct {
+		tag         string
+		input       *Schema
+		expectValue bool
+	}{
+		{
+			"dynamic_field_disabled",
+			NewSchema().WithField(NewField().WithIsDynamic(true)),
+			false,
+		},
+		{
+			"dynamic_enabled_not_found",
+			NewSchema().WithDynamicFieldEnabled(true).WithField(NewField().WithName("$meta").WithIsDynamic(false)),
+			false,
+		},
+		{
+			"dynamic_enabled_found",
+			NewSchema().WithDynamicFieldEnabled(true).WithField(NewField().WithName("$meta").WithIsDynamic(true)),
+			true,
+		},
+	}
+
+	for _, c := range testCases {
+		s.Run(c.tag, func() {
+			f := c.input.GetDynamicField()
+			if c.expectValue {
+				s.Require().NotNil(f)
+				s.True(f.IsDynamic)
+			} else {
+				s.Nil(f)
+			}
+		})
+	}
+}
+
 func TestSchema(t *testing.T) {
-	schemas := []*Schema{
-		NewSchema().WithName("test_collection_1").WithDescription("test_collection_1 desc").WithAutoID(false),
-		NewSchema().WithName("dynamic_schema").WithDescription("dynamic_schema desc").WithAutoID(true).WithDynamicFieldEnabled(true),
-	}
-	for _, sch := range schemas {
-		p := sch.ProtoMessage()
-		assert.Equal(t, sch.CollectionName, p.GetName())
-		assert.Equal(t, sch.AutoID, p.GetAutoID())
-		assert.Equal(t, sch.Description, p.GetDescription())
-		assert.Equal(t, sch.EnableDynamicField, p.GetEnableDynamicField())
-
-		nsch := &Schema{}
-		nsch = nsch.ReadProto(p)
-
-		assert.Equal(t, sch.CollectionName, nsch.CollectionName)
-		assert.Equal(t, sch.AutoID, nsch.AutoID)
-		assert.Equal(t, sch.Description, nsch.Description)
-		assert.Equal(t, sch.EnableDynamicField, nsch.EnableDynamicField)
-	}
+	suite.Run(t, new(SchemaSuite))
 }
