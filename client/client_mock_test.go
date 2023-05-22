@@ -45,6 +45,7 @@ func (s *MockSuiteBase) SetupSuite() {
 			s.Fail("failed to server mock server", err.Error())
 		}
 	}()
+	s.setupConnect()
 }
 
 func (s *MockSuiteBase) TearDownSuite() {
@@ -63,6 +64,7 @@ func (s *MockSuiteBase) SetupTest() {
 		grpc.WithContextDialer(s.mockDialer),
 	)
 	s.Require().NoError(err)
+	s.setupConnect()
 
 	s.client = c
 }
@@ -77,7 +79,16 @@ func (s *MockSuiteBase) resetMock() {
 	if s.mock != nil {
 		s.mock.Calls = nil
 		s.mock.ExpectedCalls = nil
+		s.setupConnect()
 	}
+}
+
+func (s *MockSuiteBase) setupConnect() {
+	s.mock.EXPECT().Connect(mock.Anything, mock.AnythingOfType("*milvuspb.ConnectRequest")).
+		Return(&server.ConnectResponse{
+			Status:     &common.Status{},
+			Identifier: 1,
+		}, nil).Maybe()
 }
 
 func (s *MockSuiteBase) setupHasCollection(collNames ...string) {
@@ -861,7 +872,10 @@ func (m *MockServer) GetIndexStatistics(_ context.Context, _ *server.GetIndexSta
 }
 
 func (m *MockServer) Connect(_ context.Context, _ *server.ConnectRequest) (*server.ConnectResponse, error) {
-	panic("not implemented") // TODO: Implement
+	return &server.ConnectResponse{
+		Status:     &common.Status{ErrorCode: common.ErrorCode_Success},
+		Identifier: 1,
+	}, nil
 }
 
 //func (m *MockServer) DescribePartition(ctx context.Context, req *server.DescribePartitionRequest) (*server.DescribePartitionResponse, error) {

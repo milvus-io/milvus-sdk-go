@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/examples/helloworld/helloworld"
@@ -285,11 +286,11 @@ func TestGrpcClientRetryPolicy(t *testing.T) {
 	}()
 	defer s.Stop()
 
-	client, err := NewGrpcClient(context.TODO(), address)
-	assert.Nil(t, err)
-	defer client.Close()
+	c := &GrpcClient{}
+	err = c.dial(context.Background(), address, c.getDefaultDialOpts()...)
+	require.NoError(t, err)
 
-	greeterClient := helloworld.NewGreeterClient(client.(*GrpcClient).Conn)
+	greeterClient := helloworld.NewGreeterClient(c.Conn)
 	ctx := context.Background()
 	name := fmt.Sprintf("hello world %d", time.Now().Second())
 	res, err := greeterClient.SayHello(ctx, &helloworld.HelloRequest{Name: name})
@@ -300,10 +301,11 @@ func TestGrpcClientRetryPolicy(t *testing.T) {
 func TestClient_getDefaultAuthOpts(t *testing.T) {
 	username := "u"
 	password := "pwd"
-	defaultOpts := getDefaultAuthOpts(username, password, true)
+	c := &GrpcClient{}
+	defaultOpts := c.getDefaultAuthDialOpts(username, password, true)
 	assert.True(t, len(defaultOpts) == 6)
 
-	defaultOpts = getDefaultAuthOpts(username, password, false)
+	defaultOpts = c.getDefaultAuthDialOpts(username, password, false)
 	assert.True(t, len(defaultOpts) == 6)
 }
 
