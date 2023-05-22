@@ -166,97 +166,34 @@ func (s *CollectionSuite) TestCreateCollection() {
 		}
 		cases := []testCase{
 			{
-				name: "empty_fields",
-				schema: &entity.Schema{
-					CollectionName: testCollectionName,
-					Fields:         []*entity.Field{},
-				},
+				name:   "empty_fields",
+				schema: entity.NewSchema().WithName(testCollectionName),
 			},
 			{
 				name: "empty_collection_name",
-				schema: &entity.Schema{
-					CollectionName: "",
-					Fields: []*entity.Field{
-						{
-							Name:       "int64",
-							DataType:   entity.FieldTypeInt64,
-							PrimaryKey: true,
-						},
-						{
-							Name:       "vector",
-							DataType:   entity.FieldTypeFloatVector,
-							TypeParams: map[string]string{entity.TypeParamDim: "128"},
-						},
-					},
-				},
+				schema: entity.NewSchema().
+					WithField(entity.NewField().WithName("int64").WithDataType(entity.FieldTypeInt64).WithIsPrimaryKey(true)).
+					WithField(entity.NewField().WithName("vector").WithDataType(entity.FieldTypeFloatVector).WithDim(128)),
 			},
-
 			{
 				name: "multiple primary key",
-				schema: &entity.Schema{
-
-					CollectionName: testCollectionName,
-					Fields: []*entity.Field{
-						{
-							Name:       "int64",
-							DataType:   entity.FieldTypeInt64,
-							PrimaryKey: true,
-						},
-						{
-							Name:       "int64_2",
-							DataType:   entity.FieldTypeInt64,
-							PrimaryKey: true,
-						},
-						{
-							Name:       "vector",
-							DataType:   entity.FieldTypeFloatVector,
-							TypeParams: map[string]string{entity.TypeParamDim: "128"},
-						},
-					},
-				},
+				schema: entity.NewSchema().WithName(testCollectionName).
+					WithField(entity.NewField().WithName("int64").WithDataType(entity.FieldTypeInt64).WithIsPrimaryKey(true)).
+					WithField(entity.NewField().WithName("int64_2").WithDataType(entity.FieldTypeInt64).WithIsPrimaryKey(true)).
+					WithField(entity.NewField().WithName("vector").WithDataType(entity.FieldTypeFloatVector).WithDim(128)),
 			},
 			{
 				name: "multiple auto id",
-				schema: &entity.Schema{
-					CollectionName: testCollectionName,
-					Fields: []*entity.Field{
-						{
-							Name:       "int64",
-							DataType:   entity.FieldTypeInt64,
-							PrimaryKey: true,
-							AutoID:     true,
-						},
-						{
-							Name:       "int64_2",
-							DataType:   entity.FieldTypeInt64,
-							PrimaryKey: false,
-							AutoID:     true,
-						},
-						{
-							Name:       "vector",
-							DataType:   entity.FieldTypeFloatVector,
-							TypeParams: map[string]string{entity.TypeParamDim: "128"},
-						},
-					},
-				},
+				schema: entity.NewSchema().WithName(testCollectionName).
+					WithField(entity.NewField().WithName("int64").WithDataType(entity.FieldTypeInt64).WithIsPrimaryKey(true).WithIsAutoID(true)).
+					WithField(entity.NewField().WithName("int64_2").WithDataType(entity.FieldTypeInt64).WithIsAutoID(true)).
+					WithField(entity.NewField().WithName("vector").WithDataType(entity.FieldTypeFloatVector).WithDim(128)),
 			},
 			{
 				name: "bad_pk_type",
-				schema: &entity.Schema{
-					CollectionName: testCollectionName,
-					Fields: []*entity.Field{
-						{
-							Name:       "float_pk",
-							DataType:   entity.FieldTypeFloat,
-							PrimaryKey: true,
-						},
-						{
-							Name:       "vector",
-							DataType:   entity.FieldTypeFloatVector,
-							TypeParams: map[string]string{entity.TypeParamDim: "128"},
-						},
-					},
-				},
+				schema: entity.NewSchema().
+					WithField(entity.NewField().WithName("int64").WithDataType(entity.FieldTypeDouble).WithIsPrimaryKey(true)).
+					WithField(entity.NewField().WithName("vector").WithDataType(entity.FieldTypeFloatVector).WithDim(128)),
 			},
 		}
 

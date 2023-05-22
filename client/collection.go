@@ -20,42 +20,10 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
-	"google.golang.org/grpc"
 
 	common "github.com/milvus-io/milvus-proto/go-api/commonpb"
 	server "github.com/milvus-io/milvus-proto/go-api/milvuspb"
 )
-
-// GrpcClient, uses default grpc Service definition to connect with Milvus2.0
-type GrpcClient struct {
-	Conn    *grpc.ClientConn           // grpc connection instance
-	Service server.MilvusServiceClient // Service client stub
-}
-
-// connect connect to Service
-func (c *GrpcClient) connect(ctx context.Context, addr string, opts ...grpc.DialOption) error {
-	if addr == "" {
-		return fmt.Errorf("address is empty")
-	}
-	conn, err := grpc.DialContext(ctx, addr, opts...)
-	if err != nil {
-		return err
-	}
-
-	c.Conn = conn
-	c.Service = server.NewMilvusServiceClient(c.Conn)
-	return nil
-}
-
-// Close close the connection
-func (c *GrpcClient) Close() error {
-	if c.Conn != nil {
-		err := c.Conn.Close()
-		c.Conn = nil
-		return err
-	}
-	return nil
-}
 
 // handles response status
 // if status is nil returns ErrStatusNil
@@ -222,7 +190,7 @@ func (c *GrpcClient) DescribeCollection(ctx context.Context, collName string) (*
 	collection := &entity.Collection{
 		ID:               resp.GetCollectionID(),
 		Name:             collName,
-		Schema:           (&entity.Schema{}).ReadProto(resp.GetSchema()),
+		Schema:           entity.NewSchema().ReadProto(resp.GetSchema()),
 		PhysicalChannels: resp.GetPhysicalChannelNames(),
 		VirtualChannels:  resp.GetVirtualChannelNames(),
 		ConsistencyLevel: entity.ConsistencyLevel(resp.ConsistencyLevel),

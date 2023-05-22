@@ -17,6 +17,7 @@ import (
 	server "github.com/milvus-io/milvus-proto/go-api/milvuspb"
 )
 
+// GetVersion returns milvus server version information.
 func (c *GrpcClient) GetVersion(ctx context.Context) (string, error) {
 	if c.Service == nil {
 		return "", ErrClientNotReady

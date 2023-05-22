@@ -65,12 +65,14 @@ func (s *SchemaSuite) TestBasic() {
 		{
 			"test_collection",
 			NewSchema().WithName("test_collection_1").WithDescription("test_collection_1 desc").WithAutoID(false).
-				WithField(NewField().WithName("ID").WithDataType(FieldTypeInt64).WithIsPrimaryKey(true)),
+				WithField(NewField().WithName("ID").WithDataType(FieldTypeInt64).WithIsPrimaryKey(true)).
+				WithField(NewField().WithName("vector").WithDataType(FieldTypeFloatVector).WithDim(128)),
 			"ID",
 		},
 		{
 			"dynamic_schema",
 			NewSchema().WithName("dynamic_schema").WithDescription("dynamic_schema desc").WithAutoID(true).WithDynamicFieldEnabled(true).
+				WithField(NewField().WithName("ID").WithDataType(FieldTypeVarChar).WithMaxLength(256)).
 				WithField(NewField().WithName("$meta").WithIsDynamic(true)),
 			"",
 		},
