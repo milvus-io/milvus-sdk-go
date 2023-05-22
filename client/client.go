@@ -14,21 +14,18 @@ package client
 
 import (
 	"context"
-	"crypto/tls"
-	"math"
 	"net/url"
 	"strings"
 	"time"
 
-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/backoff"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
+)
+
+const (
+	sdkVerion = `v2.3.0-pre+dev`
 )
 
 // Client is the interface used to communicate with Milvus
@@ -252,23 +249,8 @@ func NewGrpcClient(ctx context.Context, addr string, dialOptions ...grpc.DialOpt
 
 func NewDefaultGrpcClient(ctx context.Context, addr string) (Client, error) {
 	c := &GrpcClient{}
-	defaultOpts := append(DefaultGrpcOpts,
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithUnaryInterceptor(
-			grpc_middleware.ChainUnaryClient(
-				grpc_retry.UnaryClientInterceptor(
-					grpc_retry.WithMax(6),
-					grpc_retry.WithBackoff(func(attempt uint) time.Duration {
-						return 60 * time.Millisecond * time.Duration(math.Pow(3, float64(attempt)))
-					}),
-					grpc_retry.WithCodes(codes.Unavailable, codes.ResourceExhausted)),
-				RetryOnRateLimitInterceptor(10, func(ctx context.Context, attempt uint) time.Duration {
-					return 10 * time.Millisecond * time.Duration(math.Pow(3, float64(attempt)))
-				}),
-			),
-		),
-	)
-	err := c.connect(ctx, addr, defaultOpts...)
+
+	err := c.connect(ctx, addr, c.getDefaultDialOpts()...)
 	if err != nil {
 		return nil, err
 	}
@@ -290,38 +272,16 @@ func NewDefaultGrpcClientWithURI(ctx context.Context, uri, username, password st
 
 // NewDefaultGrpcClientWithTLSAuth enable transport security
 func NewDefaultGrpcClientWithTLSAuth(ctx context.Context, addr, username, password string) (Client, error) {
-	defaultOpts := getDefaultAuthOpts(username, password, true)
-	return NewGrpcClient(ctx, addr, defaultOpts...)
+	c := &GrpcClient{}
+	defaultOpts := c.getDefaultAuthDialOpts(username, password, true)
+	return c.dialWithOptions(ctx, addr, defaultOpts...)
 }
 
 // NewDefaultGrpcClientWithAuth  disable transport security
 func NewDefaultGrpcClientWithAuth(ctx context.Context, addr, username, password string) (Client, error) {
-	defaultOpts := getDefaultAuthOpts(username, password, false)
-	return NewGrpcClient(ctx, addr, defaultOpts...)
-}
-
-func getDefaultAuthOpts(username, password string, enableTLS bool) []grpc.DialOption {
-	var credential credentials.TransportCredentials
-	if enableTLS {
-		credential = credentials.NewTLS(&tls.Config{})
-	} else {
-		credential = insecure.NewCredentials()
-	}
-
-	defaultOpts := append(DefaultGrpcOpts,
-		grpc.WithTransportCredentials(credential),
-		grpc.WithChainUnaryInterceptor(
-			CreateAuthenticationUnaryInterceptor(username, password),
-			grpc_retry.UnaryClientInterceptor(
-				grpc_retry.WithMax(6),
-				grpc_retry.WithBackoff(func(attempt uint) time.Duration {
-					return 60 * time.Millisecond * time.Duration(math.Pow(3, float64(attempt)))
-				}),
-				grpc_retry.WithCodes(codes.Unavailable, codes.ResourceExhausted)),
-		),
-		grpc.WithStreamInterceptor(CreateAuthenticationStreamInterceptor(username, password)),
-	)
-	return defaultOpts
+	c := &GrpcClient{}
+	defaultOpts := c.getDefaultAuthDialOpts(username, password, false)
+	return c.dialWithOptions(ctx, addr, defaultOpts...) //NewGrpcClient(ctx, addr, defaultOpts...)
 }
 
 func parseURI(uri string) (string, bool, error) {
