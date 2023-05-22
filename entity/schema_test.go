@@ -24,6 +24,7 @@ func TestFieldSchema(t *testing.T) {
 	fields := []*Field{
 		NewField().WithName("int_field").WithDataType(FieldTypeInt64).WithIsAutoID(true).WithIsPrimaryKey(true).WithDescription("int_field desc"),
 		NewField().WithName("string_field").WithDataType(FieldTypeString).WithIsAutoID(false).WithIsPrimaryKey(true).WithIsDynamic(false).WithTypeParams("max_len", "32").WithDescription("string_field desc"),
+		NewField().WithName("partition_key").WithDataType(FieldTypeInt32).WithIsPartitionKey(true),
 	}
 
 	for _, field := range fields {
@@ -33,6 +34,8 @@ func TestFieldSchema(t *testing.T) {
 		assert.EqualValues(t, field.DataType, fieldSchema.GetDataType())
 		assert.Equal(t, field.AutoID, fieldSchema.GetAutoID())
 		assert.Equal(t, field.PrimaryKey, fieldSchema.GetIsPrimaryKey())
+		assert.Equal(t, field.IsPartitionKey, fieldSchema.GetIsPartitionKey())
+		assert.Equal(t, field.IsDynamic, fieldSchema.GetIsDynamic())
 		assert.Equal(t, field.Description, fieldSchema.GetDescription())
 		assert.Equal(t, field.TypeParams, KvPairsMap(fieldSchema.GetTypeParams()))
 		// marshal & unmarshal, still equals
@@ -44,6 +47,8 @@ func TestFieldSchema(t *testing.T) {
 		assert.Equal(t, field.AutoID, nf.AutoID)
 		assert.Equal(t, field.PrimaryKey, nf.PrimaryKey)
 		assert.Equal(t, field.Description, nf.Description)
+		assert.Equal(t, field.IsDynamic, nf.IsDynamic)
+		assert.Equal(t, field.IsPartitionKey, nf.IsPartitionKey)
 		assert.EqualValues(t, field.TypeParams, nf.TypeParams)
 	}
 
