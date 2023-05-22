@@ -47,50 +47,15 @@ const (
 )
 
 func defaultSchema() *entity.Schema {
-	return &entity.Schema{
-		CollectionName: testCollectionName,
-		AutoID:         false,
-		Fields: []*entity.Field{
-			{
-				Name:       testPrimaryField,
-				DataType:   entity.FieldTypeInt64,
-				PrimaryKey: true,
-				AutoID:     true,
-			},
-			{
-				Name:     testVectorField,
-				DataType: entity.FieldTypeFloatVector,
-				TypeParams: map[string]string{
-					entity.TypeParamDim: fmt.Sprintf("%d", testVectorDim),
-				},
-			},
-		},
-	}
+	return entity.NewSchema().WithName(testCollectionName).WithAutoID(false).
+		WithField(entity.NewField().WithName(testPrimaryField).WithDataType(entity.FieldTypeInt64).WithIsPrimaryKey(true).WithIsAutoID(true)).
+		WithField(entity.NewField().WithName(testVectorField).WithDataType(entity.FieldTypeFloatVector).WithDim(testVectorDim))
 }
 
 func varCharSchema() *entity.Schema {
-	return &entity.Schema{
-		CollectionName: testCollectionName,
-		AutoID:         false,
-		Fields: []*entity.Field{
-			{
-				Name:       "varchar",
-				DataType:   entity.FieldTypeVarChar,
-				PrimaryKey: true,
-				AutoID:     false,
-				TypeParams: map[string]string{
-					entity.TypeParamMaxLength: fmt.Sprintf("%d", 100),
-				},
-			},
-			{
-				Name:     testVectorField,
-				DataType: entity.FieldTypeFloatVector,
-				TypeParams: map[string]string{
-					entity.TypeParamDim: fmt.Sprintf("%d", testVectorDim),
-				},
-			},
-		},
-	}
+	return entity.NewSchema().WithName(testCollectionName).WithAutoID(false).
+		WithField(entity.NewField().WithName("varchar").WithDataType(entity.FieldTypeInt64).WithIsPrimaryKey(true).WithIsAutoID(false).WithMaxLength(100)).
+		WithField(entity.NewField().WithName(testVectorField).WithDataType(entity.FieldTypeFloatVector).WithDim(testVectorDim))
 }
 
 var _ entity.Row = &defaultRow{}

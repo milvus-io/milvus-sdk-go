@@ -13,7 +13,6 @@ package client
 
 import (
 	"context"
-	"fmt"
 	"math/rand"
 	"testing"
 	"time"
@@ -954,56 +953,17 @@ func TestIsCollectionPrimaryKey(t *testing.T) {
 
 func TestEstRowSize(t *testing.T) {
 	// a schema contains all supported vector
-	sch := &entity.Schema{
-		CollectionName: testCollectionName,
-		AutoID:         false,
-		Fields: []*entity.Field{
-			{
-				Name:       testPrimaryField,
-				DataType:   entity.FieldTypeInt64,
-				PrimaryKey: true,
-				AutoID:     true,
-			},
-			{
-				Name:     "attr1",
-				DataType: entity.FieldTypeInt8,
-			},
-			{
-				Name:     "attr2",
-				DataType: entity.FieldTypeInt16,
-			},
-			{
-				Name:     "attr3",
-				DataType: entity.FieldTypeInt32,
-			},
-			{
-				Name:     "attr4",
-				DataType: entity.FieldTypeFloat,
-			},
-			{
-				Name:     "attr5",
-				DataType: entity.FieldTypeDouble,
-			},
-			{
-				Name:     "attr6",
-				DataType: entity.FieldTypeBool,
-			},
-			{
-				Name:     testVectorField,
-				DataType: entity.FieldTypeFloatVector,
-				TypeParams: map[string]string{
-					entity.TypeParamDim: fmt.Sprintf("%d", testVectorDim),
-				},
-			},
-			{
-				Name:     "binary_vector",
-				DataType: entity.FieldTypeBinaryVector,
-				TypeParams: map[string]string{
-					entity.TypeParamDim: fmt.Sprintf("%d", testVectorDim),
-				},
-			},
-		},
-	}
+	sch := entity.NewSchema().WithName(testCollectionName).WithAutoID(false).
+		WithField(entity.NewField().WithName(testPrimaryField).WithDataType(entity.FieldTypeInt64).WithIsPrimaryKey(true).WithIsAutoID(true)).
+		WithField(entity.NewField().WithName("attr1").WithDataType(entity.FieldTypeInt8)).
+		WithField(entity.NewField().WithName("attr2").WithDataType(entity.FieldTypeInt16)).
+		WithField(entity.NewField().WithName("attr3").WithDataType(entity.FieldTypeInt32)).
+		WithField(entity.NewField().WithName("attr4").WithDataType(entity.FieldTypeFloat)).
+		WithField(entity.NewField().WithName("attr5").WithDataType(entity.FieldTypeDouble)).
+		WithField(entity.NewField().WithName("attr6").WithDataType(entity.FieldTypeBool)).
+		WithField(entity.NewField().WithName("attr6").WithDataType(entity.FieldTypeBool)).
+		WithField(entity.NewField().WithName(testVectorField).WithDataType(entity.FieldTypeFloatVector).WithDim(testVectorDim)).
+		WithField(entity.NewField().WithName("binary_vector").WithDataType(entity.FieldTypeBinaryVector).WithDim(testVectorDim))
 
 	// one row
 	columnID := entity.NewColumnInt64(testPrimaryField, []int64{0})

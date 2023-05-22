@@ -220,6 +220,14 @@ func (f *Field) WithDim(dim int64) *Field {
 	return f
 }
 
+func (f *Field) WithMaxLength(maxLen int64) *Field {
+	if f.TypeParams == nil {
+		f.TypeParams = make(map[string]string)
+	}
+	f.TypeParams[TypeParamMaxLength] = strconv.FormatInt(maxLen, 10)
+	return f
+}
+
 // ReadProto parses FieldSchema
 func (f *Field) ReadProto(p *schema.FieldSchema) *Field {
 	f.ID = p.GetFieldID()
