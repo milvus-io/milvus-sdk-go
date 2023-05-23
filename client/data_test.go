@@ -427,10 +427,10 @@ func (s *SearchSuite) TestSearchSuccess() {
 					NumQueries: 1,
 					TopK:       2,
 					FieldsData: []*schema.FieldData{
-						s.getJSONBytesFieldData("$meta", [][]byte{
+						s.getJSONBytesFieldData("", [][]byte{
 							[]byte(`{"A": 123, "B": "456"}`),
 							[]byte(`{"B": "abc", "A": 456}`),
-						}),
+						}, true),
 					},
 					Ids: &schema.IDs{
 						IdField: &schema.IDs_IntId{
@@ -663,7 +663,7 @@ func (s *QuerySuite) TestQuerySuccess() {
 					s.getJSONBytesFieldData("$meta", [][]byte{
 						[]byte(`{"A": 123, "B": "456"}`),
 						[]byte(`{"B": "abc", "A": 456}`),
-					}),
+					}, true),
 				},
 			}, nil)
 

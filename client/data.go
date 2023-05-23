@@ -92,12 +92,12 @@ func (c *GrpcClient) Search(ctx context.Context, collName string, partitions []s
 }
 
 func (c *GrpcClient) parseSearchResult(sch *entity.Schema, outputFields []string, fieldDataList []*schema.FieldData, idx, from, to int) ([]entity.Column, error) {
-	dynamicField := sch.GetDynamicField()
+	//dynamicField := sch.GetDynamicField()
 	fields := make(map[string]*schema.FieldData)
 	var dynamicColumn *entity.ColumnJSONBytes
 	for _, fieldData := range fieldDataList {
 		fields[fieldData.GetFieldName()] = fieldData
-		if dynamicField != nil && fieldData.GetFieldName() == dynamicField.Name {
+		if fieldData.GetIsDynamic() {
 			column, err := entity.FieldDataColumn(fieldData, from, to)
 			if err != nil {
 				return nil, err
@@ -115,9 +115,6 @@ func (c *GrpcClient) parseSearchResult(sch *entity.Schema, outputFields []string
 		var column entity.Column
 		var err error
 		if !ok {
-			if dynamicField == nil {
-				return nil, errors.New("output fields not match when dynamic field disabled")
-			}
 			if dynamicColumn == nil {
 				return nil, errors.New("output fields not match and result field data does not contain dynamic field")
 			}

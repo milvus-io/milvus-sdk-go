@@ -184,7 +184,7 @@ func (s *MockSuiteBase) getVarcharFieldData(name string, data []string) *schema.
 	}
 }
 
-func (s *MockSuiteBase) getJSONBytesFieldData(name string, data [][]byte) *schema.FieldData {
+func (s *MockSuiteBase) getJSONBytesFieldData(name string, data [][]byte, isDynamic bool) *schema.FieldData {
 	return &schema.FieldData{
 		Type:      schema.DataType_JSON,
 		FieldName: name,
@@ -197,6 +197,7 @@ func (s *MockSuiteBase) getJSONBytesFieldData(name string, data [][]byte) *schem
 				},
 			},
 		},
+		IsDynamic: isDynamic,
 	}
 }
 

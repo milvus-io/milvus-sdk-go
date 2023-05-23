@@ -87,19 +87,6 @@ func (s *Schema) WithField(f *Field) *Schema {
 	return s
 }
 
-// GetDynamicField returns dynamic field when EnabledDynamicField is enabled.
-func (s *Schema) GetDynamicField() *Field {
-	if !s.EnableDynamicField {
-		return nil
-	}
-	for _, field := range s.Fields {
-		if field.IsDynamic {
-			return field
-		}
-	}
-	return nil
-}
-
 // ProtoMessage returns corresponding server.CollectionSchema
 func (s *Schema) ProtoMessage() *schema.CollectionSchema {
 	r := &schema.CollectionSchema{

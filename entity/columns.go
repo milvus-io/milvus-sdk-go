@@ -230,13 +230,14 @@ func FieldDataColumn(fd *schema.FieldData, begin, end int) (Column, error) {
 
 	case schema.DataType_JSON:
 		data, ok := fd.GetScalars().GetData().(*schema.ScalarField_JsonData)
+		isDynamic := fd.GetIsDynamic()
 		if !ok {
 			return nil, errFieldDataTypeNotMatch
 		}
 		if end < 0 {
-			return NewColumnJSONBytes(fd.GetFieldName(), data.JsonData.GetData()[begin:]), nil
+			return NewColumnJSONBytes(fd.GetFieldName(), data.JsonData.GetData()[begin:]).WithIsDynamic(isDynamic), nil
 		}
-		return NewColumnJSONBytes(fd.GetFieldName(), data.JsonData.GetData()[begin:end]), nil
+		return NewColumnJSONBytes(fd.GetFieldName(), data.JsonData.GetData()[begin:end]).WithIsDynamic(isDynamic), nil
 
 	case schema.DataType_FloatVector:
 		vectors := fd.GetVectors()

@@ -107,42 +107,6 @@ func (s *SchemaSuite) TestBasic() {
 	}
 }
 
-func (s *SchemaSuite) TestGetDynamicField() {
-	testCases := []struct {
-		tag         string
-		input       *Schema
-		expectValue bool
-	}{
-		{
-			"dynamic_field_disabled",
-			NewSchema().WithField(NewField().WithIsDynamic(true)),
-			false,
-		},
-		{
-			"dynamic_enabled_not_found",
-			NewSchema().WithDynamicFieldEnabled(true).WithField(NewField().WithName("$meta").WithIsDynamic(false)),
-			false,
-		},
-		{
-			"dynamic_enabled_found",
-			NewSchema().WithDynamicFieldEnabled(true).WithField(NewField().WithName("$meta").WithIsDynamic(true)),
-			true,
-		},
-	}
-
-	for _, c := range testCases {
-		s.Run(c.tag, func() {
-			f := c.input.GetDynamicField()
-			if c.expectValue {
-				s.Require().NotNil(f)
-				s.True(f.IsDynamic)
-			} else {
-				s.Nil(f)
-			}
-		})
-	}
-}
-
 func TestSchema(t *testing.T) {
 	suite.Run(t, new(SchemaSuite))
 }

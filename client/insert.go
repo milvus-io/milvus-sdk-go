@@ -52,6 +52,7 @@ func (c *GrpcClient) Insert(ctx context.Context, collName string, partitionName 
 		return nil, err
 	}
 
+	// convert columns to field data
 	fieldsData, rowSize, err := c.processInsertColumns(coll.Schema, columns...)
 	if err != nil {
 		return nil, err
@@ -84,15 +85,6 @@ func (c *GrpcClient) Insert(ctx context.Context, collName string, partitionName 
 func (c *GrpcClient) processInsertColumns(colSchema *entity.Schema, columns ...entity.Column) ([]*schema.FieldData, int, error) {
 	// setup dynamic related var
 	isDynamic := colSchema.EnableDynamicField
-	var dynamicField *entity.Field
-	if isDynamic {
-		for _, field := range colSchema.Fields {
-			if field.IsDynamic {
-				dynamicField = field
-				break
-			}
-		}
-	}
 
 	// check columns and field matches
 	var rowSize int
@@ -157,7 +149,8 @@ func (c *GrpcClient) processInsertColumns(colSchema *entity.Schema, columns ...e
 		fieldsData = append(fieldsData, fixedColumn.FieldData())
 	}
 	if len(dynamicColumns) > 0 {
-		col, err := c.mergeDynamicColumns(dynamicField.Name, rowSize, dynamicColumns)
+		// use empty column name here
+		col, err := c.mergeDynamicColumns("", rowSize, dynamicColumns)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -193,6 +186,7 @@ func (c *GrpcClient) mergeDynamicColumns(dynamicName string, rowSize int, column
 				},
 			},
 		},
+		IsDynamic: true,
 	}, nil
 }
 
