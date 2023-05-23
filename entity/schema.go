@@ -140,29 +140,31 @@ func (s *Schema) PKFieldName() string {
 
 // Field represent field schema in milvus
 type Field struct {
-	ID          int64  // field id, generated when collection is created, input value is ignored
-	Name        string // field name
-	PrimaryKey  bool   // is primary key
-	AutoID      bool   // is auto id
-	Description string
-	DataType    FieldType
-	TypeParams  map[string]string
-	IndexParams map[string]string
-	IsDynamic   bool
+	ID             int64  // field id, generated when collection is created, input value is ignored
+	Name           string // field name
+	PrimaryKey     bool   // is primary key
+	AutoID         bool   // is auto id
+	Description    string
+	DataType       FieldType
+	TypeParams     map[string]string
+	IndexParams    map[string]string
+	IsDynamic      bool
+	IsPartitionKey bool
 }
 
 // ProtoMessage generates corresponding FieldSchema
 func (f *Field) ProtoMessage() *schema.FieldSchema {
 	return &schema.FieldSchema{
-		FieldID:      f.ID,
-		Name:         f.Name,
-		Description:  f.Description,
-		IsPrimaryKey: f.PrimaryKey,
-		AutoID:       f.AutoID,
-		DataType:     schema.DataType(f.DataType),
-		TypeParams:   MapKvPairs(f.TypeParams),
-		IndexParams:  MapKvPairs(f.IndexParams),
-		IsDynamic:    f.IsDynamic,
+		FieldID:        f.ID,
+		Name:           f.Name,
+		Description:    f.Description,
+		IsPrimaryKey:   f.PrimaryKey,
+		AutoID:         f.AutoID,
+		DataType:       schema.DataType(f.DataType),
+		TypeParams:     MapKvPairs(f.TypeParams),
+		IndexParams:    MapKvPairs(f.IndexParams),
+		IsDynamic:      f.IsDynamic,
+		IsPartitionKey: f.IsPartitionKey,
 	}
 }
 
@@ -204,6 +206,11 @@ func (f *Field) WithIsDynamic(isDynamic bool) *Field {
 	return f
 }
 
+func (f *Field) WithIsPartitionKey(isPartitionKey bool) *Field {
+	f.IsPartitionKey = isPartitionKey
+	return f
+}
+
 func (f *Field) WithTypeParams(key string, value string) *Field {
 	if f.TypeParams == nil {
 		f.TypeParams = make(map[string]string)
@@ -239,6 +246,7 @@ func (f *Field) ReadProto(p *schema.FieldSchema) *Field {
 	f.TypeParams = KvPairsMap(p.GetTypeParams())
 	f.IndexParams = KvPairsMap(p.GetIndexParams())
 	f.IsDynamic = p.GetIsDynamic()
+	f.IsPartitionKey = p.GetIsPartitionKey()
 
 	return f
 }
