@@ -22,7 +22,14 @@ const (
 func main() {
 	ctx := context.Background()
 	// create grpc client that tls is enabled
-	c, err := client.NewDefaultGrpcClientWithTLSAuth(ctx, addr, username, password)
+	c, err := client.NewClient(
+		ctx,
+		client.Config{
+			Address:  addr,
+			Username: username,
+			Password: password,
+		},
+	)
 	if err != nil {
 		log.Fatal("failed to connect:", err)
 	}
