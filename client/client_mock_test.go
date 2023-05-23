@@ -9,6 +9,8 @@ import (
 	"github.com/golang/protobuf/proto"
 	common "github.com/milvus-io/milvus-proto/go-api/commonpb"
 	server "github.com/milvus-io/milvus-proto/go-api/milvuspb"
+	schema "github.com/milvus-io/milvus-proto/go-api/schemapb"
+	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 	"github.com/milvus-io/milvus-sdk-go/v2/mocks"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -77,15 +79,130 @@ func (s *MockSuiteBase) resetMock() {
 	}
 }
 
-func (s *MockSuiteBase) setupHasCollection(collName string) {
+func (s *MockSuiteBase) setupHasCollection(collNames ...string) {
 	s.mock.EXPECT().HasCollection(mock.Anything, mock.AnythingOfType("*milvuspb.HasCollectionRequest")).
 		Call.Return(func(ctx context.Context, req *server.HasCollectionRequest) *server.BoolResponse {
 		resp := &server.BoolResponse{Status: &common.Status{}}
-		if req.GetCollectionName() == collName {
-			resp.Value = true
+		for _, collName := range collNames {
+			if req.GetCollectionName() == collName {
+				resp.Value = true
+				break
+			}
 		}
 		return resp
 	}, nil)
+}
+
+func (s *MockSuiteBase) setupHasCollectionError(errorCode common.ErrorCode, err error) {
+	s.mock.EXPECT().HasCollection(mock.Anything, mock.AnythingOfType("*milvuspb.HasCollectionRequest")).
+		Return(&server.BoolResponse{
+			Status: &common.Status{ErrorCode: errorCode},
+		}, err)
+}
+
+func (s *MockSuiteBase) setupHasPartition(collName string, partNames ...string) {
+	s.mock.EXPECT().HasPartition(mock.Anything, mock.AnythingOfType("*milvuspb.HasPartitionRequest")).
+		Call.Return(func(ctx context.Context, req *server.HasPartitionRequest) *server.BoolResponse {
+		resp := &server.BoolResponse{Status: &common.Status{}}
+		if req.GetCollectionName() == collName {
+			for _, partName := range partNames {
+				if req.GetPartitionName() == partName {
+					resp.Value = true
+					break
+				}
+			}
+		}
+		return resp
+	}, nil)
+}
+
+func (s *MockSuiteBase) setupHasPartitionError(errorCode common.ErrorCode, err error) {
+	s.mock.EXPECT().HasPartition(mock.Anything, mock.AnythingOfType("*milvuspb.HasPartitionRequest")).
+		Return(&server.BoolResponse{
+			Status: &common.Status{ErrorCode: errorCode},
+		}, err)
+}
+
+func (s *MockSuiteBase) setupDescribeCollection(collName string, schema *entity.Schema) {
+	s.mock.EXPECT().DescribeCollection(mock.Anything, mock.AnythingOfType("*milvuspb.DescribeCollectionRequest")).
+		Call.Return(func(ctx context.Context, req *server.DescribeCollectionRequest) *server.DescribeCollectionResponse {
+		return &server.DescribeCollectionResponse{
+			Status: &common.Status{ErrorCode: common.ErrorCode_Success},
+			Schema: schema.ProtoMessage(),
+		}
+	}, nil)
+}
+
+func (s *MockSuiteBase) setupDescribeCollectionError(errorCode common.ErrorCode, err error) {
+	s.mock.EXPECT().DescribeCollection(mock.Anything, mock.AnythingOfType("*milvuspb.DescribeCollectionRequest")).
+		Return(&server.DescribeCollectionResponse{
+			Status: &common.Status{ErrorCode: errorCode},
+		}, err)
+}
+
+func (s *MockSuiteBase) getInt64FieldData(name string, data []int64) *schema.FieldData {
+	return &schema.FieldData{
+		Type:      schema.DataType_Int64,
+		FieldName: name,
+		Field: &schema.FieldData_Scalars{
+			Scalars: &schema.ScalarField{
+				Data: &schema.ScalarField_LongData{
+					LongData: &schema.LongArray{
+						Data: data,
+					},
+				},
+			},
+		},
+	}
+}
+
+func (s *MockSuiteBase) getVarcharFieldData(name string, data []string) *schema.FieldData {
+	return &schema.FieldData{
+		Type:      schema.DataType_VarChar,
+		FieldName: name,
+		Field: &schema.FieldData_Scalars{
+			Scalars: &schema.ScalarField{
+				Data: &schema.ScalarField_StringData{
+					StringData: &schema.StringArray{
+						Data: data,
+					},
+				},
+			},
+		},
+	}
+}
+
+func (s *MockSuiteBase) getJSONBytesFieldData(name string, data [][]byte) *schema.FieldData {
+	return &schema.FieldData{
+		Type:      schema.DataType_JSON,
+		FieldName: name,
+		Field: &schema.FieldData_Scalars{
+			Scalars: &schema.ScalarField{
+				Data: &schema.ScalarField_JsonData{
+					JsonData: &schema.JSONArray{
+						Data: data,
+					},
+				},
+			},
+		},
+	}
+}
+
+func (s *MockSuiteBase) getFloatVectorFieldData(name string, dim int64, data []float32) *schema.FieldData {
+	return &schema.FieldData{
+		Type:      schema.DataType_FloatVector,
+		FieldName: name,
+		Field: &schema.FieldData_Vectors{
+			Vectors: &schema.VectorField{
+				Dim: dim,
+				Data: &schema.VectorField_FloatVector{
+					FloatVector: &schema.FloatArray{
+						Data: data,
+					},
+				},
+			},
+		},
+	}
 }
 
 // ref https://stackoverflow.com/questions/42102496/testing-a-grpc-service
@@ -786,6 +903,10 @@ func (m *MockServer) FlushAll(_a0 context.Context, _a1 *server.FlushAllRequest) 
 
 func (m *MockServer) GetFlushAllState(_a0 context.Context, _a1 *server.GetFlushAllStateRequest) (*server.GetFlushAllStateResponse, error) {
 	panic("not implemented")
+}
+
+func (m *MockServer) Connect(_ context.Context, _ *server.ConnectRequest) (*server.ConnectResponse, error) {
+	panic("not implemented") // TODO: Implement
 }
 
 func SuccessStatus() (*common.Status, error) {
