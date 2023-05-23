@@ -29,6 +29,8 @@ import (
 type GrpcClient struct {
 	Conn    *grpc.ClientConn           // grpc connection instance
 	Service server.MilvusServiceClient // Service client stub
+
+	config *syncConfig
 }
 
 // connect connect to Service
@@ -44,6 +46,15 @@ func (c *GrpcClient) connect(ctx context.Context, addr string, opts ...grpc.Dial
 	c.Conn = conn
 	c.Service = server.NewMilvusServiceClient(c.Conn)
 	return nil
+}
+
+// UsingDatabase for database operation after this function call.
+// All request in any goroutine will be applied to new database on the same client. e.g.
+// 1. goroutine A access DB1.
+// 2. goroutine B call UsingDatabase(ctx, "DB2").
+// 3. goroutine A access DB2 after 2.
+func (c *GrpcClient) UsingDatabase(ctx context.Context, dbName string) {
+	c.config.useDatabase(dbName)
 }
 
 // Close close the connection

@@ -52,11 +52,14 @@ func (s *MockSuiteBase) mockDialer(context.Context, string) (net.Conn, error) {
 }
 
 func (s *MockSuiteBase) SetupTest() {
-	c, err := NewGrpcClient(context.Background(), "bufnet2",
-		grpc.WithBlock(),
-		grpc.WithInsecure(),
-		grpc.WithContextDialer(s.mockDialer),
-	)
+	c, err := NewClient(context.Background(), Config{
+		Address: "bufnet2",
+		DialOptions: []grpc.DialOption{
+			grpc.WithBlock(),
+			grpc.WithInsecure(),
+			grpc.WithContextDialer(s.mockDialer),
+		},
+	})
 	s.Require().NoError(err)
 
 	s.client = c
@@ -87,9 +90,7 @@ func (s *MockSuiteBase) setupHasCollection(collName string) {
 
 // ref https://stackoverflow.com/questions/42102496/testing-a-grpc-service
 
-var (
-	errNotImplemented = errors.New("not implemented")
-)
+var errNotImplemented = errors.New("not implemented")
 
 // type alias for Service method
 type ServiceMethod int
@@ -149,6 +150,10 @@ const (
 	MGetComponentStates ServiceMethod = 900
 	MGetVersion         ServiceMethod = 901
 	MCheckHealth        ServiceMethod = 902
+
+	MListDatabase   ServiceMethod = 1000
+	MCreateDatabase ServiceMethod = 1001
+	MDropDatabase   ServiceMethod = 1002
 )
 
 // injection function definition
@@ -184,6 +189,40 @@ func (m *MockServer) DelInjection(n ServiceMethod) {
 	m.Lock()
 	defer m.Unlock()
 	delete(m.Injections, n)
+}
+
+// -- database --
+// ListDatabases list all database in milvus cluster.
+func (m *MockServer) ListDatabases(ctx context.Context, req *server.ListDatabasesRequest) (*server.ListDatabasesResponse, error) {
+	f := m.GetInjection(MListDatabase)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*server.ListDatabasesResponse), err
+	}
+	r := &server.ListDatabasesResponse{}
+	s, err := SuccessStatus()
+	r.Status = s
+	return r, err
+}
+
+// CreateDatabase create database with the given name.
+func (m *MockServer) CreateDatabase(ctx context.Context, req *server.CreateDatabaseRequest) (*common.Status, error) {
+	f := m.GetInjection(MCreateDatabase)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*common.Status), err
+	}
+	return SuccessStatus()
+}
+
+// DropDatabase drop database with the given db name.
+func (m *MockServer) DropDatabase(ctx context.Context, req *server.DropDatabaseRequest) (*common.Status, error) {
+	f := m.GetInjection(MDropDatabase)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*common.Status), err
+	}
+	return SuccessStatus()
 }
 
 func (m *MockServer) CreateCollection(ctx context.Context, req *server.CreateCollectionRequest) (*common.Status, error) {
@@ -283,7 +322,6 @@ func (m *MockServer) CreatePartition(ctx context.Context, req *server.CreatePart
 		return r.(*common.Status), err
 	}
 	return SuccessStatus()
-
 }
 
 func (m *MockServer) DropPartition(ctx context.Context, req *server.DropPartitionRequest) (*common.Status, error) {
@@ -384,7 +422,6 @@ func (m *MockServer) GetIndexState(ctx context.Context, req *server.GetIndexStat
 	}
 	s, err := SuccessStatus()
 	return &server.GetIndexStateResponse{Status: s}, err
-
 }
 
 func (m *MockServer) GetIndexBuildProgress(ctx context.Context, req *server.GetIndexBuildProgressRequest) (*server.GetIndexBuildProgressResponse, error) {
@@ -395,7 +432,6 @@ func (m *MockServer) GetIndexBuildProgress(ctx context.Context, req *server.GetI
 	}
 	s, err := SuccessStatus()
 	return &server.GetIndexBuildProgressResponse{Status: s}, err
-
 }
 
 func (m *MockServer) DropIndex(ctx context.Context, req *server.DropIndexRequest) (*common.Status, error) {

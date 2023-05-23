@@ -217,7 +217,7 @@ func TestCreateIndexInvalidParams(t *testing.T) {
 	// TODO unclear error message
 	idxInvalidm, _ := entity.NewIndexIvfPQ(entity.L2, 128, 7, 8)
 	errm := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idxInvalidm, false)
-	common.CheckErr(t, errm, false, "invalid index params")
+	common.CheckErr(t, errm, false, "dimension must")
 
 	// invalid Hnsw M [4, 64], efConstruction [8, 512]
 	_, errHnswM := entity.NewIndexHNSW(entity.L2, 3, 96)
@@ -239,7 +239,7 @@ func TestCreateIndexInvalidParams(t *testing.T) {
 	// TODO unclear error message
 	idx, _ := entity.NewIndexFlat(entity.JACCARD)
 	errMetricType := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false)
-	common.CheckErr(t, errMetricType, false, "invalid index params")
+	common.CheckErr(t, errMetricType, false, "metric type not found or not supported")
 }
 
 // test create index with nil index

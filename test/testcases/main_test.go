@@ -37,7 +37,6 @@ func teardown() {
 	defer mc.Close()
 }
 
-//
 func createContext(t *testing.T, timeout time.Duration) context.Context {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	t.Cleanup(func() {
@@ -47,10 +46,19 @@ func createContext(t *testing.T, timeout time.Duration) context.Context {
 }
 
 // create connect
-func createMilvusClient(ctx context.Context, t *testing.T) *base.MilvusClient {
+func createMilvusClient(ctx context.Context, t *testing.T, cfg ...client.Config) *base.MilvusClient {
 	t.Helper()
 
-	mc, err := base.NewDefaultMilvusClient(ctx, *addr)
+	var (
+		mc  *base.MilvusClient
+		err error
+	)
+	if len(cfg) == 0 {
+		mc, err = base.NewDefaultMilvusClient(ctx, *addr)
+	} else {
+		cfg[0].Address = *addr
+		mc, err = base.NewMilvusClient(ctx, cfg[0])
+	}
 	common.CheckErr(t, err, true)
 
 	t.Cleanup(func() {
@@ -96,7 +104,7 @@ func createDefaultBinaryCollection(ctx context.Context, t *testing.T, mc *base.M
 	// close connect and drop collection after each case
 	t.Cleanup(func() {
 		mc.DropCollection(ctx, collName)
-		//mc.Close()
+		// mc.Close()
 	})
 	return collName
 }
@@ -117,7 +125,7 @@ func createDefaultVarcharCollection(ctx context.Context, t *testing.T, mc *base.
 	// close connect and drop collection after each case
 	t.Cleanup(func() {
 		mc.DropCollection(ctx, collName)
-		//mc.Close()
+		// mc.Close()
 	})
 	return collName
 }

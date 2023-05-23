@@ -7,8 +7,6 @@ import (
 
 	"github.com/milvus-io/milvus-sdk-go/v2/client"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
-
-	"google.golang.org/grpc"
 )
 
 func preRequest(funcName string, args ...interface{}) {
@@ -21,17 +19,16 @@ func postResponse(funcName string, err error, res ...interface{}) {
 	} else {
 		log.Printf("(ApiResponse): func [%s], results: %v\n", funcName, res)
 	}
-
 }
 
 type MilvusClient struct {
 	mClient client.Client
 }
 
-func NewMilvusClient(ctx context.Context, addr string, dialOptions ...grpc.DialOption) (*MilvusClient, error) {
-	preRequest("NewGrpcClient", ctx, addr, dialOptions)
-	mClient, err := client.NewGrpcClient(ctx, addr, dialOptions...)
-	postResponse("NewGrpcClient", err, mClient)
+func NewMilvusClient(ctx context.Context, cfg client.Config) (*MilvusClient, error) {
+	preRequest("NewClient", ctx, cfg)
+	mClient, err := client.NewClient(ctx, cfg)
+	postResponse("NewClient", err, mClient)
 	return &MilvusClient{
 		mClient,
 	}, err
@@ -77,6 +74,44 @@ func (mc *MilvusClient) Close() error {
 	preRequest("Close")
 	err := mc.mClient.Close()
 	postResponse("Close", err)
+	return err
+}
+
+// -- database --
+// UsingDatabase for database operation after this function call.
+// All request in any goroutine will be applied to new database on the same client. e.g.
+// 1. goroutine A access DB1.
+// 2. goroutine B call UsingDatabase(ctx, "DB2").
+// 3. goroutine A access DB2 after 2.
+func (mc *MilvusClient) UsingDatabase(ctx context.Context, dbName string) {
+	preRequest("UsingDatabase", ctx, dbName)
+	mc.mClient.UsingDatabase(ctx, dbName)
+	postResponse("UsingDatabase", nil)
+}
+
+// -- database --
+
+// ListDatabases list all database in milvus cluster.
+func (mc *MilvusClient) ListDatabases(ctx context.Context) ([]entity.Database, error) {
+	preRequest("ListDatabases", ctx)
+	dbs, err := mc.mClient.ListDatabases(ctx)
+	postResponse("ListDatabases", err, dbs)
+	return dbs, err
+}
+
+// CreateDatabase create database with the given name.
+func (mc *MilvusClient) CreateDatabase(ctx context.Context, dbName string) error {
+	preRequest("CreateDatabase", ctx)
+	err := mc.mClient.CreateDatabase(ctx, dbName)
+	postResponse("CreateDatabase", err)
+	return err
+}
+
+// DropDatabase drop database with the given db name.
+func (mc *MilvusClient) DropDatabase(ctx context.Context, dbName string) error {
+	preRequest("DropDatabase", ctx)
+	err := mc.mClient.DropDatabase(ctx, dbName)
+	postResponse("DropDatabase", err)
 	return err
 }
 
@@ -128,7 +163,7 @@ func (mc *MilvusClient) GetCollectionStatistics(ctx context.Context, collName st
 
 // Load Collection
 func (mc *MilvusClient) LoadCollection(ctx context.Context, collName string, async bool, opts ...client.LoadCollectionOption) error {
-	var funcName = "LoadCollection"
+	funcName := "LoadCollection"
 	preRequest(funcName, ctx, collName, opts)
 	err := mc.mClient.LoadCollection(ctx, collName, async, opts...)
 	postResponse(funcName, err)
@@ -337,8 +372,9 @@ func (mc *MilvusClient) DeleteByPks(ctx context.Context, collName string, partit
 
 // Search
 func (mc *MilvusClient) Search(ctx context.Context, collName string, partitions []string, expr string,
-	outputFields []string, vectors []entity.Vector, vectorField string, metricType entity.MetricType, topK int, sp entity.SearchParam, opts ...client.SearchQueryOptionFunc) ([]client.SearchResult, error) {
-	var funcName = "Search"
+	outputFields []string, vectors []entity.Vector, vectorField string, metricType entity.MetricType, topK int, sp entity.SearchParam, opts ...client.SearchQueryOptionFunc,
+) ([]client.SearchResult, error) {
+	funcName := "Search"
 	preRequest(funcName, ctx, collName, partitions, expr, outputFields, vectors, vectorField, metricType, topK, sp, opts)
 
 	searchResult, err := mc.mClient.Search(ctx, collName, partitions, expr, outputFields, vectors, vectorField, metricType, topK, sp, opts...)
@@ -349,8 +385,9 @@ func (mc *MilvusClient) Search(ctx context.Context, collName string, partitions 
 
 // Query
 func (mc *MilvusClient) Query(ctx context.Context, collName string, partitions []string, ids entity.Column,
-	outputFields []string, opts ...client.SearchQueryOptionFunc) ([]entity.Column, error) {
-	var funcName = "QueryByPks"
+	outputFields []string, opts ...client.SearchQueryOptionFunc,
+) ([]entity.Column, error) {
+	funcName := "QueryByPks"
 	preRequest(funcName, ctx, collName, partitions, ids, outputFields, opts)
 
 	queryResults, err := mc.mClient.QueryByPks(ctx, collName, partitions, ids, outputFields, opts...)

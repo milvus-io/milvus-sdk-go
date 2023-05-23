@@ -54,11 +54,14 @@ func (s *RBACSuite) mockDialer(context.Context, string) (net.Conn, error) {
 }
 
 func (s *RBACSuite) SetupTest() {
-	c, err := NewGrpcClient(context.Background(), "bufnet2",
-		grpc.WithBlock(),
-		grpc.WithInsecure(),
-		grpc.WithContextDialer(s.mockDialer),
-	)
+	c, err := NewClient(context.Background(), Config{
+		Address: "bufnet2",
+		DialOptions: []grpc.DialOption{
+			grpc.WithBlock(),
+			grpc.WithInsecure(),
+			grpc.WithContextDialer(s.mockDialer),
+		},
+	})
 	s.Require().NoError(err)
 
 	s.client = c
