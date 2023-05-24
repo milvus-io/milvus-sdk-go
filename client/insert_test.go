@@ -15,13 +15,13 @@ import (
 	"context"
 	"testing"
 
+	"github.com/cockroachdb/errors"
 	common "github.com/milvus-io/milvus-proto/go-api/commonpb"
 	server "github.com/milvus-io/milvus-proto/go-api/milvuspb"
 	schema "github.com/milvus-io/milvus-proto/go-api/schemapb"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
-	"google.golang.org/grpc"
 )
 
 type InsertSuite struct {
@@ -178,7 +178,7 @@ func (s *InsertSuite) TestInsertFail() {
 		)
 
 		s.mock.EXPECT().Insert(mock.Anything, mock.AnythingOfType("*milvuspb.InsertRequest")).Return(
-			nil, grpc.ErrClientConnClosing,
+			nil, errors.New("mocked error"),
 		)
 
 		_, err := c.Insert(ctx, testCollectionName, "partition_1",
@@ -234,8 +234,7 @@ func (s *InsertSuite) TestInsertSuccess() {
 		s.setupDescribeCollection(testCollectionName, entity.NewSchema().
 			WithDynamicFieldEnabled(true).
 			WithField(entity.NewField().WithIsPrimaryKey(true).WithIsAutoID(true).WithName("ID").WithDataType(entity.FieldTypeInt64)).
-			WithField(entity.NewField().WithName("vector").WithDataType(entity.FieldTypeFloatVector).WithTypeParams(entity.TypeParamDim, "128")).
-			WithField(entity.NewField().WithName("$meta").WithDataType(entity.FieldTypeJSON).WithIsDynamic(true)),
+			WithField(entity.NewField().WithName("vector").WithDataType(entity.FieldTypeFloatVector).WithTypeParams(entity.TypeParamDim, "128")),
 		)
 
 		s.mock.EXPECT().Insert(mock.Anything, mock.AnythingOfType("*milvuspb.InsertRequest")).
@@ -243,7 +242,7 @@ func (s *InsertSuite) TestInsertSuccess() {
 				s.Equal(2, len(req.GetFieldsData()))
 				var found bool
 				for _, fd := range req.GetFieldsData() {
-					if fd.GetFieldName() == "$meta" {
+					if fd.GetFieldName() == "" && fd.GetIsDynamic() {
 						found = true
 						break
 					}

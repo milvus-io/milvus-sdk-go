@@ -286,11 +286,7 @@ func RowsToColumns(rows []Row, schemas ...*Schema) ([]Column, error) {
 		case FieldTypeJSON:
 			data := make([][]byte, 0, rowsLen)
 			col := NewColumnJSONBytes(field.Name, data)
-			if isDynamic && field.IsDynamic {
-				dynamicCol = col
-			} else {
-				nameColumns[field.Name] = col
-			}
+			nameColumns[field.Name] = col
 		case FieldTypeFloatVector:
 			data := make([][]float32, 0, rowsLen)
 			dimStr, has := field.TypeParams[TypeParamDim]
@@ -318,8 +314,8 @@ func RowsToColumns(rows []Row, schemas ...*Schema) ([]Column, error) {
 		}
 	}
 
-	if isDynamic && dynamicCol == nil {
-		return nil, errors.New("schema dynamic field enabled but field not found")
+	if isDynamic {
+		dynamicCol = NewColumnJSONBytes("", make([][]byte, 0, rowsLen)).WithIsDynamic(true)
 	}
 
 	for _, row := range rows {
@@ -406,7 +402,7 @@ func RowsToColumns(rows []Row, schemas ...*Schema) ([]Column, error) {
 	for _, column := range nameColumns {
 		columns = append(columns, column)
 	}
-	if dynamicCol != nil {
+	if isDynamic {
 		columns = append(columns, dynamicCol)
 	}
 	return columns, nil

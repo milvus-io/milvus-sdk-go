@@ -285,8 +285,7 @@ func (s *InsertByRowsSuite) TestSuccess() {
 		s.setupDescribeCollection(testCollectionName, entity.NewSchema().
 			WithName(testCollectionName).WithDynamicFieldEnabled(true).
 			WithField(entity.NewField().WithName("ID").WithDataType(entity.FieldTypeInt64).WithIsPrimaryKey(true)).
-			WithField(entity.NewField().WithName("Vector").WithDataType(entity.FieldTypeFloatVector).WithTypeParams(entity.TypeParamDim, "128")).
-			WithField(entity.NewField().WithName("$meta").WithDataType(entity.FieldTypeJSON).WithIsDynamic(true)),
+			WithField(entity.NewField().WithName("Vector").WithDataType(entity.FieldTypeFloatVector).WithTypeParams(entity.TypeParamDim, "128")),
 		)
 
 		s.mock.EXPECT().Insert(mock.Anything, mock.AnythingOfType("*milvuspb.InsertRequest")).

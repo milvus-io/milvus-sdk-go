@@ -247,10 +247,7 @@ type RowsSuite struct {
 func (s *RowsSuite) TestDynamicSchema() {
 	s.Run("all_fallback_dynamic", func() {
 		columns, err := RowsToColumns([]Row{&ValidStruct{}},
-			NewSchema().WithField(
-				NewField().WithName("$meta").WithDataType(FieldTypeJSON).WithIsDynamic(true),
-			).
-				WithDynamicFieldEnabled(true),
+			NewSchema().WithDynamicFieldEnabled(true),
 		)
 		s.NoError(err)
 		s.Equal(1, len(columns))
@@ -262,7 +259,7 @@ func (s *RowsSuite) TestDynamicSchema() {
 				NewField().WithName("ID").WithDataType(FieldTypeInt64).WithIsPrimaryKey(true),
 			).WithDynamicFieldEnabled(true),
 		)
-		s.Error(err)
+		s.NoError(err)
 	})
 }
 
