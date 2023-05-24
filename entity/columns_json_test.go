@@ -22,7 +22,7 @@ func (s *ColumnJSONBytesSuite) TestAttrMethods() {
 	columnLen := 8 + rand.Intn(10)
 
 	v := make([][]byte, columnLen)
-	column := NewColumnJSONBytes(columnName, v)
+	column := NewColumnJSONBytes(columnName, v).WithIsDynamic(true)
 
 	s.Run("test_meta", func() {
 		ft := FieldTypeJSON
@@ -70,7 +70,6 @@ func (s *ColumnJSONBytesSuite) TestAttrMethods() {
 		err = column.AppendValue(1)
 		s.Error(err)
 	})
-
 }
 
 func TestColumnJSONBytes(t *testing.T) {

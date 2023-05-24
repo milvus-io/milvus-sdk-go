@@ -14,14 +14,13 @@ package client
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"strconv"
 	"strings"
-	"time"
 
-	"github.com/golang/protobuf/proto"
+	"github.com/cockroachdb/errors"
+
 	common "github.com/milvus-io/milvus-proto/go-api/commonpb"
 	server "github.com/milvus-io/milvus-proto/go-api/milvuspb"
 	schema "github.com/milvus-io/milvus-proto/go-api/schemapb"
@@ -34,212 +33,24 @@ const (
 	ignoreGrowingKey = `ignore_growing`
 )
 
-// Insert Index  into collection with column-based format
-// collName is the collection name
-// partitionName is the partition to insert, if not specified(empty), default partition will be used
-// columns are slice of the column-based data
-func (c *GrpcClient) Insert(ctx context.Context, collName string, partitionName string, columns ...entity.Column) (entity.Column, error) {
-	if c.Service == nil {
-		return nil, ErrClientNotReady
-	}
-	// 1. validation for all input params
-	// collection
-	if err := c.checkCollectionExists(ctx, collName); err != nil {
-		return nil, err
-	}
-	if partitionName != "" {
-		err := c.checkPartitionExists(ctx, collName, partitionName)
-		if err != nil {
-			return nil, err
-		}
-	}
-	// fields
-	var rowSize int
-	coll, err := c.DescribeCollection(ctx, collName)
-	if err != nil {
-		return nil, err
-	}
-	mNameField := make(map[string]*entity.Field)
-	for _, field := range coll.Schema.Fields {
-		mNameField[field.Name] = field
-	}
-	mNameColumn := make(map[string]entity.Column)
-	for _, column := range columns {
-		mNameColumn[column.Name()] = column
-		l := column.Len()
-		if rowSize == 0 {
-			rowSize = l
-		} else {
-			if rowSize != l {
-				return nil, errors.New("column size not match")
-			}
-		}
-		field, has := mNameField[column.Name()]
-		if !has {
-			return nil, fmt.Errorf("field %s does not exist in collection %s", column.Name(), collName)
-		}
-		if column.Type() != field.DataType {
-			return nil, fmt.Errorf("param column %s has type %v but collection field definition is %v", column.Name(), column.FieldData(), field.DataType)
-		}
-		if field.DataType == entity.FieldTypeFloatVector || field.DataType == entity.FieldTypeBinaryVector {
-			dim := 0
-			switch column := column.(type) {
-			case *entity.ColumnFloatVector:
-				dim = column.Dim()
-			case *entity.ColumnBinaryVector:
-				dim = column.Dim()
-			}
-			if fmt.Sprintf("%d", dim) != field.TypeParams[entity.TypeParamDim] {
-				return nil, fmt.Errorf("params column %s vector dim %d not match collection definition, which has dim of %s", field.Name, dim, field.TypeParams[entity.TypeParamDim])
-			}
-		}
-	}
-	for _, field := range coll.Schema.Fields {
-		_, has := mNameColumn[field.Name]
-		if !has && !field.AutoID {
-			return nil, fmt.Errorf("field %s not passed", field.Name)
-		}
-	}
-
-	// 2. do insert request
-	req := &server.InsertRequest{
-		DbName:         "", // reserved
-		CollectionName: collName,
-		PartitionName:  partitionName,
-	}
-	if req.PartitionName == "" {
-		req.PartitionName = "_default" // use default partition
-	}
-	req.NumRows = uint32(rowSize)
-	for _, column := range columns {
-		req.FieldsData = append(req.FieldsData, column.FieldData())
-	}
-	resp, err := c.Service.Insert(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	if err := handleRespStatus(resp.GetStatus()); err != nil {
-		return nil, err
-	}
-	MetaCache.setSessionTs(collName, resp.Timestamp)
-	// 3. parse id column
-	return entity.IDColumns(resp.GetIDs(), 0, -1)
-}
-
-// Flush force collection to flush memory records into storage
-// in sync mode, flush will wait all segments to be flushed
-func (c *GrpcClient) Flush(ctx context.Context, collName string, async bool) error {
-	if c.Service == nil {
-		return ErrClientNotReady
-	}
-	if err := c.checkCollectionExists(ctx, collName); err != nil {
-		return err
-	}
-	req := &server.FlushRequest{
-		DbName:          "", // reserved,
-		CollectionNames: []string{collName},
-	}
-	resp, err := c.Service.Flush(ctx, req)
-	if err != nil {
-		return err
-	}
-	if err := handleRespStatus(resp.GetStatus()); err != nil {
-		return err
-	}
-	if !async {
-		segmentIDs, has := resp.GetCollSegIDs()[collName]
-		ids := segmentIDs.GetData()
-		if has && len(ids) > 0 {
-			flushed := func() bool {
-				resp, err := c.Service.GetFlushState(ctx, &server.GetFlushStateRequest{
-					SegmentIDs: ids,
-				})
-				if err != nil {
-					// TODO max retry
-					return false
-				}
-				return resp.GetFlushed()
-			}
-			for !flushed() {
-				// respect context deadline/cancel
-				select {
-				case <-ctx.Done():
-					return errors.New("deadline exceeded")
-				default:
-				}
-				time.Sleep(200 * time.Millisecond)
-			}
-		}
-	}
-	return nil
-}
-
-// DeleteByPks deletes entries related to provided primary keys
-func (c *GrpcClient) DeleteByPks(ctx context.Context, collName string, partitionName string, ids entity.Column) error {
-	if c.Service == nil {
-		return ErrClientNotReady
-	}
-
-	// check collection name
-	if err := c.checkCollectionExists(ctx, collName); err != nil {
-		return err
-	}
-	coll, err := c.DescribeCollection(ctx, collName)
-	if err != nil {
-		return err
-	}
-	// check partition name
-	if partitionName != "" {
-		err := c.checkPartitionExists(ctx, collName, partitionName)
-		if err != nil {
-			return err
-		}
-	}
-	// check primary keys
-	if ids.Len() == 0 {
-		return errors.New("ids len must not be zero")
-	}
-	if ids.Type() != entity.FieldTypeInt64 && ids.Type() != entity.FieldTypeVarChar { // string key not supported yet
-		return errors.New("only int64 and varchar column can be primary key for now")
-	}
-
-	pkf := getPKField(coll.Schema)
-	// pkf shall not be nil since is returned from milvus
-	if pkf.Name != ids.Name() {
-		return errors.New("only delete by primary key is supported now")
-	}
-
-	expr := PKs2Expr(ids)
-
-	req := &server.DeleteRequest{
-		DbName:         "",
-		CollectionName: collName,
-		PartitionName:  partitionName,
-		Expr:           expr,
-	}
-
-	resp, err := c.Service.Delete(ctx, req)
-	if err != nil {
-		return err
-	}
-	err = handleRespStatus(resp.GetStatus())
-	if err != nil {
-		return err
-	}
-	MetaCache.setSessionTs(collName, resp.Timestamp)
-	return nil
-}
-
 // Search with bool expression
 func (c *GrpcClient) Search(ctx context.Context, collName string, partitions []string,
 	expr string, outputFields []string, vectors []entity.Vector, vectorField string, metricType entity.MetricType, topK int, sp entity.SearchParam, opts ...SearchQueryOptionFunc) ([]SearchResult, error) {
 	if c.Service == nil {
 		return []SearchResult{}, ErrClientNotReady
 	}
-	_, ok := MetaCache.getCollectionInfo(collName)
+	var schema *entity.Schema
+	collInfo, ok := MetaCache.getCollectionInfo(collName)
 	if !ok {
-		c.DescribeCollection(ctx, collName)
+		coll, err := c.DescribeCollection(ctx, collName)
+		if err != nil {
+			return nil, err
+		}
+		schema = coll.Schema
+	} else {
+		schema = collInfo.Schema
 	}
+
 	option, err := makeSearchQueryOption(collName, opts...)
 	if err != nil {
 		return nil, err
@@ -273,38 +84,73 @@ func (c *GrpcClient) Search(ctx context.Context, collName string, partitions []s
 			offset += rc
 			continue
 		}
-		entry.Fields = make([]entity.Column, 0, len(fieldDataList))
-		for _, fieldData := range fieldDataList {
-			column, err := entity.FieldDataColumn(fieldData, offset, offset+rc)
-			if err != nil {
-				entry.Err = err
-				continue
-			}
-			entry.Fields = append(entry.Fields, column)
-		}
+		entry.Fields, entry.Err = c.parseSearchResult(schema, outputFields, fieldDataList, i, offset, offset+rc)
 		sr = append(sr, entry)
 		offset += rc
 	}
 	return sr, nil
 }
 
-func PKs2Expr(ids entity.Column) string {
+func (c *GrpcClient) parseSearchResult(sch *entity.Schema, outputFields []string, fieldDataList []*schema.FieldData, idx, from, to int) ([]entity.Column, error) {
+	//dynamicField := sch.GetDynamicField()
+	fields := make(map[string]*schema.FieldData)
+	var dynamicColumn *entity.ColumnJSONBytes
+	for _, fieldData := range fieldDataList {
+		fields[fieldData.GetFieldName()] = fieldData
+		if fieldData.GetIsDynamic() {
+			column, err := entity.FieldDataColumn(fieldData, from, to)
+			if err != nil {
+				return nil, err
+			}
+			var ok bool
+			dynamicColumn, ok = column.(*entity.ColumnJSONBytes)
+			if !ok {
+				return nil, errors.New("dynamic field not json")
+			}
+		}
+	}
+	columns := make([]entity.Column, 0, len(outputFields))
+	for _, outputField := range outputFields {
+		fieldData, ok := fields[outputField]
+		var column entity.Column
+		var err error
+		if !ok {
+			if dynamicColumn == nil {
+				return nil, errors.New("output fields not match and result field data does not contain dynamic field")
+			}
+			column = entity.NewColumnDynamic(dynamicColumn, outputField)
+		} else {
+			column, err = entity.FieldDataColumn(fieldData, from, to)
+		}
+		if err != nil {
+			return nil, err
+		}
+		columns = append(columns, column)
+	}
+	return columns, nil
+}
+
+func PKs2Expr(backName string, ids entity.Column) string {
 	var expr string
+	var pkName = ids.Name()
+	if ids.Name() == "" {
+		pkName = backName
+	}
 	switch ids.Type() {
 	case entity.FieldTypeInt64:
-		expr = fmt.Sprintf("%s in %s", ids.Name(), strings.Join(strings.Fields(fmt.Sprint(ids.FieldData().GetScalars().GetLongData().GetData())), ","))
+		expr = fmt.Sprintf("%s in %s", pkName, strings.Join(strings.Fields(fmt.Sprint(ids.FieldData().GetScalars().GetLongData().GetData())), ","))
 	case entity.FieldTypeVarChar:
 		data := ids.FieldData().GetScalars().GetData().(*schema.ScalarField_StringData).StringData.Data
 		for i := range data {
 			data[i] = fmt.Sprintf("\"%s\"", data[i])
 		}
-		expr = fmt.Sprintf("%s in %s", ids.Name(), strings.Join(strings.Fields(fmt.Sprint(data)), ","))
+		expr = fmt.Sprintf("%s in %s", pkName, strings.Join(strings.Fields(fmt.Sprint(data)), ","))
 	}
 	return expr
 }
 
 // QueryByPks query record by specified primary key(s)
-func (c *GrpcClient) QueryByPks(ctx context.Context, collectionName string, partitionNames []string, ids entity.Column, outputFields []string, opts ...SearchQueryOptionFunc) ([]entity.Column, error) {
+func (c *GrpcClient) QueryByPks(ctx context.Context, collectionName string, partitionNames []string, ids entity.Column, outputFields []string, opts ...SearchQueryOptionFunc) (ResultSet, error) {
 	if c.Service == nil {
 		return nil, ErrClientNotReady
 	}
@@ -316,23 +162,27 @@ func (c *GrpcClient) QueryByPks(ctx context.Context, collectionName string, part
 		return nil, errors.New("only int64 and varchar column can be primary key for now")
 	}
 
-	expr := PKs2Expr(ids)
+	expr := PKs2Expr("", ids)
 
 	return c.Query(ctx, collectionName, partitionNames, expr, outputFields, opts...)
 }
 
 // Query performs query by expression.
-func (c *GrpcClient) Query(ctx context.Context, collectionName string, partitionNames []string, expr string, outputFields []string, opts ...SearchQueryOptionFunc) ([]entity.Column, error) {
+func (c *GrpcClient) Query(ctx context.Context, collectionName string, partitionNames []string, expr string, outputFields []string, opts ...SearchQueryOptionFunc) (ResultSet, error) {
 	if c.Service == nil {
 		return nil, ErrClientNotReady
 	}
 
-	_, ok := MetaCache.getCollectionInfo(collectionName)
+	var sch *entity.Schema
+	collInfo, ok := MetaCache.getCollectionInfo(collectionName)
 	if !ok {
-		_, err := c.DescribeCollection(ctx, collectionName)
+		coll, err := c.DescribeCollection(ctx, collectionName)
 		if err != nil {
 			return nil, err
 		}
+		sch = coll.Schema
+	} else {
+		sch = collInfo.Schema
 	}
 
 	option, err := makeSearchQueryOption(collectionName, opts...)
@@ -369,22 +219,22 @@ func (c *GrpcClient) Query(ctx context.Context, collectionName string, partition
 	}
 
 	fieldsData := resp.GetFieldsData()
-	columns := make([]entity.Column, 0, len(fieldsData))
-	for _, fieldData := range resp.GetFieldsData() {
-		if fieldData.GetType() == schema.DataType_FloatVector ||
-			fieldData.GetType() == schema.DataType_BinaryVector {
-			column, err := entity.FieldDataVector(fieldData)
-			if err != nil {
-				return nil, err
-			}
-			columns = append(columns, column)
-			continue
+	// query always has pk field as output
+	hasPK := false
+	pkName := sch.PKFieldName()
+	for _, output := range outputFields {
+		if output == pkName {
+			hasPK = true
+			break
 		}
-		column, err := entity.FieldDataColumn(fieldData, 0, -1)
-		if err != nil {
-			return nil, err
-		}
-		columns = append(columns, column)
+	}
+	if !hasPK {
+		outputFields = append(outputFields, pkName)
+	}
+
+	columns, err := c.parseSearchResult(sch, outputFields, fieldsData, 0, 0, -1) //entity.FieldDataColumn(fieldData, 0, -1)
+	if err != nil {
+		return nil, err
 	}
 
 	return columns, nil
@@ -627,39 +477,6 @@ func columnToVectorsArray(collName string, partitions []string, column entity.Co
 	return result
 }
 
-func vector2PlaceholderGroupBytes(vectors []entity.Vector) []byte {
-	phg := &common.PlaceholderGroup{
-		Placeholders: []*common.PlaceholderValue{
-			vector2Placeholder(vectors),
-		},
-	}
-
-	bs, _ := proto.Marshal(phg)
-	return bs
-}
-
-func vector2Placeholder(vectors []entity.Vector) *common.PlaceholderValue {
-	var placeHolderType common.PlaceholderType
-	ph := &common.PlaceholderValue{
-		Tag:    "$0",
-		Values: make([][]byte, 0, len(vectors)),
-	}
-	if len(vectors) == 0 {
-		return ph
-	}
-	switch vectors[0].(type) {
-	case entity.FloatVector:
-		placeHolderType = common.PlaceholderType_FloatVector
-	case entity.BinaryVector:
-		placeHolderType = common.PlaceholderType_BinaryVector
-	}
-	ph.Type = placeHolderType
-	for _, vector := range vectors {
-		ph.Values = append(ph.Values, vector.Serialize())
-	}
-	return ph
-}
-
 func isCollectionPrimaryKey(coll *entity.Collection, column entity.Column) bool {
 	if coll == nil || coll.Schema == nil || column == nil {
 		return false
@@ -727,92 +544,4 @@ func estRowSize(sch *entity.Schema, selected []string) int64 {
 		}
 	}
 	return total
-}
-
-// BulkInsert data files(json, numpy, etc.) on MinIO/S3 storage, read and parse them into sealed segments
-func (c *GrpcClient) BulkInsert(ctx context.Context, collName string, partitionName string, files []string, opts ...BulkInsertOption) (int64, error) {
-	if c.Service == nil {
-		return 0, ErrClientNotReady
-	}
-	req := &server.ImportRequest{
-		CollectionName: collName,
-		PartitionName:  partitionName,
-		Files:          files,
-	}
-
-	for _, opt := range opts {
-		opt(req)
-	}
-
-	resp, err := c.Service.Import(ctx, req)
-	if err != nil {
-		return 0, err
-	}
-	if err := handleRespStatus(resp.GetStatus()); err != nil {
-		return 0, err
-	}
-
-	return resp.Tasks[0], nil
-}
-
-// GetBulkInsertState checks import task state
-func (c *GrpcClient) GetBulkInsertState(ctx context.Context, taskID int64) (*entity.BulkInsertTaskState, error) {
-	if c.Service == nil {
-		return nil, ErrClientNotReady
-	}
-	req := &server.GetImportStateRequest{
-		Task: taskID,
-	}
-	resp, err := c.Service.GetImportState(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	if err := handleRespStatus(resp.GetStatus()); err != nil {
-		return nil, err
-	}
-
-	return &entity.BulkInsertTaskState{
-		ID:           resp.GetId(),
-		State:        entity.BulkInsertState(resp.GetState()),
-		RowCount:     resp.GetRowCount(),
-		IDList:       resp.GetIdList(),
-		Infos:        entity.KvPairsMap(resp.GetInfos()),
-		CollectionID: resp.GetCollectionId(),
-		SegmentIDs:   resp.GetSegmentIds(),
-		CreateTs:     resp.GetCreateTs(),
-	}, nil
-}
-
-// ListBulkInsertTasks list state of all import tasks
-func (c *GrpcClient) ListBulkInsertTasks(ctx context.Context, collName string, limit int64) ([]*entity.BulkInsertTaskState, error) {
-	if c.Service == nil {
-		return nil, ErrClientNotReady
-	}
-	req := &server.ListImportTasksRequest{
-		CollectionName: collName,
-		Limit:          limit,
-	}
-	resp, err := c.Service.ListImportTasks(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	if err := handleRespStatus(resp.GetStatus()); err != nil {
-		return nil, err
-	}
-
-	tasks := make([]*entity.BulkInsertTaskState, 0)
-	for _, task := range resp.GetTasks() {
-		tasks = append(tasks, &entity.BulkInsertTaskState{
-			ID:           task.GetId(),
-			State:        entity.BulkInsertState(task.GetState()),
-			RowCount:     task.GetRowCount(),
-			IDList:       task.GetIdList(),
-			Infos:        entity.KvPairsMap(task.GetInfos()),
-			CollectionID: task.GetCollectionId(),
-			SegmentIDs:   task.GetSegmentIds(),
-			CreateTs:     task.GetCreateTs(),
-		})
-	}
-
-	return tasks, nil
 }

@@ -12,6 +12,7 @@
 package entity
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"go/ast"
@@ -23,6 +24,9 @@ import (
 const (
 	// MilvusTag struct tag const for milvus row based struct
 	MilvusTag = `milvus`
+
+	// MilvusSkipTagValue struct tag const for skip this field.
+	MilvusSkipTagValue = `-`
 
 	// MilvusTagSep struct tag const for attribute separator
 	MilvusTagSep = `;`
@@ -107,7 +111,11 @@ func ParseSchema(r Row) (*Schema, error) {
 			ft = ft.Elem()
 		}
 		fv := reflect.New(ft)
-		tagSettings := ParseTagSetting(f.Tag.Get(MilvusTag), MilvusTagSep)
+		tag := f.Tag.Get(MilvusTag)
+		if tag == MilvusSkipTagValue {
+			continue
+		}
+		tagSettings := ParseTagSetting(tag, MilvusTagSep)
 		if _, has := tagSettings[MilvusPrimaryKey]; has {
 			field.PrimaryKey = true
 		}
@@ -229,13 +237,17 @@ func RowsToColumns(rows []Row, schemas ...*Schema) ([]Column, error) {
 	// if schema not provided, try to parse from row
 	if len(schemas) == 0 {
 		sch, err = ParseSchema(rows[0])
+		if err != nil {
+			return []Column{}, err
+		}
 	} else {
 		// use first schema provided
 		sch = schemas[0]
 	}
-	if err != nil {
-		return []Column{}, err
-	}
+
+	isDynamic := sch.EnableDynamicField
+	var dynamicCol *ColumnJSONBytes
+
 	nameColumns := make(map[string]Column)
 	for _, field := range sch.Fields {
 		switch field.DataType {
@@ -271,6 +283,10 @@ func RowsToColumns(rows []Row, schemas ...*Schema) ([]Column, error) {
 			data := make([]string, 0, rowsLen)
 			col := NewColumnString(field.Name, data)
 			nameColumns[field.Name] = col
+		case FieldTypeJSON:
+			data := make([][]byte, 0, rowsLen)
+			col := NewColumnJSONBytes(field.Name, data)
+			nameColumns[field.Name] = col
 		case FieldTypeFloatVector:
 			data := make([][]float32, 0, rowsLen)
 			dimStr, has := field.TypeParams[TypeParamDim]
@@ -297,6 +313,11 @@ func RowsToColumns(rows []Row, schemas ...*Schema) ([]Column, error) {
 			nameColumns[field.Name] = col
 		}
 	}
+
+	if isDynamic {
+		dynamicCol = NewColumnJSONBytes("", make([][]byte, 0, rowsLen)).WithIsDynamic(true)
+	}
+
 	for _, row := range rows {
 		// collection schema name need not to be same, since receiver could has other names
 		v := reflect.ValueOf(row)
@@ -304,43 +325,85 @@ func RowsToColumns(rows []Row, schemas ...*Schema) ([]Column, error) {
 			v = v.Elem()
 		}
 
-		for idx, field := range sch.Fields {
-			column := nameColumns[field.Name]
+		type fieldCandi struct {
+			name    string
+			v       reflect.Value
+			options map[string]string
+		}
+		set := make(map[string]fieldCandi)
+		for i := 0; i < v.NumField(); i++ {
+			ft := v.Type().Field(i)
+			name := ft.Name
+			tag, ok := ft.Tag.Lookup(MilvusTag)
 
-			fv := fieldFromNameTag(v, field.Name)
-			if !fv.IsValid() {
-				return []Column{}, fmt.Errorf("row %d does not has field %s", idx, field.Name)
+			settings := make(map[string]string)
+			if ok {
+				if tag == MilvusSkipTagValue {
+					continue
+				}
+				settings = ParseTagSetting(tag, MilvusTagSep)
+				fn, has := settings[MilvusTagName]
+				if has {
+					// overwrite column to tag name
+					name = fn
+				}
 			}
-			if fv.Kind() == reflect.Array { // change to slice
-				fv = fv.Slice(0, fv.Len()-1)
+			_, ok = set[name]
+			// duplicated
+			if ok {
+				return nil, fmt.Errorf("column has duplicated name: %s when parsing field: %s", name, ft.Name)
 			}
-			err := column.AppendValue(fv.Interface())
-			if err != nil {
-				return []Column{}, err
+
+			v := v.Field(i)
+			if v.Kind() == reflect.Array {
+				v = v.Slice(0, v.Len()-1)
+			}
+
+			set[name] = fieldCandi{
+				name:    name,
+				v:       v,
+				options: settings,
 			}
 		}
 
+		for idx, field := range sch.Fields {
+			if isDynamic && field.IsDynamic {
+				continue
+			}
+			column := nameColumns[field.Name]
+
+			candi, ok := set[field.Name]
+			if !ok {
+				return nil, fmt.Errorf("row %d does not has field %s", idx, field.Name)
+			}
+			err := column.AppendValue(candi.v.Interface())
+			if err != nil {
+				return nil, err
+			}
+			delete(set, field.Name)
+		}
+
+		if isDynamic {
+			m := make(map[string]interface{})
+			for name, candi := range set {
+				m[name] = candi.v.Interface()
+			}
+			bs, err := json.Marshal(m)
+			if err != nil {
+				return nil, fmt.Errorf("failed to marshal dynamic field %w", err)
+			}
+			err = dynamicCol.AppendValue(bs)
+			if err != nil {
+				return nil, fmt.Errorf("failed to append value to dynamic field %w", err)
+			}
+		}
 	}
 	columns := make([]Column, 0, len(nameColumns))
 	for _, column := range nameColumns {
 		columns = append(columns, column)
 	}
-	return columns, nil
-}
-
-func fieldFromNameTag(v reflect.Value, name string) reflect.Value {
-	// tag has higher priority
-	for i := 0; i < v.NumField(); i++ {
-		tag := v.Type().Field(i).Tag.Get(MilvusTag)
-		if tag == "" {
-			continue
-		}
-		settings := ParseTagSetting(tag, MilvusTagSep)
-		fn, has := settings[MilvusTagName]
-		if has && fn == name {
-			return v.Field(i)
-		}
+	if isDynamic {
+		columns = append(columns, dynamicCol)
 	}
-	// try use name directly
-	return v.FieldByName(name)
+	return columns, nil
 }

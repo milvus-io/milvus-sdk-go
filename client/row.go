@@ -2,9 +2,10 @@ package client
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"reflect"
+
+	"github.com/cockroachdb/errors"
 
 	"github.com/golang/protobuf/proto"
 	server "github.com/milvus-io/milvus-proto/go-api/milvuspb"
@@ -70,6 +71,11 @@ func (c *GrpcClient) InsertByRows(ctx context.Context, collName string, partitio
 	if err := c.checkCollectionExists(ctx, collName); err != nil {
 		return nil, err
 	}
+	if partitionName != "" {
+		if err := c.checkPartitionExists(ctx, collName, partitionName); err != nil {
+			return nil, err
+		}
+	}
 	coll, err := c.DescribeCollection(ctx, collName)
 	if err != nil {
 		return nil, err
@@ -79,12 +85,14 @@ func (c *GrpcClient) InsertByRows(ctx context.Context, collName string, partitio
 	if err != nil {
 		return nil, err
 	}
+	//fieldData
 	// 2. do insert request
 	req := &server.InsertRequest{
 		DbName:         "", // reserved
 		CollectionName: collName,
 		PartitionName:  partitionName,
 	}
+	//c.Service.
 	if req.PartitionName == "" {
 		req.PartitionName = "_default" // use default partition
 	}

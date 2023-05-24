@@ -15,6 +15,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 )
 
 // ArrayRow test case type
@@ -189,12 +190,15 @@ type ValidStruct struct {
 	Vector  []float32 `milvus:"dim:16"`
 	Vector2 []byte    `milvus:"dim:32"`
 }
+
 type ValidStruct2 struct {
 	RowBase
 	ID      int64 `milvus:"primary_key"`
 	Vector  [16]float32
 	Vector2 [4]byte
+	Ignored bool `milvus:"-"`
 }
+
 type ValidStructWithNamedTag struct {
 	RowBase
 	ID     int64       `milvus:"primary_key;name:id"`
@@ -234,4 +238,31 @@ func TestRowsToColumns(t *testing.T) {
 		})
 		assert.NotNil(t, err)
 	})
+}
+
+type RowsSuite struct {
+	suite.Suite
+}
+
+func (s *RowsSuite) TestDynamicSchema() {
+	s.Run("all_fallback_dynamic", func() {
+		columns, err := RowsToColumns([]Row{&ValidStruct{}},
+			NewSchema().WithDynamicFieldEnabled(true),
+		)
+		s.NoError(err)
+		s.Equal(1, len(columns))
+	})
+
+	s.Run("dynamic_not_found", func() {
+		_, err := RowsToColumns([]Row{&ValidStruct{}},
+			NewSchema().WithField(
+				NewField().WithName("ID").WithDataType(FieldTypeInt64).WithIsPrimaryKey(true),
+			).WithDynamicFieldEnabled(true),
+		)
+		s.NoError(err)
+	})
+}
+
+func TestRows(t *testing.T) {
+	suite.Run(t, new(RowsSuite))
 }

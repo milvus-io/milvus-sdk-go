@@ -12,8 +12,9 @@ var _ (Column) = (*ColumnJSONBytes)(nil)
 // ColumnJSONBytes column type for JSON.
 // all items are marshaled json bytes.
 type ColumnJSONBytes struct {
-	name   string
-	values [][]byte
+	name      string
+	values    [][]byte
+	isDynamic bool
 }
 
 // Name returns column name.
@@ -44,6 +45,7 @@ func (c *ColumnJSONBytes) FieldData() *schema.FieldData {
 	fd := &schema.FieldData{
 		Type:      schema.DataType_JSON,
 		FieldName: c.name,
+		IsDynamic: c.isDynamic,
 	}
 
 	fd.Field = &schema.FieldData_Scalars{
@@ -81,6 +83,11 @@ func (c *ColumnJSONBytes) AppendValue(i interface{}) error {
 // Data returns column data.
 func (c *ColumnJSONBytes) Data() [][]byte {
 	return c.values
+}
+
+func (c *ColumnJSONBytes) WithIsDynamic(isDynamic bool) *ColumnJSONBytes {
+	c.isDynamic = isDynamic
+	return c
 }
 
 // NewColumnJSONBytes composes a Column with json bytes.
