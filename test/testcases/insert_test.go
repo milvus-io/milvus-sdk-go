@@ -226,7 +226,7 @@ func TestInsertColumnsMismatchFields(t *testing.T) {
 
 	// len(column) > len(fields)
 	_, errInsert2 := mc.Insert(ctx, collName, "", intColumn, floatColumn, vecColumn, floatColumn)
-	common.CheckErr(t, errInsert2, false, "len(columns) mismatch the len(fields), len(columns): 4, len(fields): 3")
+	common.CheckErr(t, errInsert2, false, "duplicated column")
 
 	// order(column) != order(fields)
 	_, errInsert3 := mc.Insert(ctx, collName, "", floatColumn, vecColumn, intColumn)

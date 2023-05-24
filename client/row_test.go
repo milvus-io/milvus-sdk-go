@@ -2,10 +2,11 @@ package client
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"reflect"
 	"testing"
+
+	"github.com/cockroachdb/errors"
 
 	"github.com/golang/protobuf/proto"
 	common "github.com/milvus-io/milvus-proto/go-api/commonpb"
@@ -13,6 +14,8 @@ import (
 	schema "github.com/milvus-io/milvus-proto/go-api/schemapb"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/suite"
 )
 
 func TestCreateCollectionByRow(t *testing.T) {
@@ -85,107 +88,232 @@ func TestCreateCollectionByRow(t *testing.T) {
 	})
 }
 
+type InsertByRowsSuite struct {
+	MockSuiteBase
+}
+
+func (s *InsertByRowsSuite) TestFails() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	c := s.client
+
+	partName := "part_1"
+
+	s.Run("fail_empty_rows", func() {
+		defer s.resetMock()
+		_, err := c.InsertByRows(ctx, testCollectionName, partName, []entity.Row{})
+		s.Error(err)
+	})
+
+	s.Run("fail_collection_not_found", func() {
+		defer s.resetMock()
+		s.setupHasCollection()
+		_, err := c.InsertByRows(ctx, testCollectionName, partName, []entity.Row{entity.RowBase{}})
+		s.Error(err)
+	})
+
+	s.Run("fail_hascollection_errcode", func() {
+		defer s.resetMock()
+		s.setupHasCollectionError(common.ErrorCode_UnexpectedError, nil)
+		_, err := c.InsertByRows(ctx, testCollectionName, partName, []entity.Row{entity.RowBase{}})
+		s.Error(err)
+	})
+
+	s.Run("fail_hascollection_error", func() {
+		defer s.resetMock()
+		s.setupHasCollectionError(common.ErrorCode_Success, errors.New("mock error"))
+		_, err := c.InsertByRows(ctx, testCollectionName, partName, []entity.Row{entity.RowBase{}})
+		s.Error(err)
+	})
+
+	s.Run("fail_partition_not_found", func() {
+		defer s.resetMock()
+		s.setupHasCollection(testCollectionName)
+		s.setupHasPartition(testCollectionName)
+		_, err := c.InsertByRows(ctx, testCollectionName, partName, []entity.Row{entity.RowBase{}})
+		s.Error(err)
+	})
+
+	s.Run("fail_haspartition_error", func() {
+		defer s.resetMock()
+		s.setupHasCollection(testCollectionName)
+		s.setupHasPartitionError(common.ErrorCode_Success, errors.New("mock error"))
+		_, err := c.InsertByRows(ctx, testCollectionName, partName, []entity.Row{entity.RowBase{}})
+		s.Error(err)
+	})
+
+	s.Run("fail_haspartition_errcode", func() {
+		defer s.resetMock()
+		s.setupHasCollection(testCollectionName)
+		s.setupHasPartitionError(common.ErrorCode_UnexpectedError, nil)
+		_, err := c.InsertByRows(ctx, testCollectionName, partName, []entity.Row{entity.RowBase{}})
+		s.Error(err)
+	})
+
+	s.Run("fail_describecollection_error", func() {
+		defer s.resetMock()
+		s.setupHasCollection(testCollectionName)
+		s.setupHasPartition(testCollectionName, partName)
+		s.setupDescribeCollectionError(common.ErrorCode_Success, errors.New("mock error"))
+		_, err := c.InsertByRows(ctx, testCollectionName, partName, []entity.Row{entity.RowBase{}})
+		s.Error(err)
+	})
+
+	s.Run("fail_describecollection_errcode", func() {
+		defer s.resetMock()
+		s.setupHasCollection(testCollectionName)
+		s.setupHasPartition(testCollectionName, partName)
+		s.setupDescribeCollectionError(common.ErrorCode_UnexpectedError, nil)
+		_, err := c.InsertByRows(ctx, testCollectionName, partName, []entity.Row{entity.RowBase{}})
+		s.Error(err)
+	})
+
+	s.Run("fail_field_missing", func() {
+		defer s.resetMock()
+		s.setupHasCollection(testCollectionName)
+		s.setupHasPartition(testCollectionName, partName)
+		s.setupDescribeCollection(testCollectionName,
+			entity.NewSchema().
+				WithField(entity.NewField().WithName("ID").WithDataType(entity.FieldTypeInt64).WithIsPrimaryKey(true).WithIsAutoID(true)).
+				WithField(entity.NewField().WithName("vector").WithDataType(entity.FieldTypeFloatVector).WithTypeParams(entity.TypeParamDim, "128")),
+		)
+		type row struct {
+			entity.RowBase
+			ID int64
+		}
+		_, err := c.InsertByRows(ctx, testCollectionName, partName, []entity.Row{row{ID: 100}})
+		s.Error(err)
+	})
+
+	s.Run("fail_field_type_not_match", func() {
+		defer s.resetMock()
+		s.setupHasCollection(testCollectionName)
+		s.setupHasPartition(testCollectionName, partName)
+		s.setupDescribeCollection(testCollectionName,
+			entity.NewSchema().
+				WithField(entity.NewField().WithName("ID").WithDataType(entity.FieldTypeInt64).WithIsPrimaryKey(true).WithIsAutoID(true)).
+				WithField(entity.NewField().WithName("vector").WithDataType(entity.FieldTypeFloatVector).WithTypeParams(entity.TypeParamDim, "128")),
+		)
+		type row struct {
+			entity.RowBase
+			ID      string
+			Vectors []float32
+		}
+		_, err := c.InsertByRows(ctx, testCollectionName, partName, []entity.Row{row{ID: "100", Vectors: make([]float32, 128)}})
+		s.Error(err)
+	})
+
+	s.Run("fail_extra_field", func() {
+		defer s.resetMock()
+		s.setupHasCollection(testCollectionName)
+		s.setupHasPartition(testCollectionName, partName)
+		s.setupDescribeCollection(testCollectionName,
+			entity.NewSchema().
+				WithField(entity.NewField().WithName("ID").WithDataType(entity.FieldTypeInt64).WithIsPrimaryKey(true).WithIsAutoID(true)).
+				WithField(entity.NewField().WithName("vector").WithDataType(entity.FieldTypeFloatVector).WithTypeParams(entity.TypeParamDim, "128")),
+		)
+		type row struct {
+			entity.RowBase
+			ID      int64
+			Extra   float64
+			Vectors []float32
+		}
+		_, err := c.InsertByRows(ctx, testCollectionName, partName, []entity.Row{row{ID: 100, Extra: 0.12, Vectors: make([]float32, 128)}})
+		s.Error(err)
+	})
+
+	s.Run("vector_dim_not_match", func() {
+		defer s.resetMock()
+		s.setupHasCollection(testCollectionName)
+		s.setupHasPartition(testCollectionName, partName)
+		s.setupDescribeCollection(testCollectionName,
+			entity.NewSchema().
+				WithField(entity.NewField().WithName("ID").WithDataType(entity.FieldTypeInt64).WithIsPrimaryKey(true).WithIsAutoID(true)).
+				WithField(entity.NewField().WithName("vector").WithDataType(entity.FieldTypeFloatVector).WithTypeParams(entity.TypeParamDim, "128")),
+		)
+		type row struct {
+			entity.RowBase
+			ID      int64
+			Vectors []float32 `milvus:"dim:16"`
+		}
+		_, err := c.InsertByRows(ctx, testCollectionName, partName, []entity.Row{row{ID: 100, Vectors: make([]float32, 16)}})
+		s.Error(err)
+	})
+}
+
+func (s *InsertByRowsSuite) TestSuccess() {
+	partName := "part_1"
+	c := s.client
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	s.Run("non_dynamic", func() {
+		defer s.resetMock()
+		s.setupHasCollection(testCollectionName)
+		s.setupHasPartition(testCollectionName, partName)
+		s.setupDescribeCollection(testCollectionName, entity.NewSchema().WithName(testCollectionName).
+			WithField(entity.NewField().WithName("ID").WithDataType(entity.FieldTypeInt64).WithIsPrimaryKey(true)).
+			WithField(entity.NewField().WithName("Vector").WithDataType(entity.FieldTypeFloatVector).WithTypeParams(entity.TypeParamDim, "128")),
+		)
+
+		s.mock.EXPECT().Insert(mock.Anything, mock.AnythingOfType("*milvuspb.InsertRequest")).
+			Run(func(_ context.Context, req *server.InsertRequest) {
+				s.Equal(testCollectionName, req.GetCollectionName())
+				s.Equal(partName, req.GetPartitionName())
+				s.Equal(2, len(req.GetFieldsData()))
+			}).Return(&server.MutationResult{
+			Status: &common.Status{ErrorCode: common.ErrorCode_Success},
+			IDs:    &schema.IDs{IdField: &schema.IDs_IntId{IntId: &schema.LongArray{Data: []int64{100}}}},
+		}, nil)
+		type row struct {
+			entity.RowBase
+			ID     int64
+			Vector []float32
+		}
+		ids, err := c.InsertByRows(ctx, testCollectionName, partName, []entity.Row{
+			row{ID: 100, Vector: make([]float32, 128)},
+		})
+		s.NoError(err)
+		s.Equal(1, ids.Len())
+	})
+
+	s.Run("dynamic", func() {
+		defer s.resetMock()
+		s.setupHasCollection(testCollectionName)
+		s.setupHasPartition(testCollectionName, partName)
+		s.setupDescribeCollection(testCollectionName, entity.NewSchema().
+			WithName(testCollectionName).WithDynamicFieldEnabled(true).
+			WithField(entity.NewField().WithName("ID").WithDataType(entity.FieldTypeInt64).WithIsPrimaryKey(true)).
+			WithField(entity.NewField().WithName("Vector").WithDataType(entity.FieldTypeFloatVector).WithTypeParams(entity.TypeParamDim, "128")),
+		)
+
+		s.mock.EXPECT().Insert(mock.Anything, mock.AnythingOfType("*milvuspb.InsertRequest")).
+			Run(func(_ context.Context, req *server.InsertRequest) {
+				s.Equal(testCollectionName, req.GetCollectionName())
+				s.Equal(partName, req.GetPartitionName())
+				s.Equal(3, len(req.GetFieldsData()))
+			}).Return(&server.MutationResult{
+			Status: &common.Status{ErrorCode: common.ErrorCode_Success},
+			IDs:    &schema.IDs{IdField: &schema.IDs_IntId{IntId: &schema.LongArray{Data: []int64{100}}}},
+		}, nil)
+		type row struct {
+			entity.RowBase
+			ID     int64
+			Vector []float32
+			Extra1 int32
+			Extra2 string
+		}
+		ids, err := c.InsertByRows(ctx, testCollectionName, partName, []entity.Row{
+			row{ID: 100, Vector: make([]float32, 128), Extra1: 1, Extra2: "aabb"},
+		})
+		s.NoError(err)
+		s.Equal(1, ids.Len())
+	})
+}
+
 func TestInsertByRows(t *testing.T) {
-	ctx := context.Background()
-
-	c := testClient(ctx, t)
-
-	t.Run("test create failure due to meta", func(t *testing.T) {
-		mockServer.DelInjection(MHasCollection) // collection does not exist
-		ids, err := c.InsertByRows(ctx, testCollectionName, "", []entity.Row{})
-		assert.Nil(t, ids)
-		assert.NotNil(t, err)
-
-		// partition not exists
-		mockServer.SetInjection(MHasCollection, hasCollectionDefault)
-		ids, err = c.InsertByRows(ctx, testCollectionName, "_part_not_exists", []entity.Row{})
-		assert.Nil(t, ids)
-		assert.NotNil(t, err)
-
-		// field not in collection
-		mockServer.SetInjection(MDescribeCollection, describeCollectionInjection(t, 0, testCollectionName, defaultSchema()))
-		type ExtraFieldRow struct {
-			entity.RowBase
-			Int64      int64 `milvus:"primary_key"`
-			ExtraField float64
-			Vector     []float32 `milvus:"dim:128"`
-		}
-		ids, err = c.InsertByRows(ctx, testCollectionName, "", []entity.Row{&ExtraFieldRow{}})
-		assert.Nil(t, ids)
-		assert.NotNil(t, err)
-
-		// field type not match
-		mockServer.SetInjection(MDescribeCollection, describeCollectionInjection(t, 0, testCollectionName, defaultSchema()))
-		type OtherFieldRow struct {
-			entity.RowBase
-			Int64  int32     `milvus:"primary_key;name:int64"`
-			Vector []float32 `milvus:"dim:128;name:vector"`
-		}
-		ids, err = c.InsertByRows(ctx, testCollectionName, "", []entity.Row{
-			&OtherFieldRow{},
-		})
-		assert.Nil(t, ids)
-		assert.NotNil(t, err)
-
-		// missing field
-		type MissingFieldRow struct {
-			entity.RowBase
-			Vector []float32 `milvus:"dim:128;name:vector"`
-		}
-		ids, err = c.InsertByRows(ctx, testCollectionName, "", []entity.Row{
-			&MissingFieldRow{},
-		})
-		assert.Nil(t, ids)
-		assert.NotNil(t, err)
-		t.Log(err.Error())
-
-		// column len not match, not equvilant case in row based api
-
-		// dim not match
-		type Dim2Row struct {
-			entity.RowBase
-			Int64  int64     `milvus:"primary_key;name:int64"`
-			Vector []float32 `milvus:"dim:16;name:vector"`
-		}
-		ids, err = c.InsertByRows(ctx, testCollectionName, "", []entity.Row{
-			&Dim2Row{},
-		})
-		assert.Nil(t, ids)
-		assert.NotNil(t, err)
-		t.Log(err.Error())
-	})
-
-	mockServer.SetInjection(MHasCollection, hasCollectionDefault)
-	mockServer.SetInjection(MDescribeCollection, describeCollectionInjection(t, 0, testCollectionName, defaultSchema()))
-
-	vector := generateFloatVector(4096, testVectorDim)
-	mockServer.SetInjection(MInsert, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-		req, ok := raw.(*server.InsertRequest)
-		resp := &server.MutationResult{}
-		if !ok {
-			s, err := BadRequestStatus()
-			resp.Status = s
-			return resp, err
-		}
-		assert.EqualValues(t, 4096, req.GetNumRows())
-		assert.Equal(t, testCollectionName, req.GetCollectionName())
-		intIds := &schema.IDs_IntId{
-			IntId: &schema.LongArray{
-				Data: make([]int64, 4096),
-			},
-		}
-		resp.IDs = &schema.IDs{
-			IdField: intIds,
-		}
-		s, err := SuccessStatus()
-		resp.Status = s
-		return resp, err
-	})
-	_, err := c.Insert(ctx, testCollectionName, "", // use default partition
-		entity.NewColumnFloatVector(testVectorField, testVectorDim, vector))
-
-	assert.Nil(t, err)
-
+	suite.Run(t, new(InsertByRowsSuite))
 }
 
 func TestSearchResultToRows(t *testing.T) {

@@ -73,6 +73,7 @@ func (s *MockSuiteBase) TearDownTest() {
 }
 
 func (s *MockSuiteBase) resetMock() {
+	MetaCache.reset()
 	if s.mock != nil {
 		s.mock.Calls = nil
 		s.mock.ExpectedCalls = nil
@@ -172,7 +173,7 @@ func (s *MockSuiteBase) getVarcharFieldData(name string, data []string) *schema.
 	}
 }
 
-func (s *MockSuiteBase) getJSONBytesFieldData(name string, data [][]byte) *schema.FieldData {
+func (s *MockSuiteBase) getJSONBytesFieldData(name string, data [][]byte, isDynamic bool) *schema.FieldData {
 	return &schema.FieldData{
 		Type:      schema.DataType_JSON,
 		FieldName: name,
@@ -185,6 +186,7 @@ func (s *MockSuiteBase) getJSONBytesFieldData(name string, data [][]byte) *schem
 				},
 			},
 		},
+		IsDynamic: isDynamic,
 	}
 }
 
@@ -907,6 +909,10 @@ func (m *MockServer) GetFlushAllState(_a0 context.Context, _a1 *server.GetFlushA
 
 func (m *MockServer) Connect(_ context.Context, _ *server.ConnectRequest) (*server.ConnectResponse, error) {
 	panic("not implemented") // TODO: Implement
+}
+
+func getSuccessStatus() *common.Status {
+	return &common.Status{ErrorCode: common.ErrorCode_Success}
 }
 
 func SuccessStatus() (*common.Status, error) {

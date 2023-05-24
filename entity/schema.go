@@ -12,6 +12,8 @@
 package entity
 
 import (
+	"strconv"
+
 	common "github.com/milvus-io/milvus-proto/go-api/commonpb"
 	schema "github.com/milvus-io/milvus-proto/go-api/schemapb"
 )
@@ -45,18 +47,53 @@ func (cl ConsistencyLevel) CommonConsistencyLevel() common.ConsistencyLevel {
 
 // Schema represents schema info of collection in milvus
 type Schema struct {
-	CollectionName string
-	Description    string
-	AutoID         bool
-	Fields         []*Field
+	CollectionName     string
+	Description        string
+	AutoID             bool
+	Fields             []*Field
+	EnableDynamicField bool
+}
+
+// NewSchema creates an empty schema object.
+func NewSchema() *Schema {
+	return &Schema{}
+}
+
+// WithName sets the name value of schema, returns schema itself.
+func (s *Schema) WithName(name string) *Schema {
+	s.CollectionName = name
+	return s
+}
+
+// WithDescription sets the description value of schema, returns schema itself.
+func (s *Schema) WithDescription(desc string) *Schema {
+	s.Description = desc
+	return s
+}
+
+func (s *Schema) WithAutoID(autoID bool) *Schema {
+	s.AutoID = autoID
+	return s
+}
+
+func (s *Schema) WithDynamicFieldEnabled(dynamicEnabled bool) *Schema {
+	s.EnableDynamicField = dynamicEnabled
+	return s
+}
+
+// WithField adds a field into schema and returns schema itself.
+func (s *Schema) WithField(f *Field) *Schema {
+	s.Fields = append(s.Fields, f)
+	return s
 }
 
 // ProtoMessage returns corresponding server.CollectionSchema
 func (s *Schema) ProtoMessage() *schema.CollectionSchema {
 	r := &schema.CollectionSchema{
-		Name:        s.CollectionName,
-		Description: s.Description,
-		AutoID:      s.AutoID,
+		Name:               s.CollectionName,
+		Description:        s.Description,
+		AutoID:             s.AutoID,
+		EnableDynamicField: s.EnableDynamicField,
 	}
 	r.Fields = make([]*schema.FieldSchema, 0, len(s.Fields))
 	for _, field := range s.Fields {
@@ -72,35 +109,117 @@ func (s *Schema) ReadProto(p *schema.CollectionSchema) *Schema {
 	s.CollectionName = p.GetName()
 	s.Fields = make([]*Field, 0, len(p.GetFields()))
 	for _, fp := range p.GetFields() {
-		s.Fields = append(s.Fields, (&Field{}).ReadProto(fp))
+		s.Fields = append(s.Fields, NewField().ReadProto(fp))
 	}
+	s.EnableDynamicField = p.GetEnableDynamicField()
 	return s
+}
+
+// PKFieldName returns pk field name for this schema.
+func (s *Schema) PKFieldName() string {
+	for _, field := range s.Fields {
+		if field.PrimaryKey {
+			return field.Name
+		}
+	}
+	return ""
 }
 
 // Field represent field schema in milvus
 type Field struct {
-	ID          int64  // field id, generated when collection is created, input value is ignored
-	Name        string // field name
-	PrimaryKey  bool   // is primary key
-	AutoID      bool   // is auto id
-	Description string
-	DataType    FieldType
-	TypeParams  map[string]string
-	IndexParams map[string]string
+	ID             int64  // field id, generated when collection is created, input value is ignored
+	Name           string // field name
+	PrimaryKey     bool   // is primary key
+	AutoID         bool   // is auto id
+	Description    string
+	DataType       FieldType
+	TypeParams     map[string]string
+	IndexParams    map[string]string
+	IsDynamic      bool
+	IsPartitionKey bool
 }
 
 // ProtoMessage generates corresponding FieldSchema
 func (f *Field) ProtoMessage() *schema.FieldSchema {
 	return &schema.FieldSchema{
-		FieldID:      f.ID,
-		Name:         f.Name,
-		Description:  f.Description,
-		IsPrimaryKey: f.PrimaryKey,
-		AutoID:       f.AutoID,
-		DataType:     schema.DataType(f.DataType),
-		TypeParams:   MapKvPairs(f.TypeParams),
-		IndexParams:  MapKvPairs(f.IndexParams),
+		FieldID:        f.ID,
+		Name:           f.Name,
+		Description:    f.Description,
+		IsPrimaryKey:   f.PrimaryKey,
+		AutoID:         f.AutoID,
+		DataType:       schema.DataType(f.DataType),
+		TypeParams:     MapKvPairs(f.TypeParams),
+		IndexParams:    MapKvPairs(f.IndexParams),
+		IsDynamic:      f.IsDynamic,
+		IsPartitionKey: f.IsPartitionKey,
 	}
+}
+
+// NewField creates a new Field with map initialized.
+func NewField() *Field {
+	return &Field{
+		TypeParams:  make(map[string]string),
+		IndexParams: make(map[string]string),
+	}
+}
+
+func (f *Field) WithName(name string) *Field {
+	f.Name = name
+	return f
+}
+
+func (f *Field) WithDescription(desc string) *Field {
+	f.Description = desc
+	return f
+}
+
+func (f *Field) WithDataType(dataType FieldType) *Field {
+	f.DataType = dataType
+	return f
+}
+
+func (f *Field) WithIsPrimaryKey(isPrimaryKey bool) *Field {
+	f.PrimaryKey = isPrimaryKey
+	return f
+}
+
+func (f *Field) WithIsAutoID(isAutoID bool) *Field {
+	f.AutoID = isAutoID
+	return f
+}
+
+func (f *Field) WithIsDynamic(isDynamic bool) *Field {
+	f.IsDynamic = isDynamic
+	return f
+}
+
+func (f *Field) WithIsPartitionKey(isPartitionKey bool) *Field {
+	f.IsPartitionKey = isPartitionKey
+	return f
+}
+
+func (f *Field) WithTypeParams(key string, value string) *Field {
+	if f.TypeParams == nil {
+		f.TypeParams = make(map[string]string)
+	}
+	f.TypeParams[key] = value
+	return f
+}
+
+func (f *Field) WithDim(dim int64) *Field {
+	if f.TypeParams == nil {
+		f.TypeParams = make(map[string]string)
+	}
+	f.TypeParams[TypeParamDim] = strconv.FormatInt(dim, 10)
+	return f
+}
+
+func (f *Field) WithMaxLength(maxLen int64) *Field {
+	if f.TypeParams == nil {
+		f.TypeParams = make(map[string]string)
+	}
+	f.TypeParams[TypeParamMaxLength] = strconv.FormatInt(maxLen, 10)
+	return f
 }
 
 // ReadProto parses FieldSchema
@@ -113,6 +232,8 @@ func (f *Field) ReadProto(p *schema.FieldSchema) *Field {
 	f.DataType = FieldType(p.GetDataType())
 	f.TypeParams = KvPairsMap(p.GetTypeParams())
 	f.IndexParams = KvPairsMap(p.GetIndexParams())
+	f.IsDynamic = p.GetIsDynamic()
+	f.IsPartitionKey = p.GetIsPartitionKey()
 
 	return f
 }
@@ -235,9 +356,7 @@ func (t FieldType) PbFieldType() (string, string) {
 		return "[]float32", ""
 	default:
 		return "undefined", ""
-
 	}
-
 }
 
 // Match schema definition
