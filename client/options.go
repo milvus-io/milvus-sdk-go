@@ -65,10 +65,17 @@ type SearchQueryOption struct {
 	Offset int64
 
 	IgnoreGrowing bool
+	ForTuning     bool
 }
 
 // SearchQueryOptionFunc is a function which modifies SearchOption
 type SearchQueryOptionFunc func(option *SearchQueryOption)
+
+func WithForTuning() SearchQueryOptionFunc {
+	return func(option *SearchQueryOption) {
+		option.ForTuning = true
+	}
+}
 
 func WithIgnoreGrowing() SearchQueryOptionFunc {
 	return func(option *SearchQueryOption) {
