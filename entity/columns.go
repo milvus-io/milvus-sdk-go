@@ -30,6 +30,29 @@ type Column interface {
 	FieldData() *schema.FieldData
 	AppendValue(interface{}) error
 	Get(int) (interface{}, error)
+	GetAsInt64(int) (int64, error)
+	GetAsString(int) (string, error)
+	GetAsDouble(int) (float64, error)
+	GetAsBool(int) (bool, error)
+}
+
+// ColumnBase adds conversion methods support for fixed-type columns.
+type ColumnBase struct{}
+
+func (b ColumnBase) GetAsInt64(_ int) (int64, error) {
+	return 0, errors.New("conversion between fixed-type column not support")
+}
+
+func (b ColumnBase) GetAsString(_ int) (string, error) {
+	return "", errors.New("conversion between fixed-type column not support")
+}
+
+func (b ColumnBase) GetAsDouble(_ int) (float64, error) {
+	return 0, errors.New("conversion between fixed-type column not support")
+}
+
+func (b ColumnBase) GetAsBool(_ int) (bool, error) {
+	return false, errors.New("conversion between fixed-type column not support")
 }
 
 // Vector interface vector used int search

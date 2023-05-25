@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
 )
 
@@ -58,8 +59,8 @@ func (s *MockSuiteBase) SetupTest() {
 		Address: "bufnet2",
 		DialOptions: []grpc.DialOption{
 			grpc.WithBlock(),
-			grpc.WithInsecure(),
 			grpc.WithContextDialer(s.mockDialer),
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
 		},
 	})
 	s.Require().NoError(err)

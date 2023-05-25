@@ -38,6 +38,7 @@ import (
 {{ range .Types }}{{with .}}
 // Column{{.TypeName}} generated columns type for {{.TypeName}}
 type Column{{.TypeName}} struct {
+	ColumnBase
 	name   string
 	values []{{.TypeDef}}
 }
@@ -138,6 +139,7 @@ import (
 {{ range .Types }}{{with.}}
 // Column{{.TypeName}} generated columns type for {{.TypeName}}
 type Column{{.TypeName}} struct {
+	ColumnBase
 	name   string
 	dim    int
 	values []{{.TypeDef}}

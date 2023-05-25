@@ -53,11 +53,6 @@ func (s *ResourceGroupSuite) TestListResourceGroups() {
 	s.Run("request_fails", func() {
 		defer s.resetMock()
 
-		rgs := make([]string, 0, 5)
-		for i := 0; i < 5; i++ {
-			rgs = append(rgs, randStr(10))
-		}
-
 		s.mock.EXPECT().ListResourceGroups(mock.Anything, mock.AnythingOfType("*milvuspb.ListResourceGroupsRequest")).
 			Return(nil, errors.New("mocked grpc error"))
 
@@ -67,11 +62,6 @@ func (s *ResourceGroupSuite) TestListResourceGroups() {
 
 	s.Run("server_return_err", func() {
 		defer s.resetMock()
-
-		rgs := make([]string, 0, 5)
-		for i := 0; i < 5; i++ {
-			rgs = append(rgs, randStr(10))
-		}
 
 		s.mock.EXPECT().ListResourceGroups(mock.Anything, mock.AnythingOfType("*milvuspb.ListResourceGroupsRequest")).
 			Return(&server.ListResourceGroupsResponse{Status: &common.Status{ErrorCode: common.ErrorCode_UnexpectedError}}, nil)
@@ -158,11 +148,6 @@ func (s *ResourceGroupSuite) TestDescribeResourceGroup() {
 			outgoingNum[fmt.Sprintf("coll_%s", randStr(6))] = rand.Int31n(5) + 1
 		}
 
-		type testColl struct {
-			Name      string
-			Capacity  int32
-			Available int32
-		}
 		s.mock.EXPECT().DescribeResourceGroup(mock.Anything, mock.AnythingOfType("*milvuspb.DescribeResourceGroupRequest")).
 			Run(func(_ context.Context, req *server.DescribeResourceGroupRequest) {
 				s.Equal(rgName, req.GetResourceGroup())
@@ -196,10 +181,6 @@ func (s *ResourceGroupSuite) TestDescribeResourceGroup() {
 		defer s.resetMock()
 
 		rgName := randStr(10)
-		rgs := make([]string, 0, 5)
-		for i := 0; i < 5; i++ {
-			rgs = append(rgs, randStr(10))
-		}
 
 		s.mock.EXPECT().DescribeResourceGroup(mock.Anything, mock.AnythingOfType("*milvuspb.DescribeResourceGroupRequest")).
 			Run(func(_ context.Context, req *server.DescribeResourceGroupRequest) {
@@ -215,10 +196,6 @@ func (s *ResourceGroupSuite) TestDescribeResourceGroup() {
 		defer s.resetMock()
 
 		rgName := randStr(10)
-		rgs := make([]string, 0, 5)
-		for i := 0; i < 5; i++ {
-			rgs = append(rgs, randStr(10))
-		}
 
 		s.mock.EXPECT().DescribeResourceGroup(mock.Anything, mock.AnythingOfType("*milvuspb.DescribeResourceGroupRequest")).
 			Run(func(_ context.Context, req *server.DescribeResourceGroupRequest) {
@@ -292,11 +269,6 @@ func (s *ResourceGroupSuite) TestTransferNodes() {
 		targetRg := randStr(10)
 		nodeNum := rand.Int31n(5) + 1
 
-		rgs := make([]string, 0, 5)
-		for i := 0; i < 5; i++ {
-			rgs = append(rgs, randStr(10))
-		}
-
 		s.mock.EXPECT().TransferNode(mock.Anything, mock.AnythingOfType("*milvuspb.TransferNodeRequest")).
 			Run(func(_ context.Context, req *server.TransferNodeRequest) {
 				s.Equal(sourceRg, req.GetSourceResourceGroup())
@@ -359,11 +331,6 @@ func (s *ResourceGroupSuite) TestTransferReplica() {
 		sourceRg := randStr(10)
 		targetRg := randStr(10)
 		replicaNum := rand.Int63n(5) + 1
-
-		rgs := make([]string, 0, 5)
-		for i := 0; i < 5; i++ {
-			rgs = append(rgs, randStr(10))
-		}
 
 		s.mock.EXPECT().TransferReplica(mock.Anything, mock.AnythingOfType("*milvuspb.TransferReplicaRequest")).
 			Run(func(_ context.Context, req *server.TransferReplicaRequest) {
