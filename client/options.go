@@ -37,6 +37,13 @@ func WithCollectionProperty(key string, value string) CreateCollectionOption {
 	}
 }
 
+// WithPartitionNum returns a create collection options to set physical partition number when logical partition feature.
+func WithPartitionNum(partitionNums int64) CreateCollectionOption {
+	return func(req *server.CreateCollectionRequest) {
+		req.NumPartitions = partitionNums
+	}
+}
+
 // LoadCollectionOption is an option that is used to modify LoadCollectionRequest
 type LoadCollectionOption func(*server.LoadCollectionRequest)
 
