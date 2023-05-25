@@ -54,6 +54,21 @@ type Row interface {
 	Description() string
 }
 
+// MapRow is the alias type for map[string]interface{} implementing `Row` inteface with empty methods.
+type MapRow map[string]interface{}
+
+func (mr MapRow) Collection() string {
+	return ""
+}
+
+func (mr MapRow) Partition() string {
+	return ""
+}
+
+func (mr MapRow) Description() string {
+	return ""
+}
+
 // RowBase row base, returns default collection, partition name which is empty string
 type RowBase struct{}
 
@@ -321,49 +336,9 @@ func RowsToColumns(rows []Row, schemas ...*Schema) ([]Column, error) {
 	for _, row := range rows {
 		// collection schema name need not to be same, since receiver could has other names
 		v := reflect.ValueOf(row)
-		if v.Kind() == reflect.Ptr {
-			v = v.Elem()
-		}
-
-		type fieldCandi struct {
-			name    string
-			v       reflect.Value
-			options map[string]string
-		}
-		set := make(map[string]fieldCandi)
-		for i := 0; i < v.NumField(); i++ {
-			ft := v.Type().Field(i)
-			name := ft.Name
-			tag, ok := ft.Tag.Lookup(MilvusTag)
-
-			settings := make(map[string]string)
-			if ok {
-				if tag == MilvusSkipTagValue {
-					continue
-				}
-				settings = ParseTagSetting(tag, MilvusTagSep)
-				fn, has := settings[MilvusTagName]
-				if has {
-					// overwrite column to tag name
-					name = fn
-				}
-			}
-			_, ok = set[name]
-			// duplicated
-			if ok {
-				return nil, fmt.Errorf("column has duplicated name: %s when parsing field: %s", name, ft.Name)
-			}
-
-			v := v.Field(i)
-			if v.Kind() == reflect.Array {
-				v = v.Slice(0, v.Len()-1)
-			}
-
-			set[name] = fieldCandi{
-				name:    name,
-				v:       v,
-				options: settings,
-			}
+		set, err := reflectValueCandi(v)
+		if err != nil {
+			return nil, err
 		}
 
 		for idx, field := range sch.Fields {
@@ -406,4 +381,69 @@ func RowsToColumns(rows []Row, schemas ...*Schema) ([]Column, error) {
 		columns = append(columns, dynamicCol)
 	}
 	return columns, nil
+}
+
+type fieldCandi struct {
+	name    string
+	v       reflect.Value
+	options map[string]string
+}
+
+func reflectValueCandi(v reflect.Value) (map[string]fieldCandi, error) {
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+
+	result := make(map[string]fieldCandi)
+	switch v.Kind() {
+	case reflect.Map: // map[string]interface{}
+		iter := v.MapRange()
+		for iter.Next() {
+			key := iter.Key().String()
+			result[key] = fieldCandi{
+				name: key,
+				v:    iter.Value(),
+			}
+		}
+		return result, nil
+	case reflect.Struct:
+		for i := 0; i < v.NumField(); i++ {
+			ft := v.Type().Field(i)
+			name := ft.Name
+			tag, ok := ft.Tag.Lookup(MilvusTag)
+
+			settings := make(map[string]string)
+			if ok {
+				if tag == MilvusSkipTagValue {
+					continue
+				}
+				settings = ParseTagSetting(tag, MilvusTagSep)
+				fn, has := settings[MilvusTagName]
+				if has {
+					// overwrite column to tag name
+					name = fn
+				}
+			}
+			_, ok = result[name]
+			// duplicated
+			if ok {
+				return nil, fmt.Errorf("column has duplicated name: %s when parsing field: %s", name, ft.Name)
+			}
+
+			v := v.Field(i)
+			if v.Kind() == reflect.Array {
+				v = v.Slice(0, v.Len()-1)
+			}
+
+			result[name] = fieldCandi{
+				name:    name,
+				v:       v,
+				options: settings,
+			}
+		}
+
+		return result, nil
+	default:
+		return nil, fmt.Errorf("unsupport row type: %s", v.Kind().String())
+	}
 }
