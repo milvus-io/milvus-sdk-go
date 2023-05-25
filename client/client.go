@@ -207,8 +207,10 @@ type SearchResult struct {
 	Err         error         // search error if any
 }
 
+// ResultSet is an alias type for column slice.
 type ResultSet []entity.Column
 
+// GetColumn returns column with provided field name.
 func (rs ResultSet) GetColumn(fieldName string) entity.Column {
 	for _, column := range rs {
 		if column.Name() == fieldName {

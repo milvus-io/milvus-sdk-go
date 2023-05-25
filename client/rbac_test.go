@@ -3,14 +3,10 @@ package client
 import (
 	"context"
 	"errors"
-	"net"
 	"testing"
 
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
-	"github.com/milvus-io/milvus-sdk-go/v2/mocks"
 	"github.com/stretchr/testify/suite"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/test/bufconn"
 
 	tmock "github.com/stretchr/testify/mock"
 
@@ -19,57 +15,7 @@ import (
 )
 
 type RBACSuite struct {
-	suite.Suite
-
-	lis  *bufconn.Listener
-	svr  *grpc.Server
-	mock *mocks.MilvusServiceServer
-
-	client Client
-}
-
-func (s *RBACSuite) SetupSuite() {
-	s.lis = bufconn.Listen(bufSize)
-	s.svr = grpc.NewServer()
-
-	s.mock = &mocks.MilvusServiceServer{}
-
-	server.RegisterMilvusServiceServer(s.svr, s.mock)
-
-	go func() {
-		s.T().Log("start mock server")
-		if err := s.svr.Serve(s.lis); err != nil {
-			s.Fail("failed to server mock server", err.Error())
-		}
-	}()
-}
-
-func (s *RBACSuite) TearDownSuite() {
-	s.svr.Stop()
-	s.lis.Close()
-}
-
-func (s *RBACSuite) mockDialer(context.Context, string) (net.Conn, error) {
-	return s.lis.Dial()
-}
-
-func (s *RBACSuite) SetupTest() {
-	c, err := NewClient(context.Background(), Config{
-		Address: "bufnet2",
-		DialOptions: []grpc.DialOption{
-			grpc.WithBlock(),
-			grpc.WithInsecure(),
-			grpc.WithContextDialer(s.mockDialer),
-		},
-	})
-	s.Require().NoError(err)
-
-	s.client = c
-}
-
-func (s *RBACSuite) TearDownTest() {
-	s.client.Close()
-	s.client = nil
+	MockSuiteBase
 }
 
 func (s *RBACSuite) TestCreateRole() {

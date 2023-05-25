@@ -17,9 +17,9 @@ const (
 	nEntities, dim = 3000, 128
 	collectionName = "dynamic_example"
 
-	msgFmt                                  = "\n==== %s ====\n"
-	idCol, typeCol, randomCol, embeddingCol = "ID", "type", "random", "embeddings"
-	topK                                    = 3
+	msgFmt                                             = "\n==== %s ====\n"
+	idCol, typeCol, randomCol, sourceCol, embeddingCol = "ID", "type", "random", "source", "embeddings"
+	topK                                               = 4
 )
 
 func main() {
@@ -134,13 +134,13 @@ func main() {
 		})
 	}
 
-	fmt.Printf(msgFmt, "start to insert by rows")
 	_, err = c.InsertByRows(ctx, collectionName, "", rows)
 	if err != nil {
 		log.Fatal("failed to insert by rows: ", err.Error())
 	}
 
 	// insert by map[string]interface{}
+	fmt.Printf(msgFmt, "start to inserting by MapRow")
 	m := make(map[string]interface{})
 	m["ID"] = int64(nEntities)
 	vec := make([]float32, 0, dim)
@@ -186,7 +186,7 @@ func main() {
 	}
 	begin := time.Now()
 	sp, _ := entity.NewIndexIvfFlatSearchParam(16)
-	sRet, err := c.Search(ctx, collectionName, nil, "", []string{ /*randomCol, typeCol*/ "*"}, vec2search,
+	sRet, err := c.Search(ctx, collectionName, nil, "", []string{randomCol, typeCol}, vec2search,
 		embeddingCol, entity.L2, topK, sp)
 	end := time.Now()
 	if err != nil {
@@ -195,7 +195,7 @@ func main() {
 
 	fmt.Println("results:")
 	for _, res := range sRet {
-		printResult(&res)
+		printResult(&res, map[string]string{randomCol: "double", typeCol: "int"})
 	}
 	fmt.Printf("\tsearch latency: %dms\n", end.Sub(begin)/time.Millisecond)
 
@@ -210,7 +210,7 @@ func main() {
 	}
 	fmt.Println("results:")
 	for _, res := range sRet2 {
-		printResult(&res)
+		printResult(&res, map[string]string{randomCol: "double", typeCol: "int"})
 	}
 	fmt.Printf("\tsearch latency: %dms\n", end.Sub(begin)/time.Millisecond)
 
@@ -221,16 +221,16 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to query result, err: %v", err)
 	}
-	printResultSet(sRet3)
+	printResultSet(sRet3, map[string]string{idCol: "int", randomCol: "double", typeCol: "int"})
 
 	// $meta["source"]
 	expr = "source in [1] and random > 0.1"
 	fmt.Printf(msgFmt, fmt.Sprintf("query with expr `%s`", expr))
-	sRet3, err = c.Query(ctx, collectionName, nil, expr, []string{randomCol, typeCol, "source"}, client.WithLimit(3))
+	sRet3, err = c.Query(ctx, collectionName, nil, expr, []string{randomCol, typeCol, sourceCol}, client.WithLimit(3))
 	if err != nil {
 		log.Fatalf("failed to query result, err: %v", err)
 	}
-	printResultSet(sRet3)
+	printResultSet(sRet3, map[string]string{idCol: "int", randomCol: "double", typeCol: "int", sourceCol: "int"})
 
 	// drop collection
 	fmt.Printf(msgFmt, "drop collection `dynamic_example`")
@@ -239,47 +239,50 @@ func main() {
 	}
 }
 
-func printResultSet(sRets []entity.Column) {
-	for _, field := range sRets {
-		fmt.Println(field.Name(), ":")
-		if dc, ok := field.(*entity.ColumnDynamic); ok {
-			for i := 0; i < field.Len(); i++ {
-				switch dc.Name() {
-				case typeCol, "source":
-					v, err := dc.GetInt64(i)
-					if err != nil {
-						fmt.Println(err.Error())
-						continue
-					}
-					fmt.Print(v)
-				case randomCol:
-					v, err := dc.GetDouble(i)
-					if err != nil {
-						fmt.Println(err.Error())
-						continue
-					}
-					fmt.Print(v)
-				default:
-					continue
-				}
-				if i != field.Len()-1 {
-					fmt.Print(", ")
-				}
-			}
-			fmt.Println()
+func printResultSet(sRets client.ResultSet, outputInfo map[string]string) {
+	for name, typ := range outputInfo {
+		column := sRets.GetColumn(name)
+		if column == nil {
+			fmt.Printf("column %s not found in result set\n", name)
 			continue
 		}
-		for i := 0; i < field.Len(); i++ {
-			v, _ := field.Get(i)
-			fmt.Print(v)
-			if i != field.Len()-1 {
-				fmt.Print(", ")
+
+		fmt.Printf("Result Column %s, count: %d\n", name, column.Len())
+		switch typ {
+		case "int":
+			var data []int64
+			for i := 0; i < column.Len(); i++ {
+				line, err := column.GetAsInt64(i)
+				if err != nil {
+					fmt.Printf("failed to get column %s at index %d, err: %s\n", name, i, err.Error())
+				}
+				data = append(data, line)
 			}
+			fmt.Println("Data:", data)
+		case "string":
+			var data []string
+			for i := 0; i < column.Len(); i++ {
+				line, err := column.GetAsString(i)
+				if err != nil {
+					fmt.Printf("failed to get column %s at index %d, err: %s\n", name, i, err.Error())
+				}
+				data = append(data, line)
+			}
+			fmt.Println("Data:", data)
+		case "double":
+			var data []float64
+			for i := 0; i < column.Len(); i++ {
+				line, err := column.GetAsDouble(i)
+				if err != nil {
+					fmt.Printf("failed to get column %s at index %d, err: %s\n", name, i, err.Error())
+				}
+				data = append(data, line)
+			}
+			fmt.Println("Data:", data)
 		}
-		fmt.Println()
 	}
 }
 
-func printResult(sRet *client.SearchResult) {
-	printResultSet(sRet.Fields)
+func printResult(sRet *client.SearchResult, outputInfo map[string]string) {
+	printResultSet(sRet.Fields, outputInfo)
 }
