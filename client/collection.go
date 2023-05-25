@@ -146,6 +146,7 @@ func (c *GrpcClient) CreateCollection(ctx context.Context, collSchema *entity.Sc
 		// default consistency level is strong
 		// to be consistent with previous version
 		ConsistencyLevel: common.ConsistencyLevel_Strong,
+		NumPartitions:    0,
 	}
 	// apply options on request
 	for _, opt := range opts {

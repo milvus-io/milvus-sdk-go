@@ -12,6 +12,7 @@
 package client
 
 import (
+	"math/rand"
 	"testing"
 
 	common "github.com/milvus-io/milvus-proto/go-api/commonpb"
@@ -30,6 +31,19 @@ func TestCreateCollectionWithConsistencyLevel(t *testing.T) {
 	})
 
 	assert.Equal(t, common.ConsistencyLevel_Bounded, req.GetConsistencyLevel())
+}
+
+func TestCreateCollectionWithPartitionNum(t *testing.T) {
+	partitionNum := rand.Int63n(1000) + 1
+	opt := WithPartitionNum(partitionNum)
+	assert.NotNil(t, opt)
+	req := &server.CreateCollectionRequest{}
+
+	assert.NotPanics(t, func() {
+		opt(req)
+	})
+
+	assert.Equal(t, partitionNum, req.GetNumPartitions())
 }
 
 func TestLoadCollectionWithReplicaNumber(t *testing.T) {
