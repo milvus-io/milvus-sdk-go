@@ -12,6 +12,7 @@
 package entity
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -63,6 +64,12 @@ func TestParseSchema(t *testing.T) {
 			RowBase
 		}{}
 		sch, err := ParseSchema(anonymusStruct)
+		assert.Nil(t, sch)
+		assert.NotNil(t, err)
+
+		// MapRow
+		m := make(MapRow)
+		sch, err = ParseSchema(m)
 		assert.Nil(t, sch)
 		assert.NotNil(t, err)
 
@@ -261,6 +268,50 @@ func (s *RowsSuite) TestDynamicSchema() {
 		)
 		s.NoError(err)
 	})
+}
+
+func (s *RowsSuite) TestReflectValueCandi() {
+	cases := []struct {
+		tag       string
+		v         reflect.Value
+		expect    map[string]fieldCandi
+		expectErr bool
+	}{
+		{
+			tag: "MapRow",
+			v: reflect.ValueOf(MapRow(map[string]interface{}{
+				"A": "abd", "B": int64(8),
+			})),
+			expect: map[string]fieldCandi{
+				"A": {
+					name: "A",
+					v:    reflect.ValueOf("abd"),
+				},
+				"B": {
+					name: "B",
+					v:    reflect.ValueOf(int64(8)),
+				},
+			},
+			expectErr: false,
+		},
+	}
+
+	for _, c := range cases {
+		s.Run(c.tag, func() {
+			r, err := reflectValueCandi(c.v)
+			if c.expectErr {
+				s.Error(err)
+				return
+			}
+			s.NoError(err)
+			s.Equal(len(c.expect), len(r))
+			for k, v := range c.expect {
+				rv, has := r[k]
+				s.Require().True(has)
+				s.Equal(v.name, rv.name)
+			}
+		})
+	}
 }
 
 func TestRows(t *testing.T) {
