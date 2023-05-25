@@ -193,11 +193,18 @@ func (c *GrpcClient) mergeDynamicColumns(dynamicName string, rowSize int, column
 // Flush force collection to flush memory records into storage
 // in sync mode, flush will wait all segments to be flushed
 func (c *GrpcClient) Flush(ctx context.Context, collName string, async bool) error {
+	_, _, _, err := c.FlushV2(ctx, collName, async)
+	return err
+}
+
+// Flush force collection to flush memory records into storage
+// in sync mode, flush will wait all segments to be flushed
+func (c *GrpcClient) FlushV2(ctx context.Context, collName string, async bool) ([]int64, []int64, int64, error) {
 	if c.Service == nil {
-		return ErrClientNotReady
+		return nil, nil, 0, ErrClientNotReady
 	}
 	if err := c.checkCollectionExists(ctx, collName); err != nil {
-		return err
+		return nil, nil, 0, err
 	}
 	req := &server.FlushRequest{
 		DbName:          "", // reserved,
@@ -205,10 +212,10 @@ func (c *GrpcClient) Flush(ctx context.Context, collName string, async bool) err
 	}
 	resp, err := c.Service.Flush(ctx, req)
 	if err != nil {
-		return err
+		return nil, nil, 0, err
 	}
 	if err := handleRespStatus(resp.GetStatus()); err != nil {
-		return err
+		return nil, nil, 0, err
 	}
 	if !async {
 		segmentIDs, has := resp.GetCollSegIDs()[collName]
@@ -228,14 +235,14 @@ func (c *GrpcClient) Flush(ctx context.Context, collName string, async bool) err
 				// respect context deadline/cancel
 				select {
 				case <-ctx.Done():
-					return errors.New("deadline exceeded")
+					return nil, nil, 0, errors.New("deadline exceeded")
 				default:
 				}
 				time.Sleep(200 * time.Millisecond)
 			}
 		}
 	}
-	return nil
+	return resp.GetCollSegIDs()[collName].GetData(), resp.GetFlushCollSegIDs()[collName].GetData(), resp.GetCollSealTimes()[collName], nil
 }
 
 // DeleteByPks deletes entries related to provided primary keys

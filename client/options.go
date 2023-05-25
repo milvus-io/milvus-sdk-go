@@ -165,3 +165,12 @@ func WithEndTs(endTs int64) BulkInsertOption {
 		req.Options = entity.MapKvPairs(optionMap)
 	}
 }
+
+// IsBackup specifies it is triggered by backup tool
+func IsBackup() BulkInsertOption {
+	return func(req *server.ImportRequest) {
+		optionMap := entity.KvPairsMap(req.GetOptions())
+		optionMap["backup"] = "true"
+		req.Options = entity.MapKvPairs(optionMap)
+	}
+}
