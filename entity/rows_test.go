@@ -212,27 +212,42 @@ type ValidStructWithNamedTag struct {
 	Vector [16]float32 `milvus:"name:vector"`
 }
 
-func TestRowsToColumns(t *testing.T) {
-	t.Run("valid cases", func(t *testing.T) {
+type RowsSuite struct {
+	suite.Suite
+}
+
+func (s *RowsSuite) TestRowsToColumns() {
+	s.Run("valid_cases", func() {
 
 		columns, err := RowsToColumns([]Row{&ValidStruct{}})
-		assert.Nil(t, err)
-		assert.Equal(t, 10, len(columns))
+		s.Nil(err)
+		s.Equal(10, len(columns))
 
 		columns, err = RowsToColumns([]Row{&ValidStruct2{}})
-		assert.Nil(t, err)
-		assert.Equal(t, 3, len(columns))
-
+		s.Nil(err)
+		s.Equal(3, len(columns))
 	})
 
-	t.Run("invalid cases", func(t *testing.T) {
+	s.Run("auto_id_pk", func() {
+		type AutoPK struct {
+			RowBase
+			ID     int64     `milvus:"primary_key;auto_id"`
+			Vector []float32 `milvus:"dim:32"`
+		}
+		columns, err := RowsToColumns([]Row{&AutoPK{}})
+		s.Nil(err)
+		s.Require().Equal(1, len(columns))
+		s.Equal("Vector", columns[0].Name())
+	})
+
+	s.Run("invalid_cases", func() {
 		// empty input
 		_, err := RowsToColumns([]Row{})
-		assert.NotNil(t, err)
+		s.NotNil(err)
 
 		// incompatible rows
 		_, err = RowsToColumns([]Row{&ValidStruct{}, &ValidStruct2{}})
-		assert.NotNil(t, err)
+		s.NotNil(err)
 
 		// schema & row not compatible
 		_, err = RowsToColumns([]Row{&ValidStruct{}}, &Schema{
@@ -243,12 +258,8 @@ func TestRowsToColumns(t *testing.T) {
 				},
 			},
 		})
-		assert.NotNil(t, err)
+		s.NotNil(err)
 	})
-}
-
-type RowsSuite struct {
-	suite.Suite
 }
 
 func (s *RowsSuite) TestDynamicSchema() {
