@@ -9,6 +9,7 @@ import (
 
 // ColumnVarChar generated columns type for VarChar
 type ColumnVarChar struct {
+	ColumnBase
 	name   string
 	values []string
 }
@@ -30,6 +31,14 @@ func (c *ColumnVarChar) Len() int {
 
 // Get returns value at index as interface{}.
 func (c *ColumnVarChar) Get(idx int) (interface{}, error) {
+	if idx < 0 || idx > c.Len() {
+		return "", errors.New("index out of range")
+	}
+	return c.values[idx], nil
+}
+
+// GetAsString returns value at idx.
+func (c *ColumnVarChar) GetAsString(idx int) (string, error) {
 	if idx < 0 || idx > c.Len() {
 		return "", errors.New("index out of range")
 	}

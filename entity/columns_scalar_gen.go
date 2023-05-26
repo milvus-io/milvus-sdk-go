@@ -12,6 +12,7 @@ import (
 
 // ColumnBool generated columns type for Bool
 type ColumnBool struct {
+	ColumnBase
 	name   string
 	values []bool
 }
@@ -98,6 +99,7 @@ func NewColumnBool(name string, values []bool) *ColumnBool {
 
 // ColumnInt8 generated columns type for Int8
 type ColumnInt8 struct {
+	ColumnBase
 	name   string
 	values []int8
 }
@@ -184,6 +186,7 @@ func NewColumnInt8(name string, values []int8) *ColumnInt8 {
 
 // ColumnInt16 generated columns type for Int16
 type ColumnInt16 struct {
+	ColumnBase
 	name   string
 	values []int16
 }
@@ -270,6 +273,7 @@ func NewColumnInt16(name string, values []int16) *ColumnInt16 {
 
 // ColumnInt32 generated columns type for Int32
 type ColumnInt32 struct {
+	ColumnBase
 	name   string
 	values []int32
 }
@@ -356,6 +360,7 @@ func NewColumnInt32(name string, values []int32) *ColumnInt32 {
 
 // ColumnInt64 generated columns type for Int64
 type ColumnInt64 struct {
+	ColumnBase
 	name   string
 	values []int64
 }
@@ -442,6 +447,7 @@ func NewColumnInt64(name string, values []int64) *ColumnInt64 {
 
 // ColumnFloat generated columns type for Float
 type ColumnFloat struct {
+	ColumnBase
 	name   string
 	values []float32
 }
@@ -528,6 +534,7 @@ func NewColumnFloat(name string, values []float32) *ColumnFloat {
 
 // ColumnDouble generated columns type for Double
 type ColumnDouble struct {
+	ColumnBase
 	name   string
 	values []float64
 }
@@ -614,6 +621,7 @@ func NewColumnDouble(name string, values []float64) *ColumnDouble {
 
 // ColumnString generated columns type for String
 type ColumnString struct {
+	ColumnBase
 	name   string
 	values []string
 }

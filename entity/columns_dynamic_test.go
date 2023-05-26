@@ -27,7 +27,7 @@ func (s *ColumnDynamicSuite) TestGetInt() {
 			column := NewColumnDynamic(&ColumnJSONBytes{
 				values: [][]byte{[]byte(c.input)},
 			}, "field")
-			v, err := column.GetInt64(0)
+			v, err := column.GetAsInt64(0)
 			if c.expectErr {
 				s.Error(err)
 				return
@@ -55,7 +55,7 @@ func (s *ColumnDynamicSuite) TestGetString() {
 			column := NewColumnDynamic(&ColumnJSONBytes{
 				values: [][]byte{[]byte(c.input)},
 			}, "field")
-			v, err := column.GetString(0)
+			v, err := column.GetAsString(0)
 			if c.expectErr {
 				s.Error(err)
 				return
@@ -83,7 +83,7 @@ func (s *ColumnDynamicSuite) TestGetBool() {
 			column := NewColumnDynamic(&ColumnJSONBytes{
 				values: [][]byte{[]byte(c.input)},
 			}, "field")
-			v, err := column.GetBool(0)
+			v, err := column.GetAsBool(0)
 			if c.expectErr {
 				s.Error(err)
 				return
@@ -111,7 +111,7 @@ func (s *ColumnDynamicSuite) TestGetDouble() {
 			column := NewColumnDynamic(&ColumnJSONBytes{
 				values: [][]byte{[]byte(c.input)},
 			}, "field")
-			v, err := column.GetDouble(0)
+			v, err := column.GetAsDouble(0)
 			if c.expectErr {
 				s.Error(err)
 				return
@@ -129,16 +129,16 @@ func (s *ColumnDynamicSuite) TestIndexOutOfRange() {
 
 	s.Equal("field", column.Name())
 
-	_, err = column.GetInt64(0)
+	_, err = column.GetAsInt64(0)
 	s.Error(err)
 
-	_, err = column.GetString(0)
+	_, err = column.GetAsString(0)
 	s.Error(err)
 
-	_, err = column.GetBool(0)
+	_, err = column.GetAsBool(0)
 	s.Error(err)
 
-	_, err = column.GetDouble(0)
+	_, err = column.GetAsDouble(0)
 	s.Error(err)
 }
 
