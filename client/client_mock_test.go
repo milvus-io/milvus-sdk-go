@@ -18,6 +18,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
 )
 
@@ -60,8 +61,8 @@ func (s *MockSuiteBase) mockDialer(context.Context, string) (net.Conn, error) {
 func (s *MockSuiteBase) SetupTest() {
 	c, err := NewGrpcClient(context.Background(), "bufnet2",
 		grpc.WithBlock(),
-		grpc.WithInsecure(),
 		grpc.WithContextDialer(s.mockDialer),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	s.Require().NoError(err)
 	s.setupConnect()

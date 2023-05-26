@@ -13,6 +13,7 @@ import (
 
 // ColumnBinaryVector generated columns type for BinaryVector
 type ColumnBinaryVector struct {
+	ColumnBase
 	name   string
 	dim    int
 	values [][]byte
@@ -99,6 +100,7 @@ func NewColumnBinaryVector(name string, dim int, values [][]byte) *ColumnBinaryV
 
 // ColumnFloatVector generated columns type for FloatVector
 type ColumnFloatVector struct {
+	ColumnBase
 	name   string
 	dim    int
 	values [][]float32

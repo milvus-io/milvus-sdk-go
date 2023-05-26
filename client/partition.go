@@ -162,7 +162,7 @@ func (c *GrpcClient) LoadPartitions(ctx context.Context, collName string, partit
 	for _, partitionName := range partitionNames {
 		id, has := m[partitionName]
 		if !has {
-			return fmt.Errorf("Collection %s does not has partitions %s", collName, partitionName)
+			return fmt.Errorf("collection %s does not has partitions %s", collName, partitionName)
 		}
 		ids[id] = struct{}{}
 	}

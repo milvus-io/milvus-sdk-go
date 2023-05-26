@@ -12,6 +12,7 @@ var _ (Column) = (*ColumnJSONBytes)(nil)
 // ColumnJSONBytes column type for JSON.
 // all items are marshaled json bytes.
 type ColumnJSONBytes struct {
+	ColumnBase
 	name      string
 	values    [][]byte
 	isDynamic bool
@@ -38,6 +39,14 @@ func (c *ColumnJSONBytes) Get(idx int) (interface{}, error) {
 		return nil, errors.New("index out of range")
 	}
 	return c.values[idx], nil
+}
+
+func (c *ColumnJSONBytes) GetAsString(idx int) (string, error) {
+	bs, err := c.ValueByIdx(idx)
+	if err != nil {
+		return "", err
+	}
+	return string(bs), nil
 }
 
 // FieldData return column data mapped to schema.FieldData.
