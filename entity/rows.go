@@ -265,6 +265,10 @@ func RowsToColumns(rows []Row, schemas ...*Schema) ([]Column, error) {
 
 	nameColumns := make(map[string]Column)
 	for _, field := range sch.Fields {
+		// skip auto id pk field
+		if field.PrimaryKey && field.AutoID {
+			continue
+		}
 		switch field.DataType {
 		case FieldTypeBool:
 			data := make([]bool, 0, rowsLen)
@@ -342,7 +346,14 @@ func RowsToColumns(rows []Row, schemas ...*Schema) ([]Column, error) {
 		}
 
 		for idx, field := range sch.Fields {
+			// skip dynamic field if visible
 			if isDynamic && field.IsDynamic {
+				continue
+			}
+			// skip auto id pk field
+			if field.PrimaryKey && field.AutoID {
+				// remove pk field from candidates set, avoid adding it into dynamic column
+				delete(set, field.Name)
 				continue
 			}
 			column := nameColumns[field.Name]
