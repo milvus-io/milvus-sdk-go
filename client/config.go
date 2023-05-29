@@ -49,6 +49,7 @@ type Config struct {
 	Password      string // Password for auth.
 	DBName        string // DBName for this client.
 	EnableTLSAuth bool   // Enable TLS Auth for transport security.
+	APIKey        string // API key
 
 	DialOptions []grpc.DialOption // Dial options for GRPC.
 
@@ -160,6 +161,13 @@ func (c *syncConfig) getDialOption() []grpc.DialOption {
 			),
 			grpc.WithStreamInterceptor(createAuthenticationStreamInterceptor(c.cfg.Username, c.cfg.Password)),
 		)
+	}
+
+	// Construct api token
+	if c.cfg.APIKey != "" {
+		options = append(options, grpc.WithChainUnaryInterceptor(
+			createAPIKeyUnaryInteceptor(c.cfg.APIKey),
+		))
 	}
 
 	// Construct DBName field
