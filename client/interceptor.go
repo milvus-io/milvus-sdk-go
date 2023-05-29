@@ -9,16 +9,33 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
+const (
+	authorizationHeader = `authorization`
+)
+
 // authenticationInterceptor appends credential into context metadata
 func authenticationInterceptor(ctx context.Context, username, password string) context.Context {
 	value := crypto.Base64Encode(fmt.Sprintf("%s:%s", username, password))
-	return metadata.AppendToOutgoingContext(ctx, "authorization", value)
+	return metadata.AppendToOutgoingContext(ctx, authorizationHeader, value)
 }
 
-// CreateAuthenticationUnaryInterceptor creates a unary interceptor for authentication
+func apiKeyInterceptor(ctx context.Context, apiKey string) context.Context {
+	value := crypto.Base64Encode(fmt.Sprintf("Bearer: %s", apiKey))
+	return metadata.AppendToOutgoingContext(ctx, authorizationHeader, value)
+}
+
+// CreateAuthenticationUnaryInterceptor creates a unary interceptor for basic authentication.
 func createAuthenticationUnaryInterceptor(username, password string) grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		ctx = authenticationInterceptor(ctx, username, password)
+		return invoker(ctx, method, req, reply, cc, opts...)
+	}
+}
+
+// createAPIKeyUnaryInteceptor creates a unary inteceptor for api key authentication.
+func createAPIKeyUnaryInteceptor(apiKey string) grpc.UnaryClientInterceptor {
+	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+		ctx = apiKeyInterceptor(ctx, apiKey)
 		return invoker(ctx, method, req, reply, cc, opts...)
 	}
 }

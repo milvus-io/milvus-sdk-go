@@ -59,6 +59,7 @@ func TestClientConfig(t *testing.T) {
 		t,
 		&Config{
 			Address: "https://xxxx-xxxxxxxxxxxxxx-xxxxxx.aws-us-west-2.vectordb-sit.zillizcloud.com:19530/database_name",
+			APIKey:  "test-token",
 		},
 		"xxxx-xxxxxxxxxxxxxx-xxxxxx.aws-us-west-2.vectordb-sit.zillizcloud.com:19530", "database_name", true, false,
 	)
