@@ -112,14 +112,13 @@ func main() {
 
 	// insert by struct
 	type DynamicRow struct {
-		entity.RowBase
 		ID     int64     `milvus:"name:ID;primary_key"`
 		Vector []float32 `milvus:"name:embeddings;dim:128"`
 		Source int32     `milvus:"name:source"`
 		Value  float64   `milvus:"name:random"`
 	}
 
-	rows := make([]entity.Row, 0, nEntities)
+	rows := make([]interface{}, 0, nEntities)
 	for i := 0; i < nEntities; i++ {
 		vec := make([]float32, 0, dim)
 		for j := 0; j < dim; j++ {
@@ -134,7 +133,7 @@ func main() {
 		})
 	}
 
-	_, err = c.InsertByRows(ctx, collectionName, "", rows)
+	_, err = c.InsertRows(ctx, collectionName, "", rows)
 	if err != nil {
 		log.Fatal("failed to insert by rows: ", err.Error())
 	}
@@ -151,7 +150,7 @@ func main() {
 	m["source"] = int32(1)
 	m["random"] = rand.Float64()
 
-	_, err = c.InsertByRows(ctx, collectionName, "", []entity.Row{entity.MapRow(m)})
+	_, err = c.InsertRows(ctx, collectionName, "", []interface{}{m})
 	if err != nil {
 		log.Fatal("failed to insert by rows: ", err.Error())
 	}
@@ -232,6 +231,16 @@ func main() {
 	}
 	printResultSet(sRet3, map[string]string{idCol: "int", randomCol: "double", typeCol: "int", sourceCol: "int"})
 
+	// with wildcard "*"
+	fmt.Printf(msgFmt, fmt.Sprintf("query with expr `%s`, output = [`*`, `random`]", expr))
+	sRet3, err = c.Query(ctx, collectionName, nil, expr, []string{"*", randomCol}, client.WithLimit(3))
+	if err != nil {
+		log.Printf("failed to query result with wildcast, err:%s\n", err.Error())
+	}
+	if sRet3 != nil {
+		printResultSet(sRet3, map[string]string{randomCol: "double", "$meta": "json"})
+	}
+
 	// drop collection
 	fmt.Printf(msgFmt, "drop collection `dynamic_example`")
 	if err := c.DropCollection(ctx, collectionName); err != nil {
@@ -273,6 +282,16 @@ func printResultSet(sRets client.ResultSet, outputInfo map[string]string) {
 			var data []float64
 			for i := 0; i < column.Len(); i++ {
 				line, err := column.GetAsDouble(i)
+				if err != nil {
+					fmt.Printf("failed to get column %s at index %d, err: %s\n", name, i, err.Error())
+				}
+				data = append(data, line)
+			}
+			fmt.Println("Data:", data)
+		case "json":
+			var data []string
+			for i := 0; i < column.Len(); i++ {
+				line, err := column.GetAsString(i)
 				if err != nil {
 					fmt.Printf("failed to get column %s at index %d, err: %s\n", name, i, err.Error())
 				}

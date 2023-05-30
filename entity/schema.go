@@ -125,6 +125,17 @@ func (s *Schema) PKFieldName() string {
 	return ""
 }
 
+func (s *Schema) ScalarFields() []string {
+	var result []string
+	for _, field := range s.Fields {
+		if field.DataType == FieldTypeFloatVector || field.DataType == FieldTypeBinaryVector {
+			continue
+		}
+		result = append(result, field.Name)
+	}
+	return result
+}
+
 // Field represent field schema in milvus
 type Field struct {
 	ID             int64  // field id, generated when collection is created, input value is ignored
