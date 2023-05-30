@@ -139,8 +139,10 @@ type Client interface {
 
 	// CreateCollectionByRow create collection by row
 	CreateCollectionByRow(ctx context.Context, row entity.Row, shardNum int32) error
-	// InsertByRows insert by rows
-	InsertByRows(ctx context.Context, collName string, paritionName string, rows []entity.Row) (entity.Column, error)
+	// DEPRECATED
+	InsertByRows(ctx context.Context, collName string, partitionName string, rows []entity.Row) (entity.Column, error)
+	// InsertRows insert with row base data.
+	InsertRows(ctx context.Context, collName string, partitionName string, rows []interface{}) (entity.Column, error)
 
 	// ManualCompaction triggers a compaction on provided collection
 	ManualCompaction(ctx context.Context, collName string, toleranceDuration time.Duration) (int64, error)
