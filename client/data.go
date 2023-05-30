@@ -73,6 +73,10 @@ func (c *GrpcClient) Search(ctx context.Context, collName string, partitions []s
 	results := resp.GetResults()
 	offset := 0
 	fieldDataList := results.GetFieldsData()
+	// response output fields supported after 2.2.9
+	if len(results.GetOutputFields()) > 0 {
+		outputFields = results.GetOutputFields()
+	}
 	for i := 0; i < int(results.GetNumQueries()); i++ {
 		rc := int(results.GetTopks()[i]) // result entry count for current query
 		entry := SearchResult{
@@ -92,7 +96,9 @@ func (c *GrpcClient) Search(ctx context.Context, collName string, partitions []s
 }
 
 func (c *GrpcClient) parseSearchResult(sch *entity.Schema, outputFields []string, fieldDataList []*schema.FieldData, idx, from, to int) ([]entity.Column, error) {
-	//dynamicField := sch.GetDynamicField()
+	// backward compatibility, expand wildcard client side
+	outputFields = expandWildcard(outputFields, sch)
+
 	fields := make(map[string]*schema.FieldData)
 	var dynamicColumn *entity.ColumnJSONBytes
 	for _, fieldData := range fieldDataList {
@@ -218,6 +224,10 @@ func (c *GrpcClient) Query(ctx context.Context, collectionName string, partition
 		return nil, err
 	}
 
+	// response output fields supported after 2.2.9
+	if len(resp.GetOutputFields()) > 0 {
+		outputFields = resp.GetOutputFields()
+	}
 	fieldsData := resp.GetFieldsData()
 	// query always has pk field as output
 	hasPK := false
@@ -544,4 +554,17 @@ func estRowSize(sch *entity.Schema, selected []string) int64 {
 		}
 	}
 	return total
+}
+
+func expandWildcard(outputFields []string, sch *entity.Schema) []string {
+	results := make([]string, 0, len(outputFields))
+	for _, field := range outputFields {
+		// all scalar in v2.2.x
+		if field == "*" {
+			results = append(results, sch.ScalarFields()...)
+			continue
+		}
+		results = append(results, field)
+	}
+	return results
 }
