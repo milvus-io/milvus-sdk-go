@@ -14,7 +14,7 @@ import (
 const (
 	milvusAddr     = `localhost:19530`
 	nEntities, dim = 3000, 8
-	collectionName = "hello_milvus"
+	collectionName = "query_example"
 
 	msgFmt                         = "\n==== %s ====\n"
 	idCol, randomCol, embeddingCol = "ID", "random", "embeddings"
@@ -43,33 +43,11 @@ func main() {
 	}
 
 	// define schema
-	fmt.Printf(msgFmt, "create collection `hello_milvus")
-	schema := &entity.Schema{
-		CollectionName: collectionName,
-		Description:    "hello_milvus is the simplest demo to introduce the APIs",
-		AutoID:         false,
-		Fields: []*entity.Field{
-			{
-				Name:       idCol,
-				DataType:   entity.FieldTypeInt64,
-				PrimaryKey: true,
-				AutoID:     false,
-			},
-			{
-				Name:       randomCol,
-				DataType:   entity.FieldTypeDouble,
-				PrimaryKey: false,
-				AutoID:     false,
-			},
-			{
-				Name:     embeddingCol,
-				DataType: entity.FieldTypeFloatVector,
-				TypeParams: map[string]string{
-					entity.TypeParamDim: fmt.Sprintf("%d", dim),
-				},
-			},
-		},
-	}
+	fmt.Printf(msgFmt, fmt.Sprintf("create collection `%s`", collectionName))
+	schema := entity.NewSchema().WithName(collectionName).WithDescription("query_example is a simple demo to demonstrate query API").
+		WithField(entity.NewField().WithName(idCol).WithDataType(entity.FieldTypeInt64).WithIsPrimaryKey(true)).
+		WithField(entity.NewField().WithName(randomCol).WithDataType(entity.FieldTypeDouble)).
+		WithField(entity.NewField().WithName(embeddingCol).WithDataType(entity.FieldTypeFloatVector).WithDim(dim))
 
 	// create collection with consistency level, which serves as the default search/query consistency level
 	if err := c.CreateCollection(ctx, schema, entity.DefaultShardNumber, client.WithConsistencyLevel(entity.ClBounded)); err != nil {
@@ -100,6 +78,16 @@ func main() {
 	randomColData := entity.NewColumnDouble(randomCol, randomList)
 	embeddingColData := entity.NewColumnFloatVector(embeddingCol, dim, embeddingList)
 
+	// insert data
+	if _, err := c.Insert(ctx, collectionName, "", idColData, randomColData, embeddingColData); err != nil {
+		log.Fatalf("failed to insert random data into `query_example`, err: %v", err)
+	}
+
+	// flush data
+	if err := c.Flush(ctx, collectionName, false); err != nil {
+		log.Fatalf("failed to flush collection `query_example`, err: %v", err)
+	}
+
 	// build index
 	fmt.Printf(msgFmt, "start creating index IVF_FLAT")
 	idx, err := entity.NewIndexIvfFlat(entity.L2, 128)
@@ -110,81 +98,56 @@ func main() {
 		log.Fatalf("failed to create index, err: %v", err)
 	}
 
-	// insert data
-	if _, err := c.Insert(ctx, collectionName, "", idColData, randomColData, embeddingColData); err != nil {
-		log.Fatalf("failed to insert random data into `hello_milvus, err: %v", err)
-	}
-
 	fmt.Printf(msgFmt, "start loading collection")
 	err = c.LoadCollection(ctx, collectionName, false)
 	if err != nil {
 		log.Fatalf("failed to load collection, err: %v", err)
 	}
 
-	// search with default consistency level (bounded in this example)
-	fmt.Printf(msgFmt, "start searcching based on vector similarity")
-	vec2search := []entity.Vector{
-		entity.FloatVector(embeddingList[len(embeddingList)-2]),
-		entity.FloatVector(embeddingList[len(embeddingList)-1]),
-	}
-	begin := time.Now()
-	sp, _ := entity.NewIndexFlatSearchParam()
-	sRet, err := c.Search(ctx, collectionName, nil, "", []string{randomCol}, vec2search,
-		embeddingCol, entity.L2, topK, sp)
-	end := time.Now()
-	if err != nil {
-		log.Fatalf("failed to search collection, err: %v", err)
-	}
-
-	fmt.Println("results:")
-	for _, res := range sRet {
-		printResult(&res)
-	}
-	fmt.Printf("\tbounded consistency search latency: %dms\n", end.Sub(begin)/time.Millisecond)
-
 	// search with strong consistency level
-	begin = time.Now()
-	sp, _ = entity.NewIndexFlatSearchParam()
-	sRet, err = c.Search(ctx, collectionName, nil, "", []string{randomCol}, vec2search,
-		embeddingCol, entity.L2, topK, sp, client.WithSearchQueryConsistencyLevel(entity.ClStrong))
-	end = time.Now()
+	// query
+	expr := "ID in [0, 1, 2]"
+	fmt.Printf(msgFmt, fmt.Sprintf("query with expr `%s`", expr))
+	resultSet, err := c.Query(ctx, collectionName, nil, expr, []string{idCol, randomCol})
 	if err != nil {
-		log.Fatalf("failed to search collection, err: %v", err)
+		log.Fatalf("failed to query result, err: %v", err)
 	}
-
-	fmt.Println("results:")
-	for _, res := range sRet {
-		printResult(&res)
-	}
-	fmt.Printf("\tstrong consistency search latency: %dms\n", end.Sub(begin)/time.Millisecond)
+	printResultSet(resultSet, idCol, randomCol)
 
 	// drop collection
-	fmt.Printf(msgFmt, "drop collection `hello_milvus`")
+	fmt.Printf(msgFmt, fmt.Sprintf("drop collection `%s`", collectionName))
 	if err := c.DropCollection(ctx, collectionName); err != nil {
 		log.Fatalf("failed to drop collection, err: %v", err)
 	}
 }
 
-func printResult(sRet *client.SearchResult) {
-	randoms := make([]float64, 0, sRet.ResultCount)
-	scores := make([]float32, 0, sRet.ResultCount)
-
-	var randCol *entity.ColumnDouble
-	for _, field := range sRet.Fields {
-		if field.Name() == randomCol {
-			c, ok := field.(*entity.ColumnDouble)
-			if ok {
-				randCol = c
+func printResultSet(rs client.ResultSet, outputFields ...string) {
+	for _, fieldName := range outputFields {
+		column := rs.GetColumn(fieldName)
+		if column == nil {
+			fmt.Printf("column %s not exists in result set\n", fieldName)
+		}
+		switch column.Type() {
+		case entity.FieldTypeInt64:
+			var result []int64
+			for i := 0; i < column.Len(); i++ {
+				v, err := column.GetAsInt64(i)
+				if err != nil {
+					fmt.Printf("column %s row %d cannot GetAsInt64, %s\n", fieldName, i, err.Error())
+				}
+				result = append(result, v)
 			}
+			fmt.Printf("Column %s: value: %v\n", fieldName, result)
+		case entity.FieldTypeDouble:
+			var result []float64
+			for i := 0; i < column.Len(); i++ {
+				v, err := column.GetAsDouble(i)
+				if err != nil {
+					fmt.Printf("column %s row %d cannot GetAsDouble, %s\n", fieldName, i, err.Error())
+				}
+				result = append(result, v)
+			}
+			fmt.Printf("Column %s: value: %v\n", fieldName, result)
 		}
 	}
-	for i := 0; i < sRet.ResultCount; i++ {
-		val, err := randCol.ValueByIdx(i)
-		if err != nil {
-			log.Fatal(err)
-		}
-		randoms = append(randoms, val)
-		scores = append(scores, sRet.Scores[i])
-	}
-	fmt.Printf("\trandoms: %v, scores: %v\n", randoms, scores)
 }
