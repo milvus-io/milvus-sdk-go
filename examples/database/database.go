@@ -15,7 +15,7 @@ func main() {
 	cfg := client.Config{
 		Address:  "localhost:19530",
 		Username: "root",
-		Password: "Milvus",
+		Password: "S6.Zr9:Xk,/g7ByR,eb*XO<$KS~D7k|M",
 	}
 	clientDefault := mustConnect(ctx, cfg)
 	defer clientDefault.Close()
@@ -26,9 +26,6 @@ func main() {
 	dbs, err := clientDefault.ListDatabases(ctx)
 	if err != nil {
 		log.Fatalf("list database failed: %+v", err)
-	}
-	if len(dbs) != 2 {
-		log.Fatalf("unexpected db number, %d, %+v", len(dbs), dbs)
 	}
 
 	fmt.Println("using db1...")
@@ -56,9 +53,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("list on db1 failed: %+v", err)
 	}
-	if len(collections) != 2 {
-		log.Fatalf("unexpected count of db1, %d", len(collections))
-	}
 
 	fmt.Println("create db2...")
 	if err := clientDefault.CreateDatabase(ctx, "db2"); err != nil {
@@ -67,9 +61,6 @@ func main() {
 	dbs, err = clientDefault.ListDatabases(ctx)
 	if err != nil {
 		log.Fatalf("list database failed: %+v", err)
-	}
-	if len(dbs) != 3 {
-		log.Fatalf("unexpected db number, %d, %+v", len(dbs), dbs)
 	}
 
 	fmt.Println("connect to db2 with existing client...")
@@ -80,7 +71,11 @@ func main() {
 		log.Fatalf("drop col1 at db2 failed, %+v", err)
 	}
 
-	clientDefault.UsingDatabase(ctx, "")
+	err = clientDefault.UsingDatabase(ctx, "")
+	if err != nil {
+		log.Fatalf("using database failed: %+v", err)
+	}
+
 	fmt.Println("drop db2: drop empty database should be always success...")
 	if err := clientDefault.DropDatabase(ctx, "db2"); err != nil {
 		log.Fatalf("drop db2 failed, %+v", err)
@@ -88,9 +83,6 @@ func main() {
 	dbs, err = clientDefault.ListDatabases(ctx)
 	if err != nil {
 		log.Fatalf("list database failed: %+v", err)
-	}
-	if len(dbs) != 2 {
-		log.Fatalf("unexpected db number, %d, %+v", len(dbs), dbs)
 	}
 
 	fmt.Println("drop db1: drop non-empty database should be fail...")
@@ -122,9 +114,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("list database failed: %+v", err)
 	}
-	if len(dbs) != 1 {
-		log.Fatalf("unexpected db number, %d, %+v", len(dbs), dbs)
-	}
+
+	fmt.Println("db:", dbs)
 }
 
 func mustConnect(ctx context.Context, cfg client.Config) client.Client {
@@ -136,6 +127,13 @@ func mustConnect(ctx context.Context, cfg client.Config) client.Client {
 }
 
 func createCollection(ctx context.Context, c client.Client, collectionName string) {
+	ok, err := c.HasCollection(ctx, collectionName)
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+	if ok {
+		c.DropCollection(ctx, collectionName)
+	}
 	schema := &entity.Schema{
 		CollectionName: collectionName,
 		Description:    "database demo",

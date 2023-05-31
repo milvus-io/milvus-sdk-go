@@ -8,7 +8,6 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -48,12 +47,15 @@ type Config struct {
 	Username      string // Username for auth.
 	Password      string // Password for auth.
 	DBName        string // DBName for this client.
+	Identifier    string // Identifier for this connection
 	EnableTLSAuth bool   // Enable TLS Auth for transport security.
 	APIKey        string // API key
 
 	DialOptions []grpc.DialOption // Dial options for GRPC.
 
 	parsedAddress *url.URL
+
+	DisableConn bool
 }
 
 // Copy a new config, dialOption may shared with old config.
@@ -102,40 +104,27 @@ func (c *Config) getParsedAddress() string {
 	return c.parsedAddress.Host
 }
 
-// syncConfig
-type syncConfig struct {
-	sync.Mutex
-	cfg Config
+// useDatabase change the inner db name.
+func (c *Config) useDatabase(dbName string) {
+	c.DBName = dbName
 }
 
 // useDatabase change the inner db name.
-func (c *syncConfig) useDatabase(dbName string) {
-	c.Lock()
-	defer c.Unlock()
-	c.cfg.DBName = dbName
-}
-
-// Get parsed remote milvus address, should be called after parse was called.
-func (c *syncConfig) getParsedAddress() string {
-	c.Lock()
-	defer c.Unlock()
-	return c.cfg.getParsedAddress()
+func (c *Config) setIdentifier(identifier string) {
+	c.Identifier = identifier
 }
 
 // Get parsed grpc dial options, should be called after parse was called.
-func (c *syncConfig) getDialOption() []grpc.DialOption {
-	c.Lock()
-	defer c.Unlock()
-
-	options := c.cfg.DialOptions
-	if c.cfg.DialOptions == nil {
+func (c *Config) getDialOption() []grpc.DialOption {
+	options := c.DialOptions
+	if c.DialOptions == nil {
 		// Add default connection options.
 		options = make([]grpc.DialOption, len(DefaultGrpcOpts))
 		copy(options, DefaultGrpcOpts)
 	}
 
 	// Construct dial option.
-	if c.cfg.EnableTLSAuth {
+	if c.EnableTLSAuth {
 		options = append(options, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})))
 	} else {
 		options = append(options, grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -153,36 +142,8 @@ func (c *syncConfig) getDialOption() []grpc.DialOption {
 			}),
 		))
 
-	// Construct username:password field
-	if c.cfg.Username != "" && c.cfg.Password != "" {
-		options = append(options,
-			grpc.WithChainUnaryInterceptor(
-				createAuthenticationUnaryInterceptor(c.cfg.Username, c.cfg.Password),
-			),
-			grpc.WithStreamInterceptor(createAuthenticationStreamInterceptor(c.cfg.Username, c.cfg.Password)),
-		)
-	}
-
-	// Construct api token
-	if c.cfg.APIKey != "" {
-		options = append(options, grpc.WithChainUnaryInterceptor(
-			createAPIKeyUnaryInteceptor(c.cfg.APIKey),
-		))
-	}
-
-	// Construct DBName field
-	dbNameGetter := func() string {
-		c.Lock()
-		defer c.Unlock()
-		return c.cfg.DBName
-	}
-
-	options = append(options,
-		grpc.WithChainUnaryInterceptor(
-			createDatabaseNameUnaryInterceptor(
-				dbNameGetter),
-		),
-		grpc.WithStreamInterceptor(createDatabaseNameStreamInterceptor(dbNameGetter)),
-	)
+	options = append(options, grpc.WithChainUnaryInterceptor(
+		createMetaDataUnaryInterceptor(c),
+	))
 	return options
 }
