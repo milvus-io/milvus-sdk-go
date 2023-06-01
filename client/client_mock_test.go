@@ -10,13 +10,14 @@ import (
 	common "github.com/milvus-io/milvus-proto/go-api/commonpb"
 	server "github.com/milvus-io/milvus-proto/go-api/milvuspb"
 	schema "github.com/milvus-io/milvus-proto/go-api/schemapb"
-	"github.com/milvus-io/milvus-sdk-go/v2/entity"
-	"github.com/milvus-io/milvus-sdk-go/v2/mocks"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
+
+	"github.com/milvus-io/milvus-sdk-go/v2/entity"
+	"github.com/milvus-io/milvus-sdk-go/v2/mocks"
 )
 
 type MockSuiteBase struct {
@@ -56,7 +57,8 @@ func (s *MockSuiteBase) mockDialer(context.Context, string) (net.Conn, error) {
 
 func (s *MockSuiteBase) SetupTest() {
 	c, err := NewClient(context.Background(), Config{
-		Address: "bufnet2",
+		Address:     "bufnet2",
+		DisableConn: true,
 		DialOptions: []grpc.DialOption{
 			grpc.WithBlock(),
 			grpc.WithContextDialer(s.mockDialer),
@@ -909,7 +911,8 @@ func (m *MockServer) GetFlushAllState(_a0 context.Context, _a1 *server.GetFlushA
 }
 
 func (m *MockServer) Connect(_ context.Context, _ *server.ConnectRequest) (*server.ConnectResponse, error) {
-	panic("not implemented") // TODO: Implement
+	s, err := SuccessStatus()
+	return &server.ConnectResponse{Status: s}, err
 }
 
 func getSuccessStatus() *common.Status {

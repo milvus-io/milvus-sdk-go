@@ -14,11 +14,11 @@ package client
 
 import (
 	"context"
-	"sync"
 	"time"
 
-	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 	"google.golang.org/grpc"
+
+	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )
 
 // Client is the interface used to communicate with Milvus
@@ -32,7 +32,7 @@ type Client interface {
 	// 1. goroutine A access DB1.
 	// 2. goroutine B call UsingDatabase(ctx, "DB2").
 	// 3. goroutine A access DB2 after 2.
-	UsingDatabase(ctx context.Context, dbName string)
+	UsingDatabase(ctx context.Context, dbName string) error
 
 	// -- database --
 	// ListDatabases list all database in milvus cluster.
@@ -233,10 +233,7 @@ func NewClient(ctx context.Context, config Config) (Client, error) {
 	}
 
 	c := &GrpcClient{
-		config: &syncConfig{
-			Mutex: sync.Mutex{},
-			cfg:   config,
-		},
+		config: &config,
 	}
 
 	// Parse remote address.

@@ -11,6 +11,8 @@ import (
 	"testing"
 	"time"
 
+	common "github.com/milvus-io/milvus-proto/go-api/commonpb"
+	server "github.com/milvus-io/milvus-proto/go-api/milvuspb"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -20,8 +22,6 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/test/bufconn"
 
-	common "github.com/milvus-io/milvus-proto/go-api/commonpb"
-	server "github.com/milvus-io/milvus-proto/go-api/milvuspb"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )
 
@@ -334,7 +334,7 @@ func TestGrpcClientRetryPolicy(t *testing.T) {
 	}()
 	defer s.Stop()
 
-	client, err := NewClient(context.TODO(), Config{Address: address})
+	client, err := NewClient(context.TODO(), Config{Address: address, DisableConn: true})
 	assert.Nil(t, err)
 	defer client.Close()
 

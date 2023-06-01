@@ -14,23 +14,27 @@ package client
 import (
 	"context"
 	"fmt"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/golang/protobuf/proto"
-	"github.com/milvus-io/milvus-sdk-go/v2/entity"
-	"google.golang.org/grpc"
-
 	common "github.com/milvus-io/milvus-proto/go-api/commonpb"
 	server "github.com/milvus-io/milvus-proto/go-api/milvuspb"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
+	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )
 
-// GrpcClient, uses default grpc Service definition to connect with Milvus2.0
+// GrpcClient  uses default grpc Service definition to connect with Milvus2.0
 type GrpcClient struct {
 	Conn    *grpc.ClientConn           // grpc connection instance
 	Service server.MilvusServiceClient // Service client stub
 
-	config *syncConfig
+	config *Config // No thread safety
 }
 
 // connect connect to Service
@@ -45,6 +49,50 @@ func (c *GrpcClient) connect(ctx context.Context, addr string, opts ...grpc.Dial
 
 	c.Conn = conn
 	c.Service = server.NewMilvusServiceClient(c.Conn)
+
+	if !c.config.DisableConn {
+		err = c.connectInternal(ctx)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c *GrpcClient) connectInternal(ctx context.Context) error {
+	hostName, err := os.Hostname()
+	if err != nil {
+		return err
+	}
+
+	req := &server.ConnectRequest{
+		ClientInfo: &common.ClientInfo{
+			SdkType:    "Golang",
+			SdkVersion: "v2.2.x",
+			LocalTime:  time.Now().String(),
+			User:       c.config.Username,
+			Host:       hostName,
+		},
+	}
+
+	resp, err := c.Service.Connect(ctx, req)
+	if err != nil {
+		status, ok := status.FromError(err)
+		if ok {
+			if status.Code() == codes.Unimplemented {
+				return errors.New("this version of sdk is incompatible with server," +
+					" please downgrade your sdk or upgrade your server")
+			}
+		}
+		return err
+	}
+
+	if resp.GetStatus().ErrorCode != common.ErrorCode_Success {
+		return fmt.Errorf("connect fail, %s", resp.Status.Reason)
+	}
+
+	c.config.Identifier = strconv.FormatInt(resp.GetIdentifier(), 10)
 	return nil
 }
 
@@ -53,8 +101,14 @@ func (c *GrpcClient) connect(ctx context.Context, addr string, opts ...grpc.Dial
 // 1. goroutine A access DB1.
 // 2. goroutine B call UsingDatabase(ctx, "DB2").
 // 3. goroutine A access DB2 after 2.
-func (c *GrpcClient) UsingDatabase(ctx context.Context, dbName string) {
+func (c *GrpcClient) UsingDatabase(ctx context.Context, dbName string) error {
 	c.config.useDatabase(dbName)
+	err := c.connectInternal(ctx)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // Close close the connection
