@@ -25,7 +25,7 @@ const (
 	MaxDim                    = 32768
 	DefaultMaxLength          = "65535"
 	DefaultShards             = int32(2)
-	DefaultConsistencyLevel   = entity.ConsistencyLevel(0)
+	DefaultConsistencyLevel   = entity.ClBounded
 	DefaultNb                 = 3000
 	DefaultNq                 = 5
 	DefaultTopK               = 10
