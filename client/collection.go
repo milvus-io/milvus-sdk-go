@@ -199,7 +199,7 @@ func (c *GrpcClient) CreateCollection(ctx context.Context, collSchema *entity.Sc
 		ShardsNum:      shardNum,
 		// default consistency level is strong
 		// to be consistent with previous version
-		ConsistencyLevel: common.ConsistencyLevel_Strong,
+		ConsistencyLevel: common.ConsistencyLevel_Bounded,
 		NumPartitions:    0,
 	}
 	// apply options on request

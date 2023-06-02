@@ -18,276 +18,6 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-func TestGrpcClientListCollections(t *testing.T) {
-	ctx := context.Background()
-	c := testClient(ctx, t)
-
-	type testCase struct {
-		ids     []int64
-		names   []string
-		collNum int
-		inMem   []int64
-	}
-	caseLen := 5
-	cases := make([]testCase, 0, caseLen)
-	for i := 0; i < caseLen; i++ {
-		collNum := rand.Intn(5) + 2
-		tc := testCase{
-			ids:     make([]int64, 0, collNum),
-			names:   make([]string, 0, collNum),
-			collNum: collNum,
-		}
-		base := rand.Intn(1000)
-		for j := 0; j < collNum; j++ {
-			base += rand.Intn(1000)
-			tc.ids = append(tc.ids, int64(base))
-			base += rand.Intn(500)
-			tc.names = append(tc.names, fmt.Sprintf("coll_%d", base))
-			inMem := rand.Intn(100)
-			if inMem%2 == 0 {
-
-				tc.inMem = append(tc.inMem, 100)
-			} else {
-				tc.inMem = append(tc.inMem, 0)
-			}
-		}
-		cases = append(cases, tc)
-	}
-
-	for _, tc := range cases {
-		mockServer.SetInjection(MShowCollections, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			s, err := SuccessStatus()
-			resp := &server.ShowCollectionsResponse{
-				Status:              s,
-				CollectionIds:       tc.ids,
-				CollectionNames:     tc.names,
-				InMemoryPercentages: tc.inMem,
-			}
-			return resp, err
-		})
-		collections, err := c.ListCollections(ctx)
-		if assert.Nil(t, err) && assert.Equal(t, tc.collNum, len(collections)) {
-			// assert element match
-			rids := make([]int64, 0, len(collections))
-			rnames := make([]string, 0, len(collections))
-			for _, collection := range collections {
-				rids = append(rids, collection.ID)
-				rnames = append(rnames, collection.Name)
-			}
-			assert.ElementsMatch(t, tc.ids, rids)
-			assert.ElementsMatch(t, tc.names, rnames)
-			// assert id & name match
-			for idx, rid := range rids {
-				for jdx, id := range tc.ids {
-					if rid == id {
-						assert.Equal(t, tc.names[jdx], rnames[idx])
-						assert.Equal(t, tc.inMem[jdx] == 100, collections[idx].Loaded)
-					}
-				}
-			}
-		}
-	}
-}
-
-func TestGrpcClientCreateCollection(t *testing.T) {
-	ctx := context.Background()
-	c := testClient(ctx, t)
-	// default, all collection name returns false
-	mockServer.DelInjection(MHasCollection)
-	t.Run("Test normal creation", func(t *testing.T) {
-		ds := defaultSchema()
-		shardsNum := int32(1)
-		mockServer.SetInjection(MCreateCollection, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
-			req, ok := raw.(*server.CreateCollectionRequest)
-			if !ok {
-				return &common.Status{ErrorCode: common.ErrorCode_IllegalArgument}, errors.New("illegal request type")
-			}
-			assert.Equal(t, testCollectionName, req.GetCollectionName())
-			sschema := &schema.CollectionSchema{}
-			if !assert.Nil(t, proto.Unmarshal(req.GetSchema(), sschema)) {
-				if assert.Equal(t, len(ds.Fields), len(sschema.Fields)) {
-					for idx, fieldSchema := range ds.Fields {
-						assert.Equal(t, fieldSchema.Name, sschema.GetFields()[idx].GetName())
-						assert.Equal(t, fieldSchema.PrimaryKey, sschema.GetFields()[idx].GetIsPrimaryKey())
-						assert.Equal(t, fieldSchema.AutoID, sschema.GetFields()[idx].GetAutoID())
-						assert.EqualValues(t, fieldSchema.DataType, sschema.GetFields()[idx].GetDataType())
-					}
-				}
-				assert.Equal(t, shardsNum, req.GetShardsNum())
-			}
-
-			return &common.Status{ErrorCode: common.ErrorCode_Success}, nil
-		})
-		assert.Nil(t, c.CreateCollection(ctx, ds, shardsNum))
-		mockServer.DelInjection(MCreateCollection)
-	})
-
-	t.Run("Test create with consistency level", func(t *testing.T) {
-		ds := defaultSchema()
-		shardsNum := int32(1)
-		mockServer.SetInjection(MCreateCollection, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
-			req, ok := raw.(*server.CreateCollectionRequest)
-			if !ok {
-				return &common.Status{ErrorCode: common.ErrorCode_IllegalArgument}, errors.New("illegal request type")
-			}
-			assert.Equal(t, testCollectionName, req.GetCollectionName())
-			assert.Equal(t, common.ConsistencyLevel_Eventually, req.GetConsistencyLevel())
-
-			return &common.Status{ErrorCode: common.ErrorCode_Success}, nil
-		})
-		assert.Nil(t, c.CreateCollection(ctx, ds, shardsNum, WithConsistencyLevel(entity.ClEventually)))
-		mockServer.DelInjection(MCreateCollection)
-	})
-
-	t.Run("Test invalid schemas", func(t *testing.T) {
-		cases := []*entity.Schema{
-			// empty fields
-			{
-				CollectionName: testCollectionName,
-				Fields:         []*entity.Field{},
-			},
-			// empty collection name
-			{
-				CollectionName: "",
-				Fields: []*entity.Field{
-					{
-						Name:       "int64",
-						DataType:   entity.FieldTypeInt64,
-						PrimaryKey: true,
-					},
-					{
-						Name:       "vector",
-						DataType:   entity.FieldTypeFloatVector,
-						TypeParams: map[string]string{entity.TypeParamDim: "128"},
-					},
-				},
-			},
-			// multiple primary key
-			{
-				CollectionName: testCollectionName,
-				Fields: []*entity.Field{
-					{
-						Name:       "int64",
-						DataType:   entity.FieldTypeInt64,
-						PrimaryKey: true,
-					},
-					{
-						Name:       "int64_2",
-						DataType:   entity.FieldTypeInt64,
-						PrimaryKey: true,
-					},
-					{
-						Name:       "vector",
-						DataType:   entity.FieldTypeFloatVector,
-						TypeParams: map[string]string{entity.TypeParamDim: "128"},
-					},
-				},
-			},
-			// multiple auto id
-			{
-				CollectionName: testCollectionName,
-				Fields: []*entity.Field{
-					{
-						Name:       "int64",
-						DataType:   entity.FieldTypeInt64,
-						PrimaryKey: true,
-						AutoID:     true,
-					},
-					{
-						Name:       "int64_2",
-						DataType:   entity.FieldTypeInt64,
-						PrimaryKey: false,
-						AutoID:     true,
-					},
-					{
-						Name:       "vector",
-						DataType:   entity.FieldTypeFloatVector,
-						TypeParams: map[string]string{entity.TypeParamDim: "128"},
-					},
-				},
-			},
-			// Bad primary key type
-			{
-				CollectionName: testCollectionName,
-				Fields: []*entity.Field{
-					{
-						Name:       "float_pk",
-						DataType:   entity.FieldTypeFloat,
-						PrimaryKey: true,
-					},
-					{
-						Name:       "vector",
-						DataType:   entity.FieldTypeFloatVector,
-						TypeParams: map[string]string{entity.TypeParamDim: "128"},
-					},
-				},
-			},
-		}
-		shardsNum := int32(1) // <= 0 will used default shards num 2, skip check
-		mockServer.SetInjection(MCreateCollection, func(_ context.Context, _ proto.Message) (proto.Message, error) {
-			// should not be here!
-			assert.FailNow(t, "should not be here")
-			return nil, errors.New("should not be here")
-		})
-		for _, s := range cases {
-			assert.NotNil(t, c.CreateCollection(ctx, s, shardsNum))
-			mockServer.DelInjection(MCreateCollection)
-		}
-	})
-
-	t.Run("test duplicated collection", func(t *testing.T) {
-		m := make(map[string]struct{})
-		mockServer.SetInjection(MCreateCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			req, ok := raw.(*server.CreateCollectionRequest)
-			if !ok {
-				return BadRequestStatus()
-			}
-			m[req.GetCollectionName()] = struct{}{}
-
-			return SuccessStatus()
-		})
-		defer mockServer.DelInjection(MCreateCollection)
-		mockServer.SetInjection(MHasCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			req, ok := raw.(*server.HasCollectionRequest)
-			resp := &server.BoolResponse{}
-			if !ok {
-				return BadRequestStatus()
-			}
-
-			_, has := m[req.GetCollectionName()]
-			resp.Value = has
-			s, err := SuccessStatus()
-			resp.Status = s
-			return resp, err
-		})
-		defer mockServer.DelInjection(MHasCollection)
-
-		assert.Nil(t, c.CreateCollection(ctx, defaultSchema(), 1))
-		assert.NotNil(t, c.CreateCollection(ctx, defaultSchema(), 1))
-	})
-
-	t.Run("test server returns error", func(t *testing.T) {
-		mockServer.SetInjection(MCreateCollection, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
-			_, ok := raw.(*server.CreateCollectionRequest)
-			if !ok {
-				return BadRequestStatus()
-			}
-			return &common.Status{
-				ErrorCode: common.ErrorCode_UnexpectedError,
-				Reason:    "Service is not healthy",
-			}, nil
-		})
-		assert.Error(t, c.CreateCollection(ctx, defaultSchema(), 1))
-
-		mockServer.SetInjection(MCreateCollection, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
-			return &common.Status{}, errors.New("mocked grpc error")
-		})
-
-		assert.Error(t, c.CreateCollection(ctx, defaultSchema(), 1))
-		mockServer.DelInjection(MCreateCollection)
-	})
-}
-
 // default HasCollection injection, returns true only when collection name is `testCollectionName`
 var hasCollectionDefault = func(_ context.Context, raw proto.Message) (proto.Message, error) {
 	req, ok := raw.(*server.HasCollectionRequest)
@@ -675,6 +405,7 @@ func TestGrpcClientGetLoadingProgress(t *testing.T) {
 }
 
 func TestGrpcClientGetLoadState(t *testing.T) {
+
 	ctx := context.Background()
 	c := testClient(ctx, t)
 
@@ -704,6 +435,242 @@ func TestGrpcClientGetLoadState(t *testing.T) {
 
 type CollectionSuite struct {
 	MockSuiteBase
+}
+
+func (s *CollectionSuite) TestListCollections() {
+	c := s.client
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	type testCase struct {
+		ids     []int64
+		names   []string
+		collNum int
+		inMem   []int64
+	}
+	caseLen := 5
+	cases := make([]testCase, 0, caseLen)
+	for i := 0; i < caseLen; i++ {
+		collNum := rand.Intn(5) + 2
+		tc := testCase{
+			ids:     make([]int64, 0, collNum),
+			names:   make([]string, 0, collNum),
+			collNum: collNum,
+		}
+		base := rand.Intn(1000)
+		for j := 0; j < collNum; j++ {
+			base += rand.Intn(1000)
+			tc.ids = append(tc.ids, int64(base))
+			base += rand.Intn(500)
+			tc.names = append(tc.names, fmt.Sprintf("coll_%d", base))
+			inMem := rand.Intn(100)
+			if inMem%2 == 0 {
+
+				tc.inMem = append(tc.inMem, 100)
+			} else {
+				tc.inMem = append(tc.inMem, 0)
+			}
+		}
+		cases = append(cases, tc)
+	}
+
+	for i, tc := range cases {
+		s.Run(fmt.Sprintf("run_%d", i), func() {
+			s.resetMock()
+			s.mock.EXPECT().ShowCollections(mock.Anything, mock.AnythingOfType("*milvuspb.ShowCollectionsRequest")).
+				Return(&server.ShowCollectionsResponse{
+					Status:              &common.Status{},
+					CollectionIds:       tc.ids,
+					CollectionNames:     tc.names,
+					InMemoryPercentages: tc.inMem,
+				}, nil)
+
+			collections, err := c.ListCollections(ctx)
+
+			s.Require().Equal(tc.collNum, len(collections))
+			s.Require().NoError(err)
+
+			// assert element match
+			rids := make([]int64, 0, len(collections))
+			rnames := make([]string, 0, len(collections))
+			for _, collection := range collections {
+				rids = append(rids, collection.ID)
+				rnames = append(rnames, collection.Name)
+			}
+
+			s.ElementsMatch(tc.ids, rids)
+			s.ElementsMatch(tc.names, rnames)
+			// assert id & name match
+			for idx, rid := range rids {
+				for jdx, id := range tc.ids {
+					if rid == id {
+						s.Equal(tc.names[idx], rnames[idx])
+						s.Equal(tc.inMem[jdx] == 100, collections[idx].Loaded)
+					}
+				}
+			}
+		})
+	}
+}
+
+func (s *CollectionSuite) TestCreateCollection() {
+	c := s.client
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	s.Run("normal_creation", func() {
+		ds := defaultSchema()
+		shardsNum := int32(1)
+
+		defer s.resetMock()
+		s.mock.EXPECT().CreateCollection(mock.Anything, mock.AnythingOfType("*milvuspb.CreateCollectionRequest")).
+			Run(func(ctx context.Context, req *server.CreateCollectionRequest) {
+				s.Equal(testCollectionName, req.GetCollectionName())
+				sschema := &schema.CollectionSchema{}
+				s.Require().NoError(proto.Unmarshal(req.GetSchema(), sschema))
+				s.Require().Equal(len(ds.Fields), len(sschema.Fields))
+				for idx, fieldSchema := range ds.Fields {
+					s.Equal(fieldSchema.Name, sschema.GetFields()[idx].GetName())
+					s.Equal(fieldSchema.PrimaryKey, sschema.GetFields()[idx].GetIsPrimaryKey())
+					s.Equal(fieldSchema.AutoID, sschema.GetFields()[idx].GetAutoID())
+					s.EqualValues(fieldSchema.DataType, sschema.GetFields()[idx].GetDataType())
+				}
+				s.Equal(shardsNum, req.GetShardsNum())
+				s.Equal(common.ConsistencyLevel_Bounded, req.GetConsistencyLevel())
+			}).
+			Return(&common.Status{ErrorCode: common.ErrorCode_Success}, nil)
+		s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).Return(&server.BoolResponse{Status: &common.Status{}, Value: false}, nil)
+
+		err := c.CreateCollection(ctx, ds, shardsNum)
+		s.NoError(err)
+	})
+
+	s.Run("create_with_consistency_level", func() {
+		ds := defaultSchema()
+		shardsNum := int32(1)
+		defer s.resetMock()
+		s.mock.EXPECT().CreateCollection(mock.Anything, mock.AnythingOfType("*milvuspb.CreateCollectionRequest")).
+			Run(func(ctx context.Context, req *server.CreateCollectionRequest) {
+				s.Equal(testCollectionName, req.GetCollectionName())
+				sschema := &schema.CollectionSchema{}
+				s.Require().NoError(proto.Unmarshal(req.GetSchema(), sschema))
+				s.Require().Equal(len(ds.Fields), len(sschema.Fields))
+				for idx, fieldSchema := range ds.Fields {
+					s.Equal(fieldSchema.Name, sschema.GetFields()[idx].GetName())
+					s.Equal(fieldSchema.PrimaryKey, sschema.GetFields()[idx].GetIsPrimaryKey())
+					s.Equal(fieldSchema.AutoID, sschema.GetFields()[idx].GetAutoID())
+					s.EqualValues(fieldSchema.DataType, sschema.GetFields()[idx].GetDataType())
+				}
+				s.Equal(shardsNum, req.GetShardsNum())
+				s.Equal(common.ConsistencyLevel_Eventually, req.GetConsistencyLevel())
+
+			}).
+			Return(&common.Status{ErrorCode: common.ErrorCode_Success}, nil)
+		s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).Return(&server.BoolResponse{Status: &common.Status{}, Value: false}, nil)
+
+		err := c.CreateCollection(ctx, ds, shardsNum, WithConsistencyLevel(entity.ClEventually))
+		s.NoError(err)
+	})
+
+	s.Run("invalid_schemas", func() {
+
+		type testCase struct {
+			name   string
+			schema *entity.Schema
+		}
+		cases := []testCase{
+			{
+				name:   "empty_fields",
+				schema: entity.NewSchema().WithName(testCollectionName),
+			},
+			{
+				name: "empty_collection_name",
+				schema: entity.NewSchema().
+					WithField(entity.NewField().WithName("int64").WithDataType(entity.FieldTypeInt64).WithIsPrimaryKey(true)).
+					WithField(entity.NewField().WithName("vector").WithDataType(entity.FieldTypeFloatVector).WithDim(128)),
+			},
+			{
+				name: "multiple primary key",
+				schema: entity.NewSchema().WithName(testCollectionName).
+					WithField(entity.NewField().WithName("int64").WithDataType(entity.FieldTypeInt64).WithIsPrimaryKey(true)).
+					WithField(entity.NewField().WithName("int64_2").WithDataType(entity.FieldTypeInt64).WithIsPrimaryKey(true)).
+					WithField(entity.NewField().WithName("vector").WithDataType(entity.FieldTypeFloatVector).WithDim(128)),
+			},
+			{
+				name: "multiple auto id",
+				schema: entity.NewSchema().WithName(testCollectionName).
+					WithField(entity.NewField().WithName("int64").WithDataType(entity.FieldTypeInt64).WithIsPrimaryKey(true).WithIsAutoID(true)).
+					WithField(entity.NewField().WithName("int64_2").WithDataType(entity.FieldTypeInt64).WithIsAutoID(true)).
+					WithField(entity.NewField().WithName("vector").WithDataType(entity.FieldTypeFloatVector).WithDim(128)),
+			},
+			{
+				name: "bad_pk_type",
+				schema: entity.NewSchema().
+					WithField(entity.NewField().WithName("int64").WithDataType(entity.FieldTypeDouble).WithIsPrimaryKey(true)).
+					WithField(entity.NewField().WithName("vector").WithDataType(entity.FieldTypeFloatVector).WithDim(128)),
+			},
+		}
+
+		for _, tc := range cases {
+			s.Run(tc.name, func() {
+				err := c.CreateCollection(ctx, tc.schema, 1)
+				s.Error(err)
+			})
+		}
+	})
+
+	s.Run("collection_already_exists", func() {
+		defer s.resetMock()
+
+		ds := defaultSchema()
+		shardsNum := int32(1)
+
+		s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).
+			Return(&server.BoolResponse{Status: &common.Status{}, Value: true}, nil)
+
+		err := c.CreateCollection(ctx, ds, shardsNum)
+		s.Error(err)
+	})
+
+	s.Run("server_returns_error", func() {
+		s.Run("has_collection_error", func() {
+			defer s.resetMock()
+			s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).
+				Return(nil, errors.New("mocked grpc error"))
+
+			err := c.CreateCollection(ctx, defaultSchema(), 1)
+			s.Error(err)
+		})
+
+		s.Run("has_collection_fail", func() {
+			defer s.resetMock()
+			s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).
+				Return(&server.BoolResponse{Status: &common.Status{ErrorCode: common.ErrorCode_UnexpectedError}}, nil)
+
+			err := c.CreateCollection(ctx, defaultSchema(), 1)
+			s.Error(err)
+		})
+
+		s.Run("create_collection_error", func() {
+			defer s.resetMock()
+			s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).Return(&server.BoolResponse{Status: &common.Status{}, Value: false}, nil)
+			s.mock.EXPECT().CreateCollection(mock.Anything, mock.AnythingOfType("*milvuspb.CreateCollectionRequest")).
+				Return(nil, errors.New("mocked grpc error"))
+
+			err := c.CreateCollection(ctx, defaultSchema(), 1)
+			s.Error(err)
+		})
+
+		s.Run("create_collection_fail", func() {
+			defer s.resetMock()
+			s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).Return(&server.BoolResponse{Status: &common.Status{}, Value: false}, nil)
+			s.mock.EXPECT().CreateCollection(mock.Anything, mock.AnythingOfType("*milvuspb.CreateCollectionRequest")).
+				Return(&common.Status{ErrorCode: common.ErrorCode_UnexpectedError}, nil)
+
+			err := c.CreateCollection(ctx, defaultSchema(), 1)
+			s.Error(err)
+		})
+	})
 }
 
 func (s *CollectionSuite) TestAlterCollection() {
