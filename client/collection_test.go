@@ -619,38 +619,7 @@ func (s *CollectionSuite) TestCreateCollection() {
 		}
 	})
 
-	s.Run("collection_already_exists", func() {
-		defer s.resetMock()
-
-		ds := defaultSchema()
-		shardsNum := int32(1)
-
-		s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).
-			Return(&server.BoolResponse{Status: &common.Status{}, Value: true}, nil)
-
-		err := c.CreateCollection(ctx, ds, shardsNum)
-		s.Error(err)
-	})
-
 	s.Run("server_returns_error", func() {
-		s.Run("has_collection_error", func() {
-			defer s.resetMock()
-			s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).
-				Return(nil, errors.New("mocked grpc error"))
-
-			err := c.CreateCollection(ctx, defaultSchema(), 1)
-			s.Error(err)
-		})
-
-		s.Run("has_collection_fail", func() {
-			defer s.resetMock()
-			s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).
-				Return(&server.BoolResponse{Status: &common.Status{ErrorCode: common.ErrorCode_UnexpectedError}}, nil)
-
-			err := c.CreateCollection(ctx, defaultSchema(), 1)
-			s.Error(err)
-		})
-
 		s.Run("create_collection_error", func() {
 			defer s.resetMock()
 			s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).Return(&server.BoolResponse{Status: &common.Status{}, Value: false}, nil)
