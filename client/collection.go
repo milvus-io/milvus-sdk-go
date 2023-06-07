@@ -180,13 +180,14 @@ func (c *GrpcClient) CreateCollection(ctx context.Context, collSchema *entity.Sc
 		return err
 	}
 
-	has, err := c.HasCollection(ctx, collSchema.CollectionName)
-	if err != nil {
-		return err
-	}
-	if has {
-		return fmt.Errorf("collection %s already exist", collSchema.CollectionName)
-	}
+	/*
+		has, err := c.HasCollection(ctx, collSchema.CollectionName)
+		if err != nil {
+			return err
+		}
+		if has {
+			return fmt.Errorf("collection %s already exist", collSchema.CollectionName)
+		}*/
 	sch := collSchema.ProtoMessage()
 	bs, err := proto.Marshal(sch)
 	if err != nil {
