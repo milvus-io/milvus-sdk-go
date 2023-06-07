@@ -14,8 +14,8 @@ package entity
 import (
 	"strconv"
 
-	common "github.com/milvus-io/milvus-proto/go-api/commonpb"
-	schema "github.com/milvus-io/milvus-proto/go-api/schemapb"
+	common "github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
+	schema "github.com/milvus-io/milvus-proto/go-api/v2/schemapb"
 )
 
 const (

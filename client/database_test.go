@@ -7,7 +7,7 @@ import (
 	"github.com/go-faker/faker/v4"
 	"github.com/go-faker/faker/v4/pkg/options"
 	"github.com/golang/protobuf/proto"
-	server "github.com/milvus-io/milvus-proto/go-api/milvuspb"
+	server "github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
 	"github.com/stretchr/testify/assert"
 )
 

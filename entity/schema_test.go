@@ -3,7 +3,7 @@ package entity
 import (
 	"testing"
 
-	common "github.com/milvus-io/milvus-proto/go-api/commonpb"
+	common "github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )

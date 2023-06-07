@@ -12,7 +12,7 @@
 package entity
 
 import (
-	common "github.com/milvus-io/milvus-proto/go-api/commonpb"
+	common "github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
 )
 
 // Segment represent segment in milvus

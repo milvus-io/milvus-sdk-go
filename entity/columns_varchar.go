@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	schema "github.com/milvus-io/milvus-proto/go-api/schemapb"
+	schema "github.com/milvus-io/milvus-proto/go-api/v2/schemapb"
 )
 
 // ColumnVarChar generated columns type for VarChar

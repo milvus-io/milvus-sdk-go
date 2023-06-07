@@ -17,7 +17,7 @@ import (
 	"math"
 
 	"github.com/cockroachdb/errors"
-	schema "github.com/milvus-io/milvus-proto/go-api/schemapb"
+	schema "github.com/milvus-io/milvus-proto/go-api/v2/schemapb"
 )
 
 //go:generate go run gen/gen.go

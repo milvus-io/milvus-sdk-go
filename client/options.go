@@ -15,7 +15,7 @@ import (
 	"errors"
 	"fmt"
 
-	server "github.com/milvus-io/milvus-proto/go-api/milvuspb"
+	server "github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )
 
