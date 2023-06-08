@@ -7,9 +7,9 @@ import (
 	"sync"
 
 	"github.com/golang/protobuf/proto"
-	common "github.com/milvus-io/milvus-proto/go-api/commonpb"
-	server "github.com/milvus-io/milvus-proto/go-api/milvuspb"
-	schema "github.com/milvus-io/milvus-proto/go-api/schemapb"
+	common "github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
+	server "github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
+	schema "github.com/milvus-io/milvus-proto/go-api/v2/schemapb"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
@@ -907,6 +907,10 @@ func (m *MockServer) FlushAll(_a0 context.Context, _a1 *server.FlushAllRequest) 
 }
 
 func (m *MockServer) GetFlushAllState(_a0 context.Context, _a1 *server.GetFlushAllStateRequest) (*server.GetFlushAllStateResponse, error) {
+	panic("not implemented")
+}
+
+func (m *MockServer) GetIndexStatistics(_a0 context.Context, _a1 *server.GetIndexStatisticsRequest) (*server.GetIndexStatisticsResponse, error) {
 	panic("not implemented")
 }
 

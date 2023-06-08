@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/cockroachdb/errors"
-	schema "github.com/milvus-io/milvus-proto/go-api/schemapb"
+	schema "github.com/milvus-io/milvus-proto/go-api/v2/schemapb"
 )
 
 var _ (Column) = (*ColumnJSONBytes)(nil)

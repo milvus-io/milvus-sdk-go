@@ -10,8 +10,8 @@ import (
 
 	tmock "github.com/stretchr/testify/mock"
 
-	common "github.com/milvus-io/milvus-proto/go-api/commonpb"
-	server "github.com/milvus-io/milvus-proto/go-api/milvuspb"
+	common "github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
+	server "github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
 )
 
 type RBACSuite struct {

@@ -33,7 +33,7 @@ import (
 	"fmt"
 
 	"github.com/cockroachdb/errors"
-	schema "github.com/milvus-io/milvus-proto/go-api/schemapb"
+	schema "github.com/milvus-io/milvus-proto/go-api/v2/schemapb"
 )
 {{ range .Types }}{{with .}}
 // Column{{.TypeName}} generated columns type for {{.TypeName}}
@@ -133,7 +133,7 @@ import (
 	"fmt"
 
 	"github.com/cockroachdb/errors"
-	schema "github.com/milvus-io/milvus-proto/go-api/schemapb"
+	schema "github.com/milvus-io/milvus-proto/go-api/v2/schemapb"
 )
 
 {{ range .Types }}{{with.}}
@@ -244,7 +244,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	schema "github.com/milvus-io/milvus-proto/go-api/schemapb"
+	schema "github.com/milvus-io/milvus-proto/go-api/v2/schemapb"
 )
 {{ range .Types }}{{with.}}
 func TestColumn{{.TypeName}}(t *testing.T) {
@@ -365,7 +365,7 @@ import (
 	"testing"
 	"time"
 
-	schema "github.com/milvus-io/milvus-proto/go-api/schemapb"
+	schema "github.com/milvus-io/milvus-proto/go-api/v2/schemapb"
 	"github.com/stretchr/testify/assert"
 )
 {{range .Types}}{{with .}}
