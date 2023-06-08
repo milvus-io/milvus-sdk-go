@@ -25,7 +25,7 @@ func authenticationInterceptor(ctx context.Context, username, password string) c
 
 func apiKeyInterceptor(ctx context.Context, apiKey string) context.Context {
 	if apiKey != "" {
-		value := crypto.Base64Encode(fmt.Sprintf("Bearer: %s", apiKey))
+		value := crypto.Base64Encode(apiKey)
 		return metadata.AppendToOutgoingContext(ctx, authorizationHeader, value)
 	}
 	return ctx
