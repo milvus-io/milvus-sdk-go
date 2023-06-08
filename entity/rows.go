@@ -316,7 +316,7 @@ func AnyToColumns(rows []interface{}, schemas ...*Schema) ([]Column, error) {
 			data := make([]float64, 0, rowsLen)
 			col := NewColumnDouble(field.Name, data)
 			nameColumns[field.Name] = col
-		case FieldTypeString:
+		case FieldTypeString, FieldTypeVarChar:
 			data := make([]string, 0, rowsLen)
 			col := NewColumnString(field.Name, data)
 			nameColumns[field.Name] = col
@@ -374,7 +374,10 @@ func AnyToColumns(rows []interface{}, schemas ...*Schema) ([]Column, error) {
 				delete(set, field.Name)
 				continue
 			}
-			column := nameColumns[field.Name]
+			column, ok := nameColumns[field.Name]
+			if !ok {
+				return nil, fmt.Errorf("expected unhandled field %s", field.Name)
+			}
 
 			candi, ok := set[field.Name]
 			if !ok {
