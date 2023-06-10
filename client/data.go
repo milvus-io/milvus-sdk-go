@@ -21,9 +21,9 @@ import (
 
 	"github.com/cockroachdb/errors"
 
-	common "github.com/milvus-io/milvus-proto/go-api/commonpb"
-	server "github.com/milvus-io/milvus-proto/go-api/milvuspb"
-	schema "github.com/milvus-io/milvus-proto/go-api/schemapb"
+	common "github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
+	server "github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
+	schema "github.com/milvus-io/milvus-proto/go-api/v2/schemapb"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )
 

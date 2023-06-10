@@ -21,8 +21,8 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 
-	common "github.com/milvus-io/milvus-proto/go-api/commonpb"
-	server "github.com/milvus-io/milvus-proto/go-api/milvuspb"
+	common "github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
+	server "github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
 )
 
 // handles response status

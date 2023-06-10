@@ -25,7 +25,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 
-	common "github.com/milvus-io/milvus-proto/go-api/commonpb"
+	common "github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
 )
 
 var mockInvokerError error

@@ -5,11 +5,11 @@ package mocks
 import (
 	context "context"
 
-	commonpb "github.com/milvus-io/milvus-proto/go-api/commonpb"
+	commonpb "github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
 
-	federpb "github.com/milvus-io/milvus-proto/go-api/federpb"
+	federpb "github.com/milvus-io/milvus-proto/go-api/v2/federpb"
 
-	milvuspb "github.com/milvus-io/milvus-proto/go-api/milvuspb"
+	milvuspb "github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
 
 	mock "github.com/stretchr/testify/mock"
 )
@@ -399,6 +399,53 @@ func (_c *MilvusServiceServer_CreateCredential_Call) Run(run func(_a0 context.Co
 }
 
 func (_c *MilvusServiceServer_CreateCredential_Call) Return(_a0 *commonpb.Status, _a1 error) *MilvusServiceServer_CreateCredential_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+// CreateDatabase provides a mock function with given fields: _a0, _a1
+func (_m *MilvusServiceServer) CreateDatabase(_a0 context.Context, _a1 *milvuspb.CreateDatabaseRequest) (*commonpb.Status, error) {
+	ret := _m.Called(_a0, _a1)
+
+	var r0 *commonpb.Status
+	if rf, ok := ret.Get(0).(func(context.Context, *milvuspb.CreateDatabaseRequest) *commonpb.Status); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*commonpb.Status)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *milvuspb.CreateDatabaseRequest) error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MilvusServiceServer_CreateDatabase_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateDatabase'
+type MilvusServiceServer_CreateDatabase_Call struct {
+	*mock.Call
+}
+
+// CreateDatabase is a helper method to define mock.On call
+//  - _a0 context.Context
+//  - _a1 *milvuspb.CreateDatabaseRequest
+func (_e *MilvusServiceServer_Expecter) CreateDatabase(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_CreateDatabase_Call {
+	return &MilvusServiceServer_CreateDatabase_Call{Call: _e.mock.On("CreateDatabase", _a0, _a1)}
+}
+
+func (_c *MilvusServiceServer_CreateDatabase_Call) Run(run func(_a0 context.Context, _a1 *milvuspb.CreateDatabaseRequest)) *MilvusServiceServer_CreateDatabase_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*milvuspb.CreateDatabaseRequest))
+	})
+	return _c
+}
+
+func (_c *MilvusServiceServer_CreateDatabase_Call) Return(_a0 *commonpb.Status, _a1 error) *MilvusServiceServer_CreateDatabase_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
@@ -1010,6 +1057,53 @@ func (_c *MilvusServiceServer_DropCollection_Call) Run(run func(_a0 context.Cont
 }
 
 func (_c *MilvusServiceServer_DropCollection_Call) Return(_a0 *commonpb.Status, _a1 error) *MilvusServiceServer_DropCollection_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+// DropDatabase provides a mock function with given fields: _a0, _a1
+func (_m *MilvusServiceServer) DropDatabase(_a0 context.Context, _a1 *milvuspb.DropDatabaseRequest) (*commonpb.Status, error) {
+	ret := _m.Called(_a0, _a1)
+
+	var r0 *commonpb.Status
+	if rf, ok := ret.Get(0).(func(context.Context, *milvuspb.DropDatabaseRequest) *commonpb.Status); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*commonpb.Status)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *milvuspb.DropDatabaseRequest) error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MilvusServiceServer_DropDatabase_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DropDatabase'
+type MilvusServiceServer_DropDatabase_Call struct {
+	*mock.Call
+}
+
+// DropDatabase is a helper method to define mock.On call
+//  - _a0 context.Context
+//  - _a1 *milvuspb.DropDatabaseRequest
+func (_e *MilvusServiceServer_Expecter) DropDatabase(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_DropDatabase_Call {
+	return &MilvusServiceServer_DropDatabase_Call{Call: _e.mock.On("DropDatabase", _a0, _a1)}
+}
+
+func (_c *MilvusServiceServer_DropDatabase_Call) Run(run func(_a0 context.Context, _a1 *milvuspb.DropDatabaseRequest)) *MilvusServiceServer_DropDatabase_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*milvuspb.DropDatabaseRequest))
+	})
+	return _c
+}
+
+func (_c *MilvusServiceServer_DropDatabase_Call) Return(_a0 *commonpb.Status, _a1 error) *MilvusServiceServer_DropDatabase_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
@@ -2467,6 +2561,53 @@ func (_c *MilvusServiceServer_ListCredUsers_Call) Run(run func(_a0 context.Conte
 }
 
 func (_c *MilvusServiceServer_ListCredUsers_Call) Return(_a0 *milvuspb.ListCredUsersResponse, _a1 error) *MilvusServiceServer_ListCredUsers_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+// ListDatabases provides a mock function with given fields: _a0, _a1
+func (_m *MilvusServiceServer) ListDatabases(_a0 context.Context, _a1 *milvuspb.ListDatabasesRequest) (*milvuspb.ListDatabasesResponse, error) {
+	ret := _m.Called(_a0, _a1)
+
+	var r0 *milvuspb.ListDatabasesResponse
+	if rf, ok := ret.Get(0).(func(context.Context, *milvuspb.ListDatabasesRequest) *milvuspb.ListDatabasesResponse); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*milvuspb.ListDatabasesResponse)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *milvuspb.ListDatabasesRequest) error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MilvusServiceServer_ListDatabases_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ListDatabases'
+type MilvusServiceServer_ListDatabases_Call struct {
+	*mock.Call
+}
+
+// ListDatabases is a helper method to define mock.On call
+//  - _a0 context.Context
+//  - _a1 *milvuspb.ListDatabasesRequest
+func (_e *MilvusServiceServer_Expecter) ListDatabases(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_ListDatabases_Call {
+	return &MilvusServiceServer_ListDatabases_Call{Call: _e.mock.On("ListDatabases", _a0, _a1)}
+}
+
+func (_c *MilvusServiceServer_ListDatabases_Call) Run(run func(_a0 context.Context, _a1 *milvuspb.ListDatabasesRequest)) *MilvusServiceServer_ListDatabases_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*milvuspb.ListDatabasesRequest))
+	})
+	return _c
+}
+
+func (_c *MilvusServiceServer_ListDatabases_Call) Return(_a0 *milvuspb.ListDatabasesResponse, _a1 error) *MilvusServiceServer_ListDatabases_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
