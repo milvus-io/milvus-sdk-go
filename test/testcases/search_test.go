@@ -434,24 +434,27 @@ func TestSearchInvalidVectorField(t *testing.T) {
 		// non-vector field
 		{vectorField: common.DefaultIntFieldName, errMsg: fmt.Sprintf("failed to create query plan: field (%s) to search is not of vector data type", common.DefaultIntFieldName)},
 
+		// skip since 2.3 allows empty vector field name
 		// empty field name
-		{vectorField: "", errMsg: "failed to get field schema by name: fieldName() not found"},
+		//{vectorField: "", errMsg: "failed to get field schema by name: fieldName() not found"},
 	}
 
 	sp, _ := entity.NewIndexHNSWSearchParam(74)
 	for _, invalidVectorField := range invalidVectorFields {
-		_, errSearchNotExist := mc.Search(
-			ctx, collName,
-			[]string{},
-			"",
-			[]string{common.DefaultIntFieldName},
-			common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeFloatVector),
-			invalidVectorField.vectorField,
-			entity.L2,
-			common.DefaultTopK,
-			sp,
-		)
-		common.CheckErr(t, errSearchNotExist, false, invalidVectorField.errMsg)
+		t.Run(invalidVectorField.vectorField, func(t *testing.T) {
+			_, errSearchNotExist := mc.Search(
+				ctx, collName,
+				[]string{},
+				"",
+				[]string{common.DefaultIntFieldName},
+				common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeFloatVector),
+				invalidVectorField.vectorField,
+				entity.L2,
+				common.DefaultTopK,
+				sp,
+			)
+			common.CheckErr(t, errSearchNotExist, false, invalidVectorField.errMsg)
+		})
 	}
 }
 
@@ -530,7 +533,7 @@ func TestSearchNotMatchMetricType(t *testing.T) {
 		common.DefaultTopK,
 		sp,
 	)
-	common.CheckErr(t, errSearchEmpty, false, "Metric type of field index isn't the same with search info")
+	common.CheckErr(t, errSearchEmpty, false, "invalid parameter")
 }
 
 // test search with invalid topK -> error

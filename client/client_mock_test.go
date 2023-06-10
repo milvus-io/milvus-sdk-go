@@ -8,11 +8,10 @@ import (
 	"github.com/cockroachdb/errors"
 
 	"github.com/golang/protobuf/proto"
-	common "github.com/milvus-io/milvus-proto/go-api/commonpb"
-	"github.com/milvus-io/milvus-proto/go-api/federpb"
-	"github.com/milvus-io/milvus-proto/go-api/milvuspb"
-	server "github.com/milvus-io/milvus-proto/go-api/milvuspb"
-	schema "github.com/milvus-io/milvus-proto/go-api/schemapb"
+	common "github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/federpb"
+	server "github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
+	schema "github.com/milvus-io/milvus-proto/go-api/v2/schemapb"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 	"github.com/milvus-io/milvus-sdk-go/v2/mocks"
 	"github.com/stretchr/testify/mock"
@@ -139,7 +138,7 @@ func (s *MockSuiteBase) setupHasPartitionError(errorCode common.ErrorCode, err e
 func (s *MockSuiteBase) setupDescribeCollection(collName string, schema *entity.Schema) {
 	s.mock.EXPECT().DescribeCollection(mock.Anything, mock.AnythingOfType("*milvuspb.DescribeCollectionRequest")).
 		Call.Return(func(ctx context.Context, req *server.DescribeCollectionRequest) *server.DescribeCollectionResponse {
-		return &milvuspb.DescribeCollectionResponse{
+		return &server.DescribeCollectionResponse{
 			Status: &common.Status{ErrorCode: common.ErrorCode_Success},
 			Schema: schema.ProtoMessage(),
 		}
@@ -148,7 +147,7 @@ func (s *MockSuiteBase) setupDescribeCollection(collName string, schema *entity.
 
 func (s *MockSuiteBase) setupDescribeCollectionError(errorCode common.ErrorCode, err error) {
 	s.mock.EXPECT().DescribeCollection(mock.Anything, mock.AnythingOfType("*milvuspb.DescribeCollectionRequest")).
-		Return(&milvuspb.DescribeCollectionResponse{
+		Return(&server.DescribeCollectionResponse{
 			Status: &common.Status{ErrorCode: errorCode},
 		}, err)
 }
@@ -870,6 +869,18 @@ func (m *MockServer) DescribeSegmentIndexData(_ context.Context, _ *federpb.Desc
 }
 
 func (m *MockServer) GetIndexStatistics(_ context.Context, _ *server.GetIndexStatisticsRequest) (*server.GetIndexStatisticsResponse, error) {
+	panic("not implemented") // TODO: Implement
+}
+
+func (m *MockServer) CreateDatabase(_a0 context.Context, _a1 *server.CreateDatabaseRequest) (*common.Status, error) {
+	panic("not implemented") // TODO: Implement
+}
+
+func (m *MockServer) DropDatabase(_a0 context.Context, _a1 *server.DropDatabaseRequest) (*common.Status, error) {
+	panic("not implemented") // TODO: Implement
+}
+
+func (m *MockServer) ListDatabases(_a0 context.Context, _a1 *server.ListDatabasesRequest) (*server.ListDatabasesResponse, error) {
 	panic("not implemented") // TODO: Implement
 }
 

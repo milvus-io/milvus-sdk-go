@@ -40,7 +40,7 @@ generate-proto: check-protoc-version
 
 generate-mockery: install-tool
 	@echo "generating mockery milvus service server"
-	@$(INSTALL_PATH)/mockery --srcpkg=github.com/milvus-io/milvus-proto/go-api/milvuspb --name=MilvusServiceServer --output=mocks --outpkg=mocks --with-expecter
+	@$(INSTALL_PATH)/mockery --srcpkg=github.com/milvus-io/milvus-proto/go-api/v2/milvuspb --name=MilvusServiceServer --output=mocks --outpkg=mocks --with-expecter
 
 static-check:
 	@echo "Running $@ check:"

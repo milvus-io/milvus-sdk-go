@@ -5,11 +5,10 @@ package entity
 import (
 	"fmt"
 
-	schema "github.com/milvus-io/milvus-proto/go-api/schemapb"
+	schema "github.com/milvus-io/milvus-proto/go-api/v2/schemapb"
 
 	"github.com/cockroachdb/errors"
 )
-
 
 // ColumnBinaryVector generated columns type for BinaryVector
 type ColumnBinaryVector struct {
@@ -30,7 +29,7 @@ func (c *ColumnBinaryVector) Type() FieldType {
 }
 
 // Len returns column data length
-func (c * ColumnBinaryVector) Len() int {
+func (c *ColumnBinaryVector) Len() int {
 	return len(c.values)
 }
 
@@ -48,7 +47,7 @@ func (c *ColumnBinaryVector) Get(idx int) (interface{}, error) {
 }
 
 // AppendValue append value into column
-func(c *ColumnBinaryVector) AppendValue(i interface{}) error {
+func (c *ColumnBinaryVector) AppendValue(i interface{}) error {
 	v, ok := i.([]byte)
 	if !ok {
 		return fmt.Errorf("invalid type, expected []byte, got %T", i)
@@ -66,11 +65,11 @@ func (c *ColumnBinaryVector) Data() [][]byte {
 // FieldData return column data mapped to schema.FieldData
 func (c *ColumnBinaryVector) FieldData() *schema.FieldData {
 	fd := &schema.FieldData{
-		Type: schema.DataType_BinaryVector,
+		Type:      schema.DataType_BinaryVector,
 		FieldName: c.name,
 	}
 
-	data := make([]byte, 0, len(c.values)* c.dim)
+	data := make([]byte, 0, len(c.values)*c.dim)
 
 	for _, vector := range c.values {
 		data = append(data, vector...)
@@ -79,11 +78,10 @@ func (c *ColumnBinaryVector) FieldData() *schema.FieldData {
 	fd.Field = &schema.FieldData_Vectors{
 		Vectors: &schema.VectorField{
 			Dim: int64(c.dim),
-			
+
 			Data: &schema.VectorField_BinaryVector{
 				BinaryVector: data,
 			},
-			
 		},
 	}
 	return fd
@@ -91,7 +89,7 @@ func (c *ColumnBinaryVector) FieldData() *schema.FieldData {
 
 // NewColumnBinaryVector auto generated constructor
 func NewColumnBinaryVector(name string, dim int, values [][]byte) *ColumnBinaryVector {
-	return &ColumnBinaryVector {
+	return &ColumnBinaryVector{
 		name:   name,
 		dim:    dim,
 		values: values,
@@ -117,7 +115,7 @@ func (c *ColumnFloatVector) Type() FieldType {
 }
 
 // Len returns column data length
-func (c * ColumnFloatVector) Len() int {
+func (c *ColumnFloatVector) Len() int {
 	return len(c.values)
 }
 
@@ -135,7 +133,7 @@ func (c *ColumnFloatVector) Get(idx int) (interface{}, error) {
 }
 
 // AppendValue append value into column
-func(c *ColumnFloatVector) AppendValue(i interface{}) error {
+func (c *ColumnFloatVector) AppendValue(i interface{}) error {
 	v, ok := i.([]float32)
 	if !ok {
 		return fmt.Errorf("invalid type, expected []float32, got %T", i)
@@ -153,11 +151,11 @@ func (c *ColumnFloatVector) Data() [][]float32 {
 // FieldData return column data mapped to schema.FieldData
 func (c *ColumnFloatVector) FieldData() *schema.FieldData {
 	fd := &schema.FieldData{
-		Type: schema.DataType_FloatVector,
+		Type:      schema.DataType_FloatVector,
 		FieldName: c.name,
 	}
 
-	data := make([]float32, 0, len(c.values)* c.dim)
+	data := make([]float32, 0, len(c.values)*c.dim)
 
 	for _, vector := range c.values {
 		data = append(data, vector...)
@@ -166,13 +164,12 @@ func (c *ColumnFloatVector) FieldData() *schema.FieldData {
 	fd.Field = &schema.FieldData_Vectors{
 		Vectors: &schema.VectorField{
 			Dim: int64(c.dim),
-			
+
 			Data: &schema.VectorField_FloatVector{
 				FloatVector: &schema.FloatArray{
 					Data: data,
 				},
 			},
-			
 		},
 	}
 	return fd
@@ -180,10 +177,9 @@ func (c *ColumnFloatVector) FieldData() *schema.FieldData {
 
 // NewColumnFloatVector auto generated constructor
 func NewColumnFloatVector(name string, dim int, values [][]float32) *ColumnFloatVector {
-	return &ColumnFloatVector {
+	return &ColumnFloatVector{
 		name:   name,
 		dim:    dim,
 		values: values,
 	}
 }
-

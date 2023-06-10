@@ -14,7 +14,7 @@ package client
 import (
 	"context"
 
-	server "github.com/milvus-io/milvus-proto/go-api/milvuspb"
+	server "github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
 )
 
 // GetVersion returns milvus server version information.
