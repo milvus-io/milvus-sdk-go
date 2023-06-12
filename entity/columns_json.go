@@ -1,7 +1,9 @@
 package entity
 
 import (
+	"encoding/json"
 	"fmt"
+	"reflect"
 
 	"github.com/cockroachdb/errors"
 	schema "github.com/milvus-io/milvus-proto/go-api/v2/schemapb"
@@ -80,9 +82,27 @@ func (c *ColumnJSONBytes) ValueByIdx(idx int) ([]byte, error) {
 
 // AppendValue append value into column.
 func (c *ColumnJSONBytes) AppendValue(i interface{}) error {
-	v, ok := i.([]byte)
-	if !ok {
-		return fmt.Errorf("invalid type, expected []byte, got %T", i)
+	var v []byte
+	switch raw := i.(type) {
+	case []byte:
+		v = raw
+	default:
+		k := reflect.TypeOf(i).Kind()
+		if k == reflect.Ptr {
+			k = reflect.TypeOf(i).Elem().Kind()
+		}
+		switch k {
+		case reflect.Struct:
+			fallthrough
+		case reflect.Map:
+			bs, err := json.Marshal(raw)
+			if err != nil {
+				return err
+			}
+			v = bs
+		default:
+			return fmt.Errorf("expect json compatible type([]byte, struct[}, map], got %T)", i)
+		}
 	}
 	c.values = append(c.values, v)
 
