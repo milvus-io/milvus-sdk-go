@@ -107,6 +107,8 @@ type Client interface {
 	// GetIndexState get index state with specified collection and field name
 	// index naming is not supported yet
 	GetIndexState(ctx context.Context, collName string, fieldName string, opts ...IndexOption) (entity.IndexState, error)
+	// GetIndexBuildProgress get index building progress
+	GetIndexBuildProgress(ctx context.Context, collName string, fieldName string, opts ...IndexOption) (total, indexed int64, err error)
 
 	// -- basic operation --
 
