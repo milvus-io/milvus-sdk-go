@@ -13,88 +13,15 @@ package client
 
 import (
 	"context"
-	"fmt"
-	"os"
-	"strconv"
 	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/golang/protobuf/proto"
 	common "github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
 	server "github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )
-
-// GrpcClient  uses default grpc Service definition to connect with Milvus2.0
-type GrpcClient struct {
-	Conn    *grpc.ClientConn           // grpc connection instance
-	Service server.MilvusServiceClient // Service client stub
-
-	config *Config // No thread safety
-}
-
-// connect connect to Service
-func (c *GrpcClient) connect(ctx context.Context, addr string, opts ...grpc.DialOption) error {
-	if addr == "" {
-		return fmt.Errorf("address is empty")
-	}
-	conn, err := grpc.DialContext(ctx, addr, opts...)
-	if err != nil {
-		return err
-	}
-
-	c.Conn = conn
-	c.Service = server.NewMilvusServiceClient(c.Conn)
-
-	if !c.config.DisableConn {
-		err = c.connectInternal(ctx)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (c *GrpcClient) connectInternal(ctx context.Context) error {
-	hostName, err := os.Hostname()
-	if err != nil {
-		return err
-	}
-
-	req := &server.ConnectRequest{
-		ClientInfo: &common.ClientInfo{
-			SdkType:    "Golang",
-			SdkVersion: "v2.2.x",
-			LocalTime:  time.Now().String(),
-			User:       c.config.Username,
-			Host:       hostName,
-		},
-	}
-
-	resp, err := c.Service.Connect(ctx, req)
-	if err != nil {
-		status, ok := status.FromError(err)
-		if ok {
-			if status.Code() == codes.Unimplemented {
-				return errors.New("this version of sdk is incompatible with server," +
-					" please downgrade your sdk or upgrade your server")
-			}
-		}
-		return err
-	}
-
-	if resp.GetStatus().ErrorCode != common.ErrorCode_Success {
-		return fmt.Errorf("connect fail, %s", resp.Status.Reason)
-	}
-
-	c.config.Identifier = strconv.FormatInt(resp.GetIdentifier(), 10)
-	return nil
-}
 
 // UsingDatabase for database operation after this function call.
 // All request in any goroutine will be applied to new database on the same client. e.g.
@@ -176,18 +103,10 @@ func (c *GrpcClient) CreateCollection(ctx context.Context, collSchema *entity.Sc
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
-	if err := validateSchema(collSchema); err != nil {
+	if err := c.validateSchema(collSchema); err != nil {
 		return err
 	}
 
-	/*
-		has, err := c.HasCollection(ctx, collSchema.CollectionName)
-		if err != nil {
-			return err
-		}
-		if has {
-			return fmt.Errorf("collection %s already exist", collSchema.CollectionName)
-		}*/
 	sch := collSchema.ProtoMessage()
 	bs, err := proto.Marshal(sch)
 	if err != nil {
@@ -218,7 +137,7 @@ func (c *GrpcClient) CreateCollection(ctx context.Context, collSchema *entity.Sc
 	return nil
 }
 
-func validateSchema(sch *entity.Schema) error {
+func (c *GrpcClient) validateSchema(sch *entity.Schema) error {
 	if sch == nil {
 		return errors.New("nil schema")
 	}
@@ -229,6 +148,9 @@ func validateSchema(sch *entity.Schema) error {
 	primaryKey := false
 	autoID := false
 	vectors := 0
+	hasPartitionKey := false
+	hasDynamicSchema := sch.EnableDynamicField
+	hasJSON := false
 	for _, field := range sch.Fields {
 		if field.PrimaryKey {
 			if primaryKey { // another primary key found, only one primary key field for now
@@ -248,12 +170,29 @@ func validateSchema(sch *entity.Schema) error {
 			}
 			autoID = true
 		}
+		if field.DataType == entity.FieldTypeJSON {
+			hasJSON = true
+		}
+		if field.IsDynamic {
+			hasDynamicSchema = true
+		}
+		if field.IsPartitionKey {
+			hasPartitionKey = true
+		}
 		if field.DataType == entity.FieldTypeFloatVector || field.DataType == entity.FieldTypeBinaryVector {
 			vectors++
 		}
 	}
 	if vectors <= 0 {
 		return errors.New("vector field not set")
+	}
+	switch {
+	case hasJSON && c.config.hasFlags(disableJSON):
+		return ErrFeatureNotSupported
+	case hasDynamicSchema && c.config.hasFlags(disableDynamicSchema):
+		return ErrFeatureNotSupported
+	case hasPartitionKey && c.config.hasFlags(disableParitionKey):
+		return ErrFeatureNotSupported
 	}
 	return nil
 }
