@@ -640,6 +640,34 @@ func (s *CollectionSuite) TestCreateCollection() {
 			s.Error(err)
 		})
 	})
+
+	s.Run("feature_not_support", func() {
+		cases := []struct {
+			tag  string
+			flag uint64
+		}{
+			{tag: "json", flag: disableJSON},
+			{tag: "partition_key", flag: disableParitionKey},
+			{tag: "dyanmic_schema", flag: disableDynamicSchema},
+		}
+		sch := entity.NewSchema().WithName("all_feature").WithDynamicFieldEnabled(true).
+			WithField(entity.NewField().WithName("id").WithDataType(entity.FieldTypeInt64).WithIsPrimaryKey(true)).
+			WithField(entity.NewField().WithName("embedding").WithDataType(entity.FieldTypeFloatVector).WithDim(128)).
+			WithField(entity.NewField().WithName("partition").WithDataType(entity.FieldTypeInt64).WithIsPartitionKey(true)).
+			WithField(entity.NewField().WithName("dynamic").WithDataType(entity.FieldTypeJSON).WithIsDynamic(true))
+		for _, tc := range cases {
+			s.Run(tc.tag, func() {
+				grpcClient, ok := c.(*GrpcClient)
+				s.Require().True(ok)
+				grpcClient.config.addFlags(tc.flag)
+				defer grpcClient.config.resetFlags(tc.flag)
+
+				err := c.CreateCollection(ctx, sch, 1)
+				s.Error(err)
+				s.ErrorIs(err, ErrFeatureNotSupported)
+			})
+		}
+	})
 }
 
 func (s *CollectionSuite) TestAlterCollection() {

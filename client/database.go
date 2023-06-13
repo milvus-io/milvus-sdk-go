@@ -30,6 +30,9 @@ func (c *GrpcClient) CreateDatabase(ctx context.Context, dbName string) error {
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
+	if c.config.hasFlags(disableDatabase) {
+		return ErrFeatureNotSupported
+	}
 	req := &server.CreateDatabaseRequest{
 		DbName: dbName,
 	}
@@ -44,6 +47,9 @@ func (c *GrpcClient) CreateDatabase(ctx context.Context, dbName string) error {
 func (c *GrpcClient) ListDatabases(ctx context.Context) ([]entity.Database, error) {
 	if c.Service == nil {
 		return nil, ErrClientNotReady
+	}
+	if c.config.hasFlags(disableDatabase) {
+		return nil, ErrFeatureNotSupported
 	}
 
 	req := &server.ListDatabasesRequest{}
@@ -67,6 +73,9 @@ func (c *GrpcClient) ListDatabases(ctx context.Context) ([]entity.Database, erro
 func (c *GrpcClient) DropDatabase(ctx context.Context, dbName string) error {
 	if c.Service == nil {
 		return ErrClientNotReady
+	}
+	if c.config.hasFlags(disableDatabase) {
+		return ErrFeatureNotSupported
 	}
 
 	req := &server.DropDatabaseRequest{
