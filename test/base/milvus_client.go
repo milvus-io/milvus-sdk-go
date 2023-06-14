@@ -34,6 +34,7 @@ func NewMilvusClient(ctx context.Context, cfg client.Config) (*MilvusClient, err
 	}, err
 }
 
+// !!!Deprecated in future, use `NewMilvusClient` first.
 func NewDefaultMilvusClient(ctx context.Context, addr string) (*MilvusClient, error) {
 	preRequest("NewDefaultGrpcClient", ctx, addr)
 	mClient, err := client.NewDefaultGrpcClient(ctx, addr)
@@ -83,10 +84,11 @@ func (mc *MilvusClient) Close() error {
 // 1. goroutine A access DB1.
 // 2. goroutine B call UsingDatabase(ctx, "DB2").
 // 3. goroutine A access DB2 after 2.
-func (mc *MilvusClient) UsingDatabase(ctx context.Context, dbName string) {
+func (mc *MilvusClient) UsingDatabase(ctx context.Context, dbName string) error {
 	preRequest("UsingDatabase", ctx, dbName)
-	mc.mClient.UsingDatabase(ctx, dbName)
-	postResponse("UsingDatabase", nil)
+	err := mc.mClient.UsingDatabase(ctx, dbName)
+	postResponse("UsingDatabase", err)
+	return err
 }
 
 // -- database --
@@ -101,7 +103,7 @@ func (mc *MilvusClient) ListDatabases(ctx context.Context) ([]entity.Database, e
 
 // CreateDatabase create database with the given name.
 func (mc *MilvusClient) CreateDatabase(ctx context.Context, dbName string) error {
-	preRequest("CreateDatabase", ctx)
+	preRequest("CreateDatabase", ctx, dbName)
 	err := mc.mClient.CreateDatabase(ctx, dbName)
 	postResponse("CreateDatabase", err)
 	return err
@@ -109,7 +111,7 @@ func (mc *MilvusClient) CreateDatabase(ctx context.Context, dbName string) error
 
 // DropDatabase drop database with the given db name.
 func (mc *MilvusClient) DropDatabase(ctx context.Context, dbName string) error {
-	preRequest("DropDatabase", ctx)
+	preRequest("DropDatabase", ctx, dbName)
 	err := mc.mClient.DropDatabase(ctx, dbName)
 	postResponse("DropDatabase", err)
 	return err
@@ -407,10 +409,10 @@ func (mc *MilvusClient) CreateCollectionByRow(ctx context.Context, row entity.Ro
 }
 
 // InsertByRows insert by rows
-func (mc *MilvusClient) InsertByRows(ctx context.Context, collName string, paritionName string, rows []entity.Row) (entity.Column, error) {
-	preRequest("InsertByRows", ctx, collName, paritionName, rows)
-	column, err := mc.mClient.InsertByRows(ctx, collName, paritionName, rows)
-	postResponse("InsertByRows", err, column)
+func (mc *MilvusClient) InsertRows(ctx context.Context, collName string, partitionName string, rows []interface{}) (entity.Column, error) {
+	preRequest("InsertRows", ctx, collName, partitionName, rows)
+	column, err := mc.mClient.InsertRows(ctx, collName, partitionName, rows)
+	postResponse("InsertRows", err, column)
 	return column, err
 }
 
