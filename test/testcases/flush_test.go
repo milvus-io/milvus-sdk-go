@@ -18,7 +18,7 @@ func TestFlushEmptyCollection(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create default collection
-	collName := createDefaultCollection(ctx, t, mc, false)
+	collName := createDefaultCollection(ctx, t, mc, false, false)
 
 	// flush and check row count
 	errFlush := mc.Flush(ctx, collName, false)
@@ -45,7 +45,7 @@ func TestFlushAsync(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create default collection
-	collName := createDefaultCollection(ctx, t, mc, false)
+	collName := createDefaultCollection(ctx, t, mc, false, false)
 
 	// insert
 	intColumn, floatColumn, vecColumn := common.GenDefaultColumnData(0, common.DefaultNb, common.DefaultDim)

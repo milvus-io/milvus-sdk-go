@@ -59,12 +59,11 @@ func TestConnectCloseDefault(t *testing.T) {
 
 // test connect with timeout and invalid addr
 func TestConnectInvalidAddr(t *testing.T) {
-	t.Skipf("Issue: %s", "https://github.com/milvus-io/milvus-sdk-go/issues/345")
 	// connect
-	ctx := createContext(t, time.Second*10)
+	ctx := createContext(t, time.Second*20)
 
 	_, errConnect := base.NewMilvusClient(ctx, client.Config{Address: "aa"})
-	common.CheckErr(t, errConnect, false, "xxx")
+	common.CheckErr(t, errConnect, false, "context deadline exceeded")
 }
 
 // test connect repeatedly

@@ -137,15 +137,13 @@ func TestCreateDb(t *testing.T) {
 
 // test drop db
 func TestDropDb(t *testing.T) {
-	t.Skip()
-
 	teardownSuite := teardownTest(t)
 	defer teardownSuite(t)
 
 	// create collection in default db
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	mc := createMilvusClient(ctx, t)
-	collName := createDefaultCollection(ctx, t, mc, true)
+	collName := createDefaultCollection(ctx, t, mc, true, false)
 	collections, _ := mc.ListCollections(ctx)
 	common.CheckContainsCollection(t, collections, collName)
 
@@ -162,7 +160,7 @@ func TestDropDb(t *testing.T) {
 
 	// verify current db
 	_, err = mc.ListCollections(ctx)
-	common.CheckErr(t, err, false, fmt.Sprintf("ShowCollections failed: database not exist: %s", dbName))
+	common.CheckErr(t, err, false, fmt.Sprintf("ShowCollections failed: database:%s not found", dbName))
 
 	// using default db and verify collections
 	mc.UsingDatabase(ctx, common.DefaultDb)
@@ -190,7 +188,7 @@ func TestUsingDb(t *testing.T) {
 	// create collection in default db
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	mc := createMilvusClient(ctx, t)
-	collName := createDefaultCollection(ctx, t, mc, true)
+	collName := createDefaultCollection(ctx, t, mc, true, false)
 	collections, _ := mc.ListCollections(ctx)
 	common.CheckContainsCollection(t, collections, collName)
 
@@ -232,7 +230,7 @@ func TestClientWithDb(t *testing.T) {
 	})
 	common.CheckErr(t, errDefault, true)
 	_, _ = mcDefault.ListCollections(ctx)
-	collDefault := createDefaultCollection(ctx, t, mcDefault, true)
+	collDefault := createDefaultCollection(ctx, t, mcDefault, true, false)
 
 	// create a db and create collection in db
 	dbName := common.GenRandomString(5)
@@ -245,7 +243,7 @@ func TestClientWithDb(t *testing.T) {
 		DBName:  dbName,
 	})
 	common.CheckErr(t, err, true)
-	collDb := createDefaultCollection(ctx, t, mcDb, true)
+	collDb := createDefaultCollection(ctx, t, mcDb, true, false)
 	collections, _ := mcDb.ListCollections(ctx)
 	common.CheckContainsCollection(t, collections, collDb)
 

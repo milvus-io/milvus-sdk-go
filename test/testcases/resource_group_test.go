@@ -303,7 +303,7 @@ func TestTransferReplicas(t *testing.T) {
 	common.CheckErr(t, errTransfer, true)
 
 	// load two replicas
-	collName, _ := createCollectionWithDataIndex(ctx, t, mc, true, true)
+	collName, _ := createCollectionWithDataIndex(ctx, t, mc, true, false, true)
 
 	// load two replicas into default rg
 	errLoad := mc.LoadCollection(ctx, collName, false, client.WithReplicaNumber(2), client.WithResourceGroups([]string{common.DefaultRgName}))
@@ -377,7 +377,7 @@ func TestTransferReplicaInvalidReplicaNumber(t *testing.T) {
 	common.CheckErr(t, errCreate, true)
 
 	// create collection
-	collName := createDefaultCollection(ctx, t, mc, false)
+	collName := createDefaultCollection(ctx, t, mc, false, false)
 
 	// invalid replicas
 	type invalidReplicasStruct struct {
@@ -411,7 +411,7 @@ func TestTransferReplicaRgNotExisted(t *testing.T) {
 	mc.TransferNode(ctx, common.DefaultRgName, rgName, newRgNode)
 
 	// init collection: create -> insert -> index -> load
-	collName, _ := createCollectionWithDataIndex(ctx, t, mc, true, true)
+	collName, _ := createCollectionWithDataIndex(ctx, t, mc, true, false, true)
 	mc.LoadCollection(ctx, collName, false, client.WithResourceGroups([]string{rgName}))
 
 	// source not exist

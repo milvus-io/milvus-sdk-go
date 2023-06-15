@@ -21,7 +21,7 @@ func TestDelete(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create, insert, index
-	collName, ids := createCollectionWithDataIndex(ctx, t, mc, true, true, client.WithConsistencyLevel(entity.ClStrong))
+	collName, ids := createCollectionWithDataIndex(ctx, t, mc, true, false, true, client.WithConsistencyLevel(entity.ClStrong))
 
 	// Load collection
 	errLoad := mc.LoadCollection(ctx, collName, false)
@@ -69,7 +69,7 @@ func TestDeleteEmptyCollection(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create
-	collName := createDefaultCollection(ctx, t, mc, false)
+	collName := createDefaultCollection(ctx, t, mc, false, false)
 
 	// delete
 	deleteIds := entity.NewColumnInt64(common.DefaultIntFieldName, []int64{0})
@@ -96,7 +96,7 @@ func TestDeleteNotExistPartition(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create, insert, index
-	collName, ids := createCollectionWithDataIndex(ctx, t, mc, true, true)
+	collName, ids := createCollectionWithDataIndex(ctx, t, mc, true, false, true)
 
 	// Load collection
 	errLoad := mc.LoadCollection(ctx, collName, false)
@@ -116,7 +116,7 @@ func TestDeleteEmptyPartitionNames(t *testing.T) {
 
 	emptyPartitionName := ""
 	// create
-	collName := createDefaultCollection(ctx, t, mc, false, client.WithConsistencyLevel(entity.ClStrong))
+	collName := createDefaultCollection(ctx, t, mc, false, false, client.WithConsistencyLevel(entity.ClStrong))
 
 	// insert "" partition and flush
 	intColumn, floatColumn, vecColumn := common.GenDefaultColumnData(0, common.DefaultNb, common.DefaultDim)
@@ -150,7 +150,7 @@ func TestDeleteEmptyPartition(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create, insert into default partition, index
-	collName, ids := createCollectionWithDataIndex(ctx, t, mc, true, true)
+	collName, ids := createCollectionWithDataIndex(ctx, t, mc, true, false, true)
 
 	// create partition and empty
 	mc.CreatePartition(ctx, collName, "p1")
@@ -182,11 +182,11 @@ func TestDeletePartitionIdsNotMatch(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create collection and insert [0, nb) into default partition, [nb, nb*2) into new partition
-	collName := createDefaultCollection(ctx, t, mc, false)
-	partitionName, idsDefault, _ := createInsertTwoPartitions(ctx, t, mc, collName, common.DefaultNb)
+	collName := createDefaultCollection(ctx, t, mc, false, false)
+	partitionName, vecColumnDefault, _ := createInsertTwoPartitions(ctx, t, mc, collName, common.DefaultNb)
 
 	// delete [0:10) from new partition -> delete nothing
-	deleteIds := entity.NewColumnInt64(common.DefaultIntFieldName, idsDefault.(*entity.ColumnInt64).Data()[:10])
+	deleteIds := entity.NewColumnInt64(common.DefaultIntFieldName, vecColumnDefault.IdsColumn.(*entity.ColumnInt64).Data()[:10])
 	errDelete := mc.DeleteByPks(ctx, collName, partitionName, deleteIds)
 	common.CheckErr(t, errDelete, true)
 
@@ -210,18 +210,17 @@ func TestDeletePartitionIdsNotMatch(t *testing.T) {
 }
 
 // test delete with nil ids
-func TestDeleteNilIds(t *testing.T) {
-	t.Skip("Issue: https://github.com/milvus-io/milvus-sdk-go/issues/369")
+func TestDeleteEmptyIds(t *testing.T) {
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect
 	mc := createMilvusClient(ctx, t)
 
 	// create
-	collName := createDefaultCollection(ctx, t, mc, false)
+	collName := createDefaultCollection(ctx, t, mc, false, false)
 
 	// delete
-	errDelete := mc.DeleteByPks(ctx, collName, common.DefaultPartition, nil)
-	common.CheckErr(t, errDelete, false, "error")
+	errDelete := mc.DeleteByPks(ctx, collName, common.DefaultPartition, entity.NewColumnInt64(common.DefaultIntFieldName, []int64{}))
+	common.CheckErr(t, errDelete, false, "ids len must not be zero")
 }
 
 // test delete ids field not pk int64
@@ -231,7 +230,7 @@ func TestDeleteNotPkIds(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create, insert, index
-	collName, _ := createCollectionWithDataIndex(ctx, t, mc, true, true)
+	collName, _ := createCollectionWithDataIndex(ctx, t, mc, true, false, true)
 
 	// Load collection
 	errLoad := mc.LoadCollection(ctx, collName, false)
@@ -250,7 +249,7 @@ func TestDeleteDuplicatedPks(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create, insert, index
-	collName, _ := createCollectionWithDataIndex(ctx, t, mc, true, true, client.WithConsistencyLevel(entity.ClStrong))
+	collName, _ := createCollectionWithDataIndex(ctx, t, mc, true, false, true, client.WithConsistencyLevel(entity.ClStrong))
 
 	// Load collection
 	errLoad := mc.LoadCollection(ctx, collName, false)

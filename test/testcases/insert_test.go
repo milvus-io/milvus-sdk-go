@@ -3,6 +3,8 @@
 package testcases
 
 import (
+	"context"
+	"fmt"
 	"math/rand"
 	"strconv"
 	"testing"
@@ -16,24 +18,27 @@ import (
 
 // test insert
 func TestInsert(t *testing.T) {
+	t.Parallel()
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect
 	mc := createMilvusClient(ctx, t)
 
-	// create default collection
-	collName := createDefaultCollection(ctx, t, mc, false)
+	for _, enableDynamicField := range []bool{true, false} {
+		// create default collection
+		collName := createDefaultCollection(ctx, t, mc, false, enableDynamicField)
 
-	// insert
-	intColumn, floatColumn, vecColumn := common.GenDefaultColumnData(0, common.DefaultNb, common.DefaultDim)
-	ids, errInsert := mc.Insert(ctx, collName, "", intColumn, floatColumn, vecColumn)
-	common.CheckErr(t, errInsert, true)
-	common.CheckInsertResult(t, ids, intColumn)
+		// insert
+		intColumn, floatColumn, vecColumn := common.GenDefaultColumnData(0, common.DefaultNb, common.DefaultDim)
+		ids, errInsert := mc.Insert(ctx, collName, "", intColumn, floatColumn, vecColumn)
+		common.CheckErr(t, errInsert, true)
+		common.CheckInsertResult(t, ids, intColumn)
 
-	// flush and check row count
-	errFlush := mc.Flush(ctx, collName, false)
-	common.CheckErr(t, errFlush, true)
-	stats, _ := mc.GetCollectionStatistics(ctx, collName)
-	require.Equal(t, strconv.Itoa(common.DefaultNb), stats[common.RowCount])
+		// flush and check row count
+		errFlush := mc.Flush(ctx, collName, false)
+		common.CheckErr(t, errFlush, true)
+		stats, _ := mc.GetCollectionStatistics(ctx, collName)
+		require.Equal(t, strconv.Itoa(common.DefaultNb), stats[common.RowCount])
+	}
 }
 
 // test insert with autoID collection
@@ -44,7 +49,7 @@ func TestInsertAutoId(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create default collection with autoID true
-	collName := createDefaultCollection(ctx, t, mc, true)
+	collName := createDefaultCollection(ctx, t, mc, true, false)
 
 	// insert
 	_, floatColumn, vecColumn := common.GenDefaultColumnData(0, common.DefaultNb, common.DefaultDim)
@@ -70,7 +75,7 @@ func TestInsertAutoIdPkData(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create default collection with autoID true
-	collName := createDefaultCollection(ctx, t, mc, true)
+	collName := createDefaultCollection(ctx, t, mc, true, false)
 
 	// insert
 	pkColumn, floatColumn, vecColumn := common.GenDefaultColumnData(0, common.DefaultNb, common.DefaultDim)
@@ -93,7 +98,7 @@ func TestInsertBinaryCollection(t *testing.T) {
 
 	// create binary collection with autoID true
 	collName := common.GenRandomString(6)
-	binaryFields := common.GenDefaultBinaryFields(true, common.DefaultDimStr)
+	binaryFields := common.GenDefaultBinaryFields(true, common.DefaultDim)
 	schema := common.GenSchema(collName, true, binaryFields)
 	mc.CreateCollection(ctx, schema, common.DefaultShards)
 
@@ -135,7 +140,7 @@ func TestInsertNotExistPartition(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create default collection with autoID true
-	collName := createDefaultCollection(ctx, t, mc, true)
+	collName := createDefaultCollection(ctx, t, mc, true, false)
 
 	// insert
 	_, floatColumn, vecColumn := common.GenDefaultColumnData(0, common.DefaultNb, common.DefaultDim)
@@ -158,46 +163,14 @@ func TestInsertAllFieldsData(t *testing.T) {
 	errCreateCollection := mc.CreateCollection(ctx, schema, common.DefaultShards)
 	common.CheckErr(t, errCreateCollection, true)
 
-	// prepare data
-	int64Values := make([]int64, 0, common.DefaultNb)
-	boolValues := make([]bool, 0, common.DefaultNb)
-	int8Values := make([]int8, 0, common.DefaultNb)
-	int16Values := make([]int16, 0, common.DefaultNb)
-	int32Values := make([]int32, 0, common.DefaultNb)
-	floatValues := make([]float32, 0, common.DefaultNb)
-	doubleValues := make([]float64, 0, common.DefaultNb)
-	varcharValues := make([]string, 0, common.DefaultNb)
-	floatVectors := make([][]float32, 0, common.DefaultNb)
-	for i := 0; i < common.DefaultNb; i++ {
-		int64Values = append(int64Values, int64(i))
-		boolValues = append(boolValues, i/2 == 0)
-		int8Values = append(int8Values, int8(i))
-		int16Values = append(int16Values, int16(i))
-		int32Values = append(int32Values, int32(i))
-		floatValues = append(floatValues, float32(i))
-		doubleValues = append(doubleValues, float64(i))
-		varcharValues = append(varcharValues, strconv.Itoa(i))
-		vec := make([]float32, 0, common.DefaultDim)
-		for j := 0; j < common.DefaultDim; j++ {
-			vec = append(vec, rand.Float32())
-		}
-		floatVectors = append(floatVectors, vec)
-	}
-
+	// prepare and insert data
+	data := common.GenAllFieldsData(0, common.DefaultNb, common.DefaultDim)
 	// insert data
 	ids, errInsert := mc.Insert(
 		ctx,
 		collName,
 		"",
-		entity.NewColumnInt64("int64", int64Values),
-		entity.NewColumnBool("bool", boolValues),
-		entity.NewColumnInt8("int8", int8Values),
-		entity.NewColumnInt16("int16", int16Values),
-		entity.NewColumnInt32("int32", int32Values),
-		entity.NewColumnFloat("float", floatValues),
-		entity.NewColumnDouble("double", doubleValues),
-		entity.NewColumnVarChar("varchar", varcharValues),
-		entity.NewColumnFloatVector("floatVec", common.DefaultDim, floatVectors),
+		data...,
 	)
 	common.CheckErr(t, errInsert, true)
 	require.Equal(t, common.DefaultNb, ids.Len())
@@ -217,7 +190,7 @@ func TestInsertColumnsMismatchFields(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create default collection
-	collName := createDefaultCollection(ctx, t, mc, false)
+	collName := createDefaultCollection(ctx, t, mc, false, false)
 	intColumn, floatColumn, vecColumn := common.GenDefaultColumnData(0, common.DefaultNb, common.DefaultDim)
 
 	// len(column) < len(fields)
@@ -241,7 +214,7 @@ func TestInsertColumnsDifferentLen(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create default collection
-	collName := createDefaultCollection(ctx, t, mc, false)
+	collName := createDefaultCollection(ctx, t, mc, false, false)
 
 	// data, different column has different len
 	int64Values := make([]int64, 0, 100)
@@ -253,7 +226,7 @@ func TestInsertColumnsDifferentLen(t *testing.T) {
 	for i := 0; i < 200; i++ {
 		floatValues = append(floatValues, float32(i))
 		vec := make([]float32, 0, common.DefaultDim)
-		for j := 0; j < common.DefaultDim; j++ {
+		for j := 0; j < int(common.DefaultDim); j++ {
 			vec = append(vec, rand.Float32())
 		}
 		vecFloatValues = append(vecFloatValues, vec)
@@ -263,6 +236,167 @@ func TestInsertColumnsDifferentLen(t *testing.T) {
 	_, errInsert := mc.Insert(ctx, collName, "",
 		entity.NewColumnInt64(common.DefaultIntFieldName, int64Values),
 		entity.NewColumnFloat(common.DefaultFloatFieldName, floatValues),
-		entity.NewColumnFloatVector(common.DefaultFloatVecFieldName, common.DefaultDim, vecFloatValues))
+		entity.NewColumnFloatVector(common.DefaultFloatVecFieldName, int(common.DefaultDim), vecFloatValues))
 	common.CheckErr(t, errInsert, false, "column size not match")
+}
+
+// test insert rows enable or disable dynamic field
+func TestInsertRows(t *testing.T) {
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+
+	// connect
+	mc := createMilvusClient(ctx, t)
+	for _, enableDynamicField := range []bool{true, false} {
+		// create collection enable dynamic field
+		schema := common.GenSchema(common.GenRandomString(6), false, common.GenDefaultFields(false), common.WithEnableDynamicField(enableDynamicField))
+		createCustomerCollection(ctx, t, mc, schema, common.DefaultShards)
+
+		// insert rows
+		rows := common.GenDefaultRows(0, common.DefaultNb, common.DefaultDim, enableDynamicField)
+		ids, err := mc.InsertRows(ctx, schema.CollectionName, "", rows)
+		common.CheckErr(t, err, true)
+
+		int64Values := make([]int64, 0, common.DefaultNb)
+		for i := 0; i < common.DefaultNb; i++ {
+			int64Values = append(int64Values, int64(i))
+		}
+		common.CheckInsertResult(t, ids, entity.NewColumnInt64(common.DefaultIntFieldName, int64Values))
+
+		// flush and check row count
+		errFlush := mc.Flush(ctx, schema.CollectionName, false)
+		common.CheckErr(t, errFlush, true)
+		stats, _ := mc.GetCollectionStatistics(ctx, schema.CollectionName)
+		require.Equal(t, strconv.Itoa(common.DefaultNb), stats[common.RowCount])
+	}
+}
+
+// test insert json rows field name not match
+func TestInsertJsonCollectionFieldNotMatch(t *testing.T) {
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+
+	// connect
+	mc := createMilvusClient(ctx, t)
+	nb := 1000
+
+	// create json collection with random json field name
+	collName := common.GenRandomString(6)
+	jsonRandomField := common.GenField("", entity.FieldTypeJSON)
+	fields := common.GenDefaultFields(true)
+	fields = append(fields, jsonRandomField)
+	schema := common.GenSchema(collName, true, fields)
+
+	// create collection
+	err := mc.CreateCollection(ctx, schema, common.DefaultShards)
+	common.CheckErr(t, err, true)
+
+	// insert data without "json" field
+	rows := common.GenDefaultRows(0, nb, common.DefaultDim, true)
+	_, errInsert := mc.InsertRows(ctx, collName, "", rows)
+	common.CheckErr(t, errInsert, false, "does not has field")
+}
+
+// test insert json collection
+func TestInsertJsonCollection(t *testing.T) {
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+
+	// connect
+	mc := createMilvusClient(ctx, t)
+	nb := 1000
+
+	// create collection with json field named "json"
+	jsonField := common.GenField(common.DefaultJSONFieldName, entity.FieldTypeJSON)
+	fields1 := common.GenDefaultFields(true)
+	fields1 = append(fields1, jsonField)
+	collName := common.GenRandomString(4)
+	err := mc.CreateCollection(ctx, common.GenSchema(collName, true, fields1), common.DefaultShards)
+	common.CheckErr(t, err, true)
+
+	// insert rows to json collection
+	rows := common.GenDefaultJSONRows(0, nb, common.DefaultDim, true)
+	_, errInsert := mc.InsertRows(ctx, collName, "", rows)
+	common.CheckErr(t, errInsert, true)
+
+	// insert json data column
+	_, floatColumn, vecColumn := common.GenDefaultColumnData(0, nb, common.DefaultDim)
+	jsonColumn := common.GenDefaultJSONData(common.DefaultJSONFieldName, 0, nb)
+	ids, errInsert := mc.Insert(ctx, collName, "", floatColumn, vecColumn, jsonColumn)
+	common.CheckErr(t, errInsert, true)
+	require.Equal(t, nb, ids.Len())
+
+	// flush and check row count
+	errFlush := mc.Flush(ctx, collName, false)
+	common.CheckErr(t, errFlush, true)
+	stats, _ := mc.GetCollectionStatistics(ctx, collName)
+	require.Equal(t, strconv.Itoa(nb*2), stats[common.RowCount])
+
+	// insert json data column less than other column
+	_, floatColumn, vecColumn = common.GenDefaultColumnData(0, nb, common.DefaultDim)
+	jsonColumn = common.GenDefaultJSONData(common.DefaultJSONFieldName, 0, nb/2)
+	ids, errInsert = mc.Insert(ctx, collName, "", floatColumn, vecColumn, jsonColumn)
+	common.CheckErr(t, errInsert, false, "column size not match")
+}
+
+// Test insert with dynamic field
+func TestInsertDynamicFieldData(t *testing.T) {
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+
+	// connect
+	mc := createMilvusClient(ctx, t)
+	nb := 1000
+
+	// create collection enable dynamic field
+	schema := common.GenSchema(common.GenRandomString(6), false, common.GenDefaultFields(false), common.WithEnableDynamicField(true))
+	createCustomerCollection(ctx, t, mc, schema, common.DefaultShards)
+
+	// insert without dynamic field data
+	intColumn, floatColumn, vecColumn := common.GenDefaultColumnData(0, nb, common.DefaultDim)
+	ids, errInsert := mc.Insert(ctx, schema.CollectionName, "", intColumn, floatColumn, vecColumn)
+	common.CheckErr(t, errInsert, true)
+	require.Equal(t, nb, ids.Len())
+
+	// insert with extra varchar column data
+	intColumn, floatColumn, vecColumn = common.GenDefaultColumnData(nb, nb, common.DefaultDim)
+	varcharColumn, _ := common.GenDefaultVarcharData(nb, nb, 0)
+	ids, errInsert = mc.Insert(ctx, schema.CollectionName, "", intColumn, floatColumn, vecColumn, varcharColumn)
+	common.CheckErr(t, errInsert, true)
+	require.Equal(t, nb, ids.Len())
+
+	// insert with extra int64 column data
+	intColumn, floatColumn, vecColumn = common.GenDefaultColumnData(nb, nb, common.DefaultDim)
+	int64Values := make([]int64, 0, nb)
+	for i := 0; i < nb; i++ {
+		int64Values = append(int64Values, int64(i*10))
+	}
+	ids, errInsert = mc.Insert(ctx, schema.CollectionName, "", intColumn, floatColumn, vecColumn, entity.NewColumnInt64("aa", int64Values))
+	common.CheckErr(t, errInsert, true)
+	require.Equal(t, nb, ids.Len())
+
+	// flush and check row count
+	errFlush := mc.Flush(ctx, schema.CollectionName, false)
+	common.CheckErr(t, errFlush, true)
+	stats, _ := mc.GetCollectionStatistics(ctx, schema.CollectionName)
+	require.Equal(t, strconv.Itoa(nb*3), stats[common.RowCount])
+
+	// insert dynamic by rows struct
+	rows := common.GenDefaultRows(nb*2, nb, common.DefaultDim, false)
+	_, err := mc.InsertRows(context.Background(), schema.CollectionName, "", rows)
+	common.CheckErr(t, err, true)
+
+	// flush and check row count
+	errFlush = mc.Flush(ctx, schema.CollectionName, false)
+	common.CheckErr(t, errFlush, true)
+	stats, _ = mc.GetCollectionStatistics(ctx, schema.CollectionName)
+	require.Equalf(t, strconv.Itoa(nb*4), stats[common.RowCount], fmt.Sprintf("Expected row_count: %d, actual: %s", common.DefaultNb, stats[common.RowCount]))
+
+	// create index
+	idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
+	err = mc.CreateIndex(ctx, schema.CollectionName, common.DefaultFloatVecFieldName, idx, false)
+	common.CheckErr(t, err, true)
+
+	// insert column data less other column
+	intColumn, floatColumn, vecColumn = common.GenDefaultColumnData(nb, nb, common.DefaultDim)
+	varcharColumn, _ = common.GenDefaultVarcharData(nb, nb/2, 0)
+	ids, errInsert = mc.Insert(ctx, schema.CollectionName, "", intColumn, floatColumn, vecColumn, varcharColumn)
+	common.CheckErr(t, errInsert, false, "column size not match")
+
 }
