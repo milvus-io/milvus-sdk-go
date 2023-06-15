@@ -20,6 +20,7 @@ const (
 	DefaultPartition          = "_default"
 	DefaultIndexName          = "_default_idx_102"
 	DefaultIndexNameBinary    = "_default_idx_100"
+	DefaultDb                 = "default"
 	DefaultDim                = 128
 	DefaultDimStr             = "128"
 	MaxDim                    = 32768
