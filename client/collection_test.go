@@ -11,6 +11,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	common "github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
 	server "github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/schemapb"
 	schema "github.com/milvus-io/milvus-proto/go-api/v2/schemapb"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 	"github.com/stretchr/testify/assert"
@@ -667,6 +668,138 @@ func (s *CollectionSuite) TestCreateCollection() {
 				s.ErrorIs(err, ErrFeatureNotSupported)
 			})
 		}
+	})
+}
+
+func (s *CollectionSuite) TestNewCollection() {
+	c := s.client
+	ctx, cancel := context.WithCancel(context.Background())
+
+	defer cancel()
+	s.resetMock()
+
+	s.Run("all_default", func() {
+		defer s.resetMock()
+
+		created := false
+		s.mock.EXPECT().CreateCollection(mock.Anything, mock.AnythingOfType("*milvuspb.CreateCollectionRequest")).
+			Run(func(ctx context.Context, req *server.CreateCollectionRequest) {
+				s.Equal(testCollectionName, req.GetCollectionName())
+				sschema := &schema.CollectionSchema{}
+				s.Require().NoError(proto.Unmarshal(req.GetSchema(), sschema))
+				s.Require().Equal(2, len(sschema.Fields))
+				for _, field := range sschema.Fields {
+					if field.GetName() == "id" {
+						s.Equal(schemapb.DataType_Int64, field.GetDataType())
+					}
+					if field.GetName() == "vector" {
+						s.Equal(schemapb.DataType_FloatVector, field.GetDataType())
+					}
+				}
+
+				s.Equal(entity.DefaultShardNumber, req.GetShardsNum())
+				s.Equal(entity.DefaultConsistencyLevel.CommonConsistencyLevel(), req.GetConsistencyLevel())
+				created = true
+			}).
+			Return(&common.Status{ErrorCode: common.ErrorCode_Success}, nil)
+		s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).Call.Return(func(_ context.Context, _ *server.HasCollectionRequest) *server.BoolResponse {
+			return &server.BoolResponse{Status: &common.Status{}, Value: created}
+		}, nil)
+		s.mock.EXPECT().CreateIndex(mock.Anything, mock.Anything).Return(&common.Status{ErrorCode: common.ErrorCode_Success}, nil)
+		s.mock.EXPECT().Flush(mock.Anything, mock.Anything).Return(&server.FlushResponse{
+			Status:     &common.Status{ErrorCode: common.ErrorCode_Success},
+			CollSegIDs: map[string]*schema.LongArray{},
+		}, nil)
+		s.mock.EXPECT().DescribeIndex(mock.Anything, mock.Anything).Return(&server.DescribeIndexResponse{
+			Status: &common.Status{ErrorCode: common.ErrorCode_Success},
+			IndexDescriptions: []*server.IndexDescription{
+				{FieldName: "vector", State: common.IndexState_Finished},
+			},
+		}, nil)
+		s.mock.EXPECT().LoadCollection(mock.Anything, mock.Anything).Return(&common.Status{ErrorCode: common.ErrorCode_Success}, nil)
+		s.mock.EXPECT().ShowCollections(mock.Anything, mock.Anything).Return(&server.ShowCollectionsResponse{
+			Status:              &common.Status{ErrorCode: common.ErrorCode_Success},
+			CollectionNames:     []string{testCollectionName},
+			CollectionIds:       []int64{0},
+			InMemoryPercentages: []int64{100},
+		}, nil)
+		s.mock.EXPECT().DescribeCollection(mock.Anything, mock.Anything).Return(&server.DescribeCollectionResponse{
+			Status: &common.Status{ErrorCode: common.ErrorCode_Success},
+			Schema: &schema.CollectionSchema{
+				Fields: []*schema.FieldSchema{
+					{Name: "id", DataType: schema.DataType_VarChar},
+					{Name: "vector", DataType: schema.DataType_FloatVector},
+				},
+			},
+		}, nil)
+
+		err := c.NewCollection(ctx, testCollectionName, testVectorDim)
+		s.NoError(err)
+	})
+
+	s.Run("with_custom_set", func() {
+		defer s.resetMock()
+		created := false
+		s.mock.EXPECT().CreateCollection(mock.Anything, mock.AnythingOfType("*milvuspb.CreateCollectionRequest")).
+			Run(func(ctx context.Context, req *server.CreateCollectionRequest) {
+				s.Equal(testCollectionName, req.GetCollectionName())
+				sschema := &schema.CollectionSchema{}
+				s.Require().NoError(proto.Unmarshal(req.GetSchema(), sschema))
+				s.Require().Equal(2, len(sschema.Fields))
+				for _, field := range sschema.Fields {
+					if field.GetName() == "my_pk" {
+						s.Equal(schemapb.DataType_VarChar, field.GetDataType())
+					}
+					if field.GetName() == "embedding" {
+						s.Equal(schemapb.DataType_FloatVector, field.GetDataType())
+					}
+				}
+
+				s.Equal(entity.DefaultShardNumber, req.GetShardsNum())
+				s.Equal(entity.ClEventually.CommonConsistencyLevel(), req.GetConsistencyLevel())
+				created = true
+			}).
+			Return(&common.Status{ErrorCode: common.ErrorCode_Success}, nil)
+		s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).Call.Return(func(_ context.Context, _ *server.HasCollectionRequest) *server.BoolResponse {
+			return &server.BoolResponse{Status: &common.Status{}, Value: created}
+		}, nil)
+		s.mock.EXPECT().CreateIndex(mock.Anything, mock.Anything).Return(&common.Status{ErrorCode: common.ErrorCode_Success}, nil)
+		s.mock.EXPECT().Flush(mock.Anything, mock.Anything).Return(&server.FlushResponse{
+			Status:     &common.Status{ErrorCode: common.ErrorCode_Success},
+			CollSegIDs: map[string]*schema.LongArray{},
+		}, nil)
+		s.mock.EXPECT().DescribeIndex(mock.Anything, mock.Anything).Return(&server.DescribeIndexResponse{
+			Status: &common.Status{ErrorCode: common.ErrorCode_Success},
+			IndexDescriptions: []*server.IndexDescription{
+				{FieldName: "embedding", State: common.IndexState_Finished},
+			},
+		}, nil)
+		s.mock.EXPECT().LoadCollection(mock.Anything, mock.Anything).Return(&common.Status{ErrorCode: common.ErrorCode_Success}, nil)
+		s.mock.EXPECT().ShowCollections(mock.Anything, mock.Anything).Return(&server.ShowCollectionsResponse{
+			Status:              &common.Status{ErrorCode: common.ErrorCode_Success},
+			CollectionNames:     []string{testCollectionName},
+			CollectionIds:       []int64{0},
+			InMemoryPercentages: []int64{100},
+		}, nil)
+		s.mock.EXPECT().DescribeCollection(mock.Anything, mock.Anything).Return(&server.DescribeCollectionResponse{
+			Status: &common.Status{ErrorCode: common.ErrorCode_Success},
+			Schema: &schema.CollectionSchema{
+				Fields: []*schema.FieldSchema{
+					{Name: "my_pk", DataType: schema.DataType_VarChar},
+					{Name: "embedding", DataType: schema.DataType_FloatVector},
+				},
+			},
+		}, nil)
+
+		err := c.NewCollection(ctx, testCollectionName, testVectorDim, WithPKFieldName("my_pk"), WithPKFieldType(entity.FieldTypeVarChar), WithVectorFieldName("embedding"), WithConsistencyLevel(entity.ClEventually))
+		s.NoError(err)
+	})
+
+	s.Run("varchar_autoid", func() {
+		defer s.resetMock()
+
+		err := c.NewCollection(ctx, testCollectionName, testVectorDim, WithPKFieldType(entity.FieldTypeVarChar), WithAutoID(true))
+		s.Error(err)
 	})
 }
 

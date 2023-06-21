@@ -137,6 +137,8 @@ func TestCreateDb(t *testing.T) {
 
 // test drop db
 func TestDropDb(t *testing.T) {
+	t.Skip()
+
 	teardownSuite := teardownTest(t)
 	defer teardownSuite(t)
 

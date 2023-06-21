@@ -15,7 +15,6 @@ import (
 	"math/rand"
 	"testing"
 
-	common "github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
 	server "github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 	"github.com/stretchr/testify/assert"
@@ -24,26 +23,26 @@ import (
 func TestCreateCollectionWithConsistencyLevel(t *testing.T) {
 	opt := WithConsistencyLevel(entity.ConsistencyLevel(entity.ClBounded))
 	assert.NotNil(t, opt)
-	req := &server.CreateCollectionRequest{}
+	o := &createCollOpt{}
 
 	assert.NotPanics(t, func() {
-		opt(req)
+		opt(o)
 	})
 
-	assert.Equal(t, common.ConsistencyLevel_Bounded, req.GetConsistencyLevel())
+	assert.Equal(t, entity.ClBounded, o.ConsistencyLevel)
 }
 
 func TestCreateCollectionWithPartitionNum(t *testing.T) {
 	partitionNum := rand.Int63n(1000) + 1
 	opt := WithPartitionNum(partitionNum)
 	assert.NotNil(t, opt)
-	req := &server.CreateCollectionRequest{}
+	o := &createCollOpt{}
 
 	assert.NotPanics(t, func() {
-		opt(req)
+		opt(o)
 	})
 
-	assert.Equal(t, partitionNum, req.GetNumPartitions())
+	assert.Equal(t, partitionNum, o.NumPartitions)
 }
 
 func TestLoadCollectionWithReplicaNumber(t *testing.T) {
