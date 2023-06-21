@@ -19,20 +19,60 @@ import (
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )
 
-// CreateCollectionOption is an option that is used to modify CreateCollectionRequest
-type CreateCollectionOption func(*server.CreateCollectionRequest)
+// CreateCollectionOption is an option that is used to alter create collection options.
+type CreateCollectionOption func(opt *createCollOpt)
+
+type createCollOpt struct {
+	ConsistencyLevel    entity.ConsistencyLevel
+	NumPartitions       int64
+	PrimaryKeyFieldName string
+	PrimaryKeyFieldType entity.FieldType
+	VectorFieldName     string
+	MetricsType         entity.MetricType
+	AutoID              bool
+}
+
+func WithPKFieldName(name string) CreateCollectionOption {
+	return func(opt *createCollOpt) {
+		opt.PrimaryKeyFieldName = name
+	}
+}
+
+func WithPKFieldType(tp entity.FieldType) CreateCollectionOption {
+	return func(opt *createCollOpt) {
+		opt.PrimaryKeyFieldType = tp
+	}
+}
+
+func WithVectorFieldName(name string) CreateCollectionOption {
+	return func(opt *createCollOpt) {
+		opt.VectorFieldName = name
+	}
+}
+
+func WithMetricsType(mt entity.MetricType) CreateCollectionOption {
+	return func(opt *createCollOpt) {
+		opt.MetricsType = mt
+	}
+}
+
+func WithAutoID(autoID bool) CreateCollectionOption {
+	return func(opt *createCollOpt) {
+		opt.AutoID = autoID
+	}
+}
 
 // WithConsistencyLevel specifies a specific ConsistencyLevel, rather than using the default ReaderProperties.
 func WithConsistencyLevel(cl entity.ConsistencyLevel) CreateCollectionOption {
-	return func(req *server.CreateCollectionRequest) {
-		req.ConsistencyLevel = cl.CommonConsistencyLevel()
+	return func(opt *createCollOpt) {
+		opt.ConsistencyLevel = cl
 	}
 }
 
 // WithPartitionNum returns a create collection options to set physical partition number when logical partition feature.
 func WithPartitionNum(partitionNums int64) CreateCollectionOption {
-	return func(req *server.CreateCollectionRequest) {
-		req.NumPartitions = partitionNums
+	return func(opt *createCollOpt) {
+		opt.NumPartitions = partitionNums
 	}
 }
 

@@ -44,6 +44,8 @@ type Client interface {
 
 	// -- collection --
 
+	// NewCollection intializeds a new collection with pre defined attributes
+	NewCollection(ctx context.Context, collName string, dimension int64, opts ...CreateCollectionOption) error
 	// ListCollections list collections from connection
 	ListCollections(ctx context.Context) ([]*entity.Collection, error)
 	// CreateCollection create collection using provided schema

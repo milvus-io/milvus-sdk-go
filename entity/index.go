@@ -93,8 +93,9 @@ type GenericIndex struct {
 
 // Params implements Index
 func (gi GenericIndex) Params() map[string]string {
-	m := map[string]string{
-		tIndexType: string(gi.IndexType()),
+	m := make(map[string]string)
+	if gi.baseIndex.it != "" {
+		m[tIndexType] = string(gi.IndexType())
 	}
 	for k, v := range gi.params {
 		m[k] = v

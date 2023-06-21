@@ -13,6 +13,7 @@ package client
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -98,6 +99,49 @@ func (c *GrpcClient) ListCollections(ctx context.Context) ([]*entity.Collection,
 	return collections, nil
 }
 
+// NewCollection creates a common simple collection with pre-defined attributes.
+func (c *GrpcClient) NewCollection(ctx context.Context, collName string, dimension int64, opts ...CreateCollectionOption) error {
+	if c.Service == nil {
+		return ErrClientNotReady
+	}
+
+	//	shardNum := entity.DefaultShardNumber
+	opt := &createCollOpt{
+		ConsistencyLevel:    entity.DefaultConsistencyLevel,
+		PrimaryKeyFieldName: "id",
+		PrimaryKeyFieldType: entity.FieldTypeInt64,
+		VectorFieldName:     "vector",
+		MetricsType:         entity.IP,
+		AutoID:              false,
+	}
+
+	for _, o := range opts {
+		o(opt)
+	}
+
+	sch := entity.NewSchema().WithName(collName).WithAutoID(opt.AutoID).
+		WithField(entity.NewField().WithName(opt.PrimaryKeyFieldName).WithDataType(opt.PrimaryKeyFieldType).WithIsAutoID(opt.AutoID).WithIsPrimaryKey(true)).
+		WithField(entity.NewField().WithName(opt.VectorFieldName).WithDataType(entity.FieldTypeFloatVector).WithDim(dimension))
+
+	if err := c.validateSchema(sch); err != nil {
+		return err
+	}
+
+	if err := c.requestCreateCollection(ctx, sch, opt, entity.DefaultShardNumber); err != nil {
+		return err
+	}
+
+	idx := entity.NewGenericIndex("", "", map[string]string{
+		"metric_type": string(opt.MetricsType),
+	})
+
+	if err := c.CreateIndex(ctx, collName, opt.VectorFieldName, idx, false); err != nil {
+		return err
+	}
+
+	return c.LoadCollection(ctx, collName, false)
+}
+
 // CreateCollection create collection with specified schema
 func (c *GrpcClient) CreateCollection(ctx context.Context, collSchema *entity.Schema, shardNum int32, opts ...CreateCollectionOption) error {
 	if c.Service == nil {
@@ -107,25 +151,33 @@ func (c *GrpcClient) CreateCollection(ctx context.Context, collSchema *entity.Sc
 		return err
 	}
 
-	sch := collSchema.ProtoMessage()
-	bs, err := proto.Marshal(sch)
-	if err != nil {
-		return err
-	}
-	req := &server.CreateCollectionRequest{
-		DbName:         "", // reserved fields, not used for now
-		CollectionName: collSchema.CollectionName,
-		Schema:         bs,
-		ShardsNum:      shardNum,
-		// default consistency level is strong
-		// to be consistent with previous version
-		ConsistencyLevel: common.ConsistencyLevel_Bounded,
+	opt := &createCollOpt{
+		ConsistencyLevel: entity.DefaultConsistencyLevel,
 		NumPartitions:    0,
 	}
 	// apply options on request
-	for _, opt := range opts {
-		opt(req)
+	for _, o := range opts {
+		o(opt)
 	}
+
+	return c.requestCreateCollection(ctx, collSchema, opt, shardNum)
+}
+
+func (c *GrpcClient) requestCreateCollection(ctx context.Context, sch *entity.Schema, opt *createCollOpt, shardNum int32) error {
+	bs, err := proto.Marshal(sch.ProtoMessage())
+	if err != nil {
+		return err
+	}
+
+	req := &server.CreateCollectionRequest{
+		DbName:           "", // reserved fields, not used for now
+		CollectionName:   sch.CollectionName,
+		Schema:           bs,
+		ShardsNum:        shardNum,
+		ConsistencyLevel: opt.ConsistencyLevel.CommonConsistencyLevel(),
+		NumPartitions:    opt.NumPartitions,
+	}
+
 	resp, err := c.Service.CreateCollection(ctx, req)
 	if err != nil {
 		return err
@@ -335,6 +387,7 @@ func (c *GrpcClient) ShowCollection(ctx context.Context, collName string) (*enti
 	}
 
 	if len(resp.CollectionIds) != 1 || len(resp.InMemoryPercentages) != 1 {
+		fmt.Println(len(resp.CollectionIds), len(resp.InMemoryPercentages), resp.String())
 		return nil, errors.New("response len not valid")
 	}
 	return &entity.Collection{
