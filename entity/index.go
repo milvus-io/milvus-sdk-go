@@ -37,6 +37,7 @@ const (
 	ANNOY      IndexType = "ANNOY"
 	AUTOINDEX  IndexType = "AUTOINDEX"
 	DISKANN    IndexType = "DISKANN"
+	Scalar     IndexType = "SCALAR"
 )
 
 // Metric Constants

@@ -73,12 +73,12 @@ func (c *GrpcClient) connectInternal(ctx context.Context) error {
 						disableParitionKey |
 						disableDynamicSchema)
 			}
-		} else {
-			return err
+			return nil
 		}
+		return err
 	}
 
-	if resp.GetStatus().ErrorCode != common.ErrorCode_Success {
+	if resp.GetStatus().GetErrorCode() != common.ErrorCode_Success {
 		return fmt.Errorf("connect fail, %s", resp.Status.Reason)
 	}
 

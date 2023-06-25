@@ -372,10 +372,10 @@ func (c *GrpcClient) CalcDistance(ctx context.Context, collName string, partitio
 			return nil, err
 		}
 	}
-	if err := c.checkCollField(ctx, collName, opLeft.Name()); err != nil {
+	if err := c.checkCollField(ctx, collName, opLeft.Name(), isVectorField); err != nil {
 		return nil, err
 	}
-	if err := c.checkCollField(ctx, collName, opRight.Name()); err != nil {
+	if err := c.checkCollField(ctx, collName, opRight.Name(), isVectorField); err != nil {
 		return nil, err
 	}
 
