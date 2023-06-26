@@ -155,6 +155,30 @@ func PKs2Expr(backName string, ids entity.Column) string {
 	return expr
 }
 
+// Get grabs the inserted entities using the primary key from the Collection.
+func (c *GrpcClient) Get(ctx context.Context, collectionName string, ids entity.Column, opts ...GetOption) (ResultSet, error) {
+	if c.Service == nil {
+		return nil, ErrClientNotReady
+	}
+
+	o := &getOption{}
+	for _, opt := range opts {
+		opt(o)
+	}
+
+	if len(o.outputFields) == 0 {
+		coll, err := c.DescribeCollection(ctx, collectionName)
+		if err != nil {
+			return nil, err
+		}
+		for _, f := range coll.Schema.Fields {
+			o.outputFields = append(o.outputFields, f.Name)
+		}
+	}
+
+	return c.QueryByPks(ctx, collectionName, o.partitionNames, ids, o.outputFields)
+}
+
 // QueryByPks query record by specified primary key(s)
 func (c *GrpcClient) QueryByPks(ctx context.Context, collectionName string, partitionNames []string, ids entity.Column, outputFields []string, opts ...SearchQueryOptionFunc) (ResultSet, error) {
 	if c.Service == nil {
@@ -253,6 +277,15 @@ func (c *GrpcClient) Query(ctx context.Context, collectionName string, partition
 func getPKField(schema *entity.Schema) *entity.Field {
 	for _, f := range schema.Fields {
 		if f.PrimaryKey {
+			return f
+		}
+	}
+	return nil
+}
+
+func getVectorField(schema *entity.Schema) *entity.Field {
+	for _, f := range schema.Fields {
+		if f.DataType == entity.FieldTypeFloatVector || f.DataType == entity.FieldTypeBinaryVector {
 			return f
 		}
 	}

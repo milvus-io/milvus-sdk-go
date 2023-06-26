@@ -214,3 +214,22 @@ func IsBackup() BulkInsertOption {
 		req.Options = entity.MapKvPairs(optionMap)
 	}
 }
+
+type getOption struct {
+	partitionNames []string
+	outputFields   []string
+}
+
+type GetOption func(o *getOption)
+
+func GetWithPartitions(partionNames ...string) GetOption {
+	return func(o *getOption) {
+		o.partitionNames = partionNames
+	}
+}
+
+func GetWithOutputFields(outputFields ...string) GetOption {
+	return func(o *getOption) {
+		o.outputFields = outputFields
+	}
+}

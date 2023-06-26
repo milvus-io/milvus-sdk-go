@@ -401,6 +401,32 @@ func (s *QuerySuite) SetupSuite() {
 		WithField(entity.NewField().WithName("vector").WithDataType(entity.FieldTypeFloatVector).WithDim(testVectorDim))
 }
 
+func (s *QuerySuite) GetFail() {
+	c := s.client
+	ctx, cancel := context.WithCancel((context.Background()))
+	defer cancel()
+
+	idCol := entity.NewColumnInt64("ID", []int64{1})
+	s.Run("service_not_ready", func() {
+		_, err := (&GrpcClient{}).Get(ctx, testCollectionName, idCol)
+		s.Error(err)
+		s.ErrorIs(err, ErrClientNotReady)
+	})
+
+	s.Run("ids_len_0", func() {
+		_, err := c.Get(ctx, testCollectionName, entity.NewColumnInt64("ID", []int64{}), GetWithOutputFields("ID"))
+		s.Error(err)
+	})
+
+	s.Run("describe_failed", func() {
+		defer s.resetMock()
+		s.setupDescribeCollectionError(common.ErrorCode_Success, errors.New("mock error"))
+
+		_, err := c.Get(ctx, testCollectionName, idCol)
+		s.Error(err)
+	})
+}
+
 func (s *QuerySuite) TestQueryByPksFail() {
 	c := s.client
 	ctx, cancel := context.WithCancel(context.Background())

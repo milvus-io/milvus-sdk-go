@@ -135,6 +135,8 @@ type Client interface {
 	QueryByPks(ctx context.Context, collectionName string, partitionNames []string, ids entity.Column, outputFields []string, opts ...SearchQueryOptionFunc) (ResultSet, error)
 	// Query performs query records with boolean expression.
 	Query(ctx context.Context, collectionName string, partitionNames []string, expr string, outputFields []string, opts ...SearchQueryOptionFunc) (ResultSet, error)
+	// Get grabs the inserted entities using the primary key from the Collection.
+	Get(ctx context.Context, collectionName string, ids entity.Column, opts ...GetOption) (ResultSet, error)
 
 	// CalcDistance calculate the distance between vectors specified by ids or provided
 	CalcDistance(ctx context.Context, collName string, partitions []string,
