@@ -21,7 +21,7 @@ import (
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )
 
-func (c *GrpcClient) checkCollField(ctx context.Context, collName string, fieldName string) error {
+func (c *GrpcClient) checkCollField(ctx context.Context, collName string, fieldName string, filters ...func(string, string, *entity.Field) error) error {
 	if err := c.checkCollectionExists(ctx, collName); err != nil {
 		return err
 	}
@@ -33,14 +33,23 @@ func (c *GrpcClient) checkCollField(ctx context.Context, collName string, fieldN
 	for _, field := range coll.Schema.Fields {
 		if field.Name == fieldName {
 			f = field
-			if f.DataType != entity.FieldTypeFloatVector && f.DataType != entity.FieldTypeBinaryVector {
-				return fmt.Errorf("field %s of collection %s is not vector field", fieldName, collName)
+			for _, filter := range filters {
+				if err := filter(collName, fieldName, f); err != nil {
+					return err
+				}
 			}
 			break
 		}
 	}
 	if f == nil {
 		return fmt.Errorf("field %s of collection %s does not exist", fieldName, collName)
+	}
+	return nil
+}
+
+func isVectorField(collName, fieldName string, f *entity.Field) error {
+	if f.DataType != entity.FieldTypeFloatVector && f.DataType != entity.FieldTypeBinaryVector {
+		return fmt.Errorf("field %s of collection %s is not vector field", fieldName, collName)
 	}
 	return nil
 }
