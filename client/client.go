@@ -259,30 +259,32 @@ func NewDefaultGrpcClient(ctx context.Context, addr string) (Client, error) {
 	return c, nil
 }
 
-func NewDefaultGrpcClientWithURI(ctx context.Context, uri, username, password string) (Client, error) {
+func NewDefaultGrpcClientWithURI(ctx context.Context, uri, username, password string, dialOptions ...grpc.DialOption) (Client, error) {
 	addr, inSecure, err := parseURI(uri)
 	if err != nil {
 		return nil, err
 	}
 
 	if inSecure {
-		return NewDefaultGrpcClientWithTLSAuth(ctx, addr, username, password)
+		return NewDefaultGrpcClientWithTLSAuth(ctx, addr, username, password, dialOptions...)
 	}
 
-	return NewDefaultGrpcClientWithAuth(ctx, addr, username, password)
+	return NewDefaultGrpcClientWithAuth(ctx, addr, username, password, dialOptions...)
 }
 
 // NewDefaultGrpcClientWithTLSAuth enable transport security
-func NewDefaultGrpcClientWithTLSAuth(ctx context.Context, addr, username, password string) (Client, error) {
+func NewDefaultGrpcClientWithTLSAuth(ctx context.Context, addr, username, password string, dialOptions ...grpc.DialOption) (Client, error) {
 	c := &GrpcClient{}
 	defaultOpts := c.getDefaultAuthDialOpts(username, password, true)
+	defaultOpts = append(defaultOpts, dialOptions...)
 	return c.dialWithOptions(ctx, addr, defaultOpts...)
 }
 
 // NewDefaultGrpcClientWithAuth  disable transport security
-func NewDefaultGrpcClientWithAuth(ctx context.Context, addr, username, password string) (Client, error) {
+func NewDefaultGrpcClientWithAuth(ctx context.Context, addr, username, password string, dialOptions ...grpc.DialOption) (Client, error) {
 	c := &GrpcClient{}
 	defaultOpts := c.getDefaultAuthDialOpts(username, password, false)
+	defaultOpts = append(defaultOpts, dialOptions...)
 	return c.dialWithOptions(ctx, addr, defaultOpts...) //NewGrpcClient(ctx, addr, defaultOpts...)
 }
 
