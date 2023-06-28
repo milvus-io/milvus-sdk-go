@@ -18,5 +18,7 @@ This is the "Constructor" method set (only one for current release) to obtain `C
 
 ```go
 ctx := context.Background()
-cli, err := client.NewGrpcClient(ctx, "localhost:19530")
+cli, err := client.NewClient(context.Background(), client.Config{
+		Address:  "localhost:19530",
+	})
 ```

@@ -51,7 +51,10 @@ func main() {
 		MinVersion:   tls.VersionTLS13,
 	})
 
-	c, err := client.NewGrpcClient(ctx, milvusAddr, grpc.WithTransportCredentials(creds))
+	c, err := client.NewClient(ctx, client.Config{
+		Address:     milvusAddr,
+		DialOptions: []grpc.DialOption{grpc.WithTransportCredentials(creds)},
+	})
 	if err != nil {
 		// handling error and exit, to make example simple here
 		log.Fatal("failed to connect to milvus:", err.Error())

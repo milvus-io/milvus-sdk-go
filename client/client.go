@@ -14,14 +14,11 @@ package client
 
 import (
 	"context"
-	"net/url"
-	"strings"
 	"time"
 
-	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/backoff"
-	"google.golang.org/grpc/keepalive"
+
+	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )
 
 const (
@@ -30,8 +27,24 @@ const (
 
 // Client is the interface used to communicate with Milvus
 type Client interface {
+	// -- client --
 	// Close close the remaining connection resources
 	Close() error
+
+	// UsingDatabase for database operation after this function call.
+	// All request in any goroutine will be applied to new database on the same client. e.g.
+	// 1. goroutine A access DB1.
+	// 2. goroutine B call UsingDatabase(ctx, "DB2").
+	// 3. goroutine A access DB2 after 2.
+	UsingDatabase(ctx context.Context, dbName string) error
+
+	// -- database --
+	// ListDatabases list all database in milvus cluster.
+	ListDatabases(ctx context.Context) ([]entity.Database, error)
+	// CreateDatabase create database with the given name.
+	CreateDatabase(ctx context.Context, dbName string) error
+	// DropDatabase drop database with the given db name.
+	DropDatabase(ctx context.Context, dbName string) error
 
 	// -- collection --
 
@@ -215,97 +228,88 @@ func (rs ResultSet) GetColumn(fieldName string) entity.Column {
 	return nil
 }
 
-var DefaultGrpcOpts = []grpc.DialOption{
-	grpc.WithBlock(),
-	grpc.WithKeepaliveParams(keepalive.ClientParameters{
-		Time:                5 * time.Second,
-		Timeout:             10 * time.Second,
-		PermitWithoutStream: true,
-	}),
-	grpc.WithConnectParams(grpc.ConnectParams{
-		Backoff: backoff.Config{
-			BaseDelay:  100 * time.Millisecond,
-			Multiplier: 1.6,
-			Jitter:     0.2,
-			MaxDelay:   3 * time.Second,
-		},
-		MinConnectTimeout: 3 * time.Second,
-	}),
+// Check if GrpcClient implement Client.
+var _ Client = &GrpcClient{}
+
+// NewClient create a client connected to remote milvus cluster.
+// More connect option can be modified by Config.
+func NewClient(ctx context.Context, config Config) (Client, error) {
+	if err := config.parse(); err != nil {
+		return nil, err
+	}
+
+	c := &GrpcClient{
+		config: &config,
+	}
+
+	// Parse remote address.
+	addr := c.config.getParsedAddress()
+
+	// Parse grpc options
+	options := c.config.getDialOption()
+
+	// Connect the grpc server.
+	if err := c.connect(ctx, addr, options...); err != nil {
+		return nil, err
+	}
+
+	return c, nil
 }
 
 // NewGrpcClient create client with grpc addr
 // the `Connect` API will be called for you
 // dialOptions contains the dial option(s) that control the grpc dialing process
+// !!!Deprecated in future, use `NewClient` first.
 func NewGrpcClient(ctx context.Context, addr string, dialOptions ...grpc.DialOption) (Client, error) {
-	c := &GrpcClient{}
-	if len(dialOptions) == 0 {
-		return NewDefaultGrpcClient(ctx, addr)
-	}
-
-	if err := c.connect(ctx, addr, dialOptions...); err != nil {
-		return nil, err
-	}
-
-	return c, nil
+	return NewClient(ctx, Config{
+		Address:     addr,
+		DialOptions: dialOptions,
+	})
 }
 
+// NewDefaultGrpcClient creates a new gRPC client.
+// !!!Deprecated in future, use `NewClient` first.
 func NewDefaultGrpcClient(ctx context.Context, addr string) (Client, error) {
-	c := &GrpcClient{}
-
-	err := c.connect(ctx, addr, c.getDefaultDialOpts()...)
-	if err != nil {
-		return nil, err
-	}
-	return c, nil
+	return NewClient(
+		ctx, Config{
+			Address: addr,
+		},
+	)
 }
 
+// NewDefaultGrpcClientWithURI creates a new gRPC client with URI.
+// !!!Deprecated in future, use `NewClient` first.
 func NewDefaultGrpcClientWithURI(ctx context.Context, uri, username, password string) (Client, error) {
-	addr, inSecure, err := parseURI(uri)
-	if err != nil {
-		return nil, err
-	}
-
-	if inSecure {
-		return NewDefaultGrpcClientWithTLSAuth(ctx, addr, username, password)
-	}
-
-	return NewDefaultGrpcClientWithAuth(ctx, addr, username, password)
+	return NewClient(ctx, Config{
+		Address:  uri,
+		Username: username,
+		Password: password,
+	})
 }
 
-// NewDefaultGrpcClientWithTLSAuth enable transport security
+// NewDefaultGrpcClientWithTLSAuth creates a new gRPC client with TLS authentication.
+// !!!Deprecated in future, use `NewClient` first.
 func NewDefaultGrpcClientWithTLSAuth(ctx context.Context, addr, username, password string) (Client, error) {
-	c := &GrpcClient{}
-	defaultOpts := c.getDefaultAuthDialOpts(username, password, true)
-	return c.dialWithOptions(ctx, addr, defaultOpts...)
+	return NewClient(
+		ctx,
+		Config{
+			Address:       addr,
+			Username:      username,
+			Password:      password,
+			EnableTLSAuth: true,
+		},
+	)
 }
 
-// NewDefaultGrpcClientWithAuth  disable transport security
+// NewDefaultGrpcClientWithAuth creates a new gRPC client with authentication.
+// !!!Deprecated in future, use `NewClient` first.
 func NewDefaultGrpcClientWithAuth(ctx context.Context, addr, username, password string) (Client, error) {
-	c := &GrpcClient{}
-	defaultOpts := c.getDefaultAuthDialOpts(username, password, false)
-	return c.dialWithOptions(ctx, addr, defaultOpts...) //NewGrpcClient(ctx, addr, defaultOpts...)
-}
-
-func parseURI(uri string) (string, bool, error) {
-	hasPrefix := false
-	inSecure := false
-	if strings.HasPrefix(uri, "https://") {
-		inSecure = true
-		hasPrefix = true
-	}
-
-	if strings.HasPrefix(uri, "http://") {
-		inSecure = false
-		hasPrefix = true
-	}
-
-	if hasPrefix {
-		url, err := url.Parse(uri)
-		if err != nil {
-			return "", inSecure, err
-		}
-		return url.Host, inSecure, nil
-	}
-
-	return uri, inSecure, nil
+	return NewClient(
+		ctx,
+		Config{
+			Address:  addr,
+			Username: username,
+			Password: password,
+		},
+	)
 }

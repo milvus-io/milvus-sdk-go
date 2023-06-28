@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/examples/helloworld/helloworld"
@@ -73,7 +72,6 @@ func (r defaultRow) Collection() string {
 
 // TestMain establishes mock grpc server to testing client behavior
 func TestMain(m *testing.M) {
-
 	rand.Seed(time.Now().Unix())
 	lis = bufconn.Listen(bufSize)
 	s := grpc.NewServer()
@@ -96,8 +94,15 @@ func bufDialer(context.Context, string) (net.Conn, error) {
 }
 
 func testClient(ctx context.Context, t *testing.T) Client {
-	c, err := NewGrpcClient(ctx, "bufnet", grpc.WithBlock(),
-		grpc.WithInsecure(), grpc.WithContextDialer(bufDialer))
+	c, err := NewClient(ctx,
+		Config{
+			Address: "bufnet",
+			DialOptions: []grpc.DialOption{
+				grpc.WithBlock(),
+				grpc.WithInsecure(),
+				grpc.WithContextDialer(bufDialer),
+			},
+		})
 
 	if !assert.Nil(t, err) || !assert.NotNil(t, c) {
 		t.FailNow()
@@ -143,6 +148,7 @@ func TestGrpcClientNil(t *testing.T) {
 		t.Run(fmt.Sprintf("TestGrpcClientNil_%s", m.Name), func(t *testing.T) {
 			mt := m.Type                                   // type of function
 			if m.Name == "Close" || m.Name == "Connect" || // skip connect & close
+				m.Name == "UsingDatabase" || // skip use database
 				m.Name == "Search" || // type alias MetricType treated as string
 				m.Name == "CalcDistance" ||
 				m.Name == "ManualCompaction" || // time.Duration hard to detect in reflect
@@ -152,7 +158,7 @@ func TestGrpcClientNil(t *testing.T) {
 			ins := make([]reflect.Value, 0, mt.NumIn())
 			for j := 1; j < mt.NumIn(); j++ { // idx == 0, is the receiver v
 				if j == 1 {
-					//non-general solution, hard code context!
+					// non-general solution, hard code context!
 					ins = append(ins, reflect.ValueOf(ctx))
 					continue
 				}
@@ -203,7 +209,6 @@ func TestGrpcClientNil(t *testing.T) {
 				assert.True(t, len(outs) > 0)
 				assert.False(t, outs[len(outs)-1].IsNil())
 			}
-
 		})
 	}
 }
@@ -212,13 +217,21 @@ func TestGrpcClientConnect(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("Use bufconn dailer, testing case", func(t *testing.T) {
-		c, err := NewGrpcClient(ctx, "bufnet", grpc.WithBlock(), grpc.WithInsecure(), grpc.WithContextDialer(bufDialer)) // uses in memory buf connection
+		c, err := NewClient(ctx,
+			Config{
+				Address: "bufnet",
+				DialOptions: []grpc.DialOption{
+					grpc.WithBlock(), grpc.WithInsecure(), grpc.WithContextDialer(bufDialer),
+				},
+			})
 		assert.Nil(t, err)
 		assert.NotNil(t, c)
 	})
 
 	t.Run("Test empty addr, using default timeout", func(t *testing.T) {
-		c, err := NewGrpcClient(ctx, "")
+		c, err := NewClient(ctx, Config{
+			Address: "",
+		})
 		assert.NotNil(t, err)
 		assert.Nil(t, c)
 	})
@@ -263,11 +276,11 @@ func TestGrpcClientRetryPolicy(t *testing.T) {
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
-	var kaep = keepalive.EnforcementPolicy{
+	kaep := keepalive.EnforcementPolicy{
 		MinTime:             5 * time.Second,
 		PermitWithoutStream: true,
 	}
-	var kasp = keepalive.ServerParameters{
+	kasp := keepalive.ServerParameters{
 		Time:    60 * time.Second,
 		Timeout: 60 * time.Second,
 	}
@@ -286,27 +299,16 @@ func TestGrpcClientRetryPolicy(t *testing.T) {
 	}()
 	defer s.Stop()
 
-	c := &GrpcClient{}
-	err = c.dial(context.Background(), address, c.getDefaultDialOpts()...)
-	require.NoError(t, err)
+	client, err := NewClient(context.TODO(), Config{Address: address, DisableConn: true})
+	assert.Nil(t, err)
+	defer client.Close()
 
-	greeterClient := helloworld.NewGreeterClient(c.Conn)
+	greeterClient := helloworld.NewGreeterClient(client.(*GrpcClient).Conn)
 	ctx := context.Background()
 	name := fmt.Sprintf("hello world %d", time.Now().Second())
 	res, err := greeterClient.SayHello(ctx, &helloworld.HelloRequest{Name: name})
 	assert.Nil(t, err)
 	assert.Equal(t, res.Message, strings.ToUpper(name))
-}
-
-func TestClient_getDefaultAuthOpts(t *testing.T) {
-	username := "u"
-	password := "pwd"
-	c := &GrpcClient{}
-	defaultOpts := c.getDefaultAuthDialOpts(username, password, true)
-	assert.True(t, len(defaultOpts) == 6)
-
-	defaultOpts = c.getDefaultAuthDialOpts(username, password, false)
-	assert.True(t, len(defaultOpts) == 6)
 }
 
 func TestClient_NewDefaultGrpcClientWithURI(t *testing.T) {
@@ -318,48 +320,6 @@ func TestClient_NewDefaultGrpcClientWithURI(t *testing.T) {
 		client, err := NewDefaultGrpcClientWithURI(ctx, uri, username, password)
 		assert.Nil(t, client)
 		assert.Error(t, err)
-	})
-}
-
-func TestClient_parseURI(t *testing.T) {
-	t.Run("https uri parse ok", func(t *testing.T) {
-		uri := "https://localhost:8080"
-		addr, inSecure, err := parseURI(uri)
-		assert.Equal(t, "localhost:8080", addr)
-		assert.True(t, inSecure)
-		assert.Nil(t, err)
-	})
-
-	t.Run("https uri parse fail", func(t *testing.T) {
-		uri := "https://localhost:port"
-		addr, inSecure, err := parseURI(uri)
-		assert.Equal(t, "", addr)
-		assert.True(t, inSecure)
-		assert.NotNil(t, err)
-	})
-
-	t.Run("http uri parse ok", func(t *testing.T) {
-		uri := "http://localhost:8080"
-		addr, inSecure, err := parseURI(uri)
-		assert.Equal(t, "localhost:8080", addr)
-		assert.False(t, inSecure)
-		assert.Nil(t, err)
-	})
-
-	t.Run("http uri parse fail", func(t *testing.T) {
-		uri := "http://localhost:port"
-		addr, inSecure, err := parseURI(uri)
-		assert.Equal(t, "", addr)
-		assert.False(t, inSecure)
-		assert.NotNil(t, err)
-	})
-
-	t.Run("no prefix uri parse ok", func(t *testing.T) {
-		uri := "localhost:8080"
-		addr, inSecure, err := parseURI(uri)
-		assert.Equal(t, "localhost:8080", addr)
-		assert.False(t, inSecure)
-		assert.Nil(t, err)
 	})
 }
 

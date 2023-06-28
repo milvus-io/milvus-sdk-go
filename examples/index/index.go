@@ -23,7 +23,9 @@ func main() {
 	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
 
-	c, err := client.NewGrpcClient(ctx, milvusAddr)
+	c, err := client.NewClient(ctx, client.Config{
+		Address: milvusAddr,
+	})
 	if err != nil {
 		// handling error and exit, to make example simple here
 		log.Fatal("failed to connect to milvus:", err.Error())
