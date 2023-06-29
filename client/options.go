@@ -27,6 +27,7 @@ type createCollOpt struct {
 	NumPartitions       int64
 	PrimaryKeyFieldName string
 	PrimaryKeyFieldType entity.FieldType
+	PrimaryKeyMaxLength int64
 	VectorFieldName     string
 	MetricsType         entity.MetricType
 	AutoID              bool
@@ -41,6 +42,12 @@ func WithPKFieldName(name string) CreateCollectionOption {
 func WithPKFieldType(tp entity.FieldType) CreateCollectionOption {
 	return func(opt *createCollOpt) {
 		opt.PrimaryKeyFieldType = tp
+	}
+}
+
+func WithPKMaxLength(maxLength int64) CreateCollectionOption {
+	return func(opt *createCollOpt) {
+		opt.PrimaryKeyMaxLength = maxLength
 	}
 }
 
