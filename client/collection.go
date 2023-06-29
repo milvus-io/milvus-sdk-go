@@ -119,8 +119,13 @@ func (c *GrpcClient) NewCollection(ctx context.Context, collName string, dimensi
 		o(opt)
 	}
 
+	pkField := entity.NewField().WithName(opt.PrimaryKeyFieldName).WithDataType(opt.PrimaryKeyFieldType).WithIsAutoID(opt.AutoID).WithIsPrimaryKey(true)
+	if opt.PrimaryKeyFieldType == entity.FieldTypeVarChar && opt.PrimaryKeyMaxLength > 0 {
+		pkField = pkField.WithMaxLength(opt.PrimaryKeyMaxLength)
+	}
+
 	sch := entity.NewSchema().WithName(collName).WithAutoID(opt.AutoID).
-		WithField(entity.NewField().WithName(opt.PrimaryKeyFieldName).WithDataType(opt.PrimaryKeyFieldType).WithIsAutoID(opt.AutoID).WithIsPrimaryKey(true)).
+		WithField(pkField).
 		WithField(entity.NewField().WithName(opt.VectorFieldName).WithDataType(entity.FieldTypeFloatVector).WithDim(dimension))
 
 	if err := c.validateSchema(sch); err != nil {
