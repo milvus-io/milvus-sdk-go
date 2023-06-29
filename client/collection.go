@@ -113,6 +113,7 @@ func (c *GrpcClient) NewCollection(ctx context.Context, collName string, dimensi
 		VectorFieldName:     "vector",
 		MetricsType:         entity.IP,
 		AutoID:              false,
+		EnableDynamicSchema: true,
 	}
 
 	for _, o := range opts {
@@ -124,7 +125,7 @@ func (c *GrpcClient) NewCollection(ctx context.Context, collName string, dimensi
 		pkField = pkField.WithMaxLength(opt.PrimaryKeyMaxLength)
 	}
 
-	sch := entity.NewSchema().WithName(collName).WithAutoID(opt.AutoID).
+	sch := entity.NewSchema().WithName(collName).WithAutoID(opt.AutoID).WithDynamicFieldEnabled(opt.EnableDynamicSchema).
 		WithField(pkField).
 		WithField(entity.NewField().WithName(opt.VectorFieldName).WithDataType(entity.FieldTypeFloatVector).WithDim(dimension))
 
