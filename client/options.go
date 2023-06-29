@@ -31,6 +31,7 @@ type createCollOpt struct {
 	VectorFieldName     string
 	MetricsType         entity.MetricType
 	AutoID              bool
+	EnableDynamicSchema bool
 }
 
 func WithPKFieldName(name string) CreateCollectionOption {
@@ -66,6 +67,12 @@ func WithMetricsType(mt entity.MetricType) CreateCollectionOption {
 func WithAutoID(autoID bool) CreateCollectionOption {
 	return func(opt *createCollOpt) {
 		opt.AutoID = autoID
+	}
+}
+
+func WithEnableDynamicSchema(enable bool) CreateCollectionOption {
+	return func(opt *createCollOpt) {
+		opt.EnableDynamicSchema = enable
 	}
 }
 
