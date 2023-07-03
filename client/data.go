@@ -31,6 +31,7 @@ const (
 	offsetKey        = `offset`
 	limitKey         = `limit`
 	ignoreGrowingKey = `ignore_growing`
+	forTuningKey     = `for_tuning`
 )
 
 // Search with bool expression
@@ -253,6 +254,7 @@ func prepareSearchRequest(collName string, partitions []string,
 	expr string, outputFields []string, vectors []entity.Vector, vectorField string,
 	metricType entity.MetricType, topK int, sp entity.SearchParam, opt *SearchQueryOption) (*server.SearchRequest, error) {
 	params := sp.Params()
+	params[forTuningKey] = opt.ForTuning
 	bs, err := json.Marshal(params)
 	if err != nil {
 		return nil, err

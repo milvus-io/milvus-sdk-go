@@ -78,6 +78,7 @@ func TestMakeSearchQueryOption(t *testing.T) {
 			ConsistencyLevel:   entity.ClStrong,
 			GuaranteeTimestamp: StrongTimestamp,
 			IgnoreGrowing:      false,
+			ForTuning:          false,
 		}
 		assert.Equal(t, expected, opt)
 	})
@@ -90,6 +91,20 @@ func TestMakeSearchQueryOption(t *testing.T) {
 			ConsistencyLevel:   entity.ClStrong,
 			GuaranteeTimestamp: StrongTimestamp,
 			IgnoreGrowing:      true,
+			ForTuning:          false,
+		}
+		assert.Equal(t, expected, opt)
+	})
+
+	t.Run("for tuning", func(t *testing.T) {
+		opt, err := makeSearchQueryOption(c.Name, WithForTuning())
+		assert.Nil(t, err)
+		assert.NotNil(t, opt)
+		expected := &SearchQueryOption{
+			ConsistencyLevel:   entity.ClStrong,
+			GuaranteeTimestamp: StrongTimestamp,
+			IgnoreGrowing:      false,
+			ForTuning:          true,
 		}
 		assert.Equal(t, expected, opt)
 	})
@@ -102,6 +117,7 @@ func TestMakeSearchQueryOption(t *testing.T) {
 			ConsistencyLevel:   entity.ClSession,
 			GuaranteeTimestamp: EventuallyTimestamp,
 			IgnoreGrowing:      false,
+			ForTuning:          false,
 		}
 		assert.Equal(t, expected, opt)
 
@@ -113,6 +129,7 @@ func TestMakeSearchQueryOption(t *testing.T) {
 			ConsistencyLevel:   entity.ClSession,
 			GuaranteeTimestamp: 99,
 			IgnoreGrowing:      false,
+			ForTuning:          false,
 		}
 		assert.Equal(t, expected, opt)
 	})
@@ -125,6 +142,7 @@ func TestMakeSearchQueryOption(t *testing.T) {
 			ConsistencyLevel:   entity.ClBounded,
 			GuaranteeTimestamp: BoundedTimestamp,
 			IgnoreGrowing:      false,
+			ForTuning:          false,
 		}
 		assert.Equal(t, expected, opt)
 	})
@@ -137,6 +155,7 @@ func TestMakeSearchQueryOption(t *testing.T) {
 			ConsistencyLevel:   entity.ClEventually,
 			GuaranteeTimestamp: EventuallyTimestamp,
 			IgnoreGrowing:      false,
+			ForTuning:          false,
 		}
 		assert.Equal(t, expected, opt)
 	})
@@ -149,6 +168,7 @@ func TestMakeSearchQueryOption(t *testing.T) {
 			ConsistencyLevel:   entity.ClCustomized,
 			GuaranteeTimestamp: 100,
 			IgnoreGrowing:      false,
+			ForTuning:          false,
 		}
 		assert.Equal(t, expected, opt)
 	})

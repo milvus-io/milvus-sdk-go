@@ -403,7 +403,7 @@ func (s *SearchSuite) TestSearchSuccess() {
 			}, nil)
 
 		r, err := c.Search(ctx, testCollectionName, []string{partName}, expr, []string{"ID"}, []entity.Vector{entity.FloatVector(vectors[0])},
-			testVectorField, entity.L2, 10, sp, WithIgnoreGrowing(), WithSearchQueryConsistencyLevel(entity.ClCustomized), WithGuaranteeTimestamp(10000000000))
+			testVectorField, entity.L2, 10, sp, WithIgnoreGrowing(), WithForTuning(), WithSearchQueryConsistencyLevel(entity.ClCustomized), WithGuaranteeTimestamp(10000000000))
 		s.NoError(err)
 		s.Require().Equal(1, len(r))
 		result := r[0]
@@ -445,7 +445,7 @@ func (s *SearchSuite) TestSearchSuccess() {
 			}, nil)
 
 		r, err := c.Search(ctx, testCollectionName, []string{partName}, expr, []string{"A", "B"}, []entity.Vector{entity.FloatVector(vectors[0])},
-			testVectorField, entity.L2, 2, sp, WithIgnoreGrowing(), WithSearchQueryConsistencyLevel(entity.ClBounded))
+			testVectorField, entity.L2, 2, sp, WithIgnoreGrowing(), WithForTuning(), WithSearchQueryConsistencyLevel(entity.ClBounded))
 		s.NoError(err)
 		s.Require().Equal(1, len(r))
 		result := r[0]
