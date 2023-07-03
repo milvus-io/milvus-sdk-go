@@ -32,6 +32,7 @@ type createCollOpt struct {
 	MetricsType         entity.MetricType
 	AutoID              bool
 	EnableDynamicSchema bool
+	Properties          map[string]string
 }
 
 func WithPKFieldName(name string) CreateCollectionOption {
@@ -87,6 +88,15 @@ func WithConsistencyLevel(cl entity.ConsistencyLevel) CreateCollectionOption {
 func WithPartitionNum(partitionNums int64) CreateCollectionOption {
 	return func(opt *createCollOpt) {
 		opt.NumPartitions = partitionNums
+	}
+}
+
+func WithCollectionProperty(key, value string) CreateCollectionOption {
+	return func(opt *createCollOpt) {
+		if opt.Properties == nil {
+			opt.Properties = make(map[string]string)
+		}
+		opt.Properties[key] = value
 	}
 }
 

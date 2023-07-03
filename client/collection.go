@@ -182,6 +182,7 @@ func (c *GrpcClient) requestCreateCollection(ctx context.Context, sch *entity.Sc
 		ShardsNum:        shardNum,
 		ConsistencyLevel: opt.ConsistencyLevel.CommonConsistencyLevel(),
 		NumPartitions:    opt.NumPartitions,
+		Properties:       entity.MapKvPairs(opt.Properties),
 	}
 
 	resp, err := c.Service.CreateCollection(ctx, req)
