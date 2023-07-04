@@ -431,22 +431,21 @@ func (c *GrpcClient) LoadCollection(ctx context.Context, collName string, async 
 	}
 
 	if !async {
+		ticker := time.NewTicker(200 * time.Millisecond)
+		defer ticker.Stop()
 		for {
 			select {
 			case <-ctx.Done():
-				return errors.New("context deadline exceeded")
-			default:
+				return ctx.Err()
+			case <-ticker.C:
+				progress, err := c.getLoadingProgress(ctx, collName)
+				if err != nil {
+					return err
+				}
+				if progress == 100 {
+					return nil
+				}
 			}
-
-			coll, err := c.ShowCollection(ctx, collName)
-			if err != nil {
-				return err
-			}
-			if coll.Loaded {
-				break
-			}
-
-			time.Sleep(200 * time.Millisecond) // TODO change to configuration
 		}
 	}
 	return nil
@@ -595,4 +594,22 @@ func (c *GrpcClient) AlterCollection(ctx context.Context, collName string, attrs
 		return err
 	}
 	return handleRespStatus(resp)
+}
+
+func (c *GrpcClient) getLoadingProgress(ctx context.Context, collectionName string, partitionNames ...string) (int64, error) {
+	req := &server.GetLoadingProgressRequest{
+		Base:           &common.MsgBase{},
+		DbName:         "",
+		CollectionName: collectionName,
+		PartitionNames: partitionNames,
+	}
+
+	resp, err := c.Service.GetLoadingProgress(ctx, req)
+	if err != nil {
+		return -1, err
+	}
+	if err := handleRespStatus(resp.GetStatus()); err != nil {
+		return -1, err
+	}
+	return resp.GetProgress(), nil
 }

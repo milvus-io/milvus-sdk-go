@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"math/rand"
 	"testing"
-	"time"
 
 	"github.com/golang/protobuf/proto"
 	common "github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
@@ -56,90 +55,6 @@ func TestGrpcClientDropCollection(t *testing.T) {
 
 	t.Run("Test drop non-existing collection", func(t *testing.T) {
 		assert.NotNil(t, c.DropCollection(ctx, "AAAAAAAAAANonExists"))
-	})
-}
-
-func TestGrpcClientLoadCollection(t *testing.T) {
-	ctx := context.Background()
-	c := testClient(ctx, t)
-	mockServer.SetInjection(MHasCollection, hasCollectionDefault)
-	// injection check collection name equals
-	mockServer.SetInjection(MLoadCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-		req, ok := raw.(*server.LoadCollectionRequest)
-		if !ok {
-			return BadRequestStatus()
-		}
-		assert.Equal(t, testCollectionName, req.GetCollectionName())
-		return SuccessStatus()
-	})
-	t.Run("Load collection normal async", func(t *testing.T) {
-		assert.Nil(t, c.LoadCollection(ctx, testCollectionName, true))
-	})
-	t.Run("Load collection sync", func(t *testing.T) {
-
-		loadTime := rand.Intn(500) + 500 // in milli seconds, 100~1000 milliseconds
-		passed := false                  // ### flag variable
-		start := time.Now()
-
-		mockServer.SetInjection(MShowCollections, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			req, ok := raw.(*server.ShowCollectionsRequest)
-			r := &server.ShowCollectionsResponse{}
-			if !ok || req == nil {
-				s, err := BadRequestStatus()
-				r.Status = s
-				return r, err
-			}
-			s, err := SuccessStatus()
-			r.Status = s
-			r.CollectionIds = []int64{1}
-			var perc int64
-			if time.Since(start) > time.Duration(loadTime)*time.Millisecond {
-				t.Log("passed")
-				perc = 100
-				passed = true
-			}
-			r.InMemoryPercentages = []int64{perc}
-			return r, err
-		})
-		assert.Nil(t, c.LoadCollection(ctx, testCollectionName, false))
-		assert.True(t, passed)
-
-		start = time.Now()
-		passed = false
-		quickCtx, cancel := context.WithTimeout(ctx, 50*time.Millisecond)
-		defer cancel()
-		assert.NotNil(t, c.LoadCollection(quickCtx, testCollectionName, false))
-
-		// remove injection
-		mockServer.DelInjection(MShowCollections)
-	})
-	t.Run("Load default replica", func(t *testing.T) {
-		mockServer.SetInjection(MLoadCollection, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
-			req, ok := raw.(*server.LoadCollectionRequest)
-			if !ok {
-				return BadRequestStatus()
-			}
-			assert.Equal(t, testDefaultReplicaNumber, req.GetReplicaNumber())
-			assert.Equal(t, testCollectionName, req.GetCollectionName())
-			return SuccessStatus()
-		})
-		defer mockServer.DelInjection(MLoadCollection)
-		assert.Nil(t, c.LoadCollection(ctx, testCollectionName, true))
-	})
-	t.Run("Load multiple replica", func(t *testing.T) {
-		mockServer.DelInjection(MLoadCollection)
-
-		mockServer.SetInjection(MLoadCollection, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
-			req, ok := raw.(*server.LoadCollectionRequest)
-			if !ok {
-				return BadRequestStatus()
-			}
-			assert.Equal(t, testMultiReplicaNumber, req.GetReplicaNumber())
-			assert.Equal(t, testCollectionName, req.GetCollectionName())
-			return SuccessStatus()
-		})
-		defer mockServer.DelInjection(MLoadCollection)
-		assert.Nil(t, c.LoadCollection(ctx, testCollectionName, true, WithReplicaNumber(testMultiReplicaNumber)))
 	})
 }
 
@@ -717,11 +632,9 @@ func (s *CollectionSuite) TestNewCollection() {
 			},
 		}, nil)
 		s.mock.EXPECT().LoadCollection(mock.Anything, mock.Anything).Return(&common.Status{ErrorCode: common.ErrorCode_Success}, nil)
-		s.mock.EXPECT().ShowCollections(mock.Anything, mock.Anything).Return(&server.ShowCollectionsResponse{
-			Status:              &common.Status{ErrorCode: common.ErrorCode_Success},
-			CollectionNames:     []string{testCollectionName},
-			CollectionIds:       []int64{0},
-			InMemoryPercentages: []int64{100},
+		s.mock.EXPECT().GetLoadingProgress(mock.Anything, mock.Anything).Return(&server.GetLoadingProgressResponse{
+			Status:   &common.Status{ErrorCode: common.ErrorCode_Success},
+			Progress: 100,
 		}, nil)
 		s.mock.EXPECT().DescribeCollection(mock.Anything, mock.Anything).Return(&server.DescribeCollectionResponse{
 			Status: &common.Status{ErrorCode: common.ErrorCode_Success},
@@ -775,11 +688,9 @@ func (s *CollectionSuite) TestNewCollection() {
 			},
 		}, nil)
 		s.mock.EXPECT().LoadCollection(mock.Anything, mock.Anything).Return(&common.Status{ErrorCode: common.ErrorCode_Success}, nil)
-		s.mock.EXPECT().ShowCollections(mock.Anything, mock.Anything).Return(&server.ShowCollectionsResponse{
-			Status:              &common.Status{ErrorCode: common.ErrorCode_Success},
-			CollectionNames:     []string{testCollectionName},
-			CollectionIds:       []int64{0},
-			InMemoryPercentages: []int64{100},
+		s.mock.EXPECT().GetLoadingProgress(mock.Anything, mock.Anything).Return(&server.GetLoadingProgressResponse{
+			Status:   &common.Status{ErrorCode: common.ErrorCode_Success},
+			Progress: 100,
 		}, nil)
 		s.mock.EXPECT().DescribeCollection(mock.Anything, mock.Anything).Return(&server.DescribeCollectionResponse{
 			Status: &common.Status{ErrorCode: common.ErrorCode_Success},
@@ -865,6 +776,132 @@ func (s *CollectionSuite) TestAlterCollection() {
 	s.Run("service_not_ready", func() {
 		c := &GrpcClient{}
 		err := c.AlterCollection(ctx, testCollectionName, entity.CollectionTTL(100000))
+		s.ErrorIs(err, ErrClientNotReady)
+	})
+}
+
+func (s *CollectionSuite) TestLoadCollection() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	c := s.client
+
+	s.Run("normal_run_async", func() {
+		defer s.resetMock()
+		s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).
+			Return(&server.BoolResponse{Status: &common.Status{}, Value: true}, nil)
+
+		s.mock.EXPECT().LoadCollection(mock.Anything, mock.Anything).Return(&common.Status{ErrorCode: common.ErrorCode_Success}, nil)
+
+		err := c.LoadCollection(ctx, testCollectionName, true)
+		s.NoError(err)
+	})
+
+	s.Run("normal_run_sync", func() {
+		defer s.resetMock()
+		s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).
+			Return(&server.BoolResponse{Status: &common.Status{}, Value: true}, nil)
+
+		s.mock.EXPECT().LoadCollection(mock.Anything, mock.Anything).Return(&common.Status{ErrorCode: common.ErrorCode_Success}, nil)
+		s.mock.EXPECT().GetLoadingProgress(mock.Anything, mock.Anything).
+			Return(&server.GetLoadingProgressResponse{
+				Status:   &common.Status{ErrorCode: common.ErrorCode_Success},
+				Progress: 100,
+			}, nil)
+
+		err := c.LoadCollection(ctx, testCollectionName, true)
+		s.NoError(err)
+	})
+
+	s.Run("load_default_replica", func() {
+		defer s.resetMock()
+		s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).
+			Return(&server.BoolResponse{Status: &common.Status{}, Value: true}, nil)
+
+		s.mock.EXPECT().LoadCollection(mock.Anything, mock.Anything).Run(func(_ context.Context, req *server.LoadCollectionRequest) {
+			s.Equal(testDefaultReplicaNumber, req.GetReplicaNumber())
+			s.Equal(testCollectionName, req.GetCollectionName())
+		}).Return(&common.Status{ErrorCode: common.ErrorCode_Success}, nil)
+
+		err := c.LoadCollection(ctx, testCollectionName, true)
+		s.NoError(err)
+	})
+
+	s.Run("load_multiple_replica", func() {
+		defer s.resetMock()
+		s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).
+			Return(&server.BoolResponse{Status: &common.Status{}, Value: true}, nil)
+
+		s.mock.EXPECT().LoadCollection(mock.Anything, mock.Anything).Run(func(_ context.Context, req *server.LoadCollectionRequest) {
+			s.Equal(testMultiReplicaNumber, req.GetReplicaNumber())
+			s.Equal(testCollectionName, req.GetCollectionName())
+		}).Return(&common.Status{ErrorCode: common.ErrorCode_Success}, nil)
+
+		err := c.LoadCollection(ctx, testCollectionName, true, WithReplicaNumber(testMultiReplicaNumber))
+		s.NoError(err)
+	})
+
+	s.Run("has_collection_failure", func() {
+		s.Run("return_false", func() {
+			defer s.resetMock()
+			s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).
+				Return(&server.BoolResponse{Status: &common.Status{}, Value: false}, nil)
+
+			err := c.LoadCollection(ctx, testCollectionName, true)
+			s.Error(err)
+		})
+
+		s.Run("return_error", func() {
+			defer s.resetMock()
+			s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).
+				Return(nil, errors.New("mock error"))
+
+			err := c.LoadCollection(ctx, testCollectionName, true)
+			s.Error(err)
+		})
+	})
+
+	s.Run("load_collection_failure", func() {
+		s.Run("failure_status", func() {
+			defer s.resetMock()
+			s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).
+				Return(&server.BoolResponse{Status: &common.Status{}, Value: true}, nil)
+
+			s.mock.EXPECT().LoadCollection(mock.Anything, mock.Anything).
+				Return(&common.Status{ErrorCode: common.ErrorCode_UnexpectedError}, nil)
+
+			err := c.LoadCollection(ctx, testCollectionName, true)
+			s.Error(err)
+		})
+
+		s.Run("return_error", func() {
+			s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).
+				Return(&server.BoolResponse{Status: &common.Status{}, Value: true}, nil)
+
+			s.mock.EXPECT().LoadCollection(mock.Anything, mock.Anything).
+				Return(nil, errors.New("mock error"))
+
+			err := c.LoadCollection(ctx, testCollectionName, true)
+			s.Error(err)
+		})
+	})
+
+	s.Run("get_loading_progress_failure", func() {
+		defer s.resetMock()
+		s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).
+			Return(&server.BoolResponse{Status: &common.Status{}, Value: true}, nil)
+
+		s.mock.EXPECT().LoadCollection(mock.Anything, mock.Anything).Return(&common.Status{ErrorCode: common.ErrorCode_Success}, nil)
+		s.mock.EXPECT().GetLoadingProgress(mock.Anything, mock.Anything).
+			Return(nil, errors.New("mock error"))
+
+		err := c.LoadCollection(ctx, testCollectionName, false)
+		s.Error(err)
+	})
+
+	s.Run("service_not_ready", func() {
+		c := &GrpcClient{}
+		err := c.LoadCollection(ctx, testCollectionName, false)
 		s.ErrorIs(err, ErrClientNotReady)
 	})
 }

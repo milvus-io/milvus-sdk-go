@@ -148,23 +148,6 @@ func (c *GrpcClient) LoadPartitions(ctx context.Context, collName string, partit
 			return err
 		}
 	}
-	partitions, err := c.ShowPartitions(ctx, collName)
-	if err != nil {
-		return err
-	}
-	m := make(map[string]int64)
-	for _, partition := range partitions {
-		m[partition.Name] = partition.ID
-	}
-	// load partitions ids
-	ids := make(map[int64]struct{})
-	for _, partitionName := range partitionNames {
-		id, has := m[partitionName]
-		if !has {
-			return fmt.Errorf("collection %s does not has partitions %s", collName, partitionName)
-		}
-		ids[id] = struct{}{}
-	}
 
 	req := &server.LoadPartitionsRequest{
 		DbName:         "", // reserved
@@ -180,34 +163,22 @@ func (c *GrpcClient) LoadPartitions(ctx context.Context, collName string, partit
 	}
 
 	if !async {
+		ticker := time.NewTicker(200 * time.Millisecond)
+		defer ticker.Stop()
+
 		for {
 			select {
 			case <-ctx.Done():
-				return errors.New("context deadline exceeded")
-			default:
-			}
-			partitions, err := c.ShowPartitions(ctx, collName)
-			if err != nil {
-				return err
-			}
-			foundLoading := false
-			loaded := 0
-			for _, partition := range partitions {
-				if _, has := ids[partition.ID]; !has {
-					continue
+				return ctx.Err()
+			case <-ticker.C:
+				progress, err := c.getLoadingProgress(ctx, collName, partitionNames...)
+				if err != nil {
+					return err
 				}
-				if !partition.Loaded {
-					//Not loaded
-					foundLoading = true
-					break
+				if progress == 100 {
+					return nil
 				}
-				loaded++
 			}
-			if foundLoading || loaded < len(partitionNames) {
-				time.Sleep(time.Millisecond * 100)
-				continue
-			}
-			break
 		}
 	}
 
