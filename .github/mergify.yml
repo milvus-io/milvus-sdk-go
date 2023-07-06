@@ -59,6 +59,18 @@ pull_request_rules:
         add:
           - ci-passed
 
+  - name: Test passed for workflow changed
+    conditions:
+      - or:
+        - base=master
+        - base=v2.2.x
+      - -files~=^(?!\.github\/).+
+    actions:
+      label:
+        add:
+          - ci-passed
+          - "kind\/workflow"
+
   - name: Remove ci-passed when some test failed
     conditions:
       - or:
