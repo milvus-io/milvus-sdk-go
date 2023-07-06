@@ -51,9 +51,9 @@ jobs:
         kubectl get pods -n milvus-operator
 
     - name: Install Milvus
-        shell: bash
-        working-directory: ci/milvus-operator
-        run: |
+      shell: bash
+      working-directory: "ci/milvus-operator"
+      run: |
           echo "IMAGE_REPO=$IMAGE_REPO, IMAGE_TAG=$IMAGE_TAG, RELEASE_NAME=$RELEASE_NAME"
           kubectl create namespace ${QA_NAMESPACE}
           envsubst < milvus-${{ matrix.mode }}.yaml | cat - | kubectl apply -f - -n ${QA_NAMESPACE}
@@ -64,19 +64,11 @@ jobs:
           kubectl get svc -n ${QA_NAMESPACE}
           kubectl port-forward service/${RELEASE_NAME}-milvus 19530 -n ${QA_NAMESPACE} >/dev/null 2>&1 & sleep 10s
 
-      - name: Run Ci Test
-        shell: bash
-        working-directory: test/
-        run: |
-          nc -vz 127.0.0.1 19530
-          curl -sSL "https://github.com/gotestyourself/gotestsum/releases/download/v1.8.2/gotestsum_1.8.2_linux_amd64.tar.gz" | sudo tar -xz -C /usr/local/bin gotestsum
-          gotestsum --format testname --hide-summary=output ./testcases/... --tags L0,L1,L2,L3 --addr=127.0.0.1:19530 -timeout=60m
+    - name: Run Ci Test
+      shell: bash
+      working-directory: test/
+      run: |
+        nc -vz 127.0.0.1 19530
+        curl -sSL "https://github.com/gotestyourself/gotestsum/releases/download/v1.8.2/gotestsum_1.8.2_linux_amd64.tar.gz" | sudo tar -xz -C /usr/local/bin gotestsum
+        gotestsum --format testname --hide-summary=output ./testcases/... --tags L0,L1,L2,L3 --addr=127.0.0.1:19530 -timeout=60m
 
-        #    - name: Install Milvus
-        #      working-directory: ci/docker/milvus
-        #      run: |
-        #        IMAGE_TAG=${{ steps.extracter.outputs.tag }}  docker-compose up -d
-        #
-        #    - name: Smoke Test
-        #      run: |
-        #        go test github.com/milvus-io/milvus-sdk-go/v2/tests/e2e/... -v --failfast
