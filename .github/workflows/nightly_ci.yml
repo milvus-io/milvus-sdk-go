@@ -18,23 +18,65 @@ jobs:
   nightly:
     name: Run Nightly CI
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     env:
-      IMAGE_REPO: "milvusdb"
+      IMAGE_REPO: "milvusdb/milvus"
       TAG_PREFIX: "master-"
+      RELEASE_NAME: "go-test"
+      IMAGE_TAG: "master-latest"
+      QA_NAMESPACE: "qa"
     steps:
-    - uses: actions/checkout@v2
+    - name: Checkout code
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: '0'
 
     - name: Get the latest of Milvus dev image tag
       shell: bash
       id: extracter
       working-directory: ci/scripts
-      run: echo "::set-output name=tag::$(./docker_image_find_tag.sh -n ${IMAGE_REPO}/milvus-dev -t ${TAG_PREFIX}latest -f ${TAG_PREFIX} -F -L -q)"
+      run: |
+        echo "IMAGE_TAG=$(./docker_image_find_tag.sh -n ${IMAGE_REPO} -t ${TAG_PREFIX}latest -f ${TAG_PREFIX} -F -L -q)" >> $GITHUB_ENV
+        # echo "::set-output name=tag::$(./docker_image_find_tag.sh -n ${IMAGE_REPO}/milvus-dev -t ${TAG_PREFIX}latest -f ${TAG_PREFIX} -F -L -q)"
+
+    - name: Create cluster
+      uses: helm/kind-action@v1.3.0
+
+    - name: Deploy milvus operator
+      shell: bash
+      run: |
+        kubectl get sc
+        helm install milvus-operator -n milvus-operator --create-namespace https://github.com/milvus-io/milvus-operator/releases/download/v0.6.9/milvus-operator-0.6.9.tgz
+        kubectl --timeout 20m wait --for=condition=ready pod -l app.kubernetes.io/instance=milvus-operator -n milvus-operator
+        kubectl get pods -n milvus-operator
 
     - name: Install Milvus
-      working-directory: ci/docker/milvus
-      run: |
-        IMAGE_TAG=${{ steps.extracter.outputs.tag }}  docker-compose up -d
+        shell: bash
+        working-directory: ci/milvus-operator
+        run: |
+          echo "IMAGE_REPO=$IMAGE_REPO, IMAGE_TAG=$IMAGE_TAG, RELEASE_NAME=$RELEASE_NAME"
+          kubectl create namespace ${QA_NAMESPACE}
+          envsubst < milvus-${{ matrix.mode }}.yaml | cat - | kubectl apply -f - -n ${QA_NAMESPACE}
+          kubectl -n ${QA_NAMESPACE} wait --for=condition=MilvusReady milvus/${RELEASE_NAME} --timeout 20m
+          kubectl --timeout 20m wait --for=condition=ready pod -l app.kubernetes.io/instance=${RELEASE_NAME} -n ${QA_NAMESPACE}
+          kubectl describe milvus ${RELEASE_NAME} -n ${QA_NAMESPACE}
+          kubectl get pod -o wide -n ${QA_NAMESPACE} | grep -E "NAME|${RELEASE_NAME}"
+          kubectl get svc -n ${QA_NAMESPACE}
+          kubectl port-forward service/${RELEASE_NAME}-milvus 19530 -n ${QA_NAMESPACE} >/dev/null 2>&1 & sleep 10s
 
-    - name: Smoke Test
-      run: |
-        go test github.com/milvus-io/milvus-sdk-go/v2/tests/e2e/... -v --failfast
+      - name: Run Ci Test
+        shell: bash
+        working-directory: test/
+        run: |
+          nc -vz 127.0.0.1 19530
+          curl -sSL "https://github.com/gotestyourself/gotestsum/releases/download/v1.8.2/gotestsum_1.8.2_linux_amd64.tar.gz" | sudo tar -xz -C /usr/local/bin gotestsum
+          gotestsum --format testname --hide-summary=output ./testcases/... --tags L0,L1,L2,L3 --addr=127.0.0.1:19530 -timeout=60m
+
+        #    - name: Install Milvus
+        #      working-directory: ci/docker/milvus
+        #      run: |
+        #        IMAGE_TAG=${{ steps.extracter.outputs.tag }}  docker-compose up -d
+        #
+        #    - name: Smoke Test
+        #      run: |
+        #        go test github.com/milvus-io/milvus-sdk-go/v2/tests/e2e/... -v --failfast
