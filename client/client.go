@@ -48,6 +48,8 @@ type Client interface {
 
 	// -- collection --
 
+	// NewCollection intializeds a new collection with pre defined attributes
+	NewCollection(ctx context.Context, collName string, dimension int64, opts ...CreateCollectionOption) error
 	// ListCollections list collections from connection
 	ListCollections(ctx context.Context) ([]*entity.Collection, error)
 	// CreateCollection create collection using provided schema
@@ -138,6 +140,8 @@ type Client interface {
 	QueryByPks(ctx context.Context, collectionName string, partitionNames []string, ids entity.Column, outputFields []string, opts ...SearchQueryOptionFunc) (ResultSet, error)
 	// Query performs query records with boolean expression.
 	Query(ctx context.Context, collectionName string, partitionNames []string, expr string, outputFields []string, opts ...SearchQueryOptionFunc) (ResultSet, error)
+	// Get grabs the inserted entities using the primary key from the Collection.
+	Get(ctx context.Context, collectionName string, ids entity.Column, opts ...GetOption) (ResultSet, error)
 
 	// CalcDistance calculate the distance between vectors specified by ids or provided
 	CalcDistance(ctx context.Context, collName string, partitions []string,
@@ -202,34 +206,6 @@ type Client interface {
 	// GetVersion get milvus version
 	GetVersion(ctx context.Context) (string, error)
 }
-
-// SearchResult contains the result from Search api of client
-// IDs is the auto generated id values for the entities
-// Fields contains the data of `outputFieleds` specified or all columns if non
-// Scores is actually the distance between the vector current record contains and the search target vector
-type SearchResult struct {
-	ResultCount int           // the returning entry count
-	IDs         entity.Column // auto generated id, can be mapped to the columns from `Insert` API
-	Fields      ResultSet     //[]entity.Column // output field data
-	Scores      []float32     // distance to the target vector
-	Err         error         // search error if any
-}
-
-// ResultSet is an alias type for column slice.
-type ResultSet []entity.Column
-
-// GetColumn returns column with provided field name.
-func (rs ResultSet) GetColumn(fieldName string) entity.Column {
-	for _, column := range rs {
-		if column.Name() == fieldName {
-			return column
-		}
-	}
-	return nil
-}
-
-// Check if GrpcClient implement Client.
-var _ Client = &GrpcClient{}
 
 // NewClient create a client connected to remote milvus cluster.
 // More connect option can be modified by Config.

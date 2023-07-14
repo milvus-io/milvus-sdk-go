@@ -16,31 +16,88 @@ import (
 
 	"github.com/cockroachdb/errors"
 
-	common "github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
 	server "github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )
 
-// CreateCollectionOption is an option that is used to modify CreateCollectionRequest
-type CreateCollectionOption func(*server.CreateCollectionRequest)
+// CreateCollectionOption is an option that is used to alter create collection options.
+type CreateCollectionOption func(opt *createCollOpt)
 
-// WithConsistencyLevel specifies a specific ConsistencyLevel, rather than using the default ReaderProperties.
-func WithConsistencyLevel(cl entity.ConsistencyLevel) CreateCollectionOption {
-	return func(req *server.CreateCollectionRequest) {
-		req.ConsistencyLevel = cl.CommonConsistencyLevel()
+type createCollOpt struct {
+	ConsistencyLevel    entity.ConsistencyLevel
+	NumPartitions       int64
+	PrimaryKeyFieldName string
+	PrimaryKeyFieldType entity.FieldType
+	PrimaryKeyMaxLength int64
+	VectorFieldName     string
+	MetricsType         entity.MetricType
+	AutoID              bool
+	EnableDynamicSchema bool
+	Properties          map[string]string
+}
+
+func WithPKFieldName(name string) CreateCollectionOption {
+	return func(opt *createCollOpt) {
+		opt.PrimaryKeyFieldName = name
 	}
 }
 
-func WithCollectionProperty(key string, value string) CreateCollectionOption {
-	return func(req *server.CreateCollectionRequest) {
-		req.Properties = append(req.Properties, &common.KeyValuePair{Key: key, Value: value})
+func WithPKFieldType(tp entity.FieldType) CreateCollectionOption {
+	return func(opt *createCollOpt) {
+		opt.PrimaryKeyFieldType = tp
+	}
+}
+
+func WithPKMaxLength(maxLength int64) CreateCollectionOption {
+	return func(opt *createCollOpt) {
+		opt.PrimaryKeyMaxLength = maxLength
+	}
+}
+
+func WithVectorFieldName(name string) CreateCollectionOption {
+	return func(opt *createCollOpt) {
+		opt.VectorFieldName = name
+	}
+}
+
+func WithMetricsType(mt entity.MetricType) CreateCollectionOption {
+	return func(opt *createCollOpt) {
+		opt.MetricsType = mt
+	}
+}
+
+func WithAutoID(autoID bool) CreateCollectionOption {
+	return func(opt *createCollOpt) {
+		opt.AutoID = autoID
+	}
+}
+
+func WithEnableDynamicSchema(enable bool) CreateCollectionOption {
+	return func(opt *createCollOpt) {
+		opt.EnableDynamicSchema = enable
+	}
+}
+
+// WithConsistencyLevel specifies a specific ConsistencyLevel, rather than using the default ReaderProperties.
+func WithConsistencyLevel(cl entity.ConsistencyLevel) CreateCollectionOption {
+	return func(opt *createCollOpt) {
+		opt.ConsistencyLevel = cl
 	}
 }
 
 // WithPartitionNum returns a create collection options to set physical partition number when logical partition feature.
 func WithPartitionNum(partitionNums int64) CreateCollectionOption {
-	return func(req *server.CreateCollectionRequest) {
-		req.NumPartitions = partitionNums
+	return func(opt *createCollOpt) {
+		opt.NumPartitions = partitionNums
+	}
+}
+
+func WithCollectionProperty(key, value string) CreateCollectionOption {
+	return func(opt *createCollOpt) {
+		if opt.Properties == nil {
+			opt.Properties = make(map[string]string)
+		}
+		opt.Properties[key] = value
 	}
 }
 
@@ -171,5 +228,24 @@ func WithEndTs(endTs int64) BulkInsertOption {
 		optionMap := entity.KvPairsMap(req.GetOptions())
 		optionMap["end_ts"] = fmt.Sprint(endTs)
 		req.Options = entity.MapKvPairs(optionMap)
+	}
+}
+
+type getOption struct {
+	partitionNames []string
+	outputFields   []string
+}
+
+type GetOption func(o *getOption)
+
+func GetWithPartitions(partionNames ...string) GetOption {
+	return func(o *getOption) {
+		o.partitionNames = partionNames
+	}
+}
+
+func GetWithOutputFields(outputFields ...string) GetOption {
+	return func(o *getOption) {
+		o.outputFields = outputFields
 	}
 }
