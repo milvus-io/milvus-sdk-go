@@ -357,3 +357,32 @@ func FieldDataVector(fd *schema.FieldData) (Column, error) {
 		return nil, errors.New("unsupported data type")
 	}
 }
+
+// defaultValueColumn will return the empty scalars column which will be fill with default value
+func DefaultValueColumn(name string, dataType FieldType) (Column, error) {
+	switch dataType {
+	case FieldTypeBool:
+		return NewColumnBool(name, nil), nil
+	case FieldTypeInt8:
+		return NewColumnInt8(name, nil), nil
+	case FieldTypeInt16:
+		return NewColumnInt16(name, nil), nil
+	case FieldTypeInt32:
+		return NewColumnInt32(name, nil), nil
+	case FieldTypeInt64:
+		return NewColumnInt64(name, nil), nil
+	case FieldTypeFloat:
+		return NewColumnFloat(name, nil), nil
+	case FieldTypeDouble:
+		return NewColumnDouble(name, nil), nil
+	case FieldTypeString:
+		return NewColumnString(name, nil), nil
+	case FieldTypeVarChar:
+		return NewColumnVarChar(name, nil), nil
+	case FieldTypeJSON:
+		return NewColumnJSONBytes(name, nil), nil
+
+	default:
+		return nil, fmt.Errorf("default value unsupported data type %s", dataType)
+	}
+}

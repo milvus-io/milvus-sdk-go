@@ -64,7 +64,7 @@ func (s *InsertSuite) TestInsertFail() {
 		s.Error(err)
 	})
 
-	s.Run("missing_field", func() {
+	s.Run("missing_field_without_default_value", func() {
 		defer s.resetMock()
 		s.setupHasCollection(testCollectionName)
 		s.setupHasPartition(testCollectionName, "partition_1")
@@ -264,6 +264,38 @@ func (s *InsertSuite) TestInsertSuccess() {
 			entity.NewColumnFloatVector("vector", 128, generateFloatVector(1, 128)),
 		)
 
+		s.NoError(err)
+		s.Equal(1, r.Len())
+	})
+
+	s.Run("missing_field_with_default_value", func() {
+		defer s.resetMock()
+		s.setupHasCollection(testCollectionName)
+		s.setupHasPartition(testCollectionName, "partition_1")
+
+		s.setupDescribeCollection(testCollectionName, entity.NewSchema().
+			WithField(entity.NewField().WithIsPrimaryKey(true).WithIsAutoID(true).WithName("ID").WithDataType(entity.FieldTypeInt64)).
+			WithField(entity.NewField().WithName("default_value").WithDataType(entity.FieldTypeInt64).WithDefaultValueLong(1)).
+			WithField(entity.NewField().WithName("vector").WithDataType(entity.FieldTypeFloatVector).WithTypeParams(entity.TypeParamDim, "128")),
+		)
+
+		s.mock.EXPECT().Insert(mock.Anything, mock.AnythingOfType("*milvuspb.InsertRequest")).
+			Run(func(ctx context.Context, req *server.InsertRequest) {
+				s.Equal(2, len(req.GetFieldsData()))
+			}).Return(&server.MutationResult{
+			Status: &common.Status{},
+			IDs: &schema.IDs{
+				IdField: &schema.IDs_IntId{
+					IntId: &schema.LongArray{
+						Data: []int64{1},
+					},
+				},
+			},
+		}, nil)
+
+		r, err := c.Insert(ctx, testCollectionName, "partition_1",
+			entity.NewColumnFloatVector("vector", 128, generateFloatVector(1, 128)),
+		)
 		s.NoError(err)
 		s.Equal(1, r.Len())
 	})
