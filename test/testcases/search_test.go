@@ -581,32 +581,32 @@ func TestSearchInvalidSearchParams(t *testing.T) {
 	invalidNprobe := []int{-1, 0, 65537}
 	for _, nprobe := range invalidNprobe {
 		_, errIvfFlat := entity.NewIndexIvfFlatSearchParam(nprobe)
-		common.CheckErr(t, errIvfFlat, false, "nprobe not valid")
+		common.CheckErr(t, errIvfFlat, false, "nprobe has to be in range [1, 65536]")
 	}
 
 	// ivf sq8 search param
 	for _, nprobe := range invalidNprobe {
 		_, errIvfSq8 := entity.NewIndexIvfSQ8SearchParam(nprobe)
-		common.CheckErr(t, errIvfSq8, false, "nprobe not valid")
+		common.CheckErr(t, errIvfSq8, false, "nprobe has to be in range [1, 65536]")
 	}
 
 	// ivf pq search param
 	for _, nprobe := range invalidNprobe {
 		_, errIvfPq := entity.NewIndexIvfPQSearchParam(nprobe)
-		common.CheckErr(t, errIvfPq, false, "nprobe not valid")
+		common.CheckErr(t, errIvfPq, false, "nprobe has to be in range [1, 65536]")
 	}
 
 	// hnsw search params ef [top_k, 32768]
 	invalidEfs := []int{-1, 0, 32769}
 	for _, invalidEf := range invalidEfs {
 		_, errHnsw := entity.NewIndexHNSWSearchParam(invalidEf)
-		common.CheckErr(t, errHnsw, false, "ef not valid")
+		common.CheckErr(t, errHnsw, false, "ef has to be in range [1, 32768]")
 	}
 
 	// bin ivf flat
 	for _, nprobe := range invalidNprobe {
 		_, errBinIvfFlat := entity.NewIndexBinIvfFlatSearchParam(nprobe)
-		common.CheckErr(t, errBinIvfFlat, false, "nprobe not valid")
+		common.CheckErr(t, errBinIvfFlat, false, "nprobe has to be in range [1, 65536]")
 	}
 }
 

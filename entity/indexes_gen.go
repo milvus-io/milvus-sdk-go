@@ -96,10 +96,10 @@ func NewIndexBinFlat(metricType MetricType,
 ) (*IndexBinFlat, error) {
 	// auto generate parameters validation code, if any
 	if nlist < 1 {
-		return nil, errors.New("nlist not valid")
+		return nil, errors.New("nlist has to be in range [1, 65536]")
 	}
 	if nlist > 65536 {
-		return nil, errors.New("nlist not valid")
+		return nil, errors.New("nlist has to be in range [1, 65536]")
 	}
 	
 	return &IndexBinFlat{ 
@@ -152,10 +152,10 @@ func NewIndexIvfFlat(metricType MetricType,
 ) (*IndexIvfFlat, error) {
 	// auto generate parameters validation code, if any
 	if nlist < 1 {
-		return nil, errors.New("nlist not valid")
+		return nil, errors.New("nlist has to be in range [1, 65536]")
 	}
 	if nlist > 65536 {
-		return nil, errors.New("nlist not valid")
+		return nil, errors.New("nlist has to be in range [1, 65536]")
 	}
 	
 	return &IndexIvfFlat{ 
@@ -208,10 +208,10 @@ func NewIndexBinIvfFlat(metricType MetricType,
 ) (*IndexBinIvfFlat, error) {
 	// auto generate parameters validation code, if any
 	if nlist < 1 {
-		return nil, errors.New("nlist not valid")
+		return nil, errors.New("nlist has to be in range [1, 65536]")
 	}
 	if nlist > 65536 {
-		return nil, errors.New("nlist not valid")
+		return nil, errors.New("nlist has to be in range [1, 65536]")
 	}
 	
 	return &IndexBinIvfFlat{ 
@@ -264,10 +264,10 @@ func NewIndexIvfSQ8(metricType MetricType,
 ) (*IndexIvfSQ8, error) {
 	// auto generate parameters validation code, if any
 	if nlist < 1 {
-		return nil, errors.New("nlist not valid")
+		return nil, errors.New("nlist has to be in range [1, 65536]")
 	}
 	if nlist > 65536 {
-		return nil, errors.New("nlist not valid")
+		return nil, errors.New("nlist has to be in range [1, 65536]")
 	}
 	
 	return &IndexIvfSQ8{ 
@@ -328,19 +328,19 @@ func NewIndexIvfPQ(metricType MetricType,
 ) (*IndexIvfPQ, error) {
 	// auto generate parameters validation code, if any
 	if nlist < 1 {
-		return nil, errors.New("nlist not valid")
+		return nil, errors.New("nlist has to be in range [1, 65536]")
 	}
 	if nlist > 65536 {
-		return nil, errors.New("nlist not valid")
+		return nil, errors.New("nlist has to be in range [1, 65536]")
 	}
 	
 	
 	
 	if nbits < 1 {
-		return nil, errors.New("nbits not valid")
+		return nil, errors.New("nbits has to be in range [1, 16]")
 	}
 	if nbits > 16 {
-		return nil, errors.New("nbits not valid")
+		return nil, errors.New("nbits has to be in range [1, 16]")
 	}
 	
 	return &IndexIvfPQ{ 
@@ -401,17 +401,17 @@ func NewIndexHNSW(metricType MetricType,
 ) (*IndexHNSW, error) {
 	// auto generate parameters validation code, if any
 	if M < 4 {
-		return nil, errors.New("M not valid")
+		return nil, errors.New("M has to be in range [4, 64]")
 	}
 	if M > 64 {
-		return nil, errors.New("M not valid")
+		return nil, errors.New("M has to be in range [4, 64]")
 	}
 	
 	if efConstruction < 8 {
-		return nil, errors.New("efConstruction not valid")
+		return nil, errors.New("efConstruction has to be in range [8, 512]")
 	}
 	if efConstruction > 512 {
-		return nil, errors.New("efConstruction not valid")
+		return nil, errors.New("efConstruction has to be in range [8, 512]")
 	}
 	
 	return &IndexHNSW{ 
@@ -474,24 +474,24 @@ func NewIndexIvfHNSW(metricType MetricType,
 ) (*IndexIvfHNSW, error) {
 	// auto generate parameters validation code, if any
 	if nlist < 1 {
-		return nil, errors.New("nlist not valid")
+		return nil, errors.New("nlist has to be in range [1, 65536]")
 	}
 	if nlist > 65536 {
-		return nil, errors.New("nlist not valid")
+		return nil, errors.New("nlist has to be in range [1, 65536]")
 	}
 	
 	if M < 4 {
-		return nil, errors.New("M not valid")
+		return nil, errors.New("M has to be in range [4, 64]")
 	}
 	if M > 64 {
-		return nil, errors.New("M not valid")
+		return nil, errors.New("M has to be in range [4, 64]")
 	}
 	
 	if efConstruction < 8 {
-		return nil, errors.New("efConstruction not valid")
+		return nil, errors.New("efConstruction has to be in range [8, 512]")
 	}
 	if efConstruction > 512 {
-		return nil, errors.New("efConstruction not valid")
+		return nil, errors.New("efConstruction has to be in range [8, 512]")
 	}
 	
 	return &IndexIvfHNSW{ 

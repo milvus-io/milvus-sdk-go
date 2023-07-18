@@ -195,26 +195,26 @@ func TestCreateIndexInvalidParams(t *testing.T) {
 	// invalid IvfFlat nlist [1, 65536]
 	_, errIvfFlatNlist := entity.NewIndexIvfFlat(entity.L2, 0)
 	_, errIvfFlatNlist2 := entity.NewIndexIvfFlat(entity.L2, 65537)
-	common.CheckErr(t, errIvfFlatNlist, false, "nlist not valid")
-	common.CheckErr(t, errIvfFlatNlist2, false, "nlist not valid")
+	common.CheckErr(t, errIvfFlatNlist, false, "nlist has to be in range [1, 65536]")
+	common.CheckErr(t, errIvfFlatNlist2, false, "nlist has to be in range [1, 65536]")
 
 	// invalid IvfSq8 nlist [1, 65536]
 	_, errIvfSq8Nlist := entity.NewIndexIvfFlat(entity.L2, 0)
 	_, errIvfSq8Nlist2 := entity.NewIndexIvfFlat(entity.L2, 65537)
-	common.CheckErr(t, errIvfSq8Nlist, false, "nlist not valid")
-	common.CheckErr(t, errIvfSq8Nlist2, false, "nlist not valid")
+	common.CheckErr(t, errIvfSq8Nlist, false, "nlist has to be in range [1, 65536]")
+	common.CheckErr(t, errIvfSq8Nlist2, false, "nlist has to be in range [1, 65536]")
 
 	// invalid IvfPq nlist [1, 65536]
 	_, errIvfPqNlist := entity.NewIndexIvfPQ(entity.L2, -1, 16, 8)
-	common.CheckErr(t, errIvfPqNlist, false, "nlist not valid")
+	common.CheckErr(t, errIvfPqNlist, false, "nlist has to be in range [1, 65536]")
 	_, errIvfPqNlist2 := entity.NewIndexIvfPQ(entity.L2, 65538, 16, 8)
-	common.CheckErr(t, errIvfPqNlist2, false, "nlist not valid")
+	common.CheckErr(t, errIvfPqNlist2, false, "nlist has to be in range [1, 65536]")
 
 	// invalid IvfPq params m dim ≡ 0 (mod m), nbits [1, 16]
 	_, errIvfPqNbits := entity.NewIndexIvfPQ(entity.L2, 128, 8, 0)
-	common.CheckErr(t, errIvfPqNbits, false, "nbits not valid")
+	common.CheckErr(t, errIvfPqNbits, false, "nbits has to be in range [1, 16]")
 	_, errIvfPqNbits2 := entity.NewIndexIvfPQ(entity.L2, 128, 8, 17)
-	common.CheckErr(t, errIvfPqNbits2, false, "nbits not valid")
+	common.CheckErr(t, errIvfPqNbits2, false, "nbits has to be in range [1, 16]")
 	// TODO unclear error message
 	idxInvalidm, _ := entity.NewIndexIvfPQ(entity.L2, 128, 7, 8)
 	errm := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idxInvalidm, false)
@@ -223,13 +223,13 @@ func TestCreateIndexInvalidParams(t *testing.T) {
 
 	// invalid Hnsw M [4, 64], efConstruction [8, 512]
 	_, errHnswM := entity.NewIndexHNSW(entity.L2, 3, 96)
-	common.CheckErr(t, errHnswM, false, "M not valid")
+	common.CheckErr(t, errHnswM, false, "M has to be in range [4, 64]")
 	_, errHnswM2 := entity.NewIndexHNSW(entity.L2, 128, 96)
-	common.CheckErr(t, errHnswM2, false, "M not valid")
+	common.CheckErr(t, errHnswM2, false, "M has to be in range [4, 64]")
 	_, errHnswEf := entity.NewIndexHNSW(entity.L2, 8, 7)
-	common.CheckErr(t, errHnswEf, false, "efConstruction not valid")
+	common.CheckErr(t, errHnswEf, false, "efConstruction has to be in range [8, 512]")
 	_, errHnswEf2 := entity.NewIndexHNSW(entity.L2, 8, 515)
-	common.CheckErr(t, errHnswEf2, false, "efConstruction not valid")
+	common.CheckErr(t, errHnswEf2, false, "efConstruction has to be in range [8, 512]")
 
 	// invalid flat metric type jaccard
 	// TODO unclear error message

@@ -47,10 +47,10 @@ func NewIndexBinFlatSearchParam(
 ) (*IndexBinFlatSearchParam, error) {
 	// auto generate parameters validation code, if any
 	if nprobe < 1 {
-		return nil, errors.New("nprobe not valid")
+		return nil, errors.New("nprobe has to be in range [1, 65536]")
 	}
 	if nprobe > 65536 {
-		return nil, errors.New("nprobe not valid")
+		return nil, errors.New("nprobe has to be in range [1, 65536]")
 	}
 	
 	return &IndexBinFlatSearchParam{ 
@@ -79,10 +79,10 @@ func NewIndexIvfFlatSearchParam(
 ) (*IndexIvfFlatSearchParam, error) {
 	// auto generate parameters validation code, if any
 	if nprobe < 1 {
-		return nil, errors.New("nprobe not valid")
+		return nil, errors.New("nprobe has to be in range [1, 65536]")
 	}
 	if nprobe > 65536 {
-		return nil, errors.New("nprobe not valid")
+		return nil, errors.New("nprobe has to be in range [1, 65536]")
 	}
 	
 	return &IndexIvfFlatSearchParam{ 
@@ -111,10 +111,10 @@ func NewIndexBinIvfFlatSearchParam(
 ) (*IndexBinIvfFlatSearchParam, error) {
 	// auto generate parameters validation code, if any
 	if nprobe < 1 {
-		return nil, errors.New("nprobe not valid")
+		return nil, errors.New("nprobe has to be in range [1, 65536]")
 	}
 	if nprobe > 65536 {
-		return nil, errors.New("nprobe not valid")
+		return nil, errors.New("nprobe has to be in range [1, 65536]")
 	}
 	
 	return &IndexBinIvfFlatSearchParam{ 
@@ -143,10 +143,10 @@ func NewIndexIvfSQ8SearchParam(
 ) (*IndexIvfSQ8SearchParam, error) {
 	// auto generate parameters validation code, if any
 	if nprobe < 1 {
-		return nil, errors.New("nprobe not valid")
+		return nil, errors.New("nprobe has to be in range [1, 65536]")
 	}
 	if nprobe > 65536 {
-		return nil, errors.New("nprobe not valid")
+		return nil, errors.New("nprobe has to be in range [1, 65536]")
 	}
 	
 	return &IndexIvfSQ8SearchParam{ 
@@ -175,10 +175,10 @@ func NewIndexIvfPQSearchParam(
 ) (*IndexIvfPQSearchParam, error) {
 	// auto generate parameters validation code, if any
 	if nprobe < 1 {
-		return nil, errors.New("nprobe not valid")
+		return nil, errors.New("nprobe has to be in range [1, 65536]")
 	}
 	if nprobe > 65536 {
-		return nil, errors.New("nprobe not valid")
+		return nil, errors.New("nprobe has to be in range [1, 65536]")
 	}
 	
 	return &IndexIvfPQSearchParam{ 
@@ -207,10 +207,10 @@ func NewIndexHNSWSearchParam(
 ) (*IndexHNSWSearchParam, error) {
 	// auto generate parameters validation code, if any
 	if ef < 1 {
-		return nil, errors.New("ef not valid")
+		return nil, errors.New("ef has to be in range [1, 32768]")
 	}
 	if ef > 32768 {
-		return nil, errors.New("ef not valid")
+		return nil, errors.New("ef has to be in range [1, 32768]")
 	}
 	
 	return &IndexHNSWSearchParam{ 
@@ -243,17 +243,17 @@ func NewIndexIvfHNSWSearchParam(
 ) (*IndexIvfHNSWSearchParam, error) {
 	// auto generate parameters validation code, if any
 	if nprobe < 1 {
-		return nil, errors.New("nprobe not valid")
+		return nil, errors.New("nprobe has to be in range [1, 65536]")
 	}
 	if nprobe > 65536 {
-		return nil, errors.New("nprobe not valid")
+		return nil, errors.New("nprobe has to be in range [1, 65536]")
 	}
 	
 	if ef < 1 {
-		return nil, errors.New("ef not valid")
+		return nil, errors.New("ef has to be in range [1, 32768]")
 	}
 	if ef > 32768 {
-		return nil, errors.New("ef not valid")
+		return nil, errors.New("ef has to be in range [1, 32768]")
 	}
 	
 	return &IndexIvfHNSWSearchParam{ 
@@ -284,10 +284,10 @@ func NewIndexDISKANNSearchParam(
 ) (*IndexDISKANNSearchParam, error) {
 	// auto generate parameters validation code, if any
 	if search_list < 1 {
-		return nil, errors.New("search_list not valid")
+		return nil, errors.New("search_list has to be in range [1, 65535]")
 	}
 	if search_list > 65535 {
-		return nil, errors.New("search_list not valid")
+		return nil, errors.New("search_list has to be in range [1, 65535]")
 	}
 	
 	return &IndexDISKANNSearchParam{ 
@@ -316,10 +316,10 @@ func NewIndexAUTOINDEXSearchParam(
 ) (*IndexAUTOINDEXSearchParam, error) {
 	// auto generate parameters validation code, if any
 	if level < 1 {
-		return nil, errors.New("level not valid")
+		return nil, errors.New("level has to be in range [1, 3]")
 	}
 	if level > 3 {
-		return nil, errors.New("level not valid")
+		return nil, errors.New("level has to be in range [1, 3]")
 	}
 	
 	return &IndexAUTOINDEXSearchParam{ 

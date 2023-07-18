@@ -277,11 +277,11 @@ func (ip idxParam) ValidationCode() string {
 		min := strings.TrimSpace(parts[0])
 		max := strings.TrimSpace(parts[1])
 		return fmt.Sprintf(`if %s < %s {
-		return nil, errors.New("%s not valid")
+		return nil, errors.New("%s has to be in range [%s, %s]")
 	}
 	if %s > %s {
-		return nil, errors.New("%s not valid")
-	}`, ip.Name, min, ip.Name, ip.Name, max, ip.Name)
+		return nil, errors.New("%s has to be in range [%s, %s]")
+	}`, ip.Name, min, ip.Name, min, max, ip.Name, max, ip.Name, min, max)
 	default:
 		return ""
 	}
