@@ -147,7 +147,7 @@ func (c *Config) getDialOption() []grpc.DialOption {
 				return 60 * time.Millisecond * time.Duration(math.Pow(3, float64(attempt)))
 			}),
 			grpc_retry.WithCodes(codes.Unavailable, codes.ResourceExhausted)),
-			RetryOnRateLimitInterceptor(10, func(ctx context.Context, attempt uint) time.Duration {
+			RetryOnRateLimitInterceptor(75, func(ctx context.Context, attempt uint) time.Duration {
 				return 10 * time.Millisecond * time.Duration(math.Pow(3, float64(attempt)))
 			}),
 		))

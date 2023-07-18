@@ -37,7 +37,7 @@ const (
 	RetryOnRateLimit ctxKey = iota
 )
 
-var MaxBackOff = 60 * time.Second
+var MaxBackOff = 3 * time.Second
 
 // RetryOnRateLimitInterceptor returns a new retrying unary client interceptor.
 func RetryOnRateLimitInterceptor(maxRetry uint, backoffFunc grpc_retry.BackoffFuncContext) grpc.UnaryClientInterceptor {
