@@ -67,6 +67,8 @@ type Index interface {
 type SearchParam interface {
 	// returns parameters for search/query
 	Params() map[string]interface{}
+	AddRadius(radius float64)
+	AddRangeFilter(rangeFilter float64)
 }
 
 type baseSearchParams struct {
@@ -79,6 +81,14 @@ func (sp *baseSearchParams) Params() map[string]interface{} {
 		params[k] = v
 	}
 	return params
+}
+
+func (sp *baseSearchParams) AddRadius(radius float64) {
+	sp.params["radius"] = radius
+}
+
+func (sp *baseSearchParams) AddRangeFilter(rangeFilter float64) {
+	sp.params["range_filter"] = rangeFilter
 }
 
 func newBaseSearchParams() baseSearchParams {
