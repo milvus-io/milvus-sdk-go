@@ -12,6 +12,10 @@ import (
 
 const (
 	authorizationHeader = `authorization`
+
+	identifierHeader = `identifier`
+
+	databaseHeader = `dbname`
 )
 
 // authenticationInterceptor appends credential into context metadata
@@ -25,16 +29,16 @@ func authenticationInterceptor(ctx context.Context, username, password string) c
 
 func apiKeyInterceptor(ctx context.Context, apiKey string) context.Context {
 	if apiKey != "" {
-		value := crypto.Base64Encode(fmt.Sprintf("Bearer: %s", apiKey))
+		value := crypto.Base64Encode(apiKey)
 		return metadata.AppendToOutgoingContext(ctx, authorizationHeader, value)
 	}
 	return ctx
 }
 
 func identifierInterceptor(ctx context.Context, identifierGetter func() string) context.Context {
-	dbname := identifierGetter()
-	if dbname != "" {
-		ctx = metadata.AppendToOutgoingContext(ctx, "identifier", dbname)
+	identifier := identifierGetter()
+	if identifier != "" {
+		ctx = metadata.AppendToOutgoingContext(ctx, identifierHeader, identifier)
 	}
 	return ctx
 }
@@ -43,7 +47,7 @@ func identifierInterceptor(ctx context.Context, identifierGetter func() string) 
 func databaseNameInterceptor(ctx context.Context, dbNameGetter func() string) context.Context {
 	dbname := dbNameGetter()
 	if dbname != "" {
-		ctx = metadata.AppendToOutgoingContext(ctx, "dbname", dbname)
+		ctx = metadata.AppendToOutgoingContext(ctx, databaseHeader, dbname)
 	}
 	return ctx
 }

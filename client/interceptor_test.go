@@ -37,7 +37,7 @@ func TestAPIInterceptor(t *testing.T) {
 	ctx := context.Background()
 	ctx = apiKeyInterceptor(ctx, "test-token")
 	md, ok := metadata.FromOutgoingContext(ctx)
-	value := crypto.Base64Encode(fmt.Sprintf("Bearer: %s", "test-token"))
+	value := crypto.Base64Encode("test-token")
 	assert.True(t, ok)
 	assert.Equal(t, 1, len(md[authorizationHeader]))
 	assert.Equal(t, value, md[authorizationHeader][0])

@@ -13,7 +13,6 @@ package client
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -75,41 +74,92 @@ func (c *GrpcClient) ListCollections(ctx context.Context) ([]*entity.Collection,
 	return collections, nil
 }
 
+// NewCollection creates a common simple collection with pre-defined attributes.
+func (c *GrpcClient) NewCollection(ctx context.Context, collName string, dimension int64, opts ...CreateCollectionOption) error {
+	if c.Service == nil {
+		return ErrClientNotReady
+	}
+
+	//	shardNum := entity.DefaultShardNumber
+	opt := &createCollOpt{
+		ConsistencyLevel:    entity.DefaultConsistencyLevel,
+		PrimaryKeyFieldName: "id",
+		PrimaryKeyFieldType: entity.FieldTypeInt64,
+		VectorFieldName:     "vector",
+		MetricsType:         entity.IP,
+		AutoID:              false,
+		EnableDynamicSchema: true,
+	}
+
+	for _, o := range opts {
+		o(opt)
+	}
+
+	pkField := entity.NewField().WithName(opt.PrimaryKeyFieldName).WithDataType(opt.PrimaryKeyFieldType).WithIsAutoID(opt.AutoID).WithIsPrimaryKey(true)
+	if opt.PrimaryKeyFieldType == entity.FieldTypeVarChar && opt.PrimaryKeyMaxLength > 0 {
+		pkField = pkField.WithMaxLength(opt.PrimaryKeyMaxLength)
+	}
+
+	sch := entity.NewSchema().WithName(collName).WithAutoID(opt.AutoID).WithDynamicFieldEnabled(opt.EnableDynamicSchema).
+		WithField(pkField).
+		WithField(entity.NewField().WithName(opt.VectorFieldName).WithDataType(entity.FieldTypeFloatVector).WithDim(dimension))
+
+	if err := c.validateSchema(sch); err != nil {
+		return err
+	}
+
+	if err := c.requestCreateCollection(ctx, sch, opt, entity.DefaultShardNumber); err != nil {
+		return err
+	}
+
+	idx := entity.NewGenericIndex("", "", map[string]string{
+		"metric_type": string(opt.MetricsType),
+	})
+
+	if err := c.CreateIndex(ctx, collName, opt.VectorFieldName, idx, false); err != nil {
+		return err
+	}
+
+	return c.LoadCollection(ctx, collName, false)
+}
+
 // CreateCollection create collection with specified schema
 func (c *GrpcClient) CreateCollection(ctx context.Context, collSchema *entity.Schema, shardNum int32, opts ...CreateCollectionOption) error {
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
-	if err := validateSchema(collSchema); err != nil {
+	if err := c.validateSchema(collSchema); err != nil {
 		return err
 	}
 
-	has, err := c.HasCollection(ctx, collSchema.CollectionName)
-	if err != nil {
-		return err
-	}
-	if has {
-		return fmt.Errorf("collection %s already exist", collSchema.CollectionName)
-	}
-	sch := collSchema.ProtoMessage()
-	bs, err := proto.Marshal(sch)
-	if err != nil {
-		return err
-	}
-	req := &server.CreateCollectionRequest{
-		DbName:         "", // reserved fields, not used for now
-		CollectionName: collSchema.CollectionName,
-		Schema:         bs,
-		ShardsNum:      shardNum,
-		// default consistency level is strong
-		// to be consistent with previous version
-		ConsistencyLevel: common.ConsistencyLevel_Bounded,
+	opt := &createCollOpt{
+		ConsistencyLevel: entity.DefaultConsistencyLevel,
 		NumPartitions:    0,
 	}
 	// apply options on request
-	for _, opt := range opts {
-		opt(req)
+	for _, o := range opts {
+		o(opt)
 	}
+
+	return c.requestCreateCollection(ctx, collSchema, opt, shardNum)
+}
+
+func (c *GrpcClient) requestCreateCollection(ctx context.Context, sch *entity.Schema, opt *createCollOpt, shardNum int32) error {
+	bs, err := proto.Marshal(sch.ProtoMessage())
+	if err != nil {
+		return err
+	}
+
+	req := &server.CreateCollectionRequest{
+		DbName:           "", // reserved fields, not used for now
+		CollectionName:   sch.CollectionName,
+		Schema:           bs,
+		ShardsNum:        shardNum,
+		ConsistencyLevel: opt.ConsistencyLevel.CommonConsistencyLevel(),
+		NumPartitions:    opt.NumPartitions,
+		Properties:       entity.MapKvPairs(opt.Properties),
+	}
+
 	resp, err := c.Service.CreateCollection(ctx, req)
 	if err != nil {
 		return err
@@ -121,7 +171,7 @@ func (c *GrpcClient) CreateCollection(ctx context.Context, collSchema *entity.Sc
 	return nil
 }
 
-func validateSchema(sch *entity.Schema) error {
+func (c *GrpcClient) validateSchema(sch *entity.Schema) error {
 	if sch == nil {
 		return errors.New("nil schema")
 	}
@@ -132,6 +182,9 @@ func validateSchema(sch *entity.Schema) error {
 	primaryKey := false
 	autoID := false
 	vectors := 0
+	hasPartitionKey := false
+	hasDynamicSchema := sch.EnableDynamicField
+	hasJSON := false
 	for _, field := range sch.Fields {
 		if field.PrimaryKey {
 			if primaryKey { // another primary key found, only one primary key field for now
@@ -151,12 +204,29 @@ func validateSchema(sch *entity.Schema) error {
 			}
 			autoID = true
 		}
+		if field.DataType == entity.FieldTypeJSON {
+			hasJSON = true
+		}
+		if field.IsDynamic {
+			hasDynamicSchema = true
+		}
+		if field.IsPartitionKey {
+			hasPartitionKey = true
+		}
 		if field.DataType == entity.FieldTypeFloatVector || field.DataType == entity.FieldTypeBinaryVector {
 			vectors++
 		}
 	}
 	if vectors <= 0 {
 		return errors.New("vector field not set")
+	}
+	switch {
+	case hasJSON && c.config.hasFlags(disableJSON):
+		return ErrFeatureNotSupported
+	case hasDynamicSchema && c.config.hasFlags(disableDynamicSchema):
+		return ErrFeatureNotSupported
+	case hasPartitionKey && c.config.hasFlags(disableParitionKey):
+		return ErrFeatureNotSupported
 	}
 	return nil
 }
@@ -356,22 +426,21 @@ func (c *GrpcClient) LoadCollection(ctx context.Context, collName string, async 
 	}
 
 	if !async {
+		ticker := time.NewTicker(200 * time.Millisecond)
+		defer ticker.Stop()
 		for {
 			select {
 			case <-ctx.Done():
-				return errors.New("context deadline exceeded")
-			default:
+				return ctx.Err()
+			case <-ticker.C:
+				progress, err := c.getLoadingProgress(ctx, collName)
+				if err != nil {
+					return err
+				}
+				if progress == 100 {
+					return nil
+				}
 			}
-
-			coll, err := c.ShowCollection(ctx, collName)
-			if err != nil {
-				return err
-			}
-			if coll.Loaded {
-				break
-			}
-
-			time.Sleep(200 * time.Millisecond) // TODO change to configuration
 		}
 	}
 	return nil
@@ -520,4 +589,22 @@ func (c *GrpcClient) AlterCollection(ctx context.Context, collName string, attrs
 		return err
 	}
 	return handleRespStatus(resp)
+}
+
+func (c *GrpcClient) getLoadingProgress(ctx context.Context, collectionName string, partitionNames ...string) (int64, error) {
+	req := &server.GetLoadingProgressRequest{
+		Base:           &common.MsgBase{},
+		DbName:         "",
+		CollectionName: collectionName,
+		PartitionNames: partitionNames,
+	}
+
+	resp, err := c.Service.GetLoadingProgress(ctx, req)
+	if err != nil {
+		return -1, err
+	}
+	if err := handleRespStatus(resp.GetStatus()); err != nil {
+		return -1, err
+	}
+	return resp.GetProgress(), nil
 }

@@ -20,6 +20,13 @@ import (
 	"google.golang.org/grpc/keepalive"
 )
 
+const (
+	disableDatabase uint64 = 1 << iota
+	disableJSON
+	disableDynamicSchema
+	disableParitionKey
+)
+
 var regexValidScheme = regexp.MustCompile(`^https?:\/\/`)
 
 // DefaultGrpcOpts is GRPC options for milvus client.
@@ -50,12 +57,15 @@ type Config struct {
 	Identifier    string // Identifier for this connection
 	EnableTLSAuth bool   // Enable TLS Auth for transport security.
 	APIKey        string // API key
+	ServerVersion string // ServerVersion
 
 	DialOptions []grpc.DialOption // Dial options for GRPC.
 
 	parsedAddress *url.URL
 
 	DisableConn bool
+
+	flags uint64 // internal flags
 }
 
 // Copy a new config, dialOption may shared with old config.
@@ -146,4 +156,18 @@ func (c *Config) getDialOption() []grpc.DialOption {
 		createMetaDataUnaryInterceptor(c),
 	))
 	return options
+}
+
+// addFlags set internal flags
+func (c *Config) addFlags(flags uint64) {
+	c.flags |= flags
+}
+
+// hasFlags check flags is set
+func (c *Config) hasFlags(flags uint64) bool {
+	return (c.flags & flags) > 0
+}
+
+func (c *Config) resetFlags(flags uint64) {
+	c.flags &= ^flags
 }
