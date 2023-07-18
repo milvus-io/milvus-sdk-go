@@ -137,6 +137,7 @@ type Field struct {
 	IndexParams    map[string]string
 	IsDynamic      bool
 	IsPartitionKey bool
+	DefaultValue   *schema.ValueField
 }
 
 // ProtoMessage generates corresponding FieldSchema
@@ -152,6 +153,7 @@ func (f *Field) ProtoMessage() *schema.FieldSchema {
 		IndexParams:    MapKvPairs(f.IndexParams),
 		IsDynamic:      f.IsDynamic,
 		IsPartitionKey: f.IsPartitionKey,
+		DefaultValue:   f.DefaultValue,
 	}
 }
 
@@ -198,6 +200,60 @@ func (f *Field) WithIsPartitionKey(isPartitionKey bool) *Field {
 	return f
 }
 
+func (f *Field) WithDefaultValueBool(defaultValue bool) *Field {
+	f.DefaultValue = &schema.ValueField{
+		Data: &schema.ValueField_BoolData{
+			BoolData: defaultValue,
+		},
+	}
+	return f
+}
+
+func (f *Field) WithDefaultValueInt(defaultValue int32) *Field {
+	f.DefaultValue = &schema.ValueField{
+		Data: &schema.ValueField_IntData{
+			IntData: defaultValue,
+		},
+	}
+	return f
+}
+
+func (f *Field) WithDefaultValueLong(defaultValue int64) *Field {
+	f.DefaultValue = &schema.ValueField{
+		Data: &schema.ValueField_LongData{
+			LongData: defaultValue,
+		},
+	}
+	return f
+}
+
+func (f *Field) WithDefaultValueFloat(defaultValue float32) *Field {
+	f.DefaultValue = &schema.ValueField{
+		Data: &schema.ValueField_FloatData{
+			FloatData: defaultValue,
+		},
+	}
+	return f
+}
+
+func (f *Field) WithDefaultValueDouble(defaultValue float64) *Field {
+	f.DefaultValue = &schema.ValueField{
+		Data: &schema.ValueField_DoubleData{
+			DoubleData: defaultValue,
+		},
+	}
+	return f
+}
+
+func (f *Field) WithDefaultValueString(defaultValue string) *Field {
+	f.DefaultValue = &schema.ValueField{
+		Data: &schema.ValueField_StringData{
+			StringData: defaultValue,
+		},
+	}
+	return f
+}
+
 func (f *Field) WithTypeParams(key string, value string) *Field {
 	if f.TypeParams == nil {
 		f.TypeParams = make(map[string]string)
@@ -234,6 +290,7 @@ func (f *Field) ReadProto(p *schema.FieldSchema) *Field {
 	f.IndexParams = KvPairsMap(p.GetIndexParams())
 	f.IsDynamic = p.GetIsDynamic()
 	f.IsPartitionKey = p.GetIsPartitionKey()
+	f.DefaultValue = p.GetDefaultValue()
 
 	return f
 }
