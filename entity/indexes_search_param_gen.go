@@ -12,33 +12,29 @@ var _ SearchParam = &IndexFlatSearchParam{}
 
 // IndexFlatSearchParam search param struct for index type FLAT
 type IndexFlatSearchParam struct { //auto generated fields
-}
-
-// Params returns index construction params, implementing Index interface
-func(i *IndexFlatSearchParam) Params() map[string]interface{} {
-	return map[string]interface{} {//auto generated mapping 
-	}
+	baseSearchParams
+	
 }
 
 // NewIndexFlatSearchParam create index search param
 func NewIndexFlatSearchParam() (*IndexFlatSearchParam, error) {
 	// auto generate parameters validation code, if any
-	return &IndexFlatSearchParam{ 
-	}, nil
+	sp := &IndexFlatSearchParam{
+		baseSearchParams: newBaseSearchParams(),
+	}
+	
+	//auto generated setting
+
+	return sp, nil
 }
 
 var _ SearchParam = &IndexBinFlatSearchParam{}
 
 // IndexBinFlatSearchParam search param struct for index type BIN_FLAT
 type IndexBinFlatSearchParam struct { //auto generated fields
+	baseSearchParams
+	
 	nprobe int
-}
-
-// Params returns index construction params, implementing Index interface
-func(i *IndexBinFlatSearchParam) Params() map[string]interface{} {
-	return map[string]interface{} {//auto generated mapping 
-		"nprobe": i.nprobe,
-	}
 }
 
 // NewIndexBinFlatSearchParam create index search param
@@ -53,24 +49,23 @@ func NewIndexBinFlatSearchParam(
 		return nil, errors.New("nprobe has to be in range [1, 65536]")
 	}
 	
-	return &IndexBinFlatSearchParam{ 
+	sp := &IndexBinFlatSearchParam{
+		baseSearchParams: newBaseSearchParams(),
+	}
+	
 	//auto generated setting
-	nprobe: nprobe,
-	}, nil
+	sp.params["nprobe"] = nprobe
+
+	return sp, nil
 }
 
 var _ SearchParam = &IndexIvfFlatSearchParam{}
 
 // IndexIvfFlatSearchParam search param struct for index type IVF_FLAT
 type IndexIvfFlatSearchParam struct { //auto generated fields
+	baseSearchParams
+	
 	nprobe int
-}
-
-// Params returns index construction params, implementing Index interface
-func(i *IndexIvfFlatSearchParam) Params() map[string]interface{} {
-	return map[string]interface{} {//auto generated mapping 
-		"nprobe": i.nprobe,
-	}
 }
 
 // NewIndexIvfFlatSearchParam create index search param
@@ -85,24 +80,23 @@ func NewIndexIvfFlatSearchParam(
 		return nil, errors.New("nprobe has to be in range [1, 65536]")
 	}
 	
-	return &IndexIvfFlatSearchParam{ 
+	sp := &IndexIvfFlatSearchParam{
+		baseSearchParams: newBaseSearchParams(),
+	}
+	
 	//auto generated setting
-	nprobe: nprobe,
-	}, nil
+	sp.params["nprobe"] = nprobe
+
+	return sp, nil
 }
 
 var _ SearchParam = &IndexBinIvfFlatSearchParam{}
 
 // IndexBinIvfFlatSearchParam search param struct for index type BIN_IVF_FLAT
 type IndexBinIvfFlatSearchParam struct { //auto generated fields
+	baseSearchParams
+	
 	nprobe int
-}
-
-// Params returns index construction params, implementing Index interface
-func(i *IndexBinIvfFlatSearchParam) Params() map[string]interface{} {
-	return map[string]interface{} {//auto generated mapping 
-		"nprobe": i.nprobe,
-	}
 }
 
 // NewIndexBinIvfFlatSearchParam create index search param
@@ -117,24 +111,23 @@ func NewIndexBinIvfFlatSearchParam(
 		return nil, errors.New("nprobe has to be in range [1, 65536]")
 	}
 	
-	return &IndexBinIvfFlatSearchParam{ 
+	sp := &IndexBinIvfFlatSearchParam{
+		baseSearchParams: newBaseSearchParams(),
+	}
+	
 	//auto generated setting
-	nprobe: nprobe,
-	}, nil
+	sp.params["nprobe"] = nprobe
+
+	return sp, nil
 }
 
 var _ SearchParam = &IndexIvfSQ8SearchParam{}
 
 // IndexIvfSQ8SearchParam search param struct for index type IVF_SQ8
 type IndexIvfSQ8SearchParam struct { //auto generated fields
+	baseSearchParams
+	
 	nprobe int
-}
-
-// Params returns index construction params, implementing Index interface
-func(i *IndexIvfSQ8SearchParam) Params() map[string]interface{} {
-	return map[string]interface{} {//auto generated mapping 
-		"nprobe": i.nprobe,
-	}
 }
 
 // NewIndexIvfSQ8SearchParam create index search param
@@ -149,24 +142,23 @@ func NewIndexIvfSQ8SearchParam(
 		return nil, errors.New("nprobe has to be in range [1, 65536]")
 	}
 	
-	return &IndexIvfSQ8SearchParam{ 
+	sp := &IndexIvfSQ8SearchParam{
+		baseSearchParams: newBaseSearchParams(),
+	}
+	
 	//auto generated setting
-	nprobe: nprobe,
-	}, nil
+	sp.params["nprobe"] = nprobe
+
+	return sp, nil
 }
 
 var _ SearchParam = &IndexIvfPQSearchParam{}
 
 // IndexIvfPQSearchParam search param struct for index type IVF_PQ
 type IndexIvfPQSearchParam struct { //auto generated fields
+	baseSearchParams
+	
 	nprobe int
-}
-
-// Params returns index construction params, implementing Index interface
-func(i *IndexIvfPQSearchParam) Params() map[string]interface{} {
-	return map[string]interface{} {//auto generated mapping 
-		"nprobe": i.nprobe,
-	}
 }
 
 // NewIndexIvfPQSearchParam create index search param
@@ -181,24 +173,23 @@ func NewIndexIvfPQSearchParam(
 		return nil, errors.New("nprobe has to be in range [1, 65536]")
 	}
 	
-	return &IndexIvfPQSearchParam{ 
+	sp := &IndexIvfPQSearchParam{
+		baseSearchParams: newBaseSearchParams(),
+	}
+	
 	//auto generated setting
-	nprobe: nprobe,
-	}, nil
+	sp.params["nprobe"] = nprobe
+
+	return sp, nil
 }
 
 var _ SearchParam = &IndexHNSWSearchParam{}
 
 // IndexHNSWSearchParam search param struct for index type HNSW
 type IndexHNSWSearchParam struct { //auto generated fields
+	baseSearchParams
+	
 	ef int
-}
-
-// Params returns index construction params, implementing Index interface
-func(i *IndexHNSWSearchParam) Params() map[string]interface{} {
-	return map[string]interface{} {//auto generated mapping 
-		"ef": i.ef,
-	}
 }
 
 // NewIndexHNSWSearchParam create index search param
@@ -213,26 +204,24 @@ func NewIndexHNSWSearchParam(
 		return nil, errors.New("ef has to be in range [1, 32768]")
 	}
 	
-	return &IndexHNSWSearchParam{ 
+	sp := &IndexHNSWSearchParam{
+		baseSearchParams: newBaseSearchParams(),
+	}
+	
 	//auto generated setting
-	ef: ef,
-	}, nil
+	sp.params["ef"] = ef
+
+	return sp, nil
 }
 
 var _ SearchParam = &IndexIvfHNSWSearchParam{}
 
 // IndexIvfHNSWSearchParam search param struct for index type IVF_HNSW
 type IndexIvfHNSWSearchParam struct { //auto generated fields
+	baseSearchParams
+	
 	nprobe int
 	ef int
-}
-
-// Params returns index construction params, implementing Index interface
-func(i *IndexIvfHNSWSearchParam) Params() map[string]interface{} {
-	return map[string]interface{} {//auto generated mapping 
-		"nprobe": i.nprobe,
-		"ef": i.ef,
-	}
 }
 
 // NewIndexIvfHNSWSearchParam create index search param
@@ -256,26 +245,24 @@ func NewIndexIvfHNSWSearchParam(
 		return nil, errors.New("ef has to be in range [1, 32768]")
 	}
 	
-	return &IndexIvfHNSWSearchParam{ 
+	sp := &IndexIvfHNSWSearchParam{
+		baseSearchParams: newBaseSearchParams(),
+	}
+	
 	//auto generated setting
-	nprobe: nprobe,
-	//auto generated setting
-	ef: ef,
-	}, nil
+	sp.params["nprobe"] = nprobe
+	sp.params["ef"] = ef
+
+	return sp, nil
 }
 
 var _ SearchParam = &IndexDISKANNSearchParam{}
 
 // IndexDISKANNSearchParam search param struct for index type DISKANN
 type IndexDISKANNSearchParam struct { //auto generated fields
+	baseSearchParams
+	
 	search_list int
-}
-
-// Params returns index construction params, implementing Index interface
-func(i *IndexDISKANNSearchParam) Params() map[string]interface{} {
-	return map[string]interface{} {//auto generated mapping 
-		"search_list": i.search_list,
-	}
 }
 
 // NewIndexDISKANNSearchParam create index search param
@@ -290,24 +277,23 @@ func NewIndexDISKANNSearchParam(
 		return nil, errors.New("search_list has to be in range [1, 65535]")
 	}
 	
-	return &IndexDISKANNSearchParam{ 
+	sp := &IndexDISKANNSearchParam{
+		baseSearchParams: newBaseSearchParams(),
+	}
+	
 	//auto generated setting
-	search_list: search_list,
-	}, nil
+	sp.params["search_list"] = search_list
+
+	return sp, nil
 }
 
 var _ SearchParam = &IndexAUTOINDEXSearchParam{}
 
 // IndexAUTOINDEXSearchParam search param struct for index type AUTOINDEX
 type IndexAUTOINDEXSearchParam struct { //auto generated fields
+	baseSearchParams
+	
 	level int
-}
-
-// Params returns index construction params, implementing Index interface
-func(i *IndexAUTOINDEXSearchParam) Params() map[string]interface{} {
-	return map[string]interface{} {//auto generated mapping 
-		"level": i.level,
-	}
 }
 
 // NewIndexAUTOINDEXSearchParam create index search param
@@ -322,9 +308,13 @@ func NewIndexAUTOINDEXSearchParam(
 		return nil, errors.New("level has to be in range [1, 3]")
 	}
 	
-	return &IndexAUTOINDEXSearchParam{ 
+	sp := &IndexAUTOINDEXSearchParam{
+		baseSearchParams: newBaseSearchParams(),
+	}
+	
 	//auto generated setting
-	level: level,
-	}, nil
+	sp.params["level"] = level
+
+	return sp, nil
 }
 

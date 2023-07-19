@@ -69,6 +69,24 @@ type SearchParam interface {
 	Params() map[string]interface{}
 }
 
+type baseSearchParams struct {
+	params map[string]interface{}
+}
+
+func (sp *baseSearchParams) Params() map[string]interface{} {
+	params := make(map[string]interface{})
+	for k, v := range sp.params {
+		params[k] = v
+	}
+	return params
+}
+
+func newBaseSearchParams() baseSearchParams {
+	return baseSearchParams{
+		params: make(map[string]interface{}),
+	}
+}
+
 type baseIndex struct {
 	it   IndexType
 	name string
