@@ -43,7 +43,8 @@ func resetMockInvokeTimes() {
 
 func TestRateLimitInterceptor(t *testing.T) {
 	maxRetry := uint(3)
-	inter := RetryOnRateLimitInterceptor(maxRetry, func(ctx context.Context, attempt uint) time.Duration {
+	maxBackoff := 3 * time.Second
+	inter := RetryOnRateLimitInterceptor(maxRetry, maxBackoff, func(ctx context.Context, attempt uint) time.Duration {
 		return 60 * time.Millisecond * time.Duration(math.Pow(2, float64(attempt)))
 	})
 
