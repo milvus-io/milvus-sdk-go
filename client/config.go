@@ -112,6 +112,9 @@ func (c *Config) parse() error {
 	if remoteURL.Scheme == "https" {
 		c.EnableTLSAuth = true
 	}
+	if remoteURL.Port() == "" && c.EnableTLSAuth {
+		remoteURL.Host += ":443"
+	}
 	c.parsedAddress = remoteURL
 	return nil
 }
