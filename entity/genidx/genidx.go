@@ -152,15 +152,10 @@ import (
 var _ SearchParam = &Index{{.IdxName}}SearchParam{}
 
 // Index{{.IdxName}}SearchParam search param struct for index type {{.IdxType}}
-type Index{{.IdxName}}SearchParam struct { //auto generated fields{{range .SearchParams}}{{with.}}
+type Index{{.IdxName}}SearchParam struct { //auto generated fields
+	baseSearchParams
+	{{range .SearchParams}}{{with.}}
 	{{.Name}} {{.ParamType}}{{end}}{{end}}
-}
-
-// Params returns index construction params, implementing Index interface
-func(i *Index{{.IdxName}}SearchParam) Params() map[string]interface{} {
-	return map[string]interface{} {//auto generated mapping {{range .SearchParams}}{{with .}}
-		"{{.Name}}": i.{{.Name}},{{end}}{{end}}
-	}
 }
 
 // NewIndex{{.IdxName}}SearchParam create index search param
@@ -170,10 +165,14 @@ func NewIndex{{.IdxName}}SearchParam({{range .SearchParams}}{{with .}}
 	// auto generate parameters validation code, if any{{range .SearchParams}}{{with .}}
 	{{.ValidationCode}}
 	{{end}}{{end}}
-	return &Index{{.IdxName}}SearchParam{ {{range .SearchParams}}{{with .}}
-	//auto generated setting
-	{{.Name}}: {{.Name}},{{end}}{{end}}
-	}, nil
+	sp := &Index{{.IdxName}}SearchParam{
+		baseSearchParams: newBaseSearchParams(),
+	}
+	
+	//auto generated setting{{range .SearchParams}}{{with .}}
+	sp.params["{{.Name}}"] = {{.Name}}{{end}}{{end}}
+
+	return sp, nil
 }
 {{end}}{{end}}
 `))
