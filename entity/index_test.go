@@ -29,3 +29,15 @@ func TestGenericIndex(t *testing.T) {
 	assert.Equal(t, name, gi.Name())
 	assert.EqualValues(t, IvfFlat, gi.Params()[tIndexType])
 }
+
+func TestAddRadius(t *testing.T) {
+	params := newBaseSearchParams()
+	params.AddRadius(10)
+	assert.Equal(t, params.Params()["radius"], float64(10))
+}
+
+func TestAddRangeFilter(t *testing.T) {
+	params := newBaseSearchParams()
+	params.AddRangeFilter(20)
+	assert.Equal(t, params.Params()["range_filter"], float64(20))
+}
