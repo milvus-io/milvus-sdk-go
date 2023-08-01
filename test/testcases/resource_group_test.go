@@ -404,7 +404,7 @@ func TestTransferReplicaInvalidReplicaNumber(t *testing.T) {
 	common.CheckErr(t, errCreate, true)
 
 	// create collection
-	collName := createDefaultCollection(ctx, t, mc, false, 1)
+	collName := createDefaultCollection(ctx, t, mc, false, common.DefaultShards)
 
 	// invalid replicas
 	type invalidReplicasStruct struct {

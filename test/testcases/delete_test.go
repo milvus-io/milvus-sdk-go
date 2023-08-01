@@ -33,7 +33,7 @@ func TestDelete(t *testing.T) {
 	common.CheckErr(t, errDelete, true)
 
 	// query, verify delete success
-	queryRes, errQuery := mc.Query(ctx, collName, []string{common.DefaultPartition}, deleteIds, []string{})
+	queryRes, errQuery := mc.QueryByPks(ctx, collName, []string{common.DefaultPartition}, deleteIds, []string{})
 	common.CheckErr(t, errQuery, true)
 	require.Zero(t, queryRes[0].Len())
 }
@@ -57,7 +57,7 @@ func TestDeleteStringPks(t *testing.T) {
 	common.CheckErr(t, errLoad, true)
 
 	// query, verify delete success
-	queryRes, errQuery := mc.Query(ctx, collName, []string{common.DefaultPartition}, deleteIds, []string{})
+	queryRes, errQuery := mc.QueryByPks(ctx, collName, []string{common.DefaultPartition}, deleteIds, []string{})
 	common.CheckErr(t, errQuery, true)
 	require.Zero(t, queryRes[0].Len())
 }
@@ -69,7 +69,7 @@ func TestDeleteEmptyCollection(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create
-	collName := createDefaultCollection(ctx, t, mc, false, 2)
+	collName := createDefaultCollection(ctx, t, mc, false, common.DefaultShards)
 
 	// delete
 	deleteIds := entity.NewColumnInt64(common.DefaultIntFieldName, []int64{0})
@@ -125,7 +125,7 @@ func TestDeleteEmptyPartitionNames(t *testing.T) {
 	mc.Flush(ctx, collName, false)
 
 	// delete
-	deleteIds := entity.NewColumnInt64(common.DefaultIntFieldName, intColumn.Data()[:10])
+	deleteIds := entity.NewColumnInt64(common.DefaultIntFieldName, intColumn.(*entity.ColumnInt64).Data()[:10])
 	errDelete := mc.DeleteByPks(ctx, collName, emptyPartitionName, deleteIds)
 	common.CheckErr(t, errDelete, true)
 
@@ -138,7 +138,7 @@ func TestDeleteEmptyPartitionNames(t *testing.T) {
 	common.CheckErr(t, errLoad, true)
 
 	// query, verify delete success
-	queryRes, errQuery := mc.Query(ctx, collName, []string{common.DefaultPartition}, deleteIds, []string{})
+	queryRes, errQuery := mc.QueryByPks(ctx, collName, []string{common.DefaultPartition}, deleteIds, []string{})
 	common.CheckErr(t, errQuery, true)
 	require.Zero(t, queryRes[0].Len())
 }
@@ -165,7 +165,7 @@ func TestDeleteEmptyPartition(t *testing.T) {
 	common.CheckErr(t, errDelete, true)
 
 	// query deleteIds in default partition
-	queryResult, _ := mc.Query(
+	queryResult, _ := mc.QueryByPks(
 		ctx,
 		collName,
 		[]string{},
@@ -182,11 +182,11 @@ func TestDeletePartitionIdsNotMatch(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create collection and insert [0, nb) into default partition, [nb, nb*2) into new partition
-	collName := createDefaultCollection(ctx, t, mc, false, 2)
-	partitionName, defaultPartition, _ := createInsertTwoPartitions(ctx, t, mc, collName, common.DefaultNb)
+	collName := createDefaultCollection(ctx, t, mc, false, common.DefaultShards)
+	partitionName, vecColumnDefault, _ := createInsertTwoPartitions(ctx, t, mc, collName, common.DefaultNb)
 
 	// delete [0:10) from new partition -> delete nothing
-	deleteIds := entity.NewColumnInt64(common.DefaultIntFieldName, defaultPartition.IdsColumn.(*entity.ColumnInt64).Data()[:10])
+	deleteIds := entity.NewColumnInt64(common.DefaultIntFieldName, vecColumnDefault.IdsColumn.(*entity.ColumnInt64).Data()[:10])
 	errDelete := mc.DeleteByPks(ctx, collName, partitionName, deleteIds)
 	common.CheckErr(t, errDelete, true)
 
@@ -199,7 +199,7 @@ func TestDeletePartitionIdsNotMatch(t *testing.T) {
 	common.CheckErr(t, errLoad, true)
 
 	// query deleteIds in default partition
-	queryResult, _ := mc.Query(
+	queryResult, _ := mc.QueryByPks(
 		ctx,
 		collName,
 		[]string{common.DefaultPartition},
@@ -210,18 +210,17 @@ func TestDeletePartitionIdsNotMatch(t *testing.T) {
 }
 
 // test delete with nil ids
-func TestDeleteNilIds(t *testing.T) {
-	t.Skip("Issue: https://github.com/milvus-io/milvus-sdk-go/issues/369")
+func TestDeleteEmptyIds(t *testing.T) {
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect
 	mc := createMilvusClient(ctx, t)
 
 	// create
-	collName := createDefaultCollection(ctx, t, mc, false, 2)
+	collName := createDefaultCollection(ctx, t, mc, false, common.DefaultShards)
 
 	// delete
-	errDelete := mc.DeleteByPks(ctx, collName, common.DefaultPartition, nil)
-	common.CheckErr(t, errDelete, false, "error")
+	errDelete := mc.DeleteByPks(ctx, collName, common.DefaultPartition, entity.NewColumnInt64(common.DefaultIntFieldName, []int64{}))
+	common.CheckErr(t, errDelete, false, "ids len must not be zero")
 }
 
 // test delete ids field not pk int64
@@ -262,7 +261,7 @@ func TestDeleteDuplicatedPks(t *testing.T) {
 	common.CheckErr(t, errDelete, true)
 
 	// query, verify delete success
-	queryRes, errQuery := mc.Query(ctx, collName, []string{common.DefaultPartition}, deleteIds, []string{})
+	queryRes, errQuery := mc.QueryByPks(ctx, collName, []string{common.DefaultPartition}, deleteIds, []string{})
 	common.CheckErr(t, errQuery, true)
 	require.Zero(t, queryRes[0].Len())
 }

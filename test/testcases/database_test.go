@@ -182,7 +182,6 @@ func TestDropDb(t *testing.T) {
 
 // test using db
 func TestUsingDb(t *testing.T) {
-	t.Skip("https://github.com/milvus-io/milvus/issues/26074")
 	teardownSuite := teardownTest(t)
 	defer teardownSuite(t)
 
@@ -213,7 +212,6 @@ func TestUsingDb(t *testing.T) {
 
 // test client with db
 func TestClientWithDb(t *testing.T) {
-	t.Skip("https://github.com/milvus-io/milvus/issues/26074")
 	teardownSuite := teardownTest(t)
 	defer teardownSuite(t)
 	ctx := createContext(t, time.Second*common.DefaultTimeout)

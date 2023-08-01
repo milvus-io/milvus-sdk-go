@@ -80,6 +80,7 @@ func (mc *MilvusClient) Close() error {
 }
 
 // -- database --
+
 // UsingDatabase for database operation after this function call.
 // All request in any goroutine will be applied to new database on the same client. e.g.
 // 1. goroutine A access DB1.
@@ -120,7 +121,7 @@ func (mc *MilvusClient) DropDatabase(ctx context.Context, dbName string) error {
 
 // -- collection --
 
-// Create Collection
+// CreateCollection Create Collection
 func (mc *MilvusClient) CreateCollection(ctx context.Context, collSchema *entity.Schema, shardsNum int32, opts ...client.CreateCollectionOption) error {
 	if collSchema == nil {
 		preRequest("CreateCollection", ctx, collSchema, shardsNum, opts)
@@ -132,7 +133,15 @@ func (mc *MilvusClient) CreateCollection(ctx context.Context, collSchema *entity
 	return err
 }
 
-// List Collections
+// NewCollection highlevel new Collection
+func (mc *MilvusClient) NewCollection(ctx context.Context, collName string, dim int64, opts ...client.CreateCollectionOption) error {
+	preRequest("NewCollection", ctx, collName, dim, opts)
+	err := mc.mClient.NewCollection(ctx, collName, dim, opts...)
+	postResponse("NewCollection", err)
+	return err
+}
+
+// ListCollections list collections
 func (mc *MilvusClient) ListCollections(ctx context.Context) ([]*entity.Collection, error) {
 	preRequest("ListCollections", ctx)
 	collections, err := mc.mClient.ListCollections(ctx)
@@ -140,7 +149,7 @@ func (mc *MilvusClient) ListCollections(ctx context.Context) ([]*entity.Collecti
 	return collections, err
 }
 
-// Describe collection
+// DescribeCollection Describe collection
 func (mc *MilvusClient) DescribeCollection(ctx context.Context, collName string) (*entity.Collection, error) {
 	preRequest("DescribeCollection", ctx, collName)
 	collection, err := mc.mClient.DescribeCollection(ctx, collName)
@@ -148,7 +157,7 @@ func (mc *MilvusClient) DescribeCollection(ctx context.Context, collName string)
 	return collection, err
 }
 
-// Drop Collection
+// DropCollection Drop Collection
 func (mc *MilvusClient) DropCollection(ctx context.Context, collName string) error {
 	preRequest("DropCollection", ctx, collName)
 	err := mc.mClient.DropCollection(ctx, collName)
@@ -156,7 +165,7 @@ func (mc *MilvusClient) DropCollection(ctx context.Context, collName string) err
 	return err
 }
 
-// Get Collection Statistics
+// GetCollectionStatistics Get Collection Statistics
 func (mc *MilvusClient) GetCollectionStatistics(ctx context.Context, collName string) (map[string]string, error) {
 	preRequest("GetCollectionStatistics", ctx, collName)
 	stats, err := mc.mClient.GetCollectionStatistics(ctx, collName)
@@ -164,7 +173,7 @@ func (mc *MilvusClient) GetCollectionStatistics(ctx context.Context, collName st
 	return stats, err
 }
 
-// Load Collection
+// LoadCollection Load Collection
 func (mc *MilvusClient) LoadCollection(ctx context.Context, collName string, async bool, opts ...client.LoadCollectionOption) error {
 	funcName := "LoadCollection"
 	preRequest(funcName, ctx, collName, opts)
@@ -173,7 +182,7 @@ func (mc *MilvusClient) LoadCollection(ctx context.Context, collName string, asy
 	return err
 }
 
-// Release Collection
+// ReleaseCollection Release Collection
 func (mc *MilvusClient) ReleaseCollection(ctx context.Context, collName string) error {
 	preRequest("ReleaseCollection", ctx, collName)
 	err := mc.mClient.ReleaseCollection(ctx, collName)
@@ -181,7 +190,7 @@ func (mc *MilvusClient) ReleaseCollection(ctx context.Context, collName string) 
 	return err
 }
 
-// Has Collection
+// HasCollection Has Collection
 func (mc *MilvusClient) HasCollection(ctx context.Context, collName string) (bool, error) {
 	preRequest("HasCollection", ctx, collName)
 	has, err := mc.mClient.HasCollection(ctx, collName)
@@ -191,7 +200,7 @@ func (mc *MilvusClient) HasCollection(ctx context.Context, collName string) (boo
 
 // -- alias --
 
-// Create Alias
+// CreateAlias Create Alias
 func (mc *MilvusClient) CreateAlias(ctx context.Context, collName string, alias string) error {
 	preRequest("CreateAlias", ctx, collName, alias)
 	err := mc.mClient.CreateAlias(ctx, collName, alias)
@@ -199,7 +208,7 @@ func (mc *MilvusClient) CreateAlias(ctx context.Context, collName string, alias 
 	return err
 }
 
-// Drop Alias
+// DropAlias drop alias
 func (mc *MilvusClient) DropAlias(ctx context.Context, alias string) error {
 	preRequest("DropAlias", ctx, alias)
 	err := mc.mClient.DropAlias(ctx, alias)
@@ -207,7 +216,7 @@ func (mc *MilvusClient) DropAlias(ctx context.Context, alias string) error {
 	return err
 }
 
-// Alter Alias
+// AlterAlias Alter Alias
 func (mc *MilvusClient) AlterAlias(ctx context.Context, collName string, alias string) error {
 	preRequest("AlterAlias", ctx, collName, alias)
 	err := mc.mClient.AlterAlias(ctx, collName, alias)
@@ -215,7 +224,7 @@ func (mc *MilvusClient) AlterAlias(ctx context.Context, collName string, alias s
 	return err
 }
 
-// Get Replicas
+// GetReplicas Get Replicas
 func (mc *MilvusClient) GetReplicas(ctx context.Context, collName string) ([]*entity.ReplicaGroup, error) {
 	preRequest("GetReplicas", ctx, collName)
 	replicas, err := mc.mClient.GetReplicas(ctx, collName)
@@ -225,7 +234,7 @@ func (mc *MilvusClient) GetReplicas(ctx context.Context, collName string) ([]*en
 
 // -- authentication --
 
-// Create Credential
+// CreateCredential Create Credential
 func (mc *MilvusClient) CreateCredential(ctx context.Context, username string, password string) error {
 	preRequest("CreateCredential", ctx, username)
 	err := mc.mClient.CreateCredential(ctx, username, password)
@@ -233,7 +242,7 @@ func (mc *MilvusClient) CreateCredential(ctx context.Context, username string, p
 	return err
 }
 
-// Update Credential
+// UpdateCredential Update Credential
 func (mc *MilvusClient) UpdateCredential(ctx context.Context, username string, oldPassword string, newPassword string) error {
 	preRequest("UpdateCredential", ctx, username)
 	err := mc.mClient.UpdateCredential(ctx, username, oldPassword, newPassword)
@@ -241,7 +250,7 @@ func (mc *MilvusClient) UpdateCredential(ctx context.Context, username string, o
 	return err
 }
 
-// DeleteCredential
+// DeleteCredential delete credential
 func (mc *MilvusClient) DeleteCredential(ctx context.Context, username string) error {
 	preRequest("DeleteCredential", ctx, username)
 	err := mc.mClient.DeleteCredential(ctx, username)
@@ -259,7 +268,7 @@ func (mc *MilvusClient) ListCredUsers(ctx context.Context) ([]string, error) {
 
 // -- partition --
 
-// Create Partition
+// CreatePartition Create Partition
 func (mc *MilvusClient) CreatePartition(ctx context.Context, collName string, partitionName string) error {
 	preRequest("CreatePartition", ctx, collName, partitionName)
 	err := mc.mClient.CreatePartition(ctx, collName, partitionName)
@@ -267,7 +276,7 @@ func (mc *MilvusClient) CreatePartition(ctx context.Context, collName string, pa
 	return err
 }
 
-// Drop Partition
+// DropPartition Drop Partition
 func (mc *MilvusClient) DropPartition(ctx context.Context, collName string, partitionName string) error {
 	preRequest("DropPartition", ctx, collName, partitionName)
 	err := mc.mClient.DropPartition(ctx, collName, partitionName)
@@ -275,7 +284,7 @@ func (mc *MilvusClient) DropPartition(ctx context.Context, collName string, part
 	return err
 }
 
-// Show Partitions
+// ShowPartitions Show Partitions
 func (mc *MilvusClient) ShowPartitions(ctx context.Context, collName string) ([]*entity.Partition, error) {
 	preRequest("ShowPartitions", ctx, collName)
 	partitions, err := mc.mClient.ShowPartitions(ctx, collName)
@@ -283,7 +292,7 @@ func (mc *MilvusClient) ShowPartitions(ctx context.Context, collName string) ([]
 	return partitions, err
 }
 
-// Has Partition
+// HasPartition Has Partition
 func (mc *MilvusClient) HasPartition(ctx context.Context, collName string, partitionName string) (bool, error) {
 	preRequest("HasPartition", ctx, collName)
 	has, err := mc.mClient.HasPartition(ctx, collName, partitionName)
@@ -291,7 +300,7 @@ func (mc *MilvusClient) HasPartition(ctx context.Context, collName string, parti
 	return has, err
 }
 
-// Load Partitions
+// LoadPartitions Load Partitions into memory
 func (mc *MilvusClient) LoadPartitions(ctx context.Context, collName string, partitionNames []string, async bool) error {
 	preRequest("LoadPartitions", ctx, collName, partitionNames, async)
 	err := mc.mClient.LoadPartitions(ctx, collName, partitionNames, async)
@@ -307,7 +316,7 @@ func (mc *MilvusClient) ReleasePartitions(ctx context.Context, collName string, 
 	return err
 }
 
-// Get Persistent Segment Info
+// GetPersistentSegmentInfo Get Persistent Segment Info
 func (mc *MilvusClient) GetPersistentSegmentInfo(ctx context.Context, collName string) ([]*entity.Segment, error) {
 	preRequest("GetPersistentSegmentInfo", ctx, collName)
 	segments, err := mc.mClient.GetPersistentSegmentInfo(ctx, collName)
@@ -315,7 +324,7 @@ func (mc *MilvusClient) GetPersistentSegmentInfo(ctx context.Context, collName s
 	return segments, err
 }
 
-// Create Index
+// CreateIndex Create Index
 func (mc *MilvusClient) CreateIndex(ctx context.Context, collName string, fieldName string, idx entity.Index, async bool, opts ...client.IndexOption) error {
 	preRequest("CreateIndex", ctx, collName, fieldName, async, idx, opts)
 	err := mc.mClient.CreateIndex(ctx, collName, fieldName, idx, async, opts...)
@@ -323,7 +332,7 @@ func (mc *MilvusClient) CreateIndex(ctx context.Context, collName string, fieldN
 	return err
 }
 
-// Describe Index
+// DescribeIndex Describe Index
 func (mc *MilvusClient) DescribeIndex(ctx context.Context, collectionName string, fieldName string, opts ...client.IndexOption) ([]entity.Index, error) {
 	preRequest("DescribeIndex", ctx, collectionName, fieldName, opts)
 	indexes, err := mc.mClient.DescribeIndex(ctx, collectionName, fieldName, opts...)
@@ -331,7 +340,7 @@ func (mc *MilvusClient) DescribeIndex(ctx context.Context, collectionName string
 	return indexes, err
 }
 
-// Drop Index
+// DropIndex Drop Index
 func (mc *MilvusClient) DropIndex(ctx context.Context, collName string, fieldName string, opts ...client.IndexOption) error {
 	preRequest("DropIndex", ctx, collName, fieldName, opts)
 	err := mc.mClient.DropIndex(ctx, collName, fieldName, opts...)
@@ -339,7 +348,7 @@ func (mc *MilvusClient) DropIndex(ctx context.Context, collName string, fieldNam
 	return err
 }
 
-// Get IndexState, index naming is not supported yet
+// GetIndexState Get IndexState, index naming is not supported yet
 func (mc *MilvusClient) GetIndexState(ctx context.Context, collName string, fieldName string, opts ...client.IndexOption) (entity.IndexState, error) {
 	preRequest("GetIndexState", ctx, collName, fieldName, opts)
 	indexState, err := mc.mClient.GetIndexState(ctx, collName, fieldName, opts...)
@@ -349,7 +358,7 @@ func (mc *MilvusClient) GetIndexState(ctx context.Context, collName string, fiel
 
 // -- basic operation --
 
-// Insert
+// Insert insert data
 func (mc *MilvusClient) Insert(ctx context.Context, collName string, partitionName string, columns ...entity.Column) (entity.Column, error) {
 	preRequest("Insert", ctx, collName, partitionName, columns)
 	ids, err := mc.mClient.Insert(ctx, collName, partitionName, columns...)
@@ -357,7 +366,7 @@ func (mc *MilvusClient) Insert(ctx context.Context, collName string, partitionNa
 	return ids, err
 }
 
-// Flush
+// Flush flush collection
 func (mc *MilvusClient) Flush(ctx context.Context, collName string, async bool) error {
 	preRequest("Flush", ctx, collName, async)
 	err := mc.mClient.Flush(ctx, collName, async)
@@ -373,7 +382,7 @@ func (mc *MilvusClient) DeleteByPks(ctx context.Context, collName string, partit
 	return err
 }
 
-// Search
+// Search search from collection
 func (mc *MilvusClient) Search(ctx context.Context, collName string, partitions []string, expr string,
 	outputFields []string, vectors []entity.Vector, vectorField string, metricType entity.MetricType, topK int, sp entity.SearchParam, opts ...client.SearchQueryOptionFunc,
 ) ([]client.SearchResult, error) {
@@ -386,10 +395,9 @@ func (mc *MilvusClient) Search(ctx context.Context, collName string, partitions 
 	return searchResult, err
 }
 
-// Query
-func (mc *MilvusClient) Query(ctx context.Context, collName string, partitions []string, ids entity.Column,
-	outputFields []string, opts ...client.SearchQueryOptionFunc,
-) ([]entity.Column, error) {
+// QueryByPks query from collection
+func (mc *MilvusClient) QueryByPks(ctx context.Context, collName string, partitions []string, ids entity.Column,
+	outputFields []string, opts ...client.SearchQueryOptionFunc) (client.ResultSet, error) {
 	funcName := "QueryByPks"
 	preRequest(funcName, ctx, collName, partitions, ids, outputFields, opts)
 
@@ -399,9 +407,31 @@ func (mc *MilvusClient) Query(ctx context.Context, collName string, partitions [
 	return queryResults, err
 }
 
+// Query query from collection
+func (mc *MilvusClient) Query(ctx context.Context, collName string, partitions []string, expr string, outputFields []string, opts ...client.SearchQueryOptionFunc,
+) (client.ResultSet, error) {
+	funcName := "Query"
+	preRequest(funcName, ctx, collName, partitions, expr, outputFields, opts)
+
+	queryResults, err := mc.mClient.Query(ctx, collName, partitions, expr, outputFields, opts...)
+
+	postResponse(funcName, err, queryResults)
+	return queryResults, err
+}
+
+// Get query from collection
+func (mc *MilvusClient) Get(ctx context.Context, collName string, ids entity.Column, opts ...client.GetOption,
+) (client.ResultSet, error) {
+	funcName := "Get"
+	preRequest(funcName, ctx, collName, ids, opts)
+	queryResults, err := mc.mClient.Get(ctx, collName, ids, opts...)
+	postResponse(funcName, err, queryResults)
+	return queryResults, err
+}
+
 // -- row based apis --
 
-// Create Collection By Row
+// CreateCollectionByRow Create Collection By Row
 func (mc *MilvusClient) CreateCollectionByRow(ctx context.Context, row entity.Row, shardNum int32) error {
 	preRequest("CreateCollectionByRow", ctx, row, shardNum)
 	err := mc.mClient.CreateCollectionByRow(ctx, row, shardNum)
@@ -417,7 +447,7 @@ func (mc *MilvusClient) InsertRows(ctx context.Context, collName string, partiti
 	return column, err
 }
 
-// Manual Compaction
+// Compact Manual Compaction
 func (mc *MilvusClient) Compact(ctx context.Context, collName string, toleranceDuration time.Duration) (int64, error) {
 	preRequest("ManualCompaction", ctx, collName, toleranceDuration)
 	compactionID, err := mc.mClient.ManualCompaction(ctx, collName, toleranceDuration)
@@ -425,7 +455,7 @@ func (mc *MilvusClient) Compact(ctx context.Context, collName string, toleranceD
 	return compactionID, err
 }
 
-// Get Compaction State
+// GetCompactionState Get Compaction State
 func (mc *MilvusClient) GetCompactionState(ctx context.Context, id int64) (entity.CompactionState, error) {
 	preRequest("GetCompactionState", ctx, id)
 	compactionState, err := mc.mClient.GetCompactionState(ctx, id)
@@ -433,7 +463,7 @@ func (mc *MilvusClient) GetCompactionState(ctx context.Context, id int64) (entit
 	return compactionState, err
 }
 
-// Get Compaction State With Plans
+// GetCompactionStateWithPlans Get Compaction State With Plans
 func (mc *MilvusClient) GetCompactionStateWithPlans(ctx context.Context, id int64) (entity.CompactionState, []entity.CompactionPlan, error) {
 	preRequest("GetCompactionStateWithPlans", ctx, id)
 	compactionState, compactionPlan, err := mc.mClient.GetCompactionStateWithPlans(ctx, id)
@@ -441,7 +471,7 @@ func (mc *MilvusClient) GetCompactionStateWithPlans(ctx context.Context, id int6
 	return compactionState, compactionPlan, err
 }
 
-// Bulk Insert import data files(json, numpy, etc.) on MinIO/S3 storage, read and parse them into sealed segments
+// BulkInsert Bulk Insert import data files(json, numpy, etc.) on MinIO/S3 storage, read and parse them into sealed segments
 func (mc *MilvusClient) BulkInsert(ctx context.Context, collName string, partitionName string, files []string, opts ...client.BulkInsertOption) (int64, error) {
 	preRequest("BulkInsert", ctx, collName, partitionName, files, opts)
 	taskID, err := mc.mClient.BulkInsert(ctx, collName, partitionName, files, opts...)
@@ -457,12 +487,28 @@ func (mc *MilvusClient) GetBulkInsertState(ctx context.Context, taskID int64) (*
 	return bulkInsertTaskState, err
 }
 
-// List Bulk Insert Tasks
+// ListBulkInsertTasks List Bulk Insert Tasks
 func (mc *MilvusClient) ListBulkInsertTasks(ctx context.Context, collName string, limit int64) ([]*entity.BulkInsertTaskState, error) {
 	preRequest("ListBulkInsertTasks", ctx, collName, limit)
 	bulkInsertTaskStates, err := mc.mClient.ListBulkInsertTasks(ctx, collName, limit)
 	postResponse("ListBulkInsertTasks", err, bulkInsertTaskStates)
 	return bulkInsertTaskStates, err
+}
+
+// GetLoadingProgress
+func (mc *MilvusClient) GetLoadingProgress(ctx context.Context, collName string, partitionNames []string) (int64, error) {
+	preRequest("GetLoadingProgress", ctx, collName, partitionNames)
+	loadingProgress, err := mc.mClient.GetLoadingProgress(ctx, collName, partitionNames)
+	postResponse("GetLoadingProgress", err, loadingProgress)
+	return loadingProgress, err
+}
+
+// GetLoadState
+func (mc *MilvusClient) GetLoadState(ctx context.Context, collName string, partitionNames []string) (entity.LoadState, error) {
+	preRequest("GetLoadState", ctx, collName, partitionNames)
+	loadState, err := mc.mClient.GetLoadState(ctx, collName, partitionNames)
+	postResponse("GetLoadState", err, loadState)
+	return loadState, err
 }
 
 // *** self-hosted
@@ -479,7 +525,7 @@ func (mc *MilvusClient) WaitForCompactionCompleted(ctx context.Context, compacti
 	}
 }
 
-// List Resource Groups
+// ListResourceGroups List Resource Groups
 func (mc *MilvusClient) ListResourceGroups(ctx context.Context) ([]string, error) {
 	preRequest("ListResourceGroups", ctx)
 	rgs, err := mc.mClient.ListResourceGroups(ctx)
@@ -495,7 +541,7 @@ func (mc *MilvusClient) CreateResourceGroup(ctx context.Context, rgName string) 
 	return err
 }
 
-// DescribeResourceGroup
+// DescribeResourceGroup describe resource group
 func (mc *MilvusClient) DescribeResourceGroup(ctx context.Context, rgName string) (*entity.ResourceGroup, error) {
 	preRequest("DescribeResourceGroup", ctx, rgName)
 	rg, err := mc.mClient.DescribeResourceGroup(ctx, rgName)
@@ -503,7 +549,7 @@ func (mc *MilvusClient) DescribeResourceGroup(ctx context.Context, rgName string
 	return rg, err
 }
 
-// DropResourceGroup
+// DropResourceGroup drop resource group
 func (mc *MilvusClient) DropResourceGroup(ctx context.Context, rgName string) error {
 	preRequest("DropResourceGroup", ctx, rgName)
 	err := mc.mClient.DropResourceGroup(ctx, rgName)
@@ -511,7 +557,7 @@ func (mc *MilvusClient) DropResourceGroup(ctx context.Context, rgName string) er
 	return err
 }
 
-// TransferNode
+// TransferNode transfer node
 func (mc *MilvusClient) TransferNode(ctx context.Context, sourceRg, targetRg string, nodesNum int32) error {
 	preRequest("TransferNode", ctx, sourceRg, targetRg, nodesNum)
 	err := mc.mClient.TransferNode(ctx, sourceRg, targetRg, nodesNum)
@@ -519,7 +565,7 @@ func (mc *MilvusClient) TransferNode(ctx context.Context, sourceRg, targetRg str
 	return err
 }
 
-// TransferReplica
+// TransferReplica transfer replica
 func (mc *MilvusClient) TransferReplica(ctx context.Context, sourceRg, targetRg string, collectionName string, replicaNum int64) error {
 	preRequest("TransferReplica", ctx, sourceRg, targetRg, collectionName, replicaNum)
 	err := mc.mClient.TransferReplica(ctx, sourceRg, targetRg, collectionName, replicaNum)

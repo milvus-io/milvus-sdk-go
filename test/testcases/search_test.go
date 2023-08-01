@@ -71,35 +71,38 @@ func TestSearchCollectionNotExist(t *testing.T) {
 
 // test search empty collection -> return empty
 func TestSearchEmptyCollection(t *testing.T) {
+	t.Parallel()
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect
 	mc := createMilvusClient(ctx, t)
 
-	// empty collection
-	collName := createDefaultCollection(ctx, t, mc, false, 2)
+	for _, enableDynamicField := range []bool{true, false} {
+		// empty collection
+		collName := createDefaultCollection(ctx, t, mc, false, common.DefaultShards, client.WithEnableDynamicSchema(enableDynamicField))
 
-	idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
-	mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false, client.WithIndexName(""))
+		idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
+		mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false, client.WithIndexName(""))
 
-	// load collection
-	errLoad := mc.LoadCollection(ctx, collName, false)
-	common.CheckErr(t, errLoad, true)
+		// load collection
+		errLoad := mc.LoadCollection(ctx, collName, false)
+		common.CheckErr(t, errLoad, true)
 
-	// search vector
-	sp, _ := entity.NewIndexHNSWSearchParam(74)
-	searchRes, _ := mc.Search(
-		ctx, collName,
-		[]string{common.DefaultPartition},
-		"",
-		[]string{common.DefaultFloatFieldName},
-		//[]entity.Vector{entity.FloatVector([]float32{0.1, 0.2})},
-		common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeFloatVector),
-		common.DefaultFloatVecFieldName,
-		entity.L2,
-		common.DefaultTopK,
-		sp,
-	)
-	require.Len(t, searchRes, 0)
+		// search vector
+		sp, _ := entity.NewIndexHNSWSearchParam(74)
+		searchRes, _ := mc.Search(
+			ctx, collName,
+			[]string{common.DefaultPartition},
+			"",
+			[]string{common.DefaultFloatFieldName},
+			//[]entity.Vector{entity.FloatVector([]float32{0.1, 0.2})},
+			common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeFloatVector),
+			common.DefaultFloatVecFieldName,
+			entity.L2,
+			common.DefaultTopK,
+			sp,
+		)
+		require.Len(t, searchRes, 0)
+	}
 }
 
 // test search with partition names []string{}, []string{""}
@@ -108,55 +111,61 @@ func TestSearchEmptyPartitions(t *testing.T) {
 	// connect
 	mc := createMilvusClient(ctx, t)
 
-	// create collection and insert [0, nb) into default partition, [nb, nb*2) into new partition
-	collName := createDefaultCollection(ctx, t, mc, false, 2)
-	_, vecColumnDefault, vecColumnPartition := createInsertTwoPartitions(ctx, t, mc, collName, 500)
+	for _, enableDynamicField := range []bool{true, false} {
+		// create collection and insert [0, nb) into default partition, [nb, nb*2) into new partition
+		collName := createDefaultCollection(ctx, t, mc, false, common.DefaultShards, client.WithEnableDynamicSchema(enableDynamicField))
+		_, vecColumnDefault, vecColumnPartition := createInsertTwoPartitions(ctx, t, mc, collName, 500)
 
-	// create index
-	idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
-	mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false)
+		// create index
+		idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
+		mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false)
 
-	// load with not exist partition names
-	errLoad := mc.LoadCollection(ctx, collName, false)
-	common.CheckErr(t, errLoad, true)
+		// load with not exist partition names
+		errLoad := mc.LoadCollection(ctx, collName, false)
+		common.CheckErr(t, errLoad, true)
 
-	// search with empty partition name []string{""}
-	sp, _ := entity.NewIndexHNSWSearchParam(74)
-	_, errSearch := mc.Search(
-		ctx, collName,
-		[]string{""},
-		"",
-		[]string{common.DefaultFloatFieldName},
-		common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeFloatVector),
-		common.DefaultFloatVecFieldName,
-		entity.L2,
-		common.DefaultTopK,
-		sp,
-	)
-	common.CheckErr(t, errSearch, false, "Partition name should not be empty")
+		// search with empty partition name []string{""}
+		sp, _ := entity.NewIndexHNSWSearchParam(74)
+		_, errSearch := mc.Search(
+			ctx, collName,
+			[]string{""},
+			"",
+			[]string{common.DefaultFloatFieldName},
+			common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeFloatVector),
+			common.DefaultFloatVecFieldName,
+			entity.L2,
+			common.DefaultTopK,
+			sp,
+		)
+		common.CheckErr(t, errSearch, false, "Partition name should not be empty")
 
-	// search with empty partition names slice []string{}
-	searchResult, _ := mc.Search(
-		ctx, collName,
-		[]string{},
-		"",
-		[]string{common.DefaultFloatFieldName},
-		[]entity.Vector{
-			entity.FloatVector(vecColumnDefault.VectorColumn.Data()[0]),
-			entity.FloatVector(vecColumnPartition.VectorColumn.Data()[0]),
-		},
-		common.DefaultFloatVecFieldName,
-		entity.L2,
-		common.DefaultTopK,
-		sp,
-	)
+		// search with empty partition names slice []string{}
+		vecDefaultData := vecColumnDefault.VectorColumn.(*entity.ColumnFloatVector).Data()[0]
+		vecPartitionData := vecColumnPartition.VectorColumn.(*entity.ColumnFloatVector).Data()[0]
+		searchResult, _ := mc.Search(
+			ctx, collName,
+			[]string{},
+			"",
+			[]string{common.DefaultFloatFieldName},
+			[]entity.Vector{
+				entity.FloatVector(vecDefaultData),
+				entity.FloatVector(vecPartitionData),
+			},
+			common.DefaultFloatVecFieldName,
+			entity.L2,
+			common.DefaultTopK,
+			sp,
+		)
 
-	// check search result contains search vector, which from all partitions
-	common.CheckSearchResult(t, searchResult, 2, common.DefaultTopK)
-	log.Println(searchResult[0].IDs.(*entity.ColumnInt64).Data())
-	log.Println(searchResult[1].IDs.(*entity.ColumnInt64).Data())
-	require.Contains(t, searchResult[0].IDs.(*entity.ColumnInt64).Data(), vecColumnDefault.IdsColumn.(*entity.ColumnInt64).Data()[0])
-	require.Contains(t, searchResult[1].IDs.(*entity.ColumnInt64).Data(), vecColumnPartition.IdsColumn.(*entity.ColumnInt64).Data()[0])
+		// check search result contains search vector, which from all partitions
+		nq0IDs := searchResult[0].IDs.(*entity.ColumnInt64).Data()
+		nq1IDs := searchResult[1].IDs.(*entity.ColumnInt64).Data()
+		common.CheckSearchResult(t, searchResult, 2, common.DefaultTopK)
+		log.Println(nq0IDs)
+		log.Println(nq1IDs)
+		require.Contains(t, nq0IDs, vecColumnDefault.IdsColumn.(*entity.ColumnInt64).Data()[0])
+		require.Contains(t, nq1IDs, vecColumnPartition.IdsColumn.(*entity.ColumnInt64).Data()[0])
+	}
 }
 
 // test search with an not existed partition -> error
@@ -197,7 +206,7 @@ func TestSearchPartitions(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create collection and insert [0, nb) into default partition, [nb, nb*2) into new partition
-	collName := createDefaultCollection(ctx, t, mc, false, 2)
+	collName := createDefaultCollection(ctx, t, mc, false, common.DefaultShards)
 	partitionName, vecColumnDefault, vecColumnPartition := createInsertTwoPartitions(ctx, t, mc, collName, 500)
 
 	// create index
@@ -208,6 +217,9 @@ func TestSearchPartitions(t *testing.T) {
 	errLoad := mc.LoadCollection(ctx, collName, false)
 	common.CheckErr(t, errLoad, true)
 
+	vecDefaultData := vecColumnDefault.VectorColumn.(*entity.ColumnFloatVector).Data()[0]
+	vecPartitionData := vecColumnPartition.VectorColumn.(*entity.ColumnFloatVector).Data()[0]
+
 	// search single partition
 	sp, _ := entity.NewIndexHNSWSearchParam(74)
 	searchSingleRes, _ := mc.Search(
@@ -216,8 +228,8 @@ func TestSearchPartitions(t *testing.T) {
 		"",
 		[]string{common.DefaultFloatFieldName},
 		[]entity.Vector{
-			entity.FloatVector(vecColumnDefault.VectorColumn.Data()[0]),
-			entity.FloatVector(vecColumnPartition.VectorColumn.Data()[0]),
+			entity.FloatVector(vecDefaultData),
+			entity.FloatVector(vecPartitionData),
 		},
 		common.DefaultFloatVecFieldName,
 		entity.L2,
@@ -235,8 +247,8 @@ func TestSearchPartitions(t *testing.T) {
 		"",
 		[]string{common.DefaultFloatFieldName},
 		[]entity.Vector{
-			entity.FloatVector(vecColumnDefault.VectorColumn.Data()[0]),
-			entity.FloatVector(vecColumnPartition.VectorColumn.Data()[0]),
+			entity.FloatVector(vecDefaultData),
+			entity.FloatVector(vecPartitionData),
 		},
 		common.DefaultFloatVecFieldName,
 		entity.L2,
@@ -250,48 +262,57 @@ func TestSearchPartitions(t *testing.T) {
 
 // test search empty output fields []string{} -> [], []string{""}
 func TestSearchEmptyOutputFields(t *testing.T) {
+	t.Parallel()
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect
 	mc := createMilvusClient(ctx, t)
 
-	// create collection with data
-	collName, _ := createCollectionWithDataIndex(ctx, t, mc, false, true)
+	for _, enableDynamic := range []bool{true, false} {
+		// create collection with data
+		collName, _ := createCollectionWithDataIndex(ctx, t, mc, false, true, client.WithEnableDynamicSchema(enableDynamic))
 
-	// load collection
-	errLoad := mc.LoadCollection(ctx, collName, false)
-	common.CheckErr(t, errLoad, true)
+		// load collection
+		errLoad := mc.LoadCollection(ctx, collName, false)
+		common.CheckErr(t, errLoad, true)
 
-	// search vector output fields []string{} -> []
-	sp, _ := entity.NewIndexHNSWSearchParam(74)
-	searchResPkOutput, errSearch := mc.Search(
-		ctx, collName,
-		[]string{},
-		"",
-		[]string{},
-		common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeFloatVector),
-		common.DefaultFloatVecFieldName,
-		entity.L2,
-		common.DefaultTopK,
-		sp,
-	)
-	common.CheckErr(t, errSearch, true)
-	// todo Issue https://github.com/milvus-io/milvus/issues/21112
-	common.CheckOutputFields(t, searchResPkOutput[0].Fields, []string{})
-	common.CheckSearchResult(t, searchResPkOutput, common.DefaultNq, common.DefaultTopK)
+		// search vector output fields []string{} -> []
+		sp, _ := entity.NewIndexHNSWSearchParam(74)
+		searchResPkOutput, errSearch := mc.Search(
+			ctx, collName,
+			[]string{},
+			"",
+			[]string{},
+			common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeFloatVector),
+			common.DefaultFloatVecFieldName,
+			entity.L2,
+			common.DefaultTopK,
+			sp,
+		)
+		common.CheckErr(t, errSearch, true)
+		common.CheckOutputFields(t, searchResPkOutput[0].Fields, []string{})
+		common.CheckSearchResult(t, searchResPkOutput, common.DefaultNq, common.DefaultTopK)
 
-	// search vector output fields []string{""}
-	_, errSearchExist := mc.Search(
-		ctx, collName,
-		[]string{},
-		"",
-		[]string{""},
-		common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeFloatVector),
-		common.DefaultFloatVecFieldName,
-		entity.L2,
-		common.DefaultTopK,
-		sp,
-	)
-	common.CheckErr(t, errSearchExist, false, "exist")
+		// search vector output fields []string{""}
+		_, errSearchExist := mc.Search(
+			ctx, collName,
+			[]string{},
+			"",
+			[]string{""},
+			common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeFloatVector),
+			common.DefaultFloatVecFieldName,
+			entity.L2,
+			common.DefaultTopK,
+			sp,
+		)
+
+		//if enableDynamic {
+		//	common.CheckErr(t, errSearchExist, true)
+		//	common.CheckOutputFields(t, sp1[0].Fields, []string{""})
+		//} else {
+		common.CheckErr(t, errSearchExist, false, "not exist")
+		//}
+		common.CheckSearchResult(t, searchResPkOutput, common.DefaultNq, common.DefaultTopK)
+	}
 }
 
 // test search output fields not exist -> error
@@ -301,115 +322,166 @@ func TestSearchNotExistOutputFields(t *testing.T) {
 	// connect
 	mc := createMilvusClient(ctx, t)
 
-	// create collection with data
-	collName, _ := createCollectionWithDataIndex(ctx, t, mc, false, true)
+	for _, enableDynamic := range []bool{true, false} {
+		// create collection with data
+		collName, _ := createCollectionWithDataIndex(ctx, t, mc, false, true, client.WithEnableDynamicSchema(enableDynamic))
 
-	// load collection
-	errLoad := mc.LoadCollection(ctx, collName, false)
-	common.CheckErr(t, errLoad, true)
+		// load collection
+		errLoad := mc.LoadCollection(ctx, collName, false)
+		common.CheckErr(t, errLoad, true)
 
-	type notExistOutputFields []string
+		type notExistOutputFields []string
 
-	// search vector output fields not exist, part exist
-	outputFields := []notExistOutputFields{[]string{"field"}, []string{"fields", common.DefaultFloatFieldName}}
-	for _, fields := range outputFields {
-		sp, _ := entity.NewIndexHNSWSearchParam(74)
-		_, errSearch := mc.Search(
-			ctx, collName,
-			[]string{},
-			"",
-			fields,
-			common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeFloatVector),
-			common.DefaultFloatVecFieldName,
-			entity.L2,
-			common.DefaultTopK,
-			sp,
-		)
-		common.CheckErr(t, errSearch, false, "not exist")
+		// search vector output fields not exist, part exist
+		outputFields := []notExistOutputFields{[]string{"aaa"}, []string{"fields", common.DefaultFloatFieldName}}
+		for _, fields := range outputFields {
+			sp, _ := entity.NewIndexHNSWSearchParam(74)
+			_, errSearch := mc.Search(
+				ctx, collName,
+				[]string{},
+				"",
+				fields,
+				common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeFloatVector),
+				common.DefaultFloatVecFieldName,
+				entity.L2,
+				common.DefaultTopK,
+				sp,
+			)
+			// if enableDynamicField, search return all output fields, even if they not existed
+
+			//if enableDynamic {
+			//	common.CheckErr(t, errSearch, true)
+			//	common.CheckOutputFields(t, _sr[0].Fields, fields)
+			//} else {
+			common.CheckErr(t, errSearch, false, "not exist")
+			//}
+		}
 	}
 }
 
 // test search output fields only pk
 func TestSearchOutputFields(t *testing.T) {
-	t.Skip()
+	t.Parallel()
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect
 	mc := createMilvusClient(ctx, t)
 
-	// create collection with data
-	collName, _ := createVarcharCollectionWithDataIndex(ctx, t, mc, true)
+	for _, enableDynamic := range []bool{true, false} {
+		// create collection
+		cp := CollectionParams{
+			CollectionFieldsType: VarcharBinaryVec,
+			AutoID:               false,
+			EnableDynamicField:   enableDynamic,
+			ShardsNum:            common.DefaultShards,
+			Dim:                  common.DefaultDim,
+		}
+		collName := createCollection(ctx, t, mc, cp)
 
-	// load collection
-	errLoad := mc.LoadCollection(ctx, collName, false)
-	common.CheckErr(t, errLoad, true)
+		// insert
+		dp := DataParams{
+			CollectionName:       collName,
+			PartitionName:        "",
+			CollectionFieldsType: VarcharBinaryVec,
+			start:                0,
+			nb:                   common.DefaultNb,
+			dim:                  common.DefaultDim,
+			EnableDynamicField:   enableDynamic,
+		}
+		_, _ = insertData(ctx, t, mc, dp)
 
-	// search vector output fields not exist
-	sp, _ := entity.NewIndexBinIvfFlatSearchParam(64)
-	searchRes, _ := mc.Search(
-		ctx, collName,
-		[]string{},
-		"",
-		[]string{common.DefaultVarcharFieldName},
-		common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeBinaryVector),
-		common.DefaultBinaryVecFieldName,
-		entity.JACCARD,
-		common.DefaultTopK,
-		sp,
-	)
-	common.CheckOutputFields(t, searchRes[0].Fields, []string{common.DefaultVarcharFieldName})
-	common.CheckSearchResult(t, searchRes, common.DefaultNq, common.DefaultTopK)
+		// index
+		idx, _ := entity.NewIndexBinIvfFlat(entity.JACCARD, 128)
+		err := mc.CreateIndex(ctx, collName, common.DefaultBinaryVecFieldName, idx, false, client.WithIndexName(""))
+		common.CheckErr(t, err, true)
 
-	// search output varchar fields and varchar
-	_, errSearch := mc.Search(
-		ctx, collName,
-		[]string{},
-		"",
-		[]string{common.DefaultVarcharFieldName, common.DefaultBinaryVecFieldName},
-		common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeBinaryVector),
-		common.DefaultBinaryVecFieldName,
-		entity.JACCARD,
-		common.DefaultTopK,
-		sp,
-	)
-	common.CheckErr(t, errSearch, false, "search doesn't support vector field as output_fields")
+		// load collection
+		errLoad := mc.LoadCollection(ctx, collName, false)
+		common.CheckErr(t, errLoad, true)
+
+		// search vector output fields not exist
+		outputFields := []string{common.DefaultVarcharFieldName, common.DefaultBinaryVecFieldName}
+		if enableDynamic {
+			outputFields = append(outputFields, common.DefaultDynamicFieldName)
+		}
+		sp, _ := entity.NewIndexBinIvfFlatSearchParam(64)
+		searchRes, _ := mc.Search(
+			ctx, collName,
+			[]string{},
+			"",
+			outputFields,
+			common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeBinaryVector),
+			common.DefaultBinaryVecFieldName,
+			entity.JACCARD,
+			common.DefaultTopK,
+			sp,
+		)
+		common.CheckOutputFields(t, searchRes[0].Fields, outputFields)
+		common.CheckSearchResult(t, searchRes, common.DefaultNq, common.DefaultTopK)
+	}
 }
 
 // test search output all scalar fields
 func TestSearchOutputAllScalarFields(t *testing.T) {
+	t.Parallel()
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect
 	mc := createMilvusClient(ctx, t)
 
-	// create and insert
-	collName, _ := createCollectionAllFields(ctx, t, mc, common.DefaultNb, 0)
-	mc.Flush(ctx, collName, false)
+	for _, enableDynamic := range []bool{true, false} {
+		// create collection
+		cp := CollectionParams{
+			CollectionFieldsType: AllFields,
+			AutoID:               false,
+			EnableDynamicField:   enableDynamic,
+			ShardsNum:            common.DefaultShards,
+			Dim:                  common.DefaultDim,
+		}
+		collName := createCollection(ctx, t, mc, cp)
 
-	// create index
-	idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
-	mc.CreateIndex(ctx, collName, "floatVec", idx, false)
+		// insert
+		dp := DataParams{
+			CollectionName:       collName,
+			PartitionName:        "",
+			CollectionFieldsType: AllFields,
+			start:                0,
+			nb:                   common.DefaultNb,
+			dim:                  common.DefaultDim,
+			EnableDynamicField:   enableDynamic,
+		}
+		_, _ = insertData(ctx, t, mc, dp)
 
-	// Load collection
-	errLoad := mc.LoadCollection(ctx, collName, false)
-	common.CheckErr(t, errLoad, true)
+		_ = mc.Flush(ctx, collName, false)
 
-	// search vector output all scalar fields
-	allScalarFields := []string{"int64", "bool", "int8", "int16", "int32", "float", "double", "varchar"}
-	sp, _ := entity.NewIndexHNSWSearchParam(74)
-	searchRes, _ := mc.Search(
-		ctx, collName,
-		[]string{},
-		"",
-		allScalarFields,
-		common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeFloatVector),
-		"floatVec",
-		entity.L2,
-		common.DefaultTopK,
-		sp,
-	)
-	common.CheckOutputFields(t, searchRes[0].Fields, allScalarFields)
+		// create index
+		idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
+		_ = mc.CreateIndex(ctx, collName, "floatVec", idx, false)
+
+		// Load collection
+		errLoad := mc.LoadCollection(ctx, collName, false)
+		common.CheckErr(t, errLoad, true)
+
+		// search vector output all scalar fields
+		allScalarFields := []string{"int64", "bool", "int8", "int16", "int32", "float", "double", "varchar", "json"}
+		if enableDynamic {
+			allScalarFields = append(allScalarFields, common.DefaultDynamicFieldName)
+		}
+		sp, _ := entity.NewIndexHNSWSearchParam(74)
+		searchRes, _ := mc.Search(
+			ctx, collName,
+			[]string{},
+			"",
+			allScalarFields,
+			common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeFloatVector),
+			"floatVec",
+			entity.L2,
+			common.DefaultTopK,
+			sp,
+		)
+		common.CheckOutputFields(t, searchRes[0].Fields, allScalarFields)
+	}
 }
 
-// test search with invalid vector field name: not exist; non-vector field, empty fiend name -> error
+// test search with invalid vector field name: not exist; non-vector field, empty fiend name, json and dynamic field -> error
 func TestSearchInvalidVectorField(t *testing.T) {
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect
@@ -424,19 +496,25 @@ func TestSearchInvalidVectorField(t *testing.T) {
 
 	type invalidVectorFieldStruct struct {
 		vectorField string
+		errNil      bool
 		errMsg      string
 	}
 
 	invalidVectorFields := []invalidVectorFieldStruct{
 		// not exist field
-		{vectorField: common.DefaultBinaryVecFieldName, errMsg: fmt.Sprintf("failed to get field schema by name: fieldName(%s) not found", common.DefaultBinaryVecFieldName)},
+		{vectorField: common.DefaultBinaryVecFieldName, errNil: false, errMsg: fmt.Sprintf("failed to get field schema by name: fieldName(%s) not found", common.DefaultBinaryVecFieldName)},
 
 		// non-vector field
-		{vectorField: common.DefaultIntFieldName, errMsg: fmt.Sprintf("failed to create query plan: field (%s) to search is not of vector data type", common.DefaultIntFieldName)},
+		{vectorField: common.DefaultIntFieldName, errNil: false, errMsg: fmt.Sprintf("failed to create query plan: field (%s) to search is not of vector data type", common.DefaultIntFieldName)},
 
-		// skip since 2.3 allows empty vector field name
-		// empty field name
-		//{vectorField: "", errMsg: "failed to get field schema by name: fieldName() not found"},
+		// json field
+		{vectorField: common.DefaultJSONFieldName, errNil: false, errMsg: fmt.Sprintf("failed to get field schema by name: fieldName(%s) not found", common.DefaultJSONFieldName)},
+
+		// dynamic field
+		{vectorField: common.DefaultDynamicFieldName, errNil: false, errMsg: fmt.Sprintf("failed to get field schema by name: fieldName(%s) not found", common.DefaultDynamicFieldName)},
+
+		// allows empty vector field name
+		{vectorField: "", errNil: true, errMsg: ""},
 	}
 
 	sp, _ := entity.NewIndexHNSWSearchParam(74)
@@ -453,7 +531,7 @@ func TestSearchInvalidVectorField(t *testing.T) {
 				common.DefaultTopK,
 				sp,
 			)
-			common.CheckErr(t, errSearchNotExist, false, invalidVectorField.errMsg)
+			common.CheckErr(t, errSearchNotExist, invalidVectorField.errNil, invalidVectorField.errMsg)
 		})
 	}
 }
@@ -587,6 +665,7 @@ func TestSearchInvalidSearchParams(t *testing.T) {
 	// ivf sq8 search param
 	for _, nprobe := range invalidNprobe {
 		_, errIvfSq8 := entity.NewIndexIvfSQ8SearchParam(nprobe)
+		log.Println(nprobe)
 		common.CheckErr(t, errIvfSq8, false, "nprobe has to be in range [1, 65536]")
 	}
 
@@ -612,7 +691,6 @@ func TestSearchInvalidSearchParams(t *testing.T) {
 
 // search with index hnsw search param ef < topK -> error
 func TestSearchTopKHnsw(t *testing.T) {
-	t.Skip("Knowhere 2.0 error message updated")
 	ctx := createContext(t, time.Second*common.DefaultTimeout*2)
 	// connect
 	mc := createMilvusClient(ctx, t)
@@ -637,17 +715,16 @@ func TestSearchTopKHnsw(t *testing.T) {
 		common.DefaultTopK,
 		sp,
 	)
-	common.CheckErr(t, errSearchEmpty, false, "Param 'ef'(7) is not in range [10, 32768] err")
+	common.CheckErr(t, errSearchEmpty, false, "ef(7) should be larger than k(10)")
 }
 
-// test search params mismatch index type, hnsw index and ivf sq8 search param
+// test search params mismatch index type, hnsw index and ivf sq8 search param -> search with default hnsw params, ef=topK
 func TestSearchSearchParamsMismatchIndex(t *testing.T) {
-	t.Skip("Knowhere 2.0 error message updated")
 	ctx := createContext(t, time.Second*common.DefaultTimeout*2)
 	// connect
 	mc := createMilvusClient(ctx, t)
 
-	// create collection with data
+	// create collection with data and create hnsw index
 	collName, _ := createCollectionWithDataIndex(ctx, t, mc, false, true)
 
 	// load collection
@@ -656,7 +733,7 @@ func TestSearchSearchParamsMismatchIndex(t *testing.T) {
 
 	// ef [top_k, 32768]
 	sp, _ := entity.NewIndexIvfSQ8SearchParam(64)
-	_, errSearchEmpty := mc.Search(
+	resSearch, errSearch := mc.Search(
 		ctx, collName,
 		[]string{},
 		"",
@@ -667,12 +744,12 @@ func TestSearchSearchParamsMismatchIndex(t *testing.T) {
 		common.DefaultTopK,
 		sp,
 	)
-	common.CheckErr(t, errSearchEmpty, false, "Param 'ef' not exist err")
+	common.CheckErr(t, errSearch, true)
+	common.CheckSearchResult(t, resSearch, common.DefaultNq, common.DefaultTopK)
 }
 
 // test search expr
 func TestSearchExpr(t *testing.T) {
-	t.Skipf("Search with expr float in [1.0] return empty result, issue: %s", "https://github.com/milvus-io/milvus-sdk-go/issues/404")
 	ctx := createContext(t, time.Second*common.DefaultTimeout*2)
 	// connect
 	mc := createMilvusClient(ctx, t)
@@ -689,7 +766,7 @@ func TestSearchExpr(t *testing.T) {
 	searchResult, errSearch := mc.Search(
 		ctx, collName,
 		[]string{common.DefaultPartition},
-		fmt.Sprintf("%s < 1000", common.DefaultIntFieldName),
+		fmt.Sprintf("%s < 1000", common.DefaultFloatFieldName),
 		[]string{common.DefaultFloatFieldName},
 		common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeFloatVector),
 		common.DefaultFloatVecFieldName,
@@ -747,7 +824,7 @@ func TestSearchInvalidExpr(t *testing.T) {
 	invalidExpr := []invalidExprStruct{
 		//{expr: "id in [0]", errMsg: "fieldName(id) not found"},               // not exist field
 		{expr: "int64 in not [0]", errMsg: "cannot parse expression"},        // wrong term expr keyword
-		{expr: "int64 < floatVec", errMsg: "unsupported data type"},          // unsupported compare field
+		{expr: "int64 < floatVec", errMsg: "unsupported"},                    // unsupported compare field
 		{expr: "floatVec in [0]", errMsg: "cannot be casted to FloatVector"}, // value and field type mismatch
 	}
 
@@ -767,6 +844,260 @@ func TestSearchInvalidExpr(t *testing.T) {
 	}
 }
 
+func TestSearchJsonFieldInvalidExpr(t *testing.T) {
+	t.Skip("https://github.com/milvus-io/milvus/issues/26408")
+	t.Parallel()
+
+	// invalid expr and error message
+	type invalidExprStruct struct {
+		expr   string
+		errMsg string
+	}
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	// connect
+	mc := createMilvusClient(ctx, t)
+
+	for _, dynamicField := range []bool{false} {
+		// create collection
+		cp := CollectionParams{
+			CollectionFieldsType: Int64FloatVecJSON,
+			AutoID:               false,
+			EnableDynamicField:   dynamicField,
+			ShardsNum:            common.DefaultShards,
+			Dim:                  common.DefaultDim,
+		}
+		collName := createCollection(ctx, t, mc, cp)
+
+		// insert
+		dp := DataParams{
+			CollectionName:       collName,
+			PartitionName:        "",
+			CollectionFieldsType: Int64FloatVecJSON,
+			start:                0,
+			nb:                   common.DefaultNb,
+			dim:                  common.DefaultDim,
+			EnableDynamicField:   dynamicField,
+		}
+		_, _ = insertData(ctx, t, mc, dp)
+
+		idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
+		_ = mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false)
+
+		// Load collection
+		errLoad := mc.LoadCollection(ctx, collName, false)
+		common.CheckErr(t, errLoad, true)
+
+		// gen invalid json and dynamic expr
+		invalidExpr := []invalidExprStruct{
+			{expr: fmt.Sprintf("%s == 1", common.DefaultJSONFieldName), errMsg: "can not comparisons jsonField directly"},                            // json field filter
+			{expr: fmt.Sprintf("%s['list'] == [1, 2]", common.DefaultJSONFieldName), errMsg: "failed to create query plan: cannot parse expression"}, // wrong term expr keyword
+		}
+		if dynamicField {
+			invalidExpr = append(invalidExpr,
+				invalidExprStruct{expr: fmt.Sprintf("%s == 1", common.DefaultDynamicFieldName), errMsg: "can not comparisons jsonField directly"},
+				invalidExprStruct{expr: fmt.Sprintf("%s[\"dynamicList\"] == [2, 3]", common.DefaultDynamicFieldName), errMsg: "failed to create query plan: cannot parse expression"})
+		}
+
+		// search with invalid expr
+		sp, _ := entity.NewIndexHNSWSearchParam(74)
+		for _, exprStruct := range invalidExpr {
+			_, errSearchEmpty := mc.Search(
+				ctx, collName,
+				[]string{},
+				exprStruct.expr,
+				[]string{common.DefaultIntFieldName},
+				common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeFloatVector),
+				common.DefaultFloatVecFieldName,
+				entity.L2,
+				common.DefaultTopK,
+				sp,
+			)
+			common.CheckErr(t, errSearchEmpty, false, exprStruct.errMsg)
+		}
+	}
+}
+
+func TestSearchJsonFieldExpr(t *testing.T) {
+	t.Parallel()
+
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	// connect
+	mc := createMilvusClient(ctx, t)
+
+	for _, dynamicField := range []bool{false} {
+		// create collection
+		cp := CollectionParams{
+			CollectionFieldsType: Int64FloatVecJSON,
+			AutoID:               false,
+			EnableDynamicField:   dynamicField,
+			ShardsNum:            common.DefaultShards,
+			Dim:                  common.DefaultDim,
+		}
+		collName := createCollection(ctx, t, mc, cp)
+
+		// insert
+		dp := DataParams{
+			CollectionName:       collName,
+			PartitionName:        "",
+			CollectionFieldsType: Int64FloatVecJSON,
+			start:                0,
+			nb:                   common.DefaultNb,
+			dim:                  common.DefaultDim,
+			EnableDynamicField:   dynamicField,
+		}
+		_, _ = insertData(ctx, t, mc, dp)
+
+		idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
+		_ = mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false)
+
+		// Load collection
+		errLoad := mc.LoadCollection(ctx, collName, false)
+		common.CheckErr(t, errLoad, true)
+
+		exprs := []string{
+			"",
+			fmt.Sprintf("exists %s['number'] ", common.DefaultJSONFieldName),   // exists
+			"json[\"number\"] > 1 and json[\"number\"] < 1000",                 // > and
+			fmt.Sprintf("%s[\"number\"] > 10", common.DefaultJSONFieldName),    // number >
+			fmt.Sprintf("%s[\"number\"] < 2000", common.DefaultJSONFieldName),  // number <
+			fmt.Sprintf("%s[\"bool\"] != true", common.DefaultJSONFieldName),   // bool !=
+			fmt.Sprintf("%s[\"bool\"] == False", common.DefaultJSONFieldName),  // bool ==
+			fmt.Sprintf("%s[\"bool\"] in [true]", common.DefaultJSONFieldName), // bool in
+			fmt.Sprintf("%s[\"string\"] >= '1' ", common.DefaultJSONFieldName), // string >=
+			fmt.Sprintf("%s['list'][0] > 200", common.DefaultJSONFieldName),    // list filter
+		}
+
+		// search with jsonField expr key datatype and json data type mismatch
+		sp, _ := entity.NewIndexHNSWSearchParam(74)
+		for _, expr := range exprs {
+			log.Printf("search expr: %s", expr)
+			searchRes, errSearchEmpty := mc.Search(
+				ctx, collName,
+				[]string{},
+				expr,
+				[]string{common.DefaultIntFieldName, common.DefaultJSONFieldName},
+				common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeFloatVector),
+				common.DefaultFloatVecFieldName,
+				entity.L2,
+				common.DefaultTopK,
+				sp,
+			)
+			common.CheckErr(t, errSearchEmpty, true)
+			common.CheckOutputFields(t, searchRes[0].Fields, []string{common.DefaultIntFieldName, common.DefaultJSONFieldName})
+			common.CheckSearchResult(t, searchRes, common.DefaultNq, common.DefaultTopK)
+		}
+	}
+}
+
+// search dynamic field with expr
+func TestSearchDynamicFieldExpr(t *testing.T) {
+	t.Parallel()
+
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	// connect
+	mc := createMilvusClient(ctx, t)
+
+	for _, withRows := range []bool{false, true} {
+		// create collection
+		cp := CollectionParams{
+			CollectionFieldsType: Int64FloatVecJSON,
+			AutoID:               false,
+			EnableDynamicField:   true,
+			ShardsNum:            common.DefaultShards,
+			Dim:                  common.DefaultDim,
+		}
+		collName := createCollection(ctx, t, mc, cp)
+
+		// insert
+		dp := DataParams{
+			CollectionName:       collName,
+			PartitionName:        "",
+			CollectionFieldsType: Int64FloatVecJSON,
+			start:                0,
+			nb:                   common.DefaultNb,
+			dim:                  common.DefaultDim,
+			EnableDynamicField:   true,
+			WithRows:             withRows,
+		}
+		_, _ = insertData(ctx, t, mc, dp)
+
+		idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
+		_ = mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false)
+
+		// Load collection
+		errLoad := mc.LoadCollection(ctx, collName, false)
+		common.CheckErr(t, errLoad, true)
+
+		exprs := []string{
+			"",
+			"exists dynamicNumber", // exist without dynamic fieldName
+			fmt.Sprintf("exists %s[\"dynamicNumber\"]", common.DefaultDynamicFieldName), // exist with fieldName
+			fmt.Sprintf("%s[\"dynamicNumber\"] > 10", common.DefaultDynamicFieldName),   // int expr with fieldName
+			fmt.Sprintf("%s[\"dynamicBool\"] == true", common.DefaultDynamicFieldName),  // bool with fieldName
+			"dynamicBool == False", // bool without fieldName
+			fmt.Sprintf("%s['dynamicString'] == '1'", common.DefaultDynamicFieldName), // string with fieldName
+			"dynamicString != \"2\" ", // string without fieldName
+		}
+
+		// search with jsonField expr key datatype and json data type mismatch
+		sp, _ := entity.NewIndexHNSWSearchParam(74)
+		for _, expr := range exprs {
+			log.Print(expr)
+			searchRes, errSearchEmpty := mc.Search(
+				ctx, collName,
+				[]string{},
+				expr,
+				[]string{common.DefaultIntFieldName, "dynamicNumber", "number"},
+				common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeFloatVector),
+				common.DefaultFloatVecFieldName,
+				entity.L2,
+				common.DefaultTopK,
+				sp,
+			)
+			common.CheckErr(t, errSearchEmpty, true)
+			common.CheckOutputFields(t, searchRes[0].Fields, []string{common.DefaultIntFieldName, "dynamicNumber", "number"})
+			if expr == "$meta['dynamicString'] == '1'" {
+				common.CheckSearchResult(t, searchRes, common.DefaultNq, 1)
+			} else {
+				common.CheckSearchResult(t, searchRes, common.DefaultNq, common.DefaultTopK)
+			}
+		}
+
+		// search with expr filter number and, &&, or, ||
+		exprs2 := []string{
+			"dynamicNumber > 1 and dynamicNumber <= 999", // int expr without fieldName
+			fmt.Sprintf("%s['dynamicNumber'] > 1 && %s['dynamicNumber'] < 1000", common.DefaultDynamicFieldName, common.DefaultDynamicFieldName),
+			"dynamicNumber < 888 || dynamicNumber < 1000",
+			fmt.Sprintf("%s['dynamicNumber'] < 888 or %s['dynamicNumber'] < 1000", common.DefaultDynamicFieldName, common.DefaultDynamicFieldName),
+			fmt.Sprintf("%s[\"dynamicNumber\"] < 1000", common.DefaultDynamicFieldName), // int expr with fieldName
+		}
+
+		// search
+		for _, expr := range exprs2 {
+			log.Print(expr)
+			searchRes, errSearchEmpty := mc.Search(
+				ctx, collName,
+				[]string{},
+				expr,
+				[]string{common.DefaultIntFieldName, common.DefaultJSONFieldName, common.DefaultDynamicFieldName, "dynamicNumber", "number"},
+				common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeFloatVector),
+				common.DefaultFloatVecFieldName,
+				entity.L2,
+				common.DefaultTopK,
+				sp,
+			)
+			common.CheckErr(t, errSearchEmpty, true)
+			common.CheckOutputFields(t, searchRes[0].Fields, []string{common.DefaultIntFieldName, common.DefaultJSONFieldName, common.DefaultDynamicFieldName, "dynamicNumber", "number"})
+			for _, res := range searchRes {
+				for _, id := range res.IDs.(*entity.ColumnInt64).Data() {
+					require.Less(t, id, int64(1000))
+				}
+			}
+		}
+	}
+}
+
 // TODO offset and limit
 // TODO consistency level
 // TODO WithGuaranteeTimestamp
+// TODO ignore growing
