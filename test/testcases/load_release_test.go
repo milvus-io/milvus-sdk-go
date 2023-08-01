@@ -22,7 +22,7 @@ func TestLoadCollection(t *testing.T) {
 	// connect
 	mc := createMilvusClient(ctx, t)
 
-	collName, _ := createCollectionWithDataIndex(ctx, t, mc, true, true)
+	collName, _ := createCollectionWithDataIndex(ctx, t, mc, true, false, true)
 
 	// load two replicas
 	errLoad := mc.LoadCollection(ctx, collName, false)
@@ -56,7 +56,7 @@ func TestLoadCollectionAsync(t *testing.T) {
 	// connect
 	mc := createMilvusClient(ctx, t)
 
-	collName, _ := createCollectionWithDataIndex(ctx, t, mc, true, true)
+	collName, _ := createCollectionWithDataIndex(ctx, t, mc, true, false, true)
 
 	// load collection async
 	errLoad := mc.LoadCollection(ctx, collName, true)
@@ -83,7 +83,7 @@ func TestLoadCollectionWithoutIndex(t *testing.T) {
 	// connect
 	mc := createMilvusClient(ctx, t)
 
-	collName, _ := createCollectionWithDataIndex(ctx, t, mc, true, false)
+	collName, _ := createCollectionWithDataIndex(ctx, t, mc, true, false, false)
 	errLoad := mc.LoadCollection(ctx, collName, true)
 	common.CheckErr(t, errLoad, false, "index doesn't exist")
 
@@ -100,7 +100,7 @@ func TestLoadCollectionMultiPartitions(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create collection and insert [0, nb) into default partition, [nb, nb*2) into new partition
-	collName := createDefaultCollection(ctx, t, mc, false)
+	collName := createDefaultCollection(ctx, t, mc, false, false)
 	createInsertTwoPartitions(ctx, t, mc, collName, common.DefaultNb)
 
 	// create index
@@ -124,13 +124,13 @@ func TestLoadCollectionMultiPartitions(t *testing.T) {
 
 // test load with empty partition name ""
 func TestLoadEmptyPartitionName(t *testing.T) {
-	t.Skip("Issue: https://github.com/milvus-io/milvus-sdk-go/issues/373")
+	//t.Skip("Issue: https://github.com/milvus-io/milvus-sdk-go/issues/373")
 	ctx := createContext(t, time.Second*common.DefaultTimeout*3)
 	// connect
 	mc := createMilvusClient(ctx, t)
 
 	// create collection and insert [0, nb) into default partition, [nb, nb*2) into new partition
-	collName := createDefaultCollection(ctx, t, mc, false)
+	collName := createDefaultCollection(ctx, t, mc, false, false)
 	createInsertTwoPartitions(ctx, t, mc, collName, 500)
 
 	// create index
@@ -139,7 +139,7 @@ func TestLoadEmptyPartitionName(t *testing.T) {
 
 	// load partition with empty partition names
 	errLoadEmpty := mc.LoadPartitions(ctx, collName, []string{""}, false)
-	common.CheckErr(t, errLoadEmpty, false, "empty")
+	common.CheckErr(t, errLoadEmpty, false, "request failed")
 }
 
 // test load partitions with empty slice []string{}
@@ -149,7 +149,7 @@ func TestLoadEmptyPartitionSlice(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create collection and insert [0, nb) into default partition, [nb, nb*2) into new partition
-	collName := createDefaultCollection(ctx, t, mc, false)
+	collName := createDefaultCollection(ctx, t, mc, false, false)
 	createInsertTwoPartitions(ctx, t, mc, collName, 500)
 
 	// create index
@@ -168,7 +168,7 @@ func TestLoadPartitionsNotExist(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create collection and insert [0, nb) into default partition, [nb, nb*2) into new partition
-	collName := createDefaultCollection(ctx, t, mc, false)
+	collName := createDefaultCollection(ctx, t, mc, false, false)
 	partitionName, _, _ := createInsertTwoPartitions(ctx, t, mc, collName, 500)
 
 	// create index
@@ -193,7 +193,7 @@ func TestLoadPartitions(t *testing.T) {
 
 	nb := 1000
 	// create collection and insert [0, nb) into default partition, [nb, nb*2) into new partition
-	collName := createDefaultCollection(ctx, t, mc, false)
+	collName := createDefaultCollection(ctx, t, mc, false, false)
 	partitionName, _, _ := createInsertTwoPartitions(ctx, t, mc, collName, nb)
 
 	// create index
@@ -234,7 +234,7 @@ func TestLoadMultiPartitions(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create collection and insert [0, nb) into default partition, [nb, nb*2) into new partition
-	collName := createDefaultCollection(ctx, t, mc, false)
+	collName := createDefaultCollection(ctx, t, mc, false, false)
 	partitionName, _, _ := createInsertTwoPartitions(ctx, t, mc, collName, common.DefaultNb)
 
 	// create index
@@ -261,7 +261,7 @@ func TestLoadPartitionsRepeatedly(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create collection and insert [0, nb) into default partition, [nb, nb*2) into new partition
-	collName := createDefaultCollection(ctx, t, mc, false)
+	collName := createDefaultCollection(ctx, t, mc, false, false)
 	partitionName, _, _ := createInsertTwoPartitions(ctx, t, mc, collName, common.DefaultNb)
 
 	// create index
@@ -286,7 +286,7 @@ func TestLoadPartitionsAsync(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create collection and insert [0, nb) into default partition, [nb, nb*2) into new partition
-	collName := createDefaultCollection(ctx, t, mc, false)
+	collName := createDefaultCollection(ctx, t, mc, false, false)
 	partitionName, _, _ := createInsertTwoPartitions(ctx, t, mc, collName, common.DefaultNb)
 
 	// create index
@@ -323,7 +323,7 @@ func TestReleasePartition(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create collection -> insert data -> create index
-	collName, _ := createCollectionWithDataIndex(ctx, t, mc, true, true)
+	collName, _ := createCollectionWithDataIndex(ctx, t, mc, true, false, true)
 
 	//load collection
 	errLoad := mc.LoadCollection(ctx, collName, true)
@@ -350,7 +350,7 @@ func TestReleaseCollectionNotExist(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create collection -> insert data -> create index
-	collName, _ := createCollectionWithDataIndex(ctx, t, mc, true, true)
+	collName, _ := createCollectionWithDataIndex(ctx, t, mc, true, false, true)
 
 	//load collection
 	errLoad := mc.LoadCollection(ctx, collName, true)
@@ -368,7 +368,7 @@ func TestReleasePartitions(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create collection and insert [0, nb) into default partition, [nb, nb*2) into new partition
-	collName := createDefaultCollection(ctx, t, mc, false)
+	collName := createDefaultCollection(ctx, t, mc, false, false)
 	partitionName, _, _ := createInsertTwoPartitions(ctx, t, mc, collName, common.DefaultNb)
 
 	// create index
@@ -405,7 +405,7 @@ func TestReleasePartitionsNotExist(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create collection and insert [0, nb) into default partition, [nb, nb*2) into new partition
-	collName := createDefaultCollection(ctx, t, mc, false)
+	collName := createDefaultCollection(ctx, t, mc, false, false)
 	partitionName, _, _ := createInsertTwoPartitions(ctx, t, mc, collName, common.DefaultNb)
 
 	// create index
@@ -446,7 +446,7 @@ func TestReleaseMultiPartitions(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create collection and insert [0, nb) into default partition, [nb, nb*2) into new partition
-	collName := createDefaultCollection(ctx, t, mc, false)
+	collName := createDefaultCollection(ctx, t, mc, false, false)
 	partitionName, _, _ := createInsertTwoPartitions(ctx, t, mc, collName, common.DefaultNb)
 
 	// create index

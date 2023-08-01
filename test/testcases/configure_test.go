@@ -18,7 +18,7 @@ func TestLoadCollectionReplicas(t *testing.T) {
 	// connect
 	mc := createMilvusClient(ctx, t)
 
-	collName, _ := createCollectionWithDataIndex(ctx, t, mc, true, true)
+	collName, _ := createCollectionWithDataIndex(ctx, t, mc, true, false, true)
 
 	// load two replicas
 	errLoad := mc.LoadCollection(ctx, collName, false, client.WithReplicaNumber(2))
