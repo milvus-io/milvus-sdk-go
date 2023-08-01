@@ -37,24 +37,21 @@ const (
 	RetryOnRateLimit ctxKey = iota
 )
 
-var MaxBackOff = 3 * time.Second
-
 // RetryOnRateLimitInterceptor returns a new retrying unary client interceptor.
-func RetryOnRateLimitInterceptor(maxRetry uint, backoffFunc grpc_retry.BackoffFuncContext) grpc.UnaryClientInterceptor {
+func RetryOnRateLimitInterceptor(maxRetry uint, maxBackoff time.Duration, backoffFunc grpc_retry.BackoffFuncContext) grpc.UnaryClientInterceptor {
 	return func(parentCtx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		if maxRetry == 0 {
 			return invoker(parentCtx, method, req, reply, cc, opts...)
 		}
 		var lastErr error
 		for attempt := uint(0); attempt < maxRetry; attempt++ {
-			_, err := waitRetryBackoff(parentCtx, attempt, backoffFunc)
+			_, err := waitRetryBackoff(parentCtx, attempt, maxBackoff, backoffFunc)
 			if err != nil {
 				return err
 			}
 			lastErr = invoker(parentCtx, method, req, reply, cc, opts...)
 			rspStatus := getResultStatus(reply)
 			if retryOnRateLimit(parentCtx) && rspStatus.GetErrorCode() == common.ErrorCode_RateLimit {
-				//log.Printf("rate limit retry attempt: %d, backoff for %v, reson: %v\n", attempt, backoff, rspStatus.GetReason())
 				continue
 			}
 			return lastErr
@@ -102,14 +99,14 @@ func contextErrToGrpcErr(err error) error {
 	}
 }
 
-func waitRetryBackoff(parentCtx context.Context, attempt uint, backoffFunc grpc_retry.BackoffFuncContext) (time.Duration, error) {
+func waitRetryBackoff(parentCtx context.Context, attempt uint, maxBackoff time.Duration, backoffFunc grpc_retry.BackoffFuncContext) (time.Duration, error) {
 	var waitTime time.Duration
 	if attempt > 0 {
 		waitTime = backoffFunc(parentCtx, attempt)
 	}
 	if waitTime > 0 {
-		if waitTime > MaxBackOff {
-			waitTime = MaxBackOff
+		if waitTime > maxBackoff {
+			waitTime = maxBackoff
 		}
 		timer := time.NewTimer(waitTime)
 		select {

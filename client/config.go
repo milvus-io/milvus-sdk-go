@@ -63,9 +63,16 @@ type Config struct {
 
 	parsedAddress *url.URL
 
+	RetryRateLimit *RetryRateLimitOption // option for retry on rate limit inteceptor
+
 	DisableConn bool
 
 	flags uint64 // internal flags
+}
+
+type RetryRateLimitOption struct {
+	MaxRetry   uint
+	MaxBackoff time.Duration
 }
 
 // Copy a new config, dialOption may shared with old config.
@@ -104,6 +111,9 @@ func (c *Config) parse() error {
 	// Always enable tls auth for https remote url.
 	if remoteURL.Scheme == "https" {
 		c.EnableTLSAuth = true
+	}
+	if remoteURL.Port() == "" && c.EnableTLSAuth {
+		remoteURL.Host += ":443"
 	}
 	c.parsedAddress = remoteURL
 	return nil
@@ -147,15 +157,30 @@ func (c *Config) getDialOption() []grpc.DialOption {
 				return 60 * time.Millisecond * time.Duration(math.Pow(3, float64(attempt)))
 			}),
 			grpc_retry.WithCodes(codes.Unavailable, codes.ResourceExhausted)),
-			RetryOnRateLimitInterceptor(75, func(ctx context.Context, attempt uint) time.Duration {
-				return 10 * time.Millisecond * time.Duration(math.Pow(3, float64(attempt)))
-			}),
+			c.getRetryOnRateLimitInterceptor(),
 		))
 
 	options = append(options, grpc.WithChainUnaryInterceptor(
 		createMetaDataUnaryInterceptor(c),
 	))
 	return options
+}
+
+func (c *Config) getRetryOnRateLimitInterceptor() grpc.UnaryClientInterceptor {
+	if c.RetryRateLimit == nil {
+		c.RetryRateLimit = c.defaultRetryRateLimitOption()
+	}
+
+	return RetryOnRateLimitInterceptor(c.RetryRateLimit.MaxRetry, c.RetryRateLimit.MaxBackoff, func(ctx context.Context, attempt uint) time.Duration {
+		return 10 * time.Millisecond * time.Duration(math.Pow(3, float64(attempt)))
+	})
+}
+
+func (c *Config) defaultRetryRateLimitOption() *RetryRateLimitOption {
+	return &RetryRateLimitOption{
+		MaxRetry:   75,
+		MaxBackoff: 3 * time.Second,
+	}
 }
 
 // addFlags set internal flags

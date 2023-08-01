@@ -61,6 +61,18 @@ func (c *GrpcClient) CreateCollectionByRow(ctx context.Context, row entity.Row, 
 // InsertByRows insert by rows
 func (c *GrpcClient) InsertByRows(ctx context.Context, collName string, partitionName string,
 	rows []entity.Row) (entity.Column, error) {
+	anys := make([]interface{}, 0, len(rows))
+	for _, row := range rows {
+		anys = append(anys, row)
+	}
+
+	return c.InsertRows(ctx, collName, partitionName, anys)
+}
+
+// InsertRows allows insert with row based data
+// rows could be struct or map.
+func (c *GrpcClient) InsertRows(ctx context.Context, collName string, partitionName string,
+	rows []interface{}) (entity.Column, error) {
 	if c.Service == nil {
 		return nil, ErrClientNotReady
 	}
@@ -81,7 +93,7 @@ func (c *GrpcClient) InsertByRows(ctx context.Context, collName string, partitio
 		return nil, err
 	}
 	// 1. convert rows to columns
-	columns, err := entity.RowsToColumns(rows, coll.Schema)
+	columns, err := entity.AnyToColumns(rows, coll.Schema)
 	if err != nil {
 		return nil, err
 	}
