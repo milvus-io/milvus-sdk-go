@@ -48,7 +48,7 @@ func main() {
 	// define collection schema, see film.csv
 	schema := &entity.Schema{
 		CollectionName: collectionName,
-		Description:    "this is the example collection for inser and search",
+		Description:    "this is the example collection for insert and search",
 		AutoID:         false,
 		Fields: []*entity.Field{
 			{
