@@ -89,16 +89,20 @@ func (b RowBase) Description() string {
 	return ""
 }
 
-// ParseSchema parse Schema from row interface
-func ParseSchema(r Row) (*Schema, error) {
-	sch := &Schema{
-		CollectionName: r.Collection(),
-		Description:    r.Description(),
-	}
+// ParseSchemaAny parses schema from interface{}.
+func ParseSchemaAny(r interface{}) (*Schema, error) {
+	sch := &Schema{}
 	t := reflect.TypeOf(r)
 	if t.Kind() == reflect.Array || t.Kind() == reflect.Slice || t.Kind() == reflect.Ptr {
 		t = t.Elem()
 	}
+
+	// MapRow is not supported for schema definition
+	// TODO add PrimaryKey() interface later
+	if t.Kind() == reflect.Map {
+		return nil, fmt.Errorf("map row is not supported for schema definition")
+	}
+
 	if t.Kind() != reflect.Struct {
 		return nil, fmt.Errorf("unsupported data type: %+v", r)
 	}
@@ -208,6 +212,21 @@ func ParseSchema(r Row) (*Schema, error) {
 	return sch, nil
 }
 
+// ParseSchema parse Schema from row interface
+func ParseSchema(r Row) (*Schema, error) {
+	schema, err := ParseSchemaAny(r)
+	if err != nil {
+		return nil, err
+	}
+	if r.Collection() != "" {
+		schema.CollectionName = r.Collection()
+	}
+	if schema.Description != "" {
+		schema.Description = r.Description()
+	}
+	return schema, nil
+}
+
 // ParseTagSetting parses struct tag into map settings
 func ParseTagSetting(str string, sep string) map[string]string {
 	settings := map[string]string{}
@@ -240,8 +259,7 @@ func ParseTagSetting(str string, sep string) map[string]string {
 	return settings
 }
 
-// RowsToColumns rows to columns
-func RowsToColumns(rows []Row, schemas ...*Schema) ([]Column, error) {
+func AnyToColumns(rows []interface{}, schemas ...*Schema) ([]Column, error) {
 	rowsLen := len(rows)
 	if rowsLen == 0 {
 		return []Column{}, errors.New("0 length column")
@@ -251,7 +269,7 @@ func RowsToColumns(rows []Row, schemas ...*Schema) ([]Column, error) {
 	var err error
 	// if schema not provided, try to parse from row
 	if len(schemas) == 0 {
-		sch, err = ParseSchema(rows[0])
+		sch, err = ParseSchemaAny(rows[0])
 		if err != nil {
 			return []Column{}, err
 		}
@@ -298,7 +316,7 @@ func RowsToColumns(rows []Row, schemas ...*Schema) ([]Column, error) {
 			data := make([]float64, 0, rowsLen)
 			col := NewColumnDouble(field.Name, data)
 			nameColumns[field.Name] = col
-		case FieldTypeString:
+		case FieldTypeString, FieldTypeVarChar:
 			data := make([]string, 0, rowsLen)
 			col := NewColumnString(field.Name, data)
 			nameColumns[field.Name] = col
@@ -356,7 +374,10 @@ func RowsToColumns(rows []Row, schemas ...*Schema) ([]Column, error) {
 				delete(set, field.Name)
 				continue
 			}
-			column := nameColumns[field.Name]
+			column, ok := nameColumns[field.Name]
+			if !ok {
+				return nil, fmt.Errorf("expected unhandled field %s", field.Name)
+			}
 
 			candi, ok := set[field.Name]
 			if !ok {
@@ -392,6 +413,15 @@ func RowsToColumns(rows []Row, schemas ...*Schema) ([]Column, error) {
 		columns = append(columns, dynamicCol)
 	}
 	return columns, nil
+}
+
+// RowsToColumns rows to columns
+func RowsToColumns(rows []Row, schemas ...*Schema) ([]Column, error) {
+	anys := make([]interface{}, 0, len(rows))
+	for _, row := range rows {
+		anys = append(anys, row)
+	}
+	return AnyToColumns(anys, schemas...)
 }
 
 type fieldCandi struct {

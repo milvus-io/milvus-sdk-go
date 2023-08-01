@@ -52,7 +52,7 @@ func TestClientConfig(t *testing.T) {
 		&Config{
 			Address: "https://xxxx-xxxx-xxxxx.com",
 		},
-		"xxxx-xxxx-xxxxx.com", "", true, false,
+		"xxxx-xxxx-xxxxx.com:443", "", true, false,
 	)
 	// remote https host with dbname
 	assertConfig(
