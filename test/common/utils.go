@@ -12,35 +12,41 @@ import (
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )
 
+// const default value for test
 const (
-	DefaultTimeout            = 60
 	DefaultIntFieldName       = "int64"
 	DefaultFloatFieldName     = "float"
 	DefaultVarcharFieldName   = "varchar"
 	DefaultJSONFieldName      = "json"
 	DefaultFloatVecFieldName  = "floatVec"
 	DefaultBinaryVecFieldName = "binaryVec"
-	DefaultDynamicFieldName   = "$meta"
 	DefaultDynamicNumberField = "dynamicNumber"
 	DefaultDynamicStringField = "dynamicString"
 	DefaultDynamicBoolField   = "dynamicBool"
 	DefaultDynamicListField   = "dynamicList"
-	DefaultPartition          = "_default"
-	DefaultIndexName          = "_default_idx_102"
-	DefaultIndexNameBinary    = "_default_idx_100"
-	DefaultDb                 = "default"
+	RowCount                  = "row_count"
+	DefaultTimeout            = 120
 	DefaultDim                = int64(128)
-	MaxDim                    = 32768
-	DefaultMaxLength          = int64(65535)
 	DefaultShards             = int32(2)
-	DefaultConsistencyLevel   = entity.ClBounded
 	DefaultNb                 = 3000
 	DefaultNq                 = 5
 	DefaultTopK               = 10
-	MaxCollectionNameLen      = 255
-	RowCount                  = "row_count"
-	DefaultRgName             = "__default_resource_group"
-	DefaultRgCapacity         = 1000000
+)
+
+// const default value from milvus
+const (
+	MaxPartitionNum         = 4096
+	DefaultDynamicFieldName = "$meta"
+	DefaultPartition        = "_default"
+	DefaultIndexName        = "_default_idx_102"
+	DefaultIndexNameBinary  = "_default_idx_100"
+	DefaultRgName           = "__default_resource_group"
+	DefaultDb               = "default"
+	DefaultConsistencyLevel = entity.ClBounded
+	MaxDim                  = 32768
+	DefaultMaxLength        = int64(65535)
+	MaxCollectionNameLen    = 255
+	DefaultRgCapacity       = 1000000
 )
 
 var IndexStateValue = map[string]int32{
@@ -145,6 +151,32 @@ func GenDefaultColumnData(start int, nb int, dim int64) (*entity.ColumnInt64, *e
 	floatColumn := entity.NewColumnFloat(DefaultFloatFieldName, floatValues)
 	vecColumn := entity.NewColumnFloatVector(DefaultFloatVecFieldName, int(DefaultDim), vecFloatValues)
 	return intColumn, floatColumn, vecColumn
+}
+
+// GenColumnData GenColumnDataOption
+func GenColumnData(start int, nb int, fieldType entity.FieldType, fieldName string) entity.Column {
+	switch fieldType {
+	case entity.FieldTypeInt64:
+		int64Values := make([]int64, 0, nb)
+		for i := start; i < start+nb; i++ {
+			int64Values = append(int64Values, int64(i))
+		}
+		return entity.NewColumnInt64(fieldName, int64Values)
+	case entity.FieldTypeFloat:
+		floatValues := make([]float32, 0, nb)
+		for i := start; i < start+nb; i++ {
+			floatValues = append(floatValues, float32(i))
+		}
+		return entity.NewColumnFloat(fieldName, floatValues)
+	case entity.FieldTypeVarChar:
+		varcharValues := make([]string, 0, nb)
+		for i := start; i < start+nb; i++ {
+			varcharValues = append(varcharValues, strconv.Itoa(i))
+		}
+		return entity.NewColumnVarChar(fieldName, varcharValues)
+	default:
+		return nil
+	}
 }
 
 // GenDefaultJSONData gen default column with data
