@@ -37,7 +37,7 @@ func main() {
 	certPool := x509.NewCertPool()
 	ca, err := os.ReadFile("../cert/ca.pem")
 	if err != nil {
-		log.Fatalf("ioutil.ReadFile err: %v", err)
+		log.Fatalf("os.ReadFile err: %v", err)
 	}
 
 	if ok := certPool.AppendCertsFromPEM(ca); !ok {
