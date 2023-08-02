@@ -71,6 +71,18 @@ pull_request_rules:
           - ci-passed
           - "kind\/workflow"
 
+  - name: Test passed for example code changed
+    conditions:
+      - or:
+        - base=master
+        - base=v2.2.x
+      - -files~=^(?!example\/).+
+      - "status-success=lint"
+    actions:
+      label:
+        add:
+          - ci-passed
+
   - name: Remove ci-passed when some test failed
     conditions:
       - or:
