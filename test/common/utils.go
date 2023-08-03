@@ -20,6 +20,7 @@ const (
 	DefaultPartition          = "_default"
 	DefaultIndexName          = "_default_idx_102"
 	DefaultIndexNameBinary    = "_default_idx_100"
+	DefaultDb                 = "default"
 	DefaultDim                = 128
 	DefaultDimStr             = "128"
 	MaxDim                    = 32768
@@ -32,6 +33,8 @@ const (
 	MaxCollectionNameLen      = 255
 	RowCount                  = "row_count"
 	RetentionDuration         = 40 // common.retentionDuration
+	DefaultRgName             = "__default_resource_group"
+	DefaultRgCapacity         = 1000000
 )
 
 var IndexStateValue = map[string]int32{

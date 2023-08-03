@@ -35,6 +35,7 @@ func NewMilvusClient(ctx context.Context, cfg client.Config) (*MilvusClient, err
 	}, err
 }
 
+// !!!Deprecated in future, use `NewMilvusClient` first.
 func NewDefaultMilvusClient(ctx context.Context, addr string) (*MilvusClient, error) {
 	preRequest("NewDefaultGrpcClient", ctx, addr)
 	mClient, err := client.NewDefaultGrpcClient(ctx, addr)
@@ -86,9 +87,9 @@ func (mc *MilvusClient) Close() error {
 // 3. goroutine A access DB2 after 2.
 func (mc *MilvusClient) UsingDatabase(ctx context.Context, dbName string) error {
 	preRequest("UsingDatabase", ctx, dbName)
-	mc.mClient.UsingDatabase(ctx, dbName)
-	postResponse("UsingDatabase", nil)
-	return nil
+	err := mc.mClient.UsingDatabase(ctx, dbName)
+	postResponse("UsingDatabase", err)
+	return err
 }
 
 // -- database --
@@ -103,7 +104,7 @@ func (mc *MilvusClient) ListDatabases(ctx context.Context) ([]entity.Database, e
 
 // CreateDatabase create database with the given name.
 func (mc *MilvusClient) CreateDatabase(ctx context.Context, dbName string) error {
-	preRequest("CreateDatabase", ctx)
+	preRequest("CreateDatabase", ctx, dbName)
 	err := mc.mClient.CreateDatabase(ctx, dbName)
 	postResponse("CreateDatabase", err)
 	return err
@@ -111,7 +112,7 @@ func (mc *MilvusClient) CreateDatabase(ctx context.Context, dbName string) error
 
 // DropDatabase drop database with the given db name.
 func (mc *MilvusClient) DropDatabase(ctx context.Context, dbName string) error {
-	preRequest("DropDatabase", ctx)
+	preRequest("DropDatabase", ctx, dbName)
 	err := mc.mClient.DropDatabase(ctx, dbName)
 	postResponse("DropDatabase", err)
 	return err
@@ -408,11 +409,11 @@ func (mc *MilvusClient) CreateCollectionByRow(ctx context.Context, row entity.Ro
 	return err
 }
 
-// InsertByRows insert by rows
-func (mc *MilvusClient) InsertByRows(ctx context.Context, collName string, paritionName string, rows []entity.Row) (entity.Column, error) {
-	preRequest("InsertByRows", ctx, collName, paritionName, rows)
-	column, err := mc.mClient.InsertByRows(ctx, collName, paritionName, rows)
-	postResponse("InsertByRows", err, column)
+// InsertRows InsertByRows insert by rows
+func (mc *MilvusClient) InsertRows(ctx context.Context, collName string, partitionName string, rows []interface{}) (entity.Column, error) {
+	preRequest("InsertRows", ctx, collName, partitionName, len(rows))
+	column, err := mc.mClient.InsertRows(ctx, collName, partitionName, rows)
+	postResponse("InsertRows", err, column)
 	return column, err
 }
 
@@ -476,4 +477,52 @@ func (mc *MilvusClient) WaitForCompactionCompleted(ctx context.Context, compacti
 			return nil
 		}
 	}
+}
+
+// List Resource Groups
+func (mc *MilvusClient) ListResourceGroups(ctx context.Context) ([]string, error) {
+	preRequest("ListResourceGroups", ctx)
+	rgs, err := mc.mClient.ListResourceGroups(ctx)
+	postResponse("ListResourceGroups", err, rgs)
+	return rgs, err
+}
+
+// CreateResourceGroup
+func (mc *MilvusClient) CreateResourceGroup(ctx context.Context, rgName string) error {
+	preRequest("CreateResourceGroup", ctx, rgName)
+	err := mc.mClient.CreateResourceGroup(ctx, rgName)
+	postResponse("CreateResourceGroup", err)
+	return err
+}
+
+// DescribeResourceGroup
+func (mc *MilvusClient) DescribeResourceGroup(ctx context.Context, rgName string) (*entity.ResourceGroup, error) {
+	preRequest("DescribeResourceGroup", ctx, rgName)
+	rg, err := mc.mClient.DescribeResourceGroup(ctx, rgName)
+	postResponse("DescribeResourceGroup", err, rg)
+	return rg, err
+}
+
+// DropResourceGroup
+func (mc *MilvusClient) DropResourceGroup(ctx context.Context, rgName string) error {
+	preRequest("DropResourceGroup", ctx, rgName)
+	err := mc.mClient.DropResourceGroup(ctx, rgName)
+	postResponse("DropResourceGroup", err)
+	return err
+}
+
+// TransferNode
+func (mc *MilvusClient) TransferNode(ctx context.Context, sourceRg, targetRg string, nodesNum int32) error {
+	preRequest("TransferNode", ctx, sourceRg, targetRg, nodesNum)
+	err := mc.mClient.TransferNode(ctx, sourceRg, targetRg, nodesNum)
+	postResponse("TransferNode", err)
+	return err
+}
+
+// TransferReplica
+func (mc *MilvusClient) TransferReplica(ctx context.Context, sourceRg, targetRg string, collectionName string, replicaNum int64) error {
+	preRequest("TransferReplica", ctx, sourceRg, targetRg, collectionName, replicaNum)
+	err := mc.mClient.TransferReplica(ctx, sourceRg, targetRg, collectionName, replicaNum)
+	postResponse("TransferReplica", err)
+	return err
 }

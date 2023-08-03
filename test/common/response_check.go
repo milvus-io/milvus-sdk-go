@@ -1,6 +1,7 @@
 package common
 
 import (
+	"fmt"
 	"log"
 	"testing"
 
@@ -72,7 +73,16 @@ func CheckContainsCollection(t *testing.T, collections []*entity.Collection, col
 	for _, collection := range collections {
 		allCollNames = append(allCollNames, collection.Name)
 	}
-	require.Contains(t, allCollNames, collName)
+	require.Containsf(t, allCollNames, collName, fmt.Sprintf("The collection %s not in: %v", collName, allCollNames))
+}
+
+// check collections not contains collName
+func CheckNotContainsCollection(t *testing.T, collections []*entity.Collection, collName string) {
+	allCollNames := make([]string, 0, len(collections))
+	for _, collection := range collections {
+		allCollNames = append(allCollNames, collection.Name)
+	}
+	require.NotContainsf(t, allCollNames, collName, fmt.Sprintf("The collection %s should not be in: %v", collName, allCollNames))
 }
 
 // check insert result, ids len (insert count), ids data (pks, but no auto ids)
@@ -179,4 +189,28 @@ func CheckPersistentSegments(t *testing.T, actualSegments []*entity.Segment, exp
 		actualNb = segment.NumRows + actualNb
 	}
 	require.Equal(t, actualNb, expNb)
+}
+
+func CheckResourceGroup(t *testing.T, actualRg *entity.ResourceGroup, expRg *entity.ResourceGroup) {
+	require.EqualValues(t, expRg, actualRg)
+}
+
+func getDbNames(dbs []entity.Database) []string {
+	allDbNames := make([]string, 0, len(dbs))
+	for _, db := range dbs {
+		allDbNames = append(allDbNames, db.Name)
+	}
+	return allDbNames
+}
+
+// check collections contains collName
+func CheckContainsDb(t *testing.T, dbs []entity.Database, dbName string) {
+	allDbNames := getDbNames(dbs)
+	require.Containsf(t, allDbNames, dbName, fmt.Sprintf("%s db not in dbs: %v", dbName, dbs))
+}
+
+// check collections contains collName
+func CheckNotContainsDb(t *testing.T, dbs []entity.Database, dbName string) {
+	allDbNames := getDbNames(dbs)
+	require.NotContainsf(t, allDbNames, dbName, fmt.Sprintf("%s db should not be in dbs: %v", dbName, dbs))
 }
