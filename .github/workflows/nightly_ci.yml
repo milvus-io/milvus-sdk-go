@@ -56,7 +56,7 @@ jobs:
       run: |
           echo "IMAGE_REPO=$IMAGE_REPO, IMAGE_TAG=$IMAGE_TAG, RELEASE_NAME=$RELEASE_NAME"
           kubectl create namespace ${QA_NAMESPACE}
-          envsubst < milvus-${{ matrix.mode }}.yaml | cat - | kubectl apply -f - -n ${QA_NAMESPACE}
+          envsubst < milvus-cluster.yaml | cat - | kubectl apply -f - -n ${QA_NAMESPACE}
           kubectl -n ${QA_NAMESPACE} wait --for=condition=MilvusReady milvus/${RELEASE_NAME} --timeout 20m
           kubectl --timeout 20m wait --for=condition=ready pod -l app.kubernetes.io/instance=${RELEASE_NAME} -n ${QA_NAMESPACE}
           kubectl describe milvus ${RELEASE_NAME} -n ${QA_NAMESPACE}
