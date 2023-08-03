@@ -76,7 +76,7 @@ pull_request_rules:
       - or:
         - base=master
         - base=v2.2.x
-      - -files~=^(?!example\/).+
+      - -files~=^(?!examples\/).+
       - "status-success=lint"
     actions:
       label:
