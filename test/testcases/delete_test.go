@@ -33,7 +33,7 @@ func TestDelete(t *testing.T) {
 	common.CheckErr(t, errDelete, true)
 
 	// query, verify delete success
-	queryRes, errQuery := mc.Query(ctx, collName, []string{common.DefaultPartition}, deleteIds, []string{})
+	queryRes, errQuery := mc.QueryByPks(ctx, collName, []string{common.DefaultPartition}, deleteIds, []string{})
 	common.CheckErr(t, errQuery, true)
 	require.Zero(t, queryRes[0].Len())
 }
@@ -57,7 +57,7 @@ func TestDeleteStringPks(t *testing.T) {
 	common.CheckErr(t, errLoad, true)
 
 	// query, verify delete success
-	queryRes, errQuery := mc.Query(ctx, collName, []string{common.DefaultPartition}, deleteIds, []string{})
+	queryRes, errQuery := mc.QueryByPks(ctx, collName, []string{common.DefaultPartition}, deleteIds, []string{})
 	common.CheckErr(t, errQuery, true)
 	require.Zero(t, queryRes[0].Len())
 }
@@ -125,7 +125,7 @@ func TestDeleteEmptyPartitionNames(t *testing.T) {
 	mc.Flush(ctx, collName, false)
 
 	// delete
-	deleteIds := entity.NewColumnInt64(common.DefaultIntFieldName, intColumn.Data()[:10])
+	deleteIds := entity.NewColumnInt64(common.DefaultIntFieldName, intColumn.(*entity.ColumnInt64).Data()[:10])
 	errDelete := mc.DeleteByPks(ctx, collName, emptyPartitionName, deleteIds)
 	common.CheckErr(t, errDelete, true)
 
@@ -138,7 +138,7 @@ func TestDeleteEmptyPartitionNames(t *testing.T) {
 	common.CheckErr(t, errLoad, true)
 
 	// query, verify delete success
-	queryRes, errQuery := mc.Query(ctx, collName, []string{common.DefaultPartition}, deleteIds, []string{})
+	queryRes, errQuery := mc.QueryByPks(ctx, collName, []string{common.DefaultPartition}, deleteIds, []string{})
 	common.CheckErr(t, errQuery, true)
 	require.Zero(t, queryRes[0].Len())
 }
@@ -165,7 +165,7 @@ func TestDeleteEmptyPartition(t *testing.T) {
 	common.CheckErr(t, errDelete, true)
 
 	// query deleteIds in default partition
-	queryResult, _ := mc.Query(
+	queryResult, _ := mc.QueryByPks(
 		ctx,
 		collName,
 		[]string{},
@@ -199,7 +199,7 @@ func TestDeletePartitionIdsNotMatch(t *testing.T) {
 	common.CheckErr(t, errLoad, true)
 
 	// query deleteIds in default partition
-	queryResult, _ := mc.Query(
+	queryResult, _ := mc.QueryByPks(
 		ctx,
 		collName,
 		[]string{common.DefaultPartition},
@@ -261,7 +261,7 @@ func TestDeleteDuplicatedPks(t *testing.T) {
 	common.CheckErr(t, errDelete, true)
 
 	// query, verify delete success
-	queryRes, errQuery := mc.Query(ctx, collName, []string{common.DefaultPartition}, deleteIds, []string{})
+	queryRes, errQuery := mc.QueryByPks(ctx, collName, []string{common.DefaultPartition}, deleteIds, []string{})
 	common.CheckErr(t, errQuery, true)
 	require.Zero(t, queryRes[0].Len())
 }

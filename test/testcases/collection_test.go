@@ -190,6 +190,12 @@ func TestCreateCollectionInvalidFields(t *testing.T) {
 			common.GenField("", entity.FieldTypeString),
 			common.GenField(common.DefaultFloatVecFieldName, entity.FieldTypeFloatVector, common.WithDim(common.DefaultDim)),
 		}, errMsg: "string data type not supported yet, please use VarChar type instead"},
+
+		// varchar field not specify max_length
+		{fields: []*entity.Field{
+			common.GenField(common.DefaultVarcharFieldName, entity.FieldTypeVarChar, common.WithIsPrimaryKey(true)),
+			common.GenField(common.DefaultFloatVecFieldName, entity.FieldTypeFloatVector, common.WithDim(common.DefaultDim)),
+		}, errMsg: "type param(max_length) should be specified for varChar field"},
 	}
 
 	for _, invalidField := range invalidFields {

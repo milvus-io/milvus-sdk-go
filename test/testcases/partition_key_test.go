@@ -54,8 +54,8 @@ func TestPartitionKeyDefaultInt64(t *testing.T) {
 		common.GenColumnData(0, 10, entity.FieldTypeInt64, common.DefaultIntFieldName),
 	}
 	for _, queryId := range queryIds {
-		queryResult, errQuery := mc.Query(ctx, schema.CollectionName, []string{},
-			queryId,
+		queryResult, errQuery := mc.QueryByPks(ctx, schema.CollectionName, []string{},
+		    queryId,
 			[]string{common.DefaultIntFieldName},
 		)
 		common.CheckErr(t, errQuery, true)
@@ -134,7 +134,7 @@ func TestPartitionKeyDefaultVarchar(t *testing.T) {
 		common.GenColumnData(0, 10, entity.FieldTypeInt64, common.DefaultIntFieldName),
 	}
 	for _, queryId := range queryIds {
-		queryResult, errQuery := mc.Query(ctx, schema.CollectionName, []string{},
+		queryResult, errQuery := mc.QueryByPks(ctx, schema.CollectionName, []string{},
 			queryId,
 			[]string{common.DefaultIntFieldName},
 		)
@@ -378,7 +378,7 @@ func TestPartitionKeyPartitionOperation(t *testing.T) {
 	//common.CheckErr(t, err, false, "not support manually specifying the partition names if partition key mode is used")
 
 	// query partitions -> error
-	_, err = mc.Query(
+	_, err = mc.QueryByPks(
 		ctx, collName,
 		[]string{partitions[0].Name},
 		entity.NewColumnInt64(common.DefaultIntFieldName, []int64{0}), []string{})

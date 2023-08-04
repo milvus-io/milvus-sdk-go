@@ -220,7 +220,7 @@ func TestLoadPartitions(t *testing.T) {
 
 	//query from nb from partition
 	queryIds := entity.NewColumnInt64(common.DefaultIntFieldName, []int64{0, int64(nb)})
-	queryResultPartition, _ := mc.Query(ctx, collName, []string{}, queryIds, []string{common.DefaultIntFieldName})
+	queryResultPartition, _ := mc.QueryByPks(ctx, collName, []string{}, queryIds, []string{common.DefaultIntFieldName})
 	common.CheckQueryResult(t, queryResultPartition, []entity.Column{
 		entity.NewColumnInt64(common.DefaultIntFieldName, []int64{int64(nb)}),
 	})
@@ -247,7 +247,7 @@ func TestLoadMultiPartitions(t *testing.T) {
 
 	//query from nb from partition
 	queryIds := entity.NewColumnInt64(common.DefaultIntFieldName, []int64{0, common.DefaultNb})
-	queryResultPartition, _ := mc.Query(ctx, collName, []string{}, queryIds, []string{common.DefaultIntFieldName})
+	queryResultPartition, _ := mc.QueryByPks(ctx, collName, []string{}, queryIds, []string{common.DefaultIntFieldName})
 	common.CheckQueryResult(t, queryResultPartition, []entity.Column{
 		entity.NewColumnInt64(common.DefaultIntFieldName, []int64{common.DefaultNb}),
 	})
@@ -274,7 +274,7 @@ func TestLoadPartitionsRepeatedly(t *testing.T) {
 
 	//query from nb from partition
 	queryIds := entity.NewColumnInt64(common.DefaultIntFieldName, []int64{common.DefaultNb})
-	queryResultPartition, _ := mc.Query(ctx, collName, []string{}, queryIds, []string{common.DefaultIntFieldName})
+	queryResultPartition, _ := mc.QueryByPks(ctx, collName, []string{}, queryIds, []string{common.DefaultIntFieldName})
 	common.CheckQueryResult(t, queryResultPartition, []entity.Column{queryIds})
 }
 
@@ -338,7 +338,7 @@ func TestReleasePartition(t *testing.T) {
 	require.False(t, collection.Loaded)
 
 	// check release success
-	_, errQuery := mc.Query(ctx, collName, []string{}, entity.NewColumnInt64(common.DefaultIntFieldName, []int64{0}),
+	_, errQuery := mc.QueryByPks(ctx, collName, []string{}, entity.NewColumnInt64(common.DefaultIntFieldName, []int64{0}),
 		[]string{common.DefaultIntFieldName})
 	common.CheckErr(t, errQuery, false, "has not been loaded to memory or load failed")
 }
@@ -392,7 +392,7 @@ func TestReleasePartitions(t *testing.T) {
 	}
 
 	// check release success
-	_, errQuery := mc.Query(ctx, collName, []string{partitionName}, entity.NewColumnInt64(common.DefaultIntFieldName, []int64{common.DefaultNb}),
+	_, errQuery := mc.QueryByPks(ctx, collName, []string{partitionName}, entity.NewColumnInt64(common.DefaultIntFieldName, []int64{common.DefaultNb}),
 		[]string{common.DefaultIntFieldName})
 	common.CheckErr(t, errQuery, false, "has not been loaded to memory or load failed")
 }
@@ -434,7 +434,7 @@ func TestReleasePartitionsNotExist(t *testing.T) {
 
 	// check release success
 	queryIds := entity.NewColumnInt64(common.DefaultIntFieldName, []int64{common.DefaultNb})
-	_, errQuery := mc.Query(ctx, collName, []string{partitionName}, queryIds,
+	_, errQuery := mc.QueryByPks(ctx, collName, []string{partitionName}, queryIds,
 		[]string{common.DefaultIntFieldName})
 	common.CheckErr(t, errQuery, false, "not loaded into memory when query")
 }
@@ -469,7 +469,7 @@ func TestReleaseMultiPartitions(t *testing.T) {
 
 	// check release success
 	queryIds := entity.NewColumnInt64(common.DefaultIntFieldName, []int64{0, common.DefaultNb})
-	_, errQuery := mc.Query(ctx, collName, []string{partitionName, common.DefaultPartition}, queryIds,
+	_, errQuery := mc.QueryByPks(ctx, collName, []string{partitionName, common.DefaultPartition}, queryIds,
 		[]string{common.DefaultIntFieldName})
 	common.CheckErr(t, errQuery, false, "not loaded into memory when query")
 }
