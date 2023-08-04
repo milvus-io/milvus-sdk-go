@@ -22,6 +22,14 @@ const configQnNodes = int32(4)
 const newRgNode = int32(2)
 
 func resetRgs(t *testing.T, ctx context.Context, mc *base.MilvusClient) {
+	// release and drop all collections
+	collections, _ := mc.ListCollections(ctx)
+	for _, coll := range collections {
+		mc.ReleaseCollection(ctx, coll.Name)
+		err := mc.DropCollection(ctx, coll.Name)
+		common.CheckErr(t, err, true)
+	}
+
 	// reset resource groups
 	rgs, errList := mc.ListResourceGroups(ctx)
 	common.CheckErr(t, errList, true)
@@ -146,7 +154,7 @@ func TestDescribeRgNotExisted(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	_, errDescribe := mc.DescribeResourceGroup(ctx, common.GenRandomString(6))
-	common.CheckErr(t, errDescribe, false, "resource group doesn't exist")
+	common.CheckErr(t, errDescribe, false, "resource group not found")
 }
 
 // drop rg with not existed name -> successfully
@@ -252,9 +260,9 @@ func TestTransferInvalidNodes(t *testing.T) {
 		errMsg   string
 	}
 	invalidNodes := []invalidNodesStruct{
-		{nodesNum: 0, errMsg: "transfer node num can't be"},
-		{nodesNum: -1, errMsg: "transfer node num can't be"},
-		{nodesNum: 99, errMsg: "failed to transfer node between resource group, err=nodes not enough"},
+		{nodesNum: 0, errMsg: "expected=NumNode > 0, actual=invalid NumNode"},
+		{nodesNum: -1, errMsg: "expected=NumNode > 0, actual=invalid NumNode"},
+		{nodesNum: 99, errMsg: "nodes not enough"},
 	}
 	// transfer node
 	for _, invalidNode := range invalidNodes {
@@ -272,11 +280,11 @@ func TestTransferRgNotExisted(t *testing.T) {
 
 	// source not exist
 	errSource := mc.TransferNode(ctx, common.GenRandomString(6), common.DefaultRgName, newRgNode)
-	common.CheckErr(t, errSource, false, "resource group doesn't exist")
+	common.CheckErr(t, errSource, false, "source resource group not found")
 
 	// target not exist
 	errTarget := mc.TransferNode(ctx, common.DefaultRgName, common.GenRandomString(6), newRgNode)
-	common.CheckErr(t, errTarget, false, "resource group doesn't exist")
+	common.CheckErr(t, errTarget, false, "target resource group not found")
 
 	// transfer to self
 	errSelf := mc.TransferNode(ctx, common.DefaultRgName, common.DefaultRgName, newRgNode)
@@ -343,8 +351,27 @@ func TestTransferReplicas(t *testing.T) {
 	}
 	common.CheckResourceGroup(t, newRg, expRg)
 
+	// drop new rg that loaded collection
+	err := mc.DropResourceGroup(ctx, rgName)
+	common.CheckErr(t, err, false, "some replicas still loaded in resource group")
+
 	// search
-	// todo
+	sp, err := entity.NewIndexHNSWSearchParam(74)
+	searchRes, _ := mc.Search(
+		ctx, collName,
+		[]string{common.DefaultPartition},
+		"",
+		[]string{common.DefaultFloatFieldName},
+		common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeFloatVector),
+		common.DefaultFloatVecFieldName,
+		entity.L2,
+		common.DefaultTopK,
+		sp,
+	)
+	// check search result contains search vector, which from all partitions
+	common.CheckErr(t, err, true)
+	common.CheckSearchResult(t, searchRes, common.DefaultNq, common.DefaultTopK)
+
 }
 
 // test transfer replica of not existed collection
@@ -385,8 +412,8 @@ func TestTransferReplicaInvalidReplicaNumber(t *testing.T) {
 		errMsg        string
 	}
 	invalidReplicas := []invalidReplicasStruct{
-		{replicaNumber: 0, errMsg: "transfer replica num can't be [0]"},
-		{replicaNumber: -1, errMsg: "transfer replica num can't be [-1]"},
+		{replicaNumber: 0, errMsg: "expected=NumReplica > 0, actual=invalid NumReplica"},
+		{replicaNumber: -1, errMsg: "expected=NumReplica > 0, actual=invalid NumReplica"},
 		{replicaNumber: 1, errMsg: "only found [0] replicas in source resource group"},
 	}
 
@@ -416,11 +443,11 @@ func TestTransferReplicaRgNotExisted(t *testing.T) {
 
 	// source not exist
 	errSource := mc.TransferReplica(ctx, common.GenRandomString(6), common.DefaultRgName, collName, 1)
-	common.CheckErr(t, errSource, false, "resource group doesn't exist")
+	common.CheckErr(t, errSource, false, "resource group not found")
 
 	// target not exist
 	errTarget := mc.TransferReplica(ctx, common.DefaultRgName, common.GenRandomString(6), collName, 1)
-	common.CheckErr(t, errTarget, false, "resource group doesn't exist")
+	common.CheckErr(t, errTarget, false, "resource group not found")
 
 	// transfer to self -> error
 	errSelf := mc.TransferReplica(ctx, rgName, rgName, collName, 1)
