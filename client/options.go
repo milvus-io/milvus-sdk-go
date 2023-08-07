@@ -120,10 +120,9 @@ func WithResourceGroups(rgs []string) LoadCollectionOption {
 
 // SearchQueryOption is an option of search/query request
 type SearchQueryOption struct {
-	// Consistency Level & Time travel
+	// Consistency Level
 	ConsistencyLevel   entity.ConsistencyLevel
 	GuaranteeTimestamp uint64
-	TravelTimestamp    uint64
 	// Pagination
 	Limit  int64
 	Offset int64
@@ -175,11 +174,9 @@ func WithGuaranteeTimestamp(gt uint64) SearchQueryOptionFunc {
 	}
 }
 
-// WithTravelTimestamp specifies time travel timestamp
+// Deprecated: time travel is not supported since v2.3.0
 func WithTravelTimestamp(tt uint64) SearchQueryOptionFunc {
-	return func(option *SearchQueryOption) {
-		option.TravelTimestamp = tt
-	}
+	return func(option *SearchQueryOption) {}
 }
 
 func makeSearchQueryOption(collName string, opts ...SearchQueryOptionFunc) (*SearchQueryOption, error) {

@@ -22,7 +22,6 @@ import (
 
 	server "github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
-	"github.com/milvus-io/milvus-sdk-go/v2/internal/utils/tso"
 )
 
 // ManualCompaction triggers a compaction on provided collection
@@ -39,11 +38,8 @@ func (c *GrpcClient) ManualCompaction(ctx context.Context, collName string, tole
 		return 0, err
 	}
 
-	tt := tso.ComposeTSByTime(time.Now().Add(-toleranceDuration), 0)
-
 	req := &server.ManualCompactionRequest{
 		CollectionID: coll.ID,
-		Timetravel:   tt,
 	}
 
 	resp, err := c.Service.ManualCompaction(ctx, req)

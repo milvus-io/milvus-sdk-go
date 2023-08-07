@@ -19,7 +19,6 @@ package client
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/cockroachdb/errors"
 
@@ -27,7 +26,6 @@ import (
 	common "github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
 	server "github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
-	"github.com/milvus-io/milvus-sdk-go/v2/internal/utils/tso"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -41,7 +39,6 @@ func TestGrpcManualCompaction(t *testing.T) {
 
 	compactionID := int64(1001)
 	t.Run("normal manual compaction", func(t *testing.T) {
-		now := time.Now()
 		mockServer.SetInjection(MDescribeCollection, describeCollectionInjection(t, testCollectionID, testCollectionName, defaultSchema()))
 		defer mockServer.DelInjection(MDescribeCollection)
 		mockServer.SetInjection(MManualCompaction, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
@@ -51,8 +48,6 @@ func TestGrpcManualCompaction(t *testing.T) {
 			}
 
 			assert.Equal(t, testCollectionID, req.GetCollectionID())
-			ts, _ := tso.ParseTS(req.GetTimetravel())
-			assert.True(t, ts.Sub(now) < time.Second)
 
 			resp := &server.ManualCompactionResponse{
 				CompactionID: compactionID,
