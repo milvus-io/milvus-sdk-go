@@ -318,3 +318,65 @@ func NewIndexAUTOINDEXSearchParam(
 	return sp, nil
 }
 
+var _ SearchParam = &IndexGPUIvfFlatSearchParam{}
+
+// IndexGPUIvfFlatSearchParam search param struct for index type GPU_IVF_FLAT
+type IndexGPUIvfFlatSearchParam struct { //auto generated fields
+	baseSearchParams
+	
+	nprobe int
+}
+
+// NewIndexGPUIvfFlatSearchParam create index search param
+func NewIndexGPUIvfFlatSearchParam(
+	nprobe int,
+) (*IndexGPUIvfFlatSearchParam, error) {
+	// auto generate parameters validation code, if any
+	if nprobe < 1 {
+		return nil, errors.New("nprobe has to be in range [1, 65536]")
+	}
+	if nprobe > 65536 {
+		return nil, errors.New("nprobe has to be in range [1, 65536]")
+	}
+	
+	sp := &IndexGPUIvfFlatSearchParam{
+		baseSearchParams: newBaseSearchParams(),
+	}
+	
+	//auto generated setting
+	sp.params["nprobe"] = nprobe
+
+	return sp, nil
+}
+
+var _ SearchParam = &IndexGPUIvfPQSearchParam{}
+
+// IndexGPUIvfPQSearchParam search param struct for index type GPU_IVF_PQ
+type IndexGPUIvfPQSearchParam struct { //auto generated fields
+	baseSearchParams
+	
+	nprobe int
+}
+
+// NewIndexGPUIvfPQSearchParam create index search param
+func NewIndexGPUIvfPQSearchParam(
+	nprobe int,
+) (*IndexGPUIvfPQSearchParam, error) {
+	// auto generate parameters validation code, if any
+	if nprobe < 1 {
+		return nil, errors.New("nprobe has to be in range [1, 65536]")
+	}
+	if nprobe > 65536 {
+		return nil, errors.New("nprobe has to be in range [1, 65536]")
+	}
+	
+	sp := &IndexGPUIvfPQSearchParam{
+		baseSearchParams: newBaseSearchParams(),
+	}
+	
+	//auto generated setting
+	sp.params["nprobe"] = nprobe
+
+	return sp, nil
+}
+

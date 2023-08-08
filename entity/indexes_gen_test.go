@@ -462,3 +462,111 @@ func TestIndexAUTOINDEX(t *testing.T){
 	})
 }
 
+func TestIndexGPUIvfFlat(t *testing.T){
+	
+	var nlist int
+
+	mt := L2
+	
+
+	t.Run("valid usage case", func(t *testing.T){
+		
+		nlist = 10
+		idx0, err := NewIndexGPUIvfFlat(mt, 
+			nlist,
+		)
+		assert.Nil(t, err)
+		assert.NotNil(t, idx0)
+		assert.Equal(t, "GPUIvfFlat", idx0.Name())
+		assert.EqualValues(t, "GPU_IVF_FLAT", idx0.IndexType())
+		assert.NotNil(t, idx0.Params())
+		assert.False(t, idx0.SupportBinary())
+		
+	})
+
+	t.Run("invalid usage case", func(t *testing.T){
+		
+		nlist = 0
+		idx0, err := NewIndexGPUIvfFlat(mt, 
+			nlist,
+		)
+		assert.NotNil(t, err)
+		assert.Nil(t, idx0)
+		
+		nlist = 65537
+		idx1, err := NewIndexGPUIvfFlat(mt, 
+			nlist,
+		)
+		assert.NotNil(t, err)
+		assert.Nil(t, idx1)
+		
+	})
+}
+
+func TestIndexGPUIvfPQ(t *testing.T){
+	
+	var nlist int
+	var m int
+	var nbits int
+
+	mt := L2
+	
+
+	t.Run("valid usage case", func(t *testing.T){
+		
+		nlist, m, nbits = 10, 8, 8
+		idx0, err := NewIndexGPUIvfPQ(mt, 
+			nlist,
+			m,
+			nbits,
+		)
+		assert.Nil(t, err)
+		assert.NotNil(t, idx0)
+		assert.Equal(t, "GPUIvfPQ", idx0.Name())
+		assert.EqualValues(t, "GPU_IVF_PQ", idx0.IndexType())
+		assert.NotNil(t, idx0.Params())
+		assert.False(t, idx0.SupportBinary())
+		
+	})
+
+	t.Run("invalid usage case", func(t *testing.T){
+		
+		nlist, m, nbits = 0, 8, 8
+		idx0, err := NewIndexGPUIvfPQ(mt, 
+			nlist,
+			m,
+			nbits,
+		)
+		assert.NotNil(t, err)
+		assert.Nil(t, idx0)
+		
+		nlist, m, nbits = 65537, 8, 8
+		idx1, err := NewIndexGPUIvfPQ(mt, 
+			nlist,
+			m,
+			nbits,
+		)
+		assert.NotNil(t, err)
+		assert.Nil(t, idx1)
+		
+		nlist, m, nbits = 10, 8, 0
+		idx2, err := NewIndexGPUIvfPQ(mt, 
+			nlist,
+			m,
+			nbits,
+		)
+		assert.NotNil(t, err)
+		assert.Nil(t, idx2)
+		
+		nlist, m, nbits = 10, 8, 65
+		idx3, err := NewIndexGPUIvfPQ(mt, 
+			nlist,
+			m,
+			nbits,
+		)
+		assert.NotNil(t, err)
+		assert.Nil(t, idx3)
+		
+	})
+}
+

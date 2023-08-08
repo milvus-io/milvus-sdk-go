@@ -36,6 +36,9 @@ const (
 	IvfHNSW    IndexType = "IVF_HNSW"
 	AUTOINDEX  IndexType = "AUTOINDEX"
 	DISKANN    IndexType = "DISKANN"
+
+	GPUIvfFlat IndexType = "GPU_IVF_FLAT"
+	GPUIvfPQ   IndexType = "GPU_IVF_PQ"
 )
 
 // Metric Constants

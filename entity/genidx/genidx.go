@@ -638,6 +638,76 @@ func main() {
 					"level = -1",
 				},
 			},
+			{
+				IdxName: "GPUIvfFlat",
+				IdxType: entity.GPUIvfFlat,
+				ConstructParams: []idxParam{
+					{
+						Name:           "nlist",
+						ValidationRule: "[1, 65536]",
+					},
+				},
+				SearchParams: []idxParam{
+					{
+						Name:           "nprobe",
+						ValidationRule: "[1, 65536]", // [1, nlist], refer to index construct param, not supported yet
+					},
+				},
+				ValidExamples: []string{
+					"nlist = 10",
+				},
+				InvalidExamples: []string{
+					"nlist = 0",
+					"nlist = 65537",
+				},
+				ValidSearchParams: []string{
+					"nprobe = 10",
+				},
+				InvalidSearchParams: []string{
+					"nprobe = 0",
+					"nprobe = 65537",
+				},
+			},
+			{
+				IdxName: "GPUIvfPQ",
+				IdxType: entity.GPUIvfPQ,
+				ConstructParams: []idxParam{
+					{
+						Name:           "nlist",
+						ValidationRule: "[1, 65536]",
+					},
+					{
+						Name:           "m",
+						ValidationRule: "dim===0 (mod self)",
+					},
+					{
+						Name:           "nbits",
+						ValidationRule: "[1, 64]",
+					},
+				},
+				SearchParams: []idxParam{
+					{
+						Name:           "nprobe",
+						ValidationRule: "[1, 65536]", // [1, nlist], refer to index construct param, not supported yet
+					},
+				},
+				ValidExamples: []string{
+					"nlist, m, nbits = 10, 8, 8",
+				},
+				InvalidExamples: []string{
+					"nlist, m, nbits = 0, 8, 8",
+					"nlist, m, nbits = 65537, 8, 8",
+					"nlist, m, nbits = 10, 8, 0",
+					"nlist, m, nbits = 10, 8, 65",
+				},
+				ValidSearchParams: []string{
+					"nprobe = 10",
+				},
+				InvalidSearchParams: []string{
+					"nprobe = 0",
+					"nprobe = 65537",
+				},
+			},
 		},
 	}
 

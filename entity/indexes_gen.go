@@ -591,3 +591,136 @@ func NewIndexAUTOINDEX(metricType MetricType, ) (*IndexAUTOINDEX, error) {
 	}, nil
 }
 
+
+var _ Index = &IndexGPUIvfFlat{}
+
+// IndexGPUIvfFlat idx type for GPU_IVF_FLAT
+type IndexGPUIvfFlat struct { //auto generated fields
+	nlist int
+	metricType MetricType
+}
+
+// Name returns index type name, implementing Index interface
+func(i *IndexGPUIvfFlat) Name() string {
+	return "GPUIvfFlat"
+}
+
+// IndexType returns IndexType, implementing Index interface
+func(i *IndexGPUIvfFlat) IndexType() IndexType {
+	return IndexType("GPU_IVF_FLAT")
+}
+
+// SupportBinary returns whether index type support binary vector
+func(i *IndexGPUIvfFlat) SupportBinary() bool {
+	return 0 & 2 > 0
+}
+
+// Params returns index construction params, implementing Index interface
+func(i *IndexGPUIvfFlat) Params() map[string]string {
+	params := map[string]string {//auto generated mapping 
+		"nlist": fmt.Sprintf("%v",i.nlist),
+	}
+	bs, _ := json.Marshal(params)
+	return map[string]string {
+		"params": string(bs),
+		"index_type": string(i.IndexType()),
+		"metric_type": string(i.metricType),
+	}
+}
+
+// NewIndexGPUIvfFlat create index with construction parameters
+func NewIndexGPUIvfFlat(metricType MetricType, 
+	nlist int,
+) (*IndexGPUIvfFlat, error) {
+	// auto generate parameters validation code, if any
+	if nlist < 1 {
+		return nil, errors.New("nlist has to be in range [1, 65536]")
+	}
+	if nlist > 65536 {
+		return nil, errors.New("nlist has to be in range [1, 65536]")
+	}
+	
+	return &IndexGPUIvfFlat{ 
+	//auto generated setting
+	nlist: nlist,
+	metricType: metricType,
+	}, nil
+}
+
+
+var _ Index = &IndexGPUIvfPQ{}
+
+// IndexGPUIvfPQ idx type for GPU_IVF_PQ
+type IndexGPUIvfPQ struct { //auto generated fields
+	nlist int
+	m int
+	nbits int
+	metricType MetricType
+}
+
+// Name returns index type name, implementing Index interface
+func(i *IndexGPUIvfPQ) Name() string {
+	return "GPUIvfPQ"
+}
+
+// IndexType returns IndexType, implementing Index interface
+func(i *IndexGPUIvfPQ) IndexType() IndexType {
+	return IndexType("GPU_IVF_PQ")
+}
+
+// SupportBinary returns whether index type support binary vector
+func(i *IndexGPUIvfPQ) SupportBinary() bool {
+	return 0 & 2 > 0
+}
+
+// Params returns index construction params, implementing Index interface
+func(i *IndexGPUIvfPQ) Params() map[string]string {
+	params := map[string]string {//auto generated mapping 
+		"nlist": fmt.Sprintf("%v",i.nlist),
+		"m": fmt.Sprintf("%v",i.m),
+		"nbits": fmt.Sprintf("%v",i.nbits),
+	}
+	bs, _ := json.Marshal(params)
+	return map[string]string {
+		"params": string(bs),
+		"index_type": string(i.IndexType()),
+		"metric_type": string(i.metricType),
+	}
+}
+
+// NewIndexGPUIvfPQ create index with construction parameters
+func NewIndexGPUIvfPQ(metricType MetricType, 
+	nlist int,
+
+	m int,
+
+	nbits int,
+) (*IndexGPUIvfPQ, error) {
+	// auto generate parameters validation code, if any
+	if nlist < 1 {
+		return nil, errors.New("nlist has to be in range [1, 65536]")
+	}
+	if nlist > 65536 {
+		return nil, errors.New("nlist has to be in range [1, 65536]")
+	}
+	
+	
+	
+	if nbits < 1 {
+		return nil, errors.New("nbits has to be in range [1, 64]")
+	}
+	if nbits > 64 {
+		return nil, errors.New("nbits has to be in range [1, 64]")
+	}
+	
+	return &IndexGPUIvfPQ{ 
+	//auto generated setting
+	nlist: nlist,
+	//auto generated setting
+	m: m,
+	//auto generated setting
+	nbits: nbits,
+	metricType: metricType,
+	}, nil
+}
+
