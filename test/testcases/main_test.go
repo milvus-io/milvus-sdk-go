@@ -448,7 +448,7 @@ func createCollectionAllFields(ctx context.Context, t *testing.T, mc *base.Milvu
 type HelpPartitionColumns struct {
 	PartitionName string
 	IdsColumn     entity.Column
-	VectorColumn  *entity.ColumnFloatVector
+	VectorColumn  entity.Column
 }
 
 func createInsertTwoPartitions(ctx context.Context, t *testing.T, mc *base.MilvusClient, collName string, nb int) (partitionName string, defaultPartition HelpPartitionColumns, newPartition HelpPartitionColumns) {

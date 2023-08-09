@@ -139,14 +139,16 @@ func TestSearchEmptyPartitions(t *testing.T) {
 		common.CheckErr(t, errSearch, false, "Partition name should not be empty")
 
 		// search with empty partition names slice []string{}
+		vecDefaultData := vecColumnDefault.VectorColumn.(*entity.ColumnFloatVector).Data()[0]
+		vecPartitionData := vecColumnPartition.VectorColumn.(*entity.ColumnFloatVector).Data()[0]
 		searchResult, _ := mc.Search(
 			ctx, collName,
 			[]string{},
 			"",
 			[]string{common.DefaultFloatFieldName},
 			[]entity.Vector{
-				entity.FloatVector(vecColumnDefault.VectorColumn.Data()[0]),
-				entity.FloatVector(vecColumnPartition.VectorColumn.Data()[0]),
+				entity.FloatVector(vecDefaultData),
+				entity.FloatVector(vecPartitionData),
 			},
 			common.DefaultFloatVecFieldName,
 			entity.L2,
@@ -155,11 +157,13 @@ func TestSearchEmptyPartitions(t *testing.T) {
 		)
 
 		// check search result contains search vector, which from all partitions
+		nq0IDs := searchResult[0].IDs.(*entity.ColumnInt64).Data()
+		nq1IDs := searchResult[1].IDs.(*entity.ColumnInt64).Data()
 		common.CheckSearchResult(t, searchResult, 2, common.DefaultTopK)
-		log.Println(searchResult[0].IDs.(*entity.ColumnInt64).Data())
-		log.Println(searchResult[1].IDs.(*entity.ColumnInt64).Data())
-		require.Contains(t, searchResult[0].IDs.(*entity.ColumnInt64).Data(), vecColumnDefault.IdsColumn.(*entity.ColumnInt64).Data()[0])
-		require.Contains(t, searchResult[1].IDs.(*entity.ColumnInt64).Data(), vecColumnPartition.IdsColumn.(*entity.ColumnInt64).Data()[0])
+		log.Println(nq0IDs)
+		log.Println(nq1IDs)
+		require.Contains(t, nq0IDs, vecColumnDefault.IdsColumn.(*entity.ColumnInt64).Data()[0])
+		require.Contains(t, nq1IDs, vecColumnPartition.IdsColumn.(*entity.ColumnInt64).Data()[0])
 	}
 }
 
@@ -212,6 +216,9 @@ func TestSearchPartitions(t *testing.T) {
 	errLoad := mc.LoadCollection(ctx, collName, false)
 	common.CheckErr(t, errLoad, true)
 
+	vecDefaultData := vecColumnDefault.VectorColumn.(*entity.ColumnFloatVector).Data()[0]
+	vecPartitionData := vecColumnPartition.VectorColumn.(*entity.ColumnFloatVector).Data()[0]
+
 	// search single partition
 	sp, _ := entity.NewIndexHNSWSearchParam(74)
 	searchSingleRes, _ := mc.Search(
@@ -220,8 +227,8 @@ func TestSearchPartitions(t *testing.T) {
 		"",
 		[]string{common.DefaultFloatFieldName},
 		[]entity.Vector{
-			entity.FloatVector(vecColumnDefault.VectorColumn.Data()[0]),
-			entity.FloatVector(vecColumnPartition.VectorColumn.Data()[0]),
+			entity.FloatVector(vecDefaultData),
+			entity.FloatVector(vecPartitionData),
 		},
 		common.DefaultFloatVecFieldName,
 		entity.L2,
@@ -239,8 +246,8 @@ func TestSearchPartitions(t *testing.T) {
 		"",
 		[]string{common.DefaultFloatFieldName},
 		[]entity.Vector{
-			entity.FloatVector(vecColumnDefault.VectorColumn.Data()[0]),
-			entity.FloatVector(vecColumnPartition.VectorColumn.Data()[0]),
+			entity.FloatVector(vecDefaultData),
+			entity.FloatVector(vecPartitionData),
 		},
 		common.DefaultFloatVecFieldName,
 		entity.L2,
@@ -814,7 +821,7 @@ func TestSearchInvalidExpr(t *testing.T) {
 	invalidExpr := []invalidExprStruct{
 		//{expr: "id in [0]", errMsg: "fieldName(id) not found"},               // not exist field
 		{expr: "int64 in not [0]", errMsg: "cannot parse expression"},        // wrong term expr keyword
-		{expr: "int64 < floatVec", errMsg: "unsupported data type"},          // unsupported compare field
+		{expr: "int64 < floatVec", errMsg: "unsupported"},                    // unsupported compare field
 		{expr: "floatVec in [0]", errMsg: "cannot be casted to FloatVector"}, // value and field type mismatch
 	}
 

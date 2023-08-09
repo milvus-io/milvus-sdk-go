@@ -132,6 +132,14 @@ func (mc *MilvusClient) CreateCollection(ctx context.Context, collSchema *entity
 	return err
 }
 
+// NewCollection highlevel new Collection
+func (mc *MilvusClient) NewCollection(ctx context.Context, collName string, dim int64, opts ...client.CreateCollectionOption) error {
+	preRequest("NewCollection", ctx, collName, dim, opts)
+	err := mc.mClient.NewCollection(ctx, collName, dim, opts...)
+	postResponse("NewCollection", err)
+	return err
+}
+
 // ListCollections list collections
 func (mc *MilvusClient) ListCollections(ctx context.Context) ([]*entity.Collection, error) {
 	preRequest("ListCollections", ctx)
@@ -378,7 +386,7 @@ func (mc *MilvusClient) Search(ctx context.Context, collName string, partitions 
 	outputFields []string, vectors []entity.Vector, vectorField string, metricType entity.MetricType, topK int, sp entity.SearchParam, opts ...client.SearchQueryOptionFunc,
 ) ([]client.SearchResult, error) {
 	funcName := "Search"
-	preRequest(funcName, ctx, collName, partitions, expr, outputFields, vectors, vectorField, metricType, topK, sp, opts)
+	preRequest(funcName, ctx, collName, partitions, expr, outputFields, len(vectors), vectorField, metricType, topK, sp, opts)
 
 	searchResult, err := mc.mClient.Search(ctx, collName, partitions, expr, outputFields, vectors, vectorField, metricType, topK, sp, opts...)
 	postResponse(funcName, err, searchResult)
@@ -386,15 +394,36 @@ func (mc *MilvusClient) Search(ctx context.Context, collName string, partitions 
 	return searchResult, err
 }
 
-// Query query from collection
-func (mc *MilvusClient) Query(ctx context.Context, collName string, partitions []string, ids entity.Column,
-	outputFields []string, opts ...client.SearchQueryOptionFunc,
-) ([]entity.Column, error) {
+// QueryByPks query from collection
+func (mc *MilvusClient) QueryByPks(ctx context.Context, collName string, partitions []string, ids entity.Column,
+	outputFields []string, opts ...client.SearchQueryOptionFunc) (client.ResultSet, error) {
 	funcName := "QueryByPks"
 	preRequest(funcName, ctx, collName, partitions, ids, outputFields, opts)
 
 	queryResults, err := mc.mClient.QueryByPks(ctx, collName, partitions, ids, outputFields, opts...)
 
+	postResponse(funcName, err, queryResults)
+	return queryResults, err
+}
+
+// Query query from collection
+func (mc *MilvusClient) Query(ctx context.Context, collName string, partitions []string, expr string, outputFields []string, opts ...client.SearchQueryOptionFunc,
+) (client.ResultSet, error) {
+	funcName := "Query"
+	preRequest(funcName, ctx, collName, partitions, expr, outputFields, opts)
+
+	queryResults, err := mc.mClient.Query(ctx, collName, partitions, expr, outputFields, opts...)
+
+	postResponse(funcName, err, queryResults)
+	return queryResults, err
+}
+
+// Get query from collection
+func (mc *MilvusClient) Get(ctx context.Context, collName string, ids entity.Column, opts ...client.GetOption,
+) (client.ResultSet, error) {
+	funcName := "Get"
+	preRequest(funcName, ctx, collName, ids, opts)
+	queryResults, err := mc.mClient.Get(ctx, collName, ids, opts...)
 	postResponse(funcName, err, queryResults)
 	return queryResults, err
 }
@@ -463,6 +492,22 @@ func (mc *MilvusClient) ListBulkInsertTasks(ctx context.Context, collName string
 	bulkInsertTaskStates, err := mc.mClient.ListBulkInsertTasks(ctx, collName, limit)
 	postResponse("ListBulkInsertTasks", err, bulkInsertTaskStates)
 	return bulkInsertTaskStates, err
+}
+
+// GetLoadingProgress
+func (mc *MilvusClient) GetLoadingProgress(ctx context.Context, collName string, partitionNames []string) (int64, error) {
+	preRequest("GetLoadingProgress", ctx, collName, partitionNames)
+	loadingProgress, err := mc.mClient.GetLoadingProgress(ctx, collName, partitionNames)
+	postResponse("GetLoadingProgress", err, loadingProgress)
+	return loadingProgress, err
+}
+
+// GetLoadState
+func (mc *MilvusClient) GetLoadState(ctx context.Context, collName string, partitionNames []string) (entity.LoadState, error) {
+	preRequest("GetLoadState", ctx, collName, partitionNames)
+	loadState, err := mc.mClient.GetLoadState(ctx, collName, partitionNames)
+	postResponse("GetLoadState", err, loadState)
+	return loadState, err
 }
 
 // ListResourceGroups List Resource Groups

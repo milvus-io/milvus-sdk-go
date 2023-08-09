@@ -32,7 +32,7 @@ func TestQueryDefaultPartition(t *testing.T) {
 
 	//query
 	pks := ids.(*entity.ColumnInt64).Data()
-	queryResult, _ := mc.Query(
+	var queryResult, _ = mc.QueryByPks(
 		ctx,
 		collName,
 		[]string{common.DefaultPartition},
@@ -58,7 +58,7 @@ func TestQueryVarcharField(t *testing.T) {
 
 	//query
 	pks := ids.(*entity.ColumnVarChar).Data()
-	queryResult, _ := mc.Query(
+	queryResult, _ := mc.QueryByPks(
 		ctx,
 		collName,
 		[]string{common.DefaultPartition},
@@ -84,7 +84,7 @@ func TestQueryNotExistCollection(t *testing.T) {
 
 	//query
 	pks := ids.(*entity.ColumnInt64).Data()
-	_, errQuery := mc.Query(
+	_, errQuery := mc.QueryByPks(
 		ctx,
 		"collName",
 		[]string{common.DefaultPartition},
@@ -109,7 +109,7 @@ func TestQueryNotExistPartition(t *testing.T) {
 
 	//query
 	pks := ids.(*entity.ColumnInt64).Data()
-	_, errQuery := mc.Query(
+	_, errQuery := mc.QueryByPks(
 		ctx,
 		collName,
 		[]string{"aaa"},
@@ -145,11 +145,11 @@ func TestQueryEmptyPartitionName(t *testing.T) {
 	common.CheckErr(t, errLoad, true)
 
 	//query from "" partitions, expect to query from default partition
-	_, errQuery := mc.Query(
+	_, errQuery := mc.QueryByPks(
 		ctx,
 		collName,
 		[]string{emptyPartitionName},
-		entity.NewColumnInt64(common.DefaultIntFieldName, intColumn.Data()[:10]),
+		entity.NewColumnInt64(common.DefaultIntFieldName, intColumn.(*entity.ColumnInt64).Data()[:10]),
 		[]string{common.DefaultIntFieldName},
 	)
 	common.CheckErr(t, errQuery, false, "Partition name should not be empty")
@@ -175,21 +175,21 @@ func TestQueryMultiPartitions(t *testing.T) {
 
 	//query from multi partition names
 	queryIds := entity.NewColumnInt64(common.DefaultIntFieldName, []int64{0, common.DefaultNb, common.DefaultNb*2 - 1})
-	queryResultMultiPartition, _ := mc.Query(ctx, collName, []string{common.DefaultPartition, partitionName}, queryIds,
+	queryResultMultiPartition, _ := mc.QueryByPks(ctx, collName, []string{common.DefaultPartition, partitionName}, queryIds,
 		[]string{common.DefaultIntFieldName})
 	common.CheckQueryResult(t, queryResultMultiPartition, []entity.Column{queryIds})
 
 	//query from empty partition names, expect to query from all partitions
-	queryResultEmptyPartition, _ := mc.Query(ctx, collName, []string{}, queryIds, []string{common.DefaultIntFieldName})
+	queryResultEmptyPartition, _ := mc.QueryByPks(ctx, collName, []string{}, queryIds, []string{common.DefaultIntFieldName})
 	common.CheckQueryResult(t, queryResultEmptyPartition, []entity.Column{queryIds})
 
 	// query from new partition and query successfully
-	queryResultPartition, _ := mc.Query(ctx, collName, []string{partitionName}, queryIds, []string{common.DefaultIntFieldName})
+	queryResultPartition, _ := mc.QueryByPks(ctx, collName, []string{partitionName}, queryIds, []string{common.DefaultIntFieldName})
 	common.CheckQueryResult(t, queryResultPartition,
 		[]entity.Column{entity.NewColumnInt64(common.DefaultIntFieldName, []int64{common.DefaultNb, common.DefaultNb*2 - 1})})
 
 	// query from new partition and query gets empty pk column data
-	queryResultEmpty, errQuery := mc.Query(ctx, collName, []string{partitionName}, entity.NewColumnInt64(common.DefaultIntFieldName,
+	queryResultEmpty, errQuery := mc.QueryByPks(ctx, collName, []string{partitionName}, entity.NewColumnInt64(common.DefaultIntFieldName,
 		[]int64{0}), []string{common.DefaultIntFieldName})
 	common.CheckErr(t, errQuery, true)
 	require.Equalf(t, queryResultEmpty[0].Len(), 0,
@@ -212,7 +212,7 @@ func TestQueryEmptyIds(t *testing.T) {
 
 	//query
 	queryIds := entity.NewColumnInt64(common.DefaultIntFieldName, []int64{})
-	_, errQuery := mc.Query(
+	_, errQuery := mc.QueryByPks(
 		ctx,
 		collName,
 		[]string{common.DefaultPartition},
@@ -253,7 +253,7 @@ func TestQueryNonPrimaryFields(t *testing.T) {
 	}
 
 	for _, idsColumn := range queryIds {
-		_, errQuery := mc.Query(ctx, collName, []string{common.DefaultPartition}, idsColumn,
+		_, errQuery := mc.QueryByPks(ctx, collName, []string{common.DefaultPartition}, idsColumn,
 			[]string{common.DefaultIntFieldName})
 
 		// TODO only int64 and varchar column can be primary key for now
@@ -277,7 +277,7 @@ func TestQueryEmptyOutputFields(t *testing.T) {
 		common.CheckErr(t, errLoad, true)
 
 		//query with empty output fields []string{}-> output "int64"
-		queryEmptyOutputs, _ := mc.Query(
+		queryEmptyOutputs, _ := mc.QueryByPks(
 			ctx, collName, []string{common.DefaultPartition},
 			entity.NewColumnInt64(common.DefaultIntFieldName, ids.(*entity.ColumnInt64).Data()[:10]),
 			[]string{},
@@ -285,7 +285,7 @@ func TestQueryEmptyOutputFields(t *testing.T) {
 		common.CheckOutputFields(t, queryEmptyOutputs, []string{common.DefaultIntFieldName})
 
 		//query with empty output fields []string{""}-> output "int64" and dynamic field
-		queryEmptyOutputs, err := mc.Query(
+		queryEmptyOutputs, err := mc.QueryByPks(
 			ctx, collName, []string{common.DefaultPartition},
 			entity.NewColumnInt64(common.DefaultIntFieldName, ids.(*entity.ColumnInt64).Data()[:10]),
 			[]string{""},
@@ -297,7 +297,7 @@ func TestQueryEmptyOutputFields(t *testing.T) {
 		}
 
 		// query with "float" output fields -> output "int64, float"
-		queryFloatOutputs, _ := mc.Query(
+		queryFloatOutputs, _ := mc.QueryByPks(
 			ctx, collName, []string{common.DefaultPartition},
 			entity.NewColumnInt64(common.DefaultIntFieldName, ids.(*entity.ColumnInt64).Data()[:10]),
 			[]string{common.DefaultFloatFieldName},
@@ -332,16 +332,16 @@ func TestQueryOutputFields(t *testing.T) {
 
 	//query
 	pos := 10
-	queryResult, _ := mc.Query(
+	queryResult, _ := mc.QueryByPks(
 		ctx, collName,
 		[]string{common.DefaultPartition},
-		entity.NewColumnInt64(common.DefaultIntFieldName, intColumn.Data()[:pos]),
+		entity.NewColumnInt64(common.DefaultIntFieldName, intColumn.(*entity.ColumnInt64).Data()[:pos]),
 		[]string{common.DefaultIntFieldName, common.DefaultFloatFieldName, common.DefaultFloatVecFieldName},
 	)
 	common.CheckQueryResult(t, queryResult, []entity.Column{
-		entity.NewColumnInt64(common.DefaultIntFieldName, intColumn.Data()[:pos]),
-		entity.NewColumnFloat(common.DefaultFloatFieldName, floatColumn.Data()[:pos]),
-		entity.NewColumnFloatVector(common.DefaultFloatVecFieldName, int(common.DefaultDim), vecColumn.Data()[:pos]),
+		entity.NewColumnInt64(common.DefaultIntFieldName, intColumn.(*entity.ColumnInt64).Data()[:pos]),
+		entity.NewColumnFloat(common.DefaultFloatFieldName, floatColumn.(*entity.ColumnFloat).Data()[:pos]),
+		entity.NewColumnFloatVector(common.DefaultFloatVecFieldName, int(common.DefaultDim), vecColumn.(*entity.ColumnFloatVector).Data()[:pos]),
 	})
 	common.CheckOutputFields(t, queryResult, []string{common.DefaultIntFieldName, common.DefaultFloatFieldName, common.DefaultFloatVecFieldName})
 }
@@ -372,16 +372,16 @@ func TestQueryOutputBinaryAndVarchar(t *testing.T) {
 
 	//query
 	pos := 10
-	queryResult, _ := mc.Query(
+	queryResult, _ := mc.QueryByPks(
 		ctx,
 		collName,
 		[]string{common.DefaultPartition},
-		entity.NewColumnVarChar(common.DefaultVarcharFieldName, varcharColumn.Data()[:pos]),
+		entity.NewColumnVarChar(common.DefaultVarcharFieldName, varcharColumn.(*entity.ColumnVarChar).Data()[:pos]),
 		[]string{common.DefaultBinaryVecFieldName},
 	)
 	common.CheckQueryResult(t, queryResult, []entity.Column{
-		entity.NewColumnVarChar(common.DefaultVarcharFieldName, varcharColumn.Data()[:pos]),
-		entity.NewColumnBinaryVector(common.DefaultBinaryVecFieldName, int(common.DefaultDim), vecColumn.Data()[:pos]),
+		entity.NewColumnVarChar(common.DefaultVarcharFieldName, varcharColumn.(*entity.ColumnVarChar).Data()[:pos]),
+		entity.NewColumnBinaryVector(common.DefaultBinaryVecFieldName, int(common.DefaultDim), vecColumn.(*entity.ColumnBinaryVector).Data()[:pos]),
 	})
 	common.CheckOutputFields(t, queryResult, []string{common.DefaultBinaryVecFieldName, common.DefaultVarcharFieldName})
 }
@@ -414,7 +414,7 @@ func TestOutputAllScalarFields(t *testing.T) {
 		entity.NewColumnDouble("double", []float64{0}),
 	}
 
-	queryResultAllScalar, errQuery := mc.Query(ctx, collName, []string{common.DefaultPartition},
+	queryResultAllScalar, errQuery := mc.QueryByPks(ctx, collName, []string{common.DefaultPartition},
 		entity.NewColumnInt64(common.DefaultIntFieldName, []int64{0}), []string{"bool", "int8", "int16", "int32", "float", "double"})
 	common.CheckErr(t, errQuery, true)
 	common.CheckQueryResult(t, queryResultAllScalar, queryIds)
@@ -435,7 +435,7 @@ func TestQueryNotExistField(t *testing.T) {
 	common.CheckErr(t, errLoad, true)
 
 	//query
-	_, errQuery := mc.Query(
+	_, errQuery := mc.QueryByPks(
 		ctx,
 		collName,
 		[]string{common.DefaultPartition},
@@ -489,7 +489,7 @@ func TestQueryJsonDynamicField(t *testing.T) {
 
 		// query and output json field
 		pkColumn := entity.NewColumnInt64(common.DefaultIntFieldName, []int64{0, 1})
-		queryResult, err := mc.Query(
+		queryResult, err := mc.QueryByPks(
 			ctx, collName,
 			[]string{common.DefaultPartition},
 			pkColumn,
@@ -520,7 +520,7 @@ func TestQueryJsonDynamicField(t *testing.T) {
 		common.CheckQueryResult(t, queryResult, actualColumns)
 
 		// query with json filter
-		queryResult, err = mc.Query(
+		queryResult, err = mc.QueryByPks(
 			ctx, collName,
 			[]string{common.DefaultPartition},
 			jsonColumn,
@@ -529,7 +529,7 @@ func TestQueryJsonDynamicField(t *testing.T) {
 		common.CheckErr(t, err, false, "only int64 and varchar column can be primary key for now")
 
 		// query with dynamic field
-		queryResult, err = mc.Query(
+		queryResult, err = mc.QueryByPks(
 			ctx, collName,
 			[]string{common.DefaultPartition},
 			common.MergeColumnsToDynamic(2, common.GenDynamicFieldData(0, 2)),
@@ -577,7 +577,7 @@ func TestQueryJsonDynamicFieldRows(t *testing.T) {
 
 	// query and output json field
 	pkColumn := entity.NewColumnInt64(common.DefaultIntFieldName, []int64{0, 1})
-	queryResult, err := mc.Query(
+	queryResult, err := mc.QueryByPks(
 		ctx, collName,
 		[]string{common.DefaultPartition},
 		pkColumn,

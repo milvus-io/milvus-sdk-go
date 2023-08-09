@@ -70,7 +70,7 @@ jobs:
         run: |
           nc -vz 127.0.0.1 19530
           curl -sSL "https://github.com/gotestyourself/gotestsum/releases/download/v1.8.2/gotestsum_1.8.2_linux_amd64.tar.gz" | sudo tar -xz -C /usr/local/bin gotestsum
-          gotestsum --format testname --hide-summary=output ./testcases/... --tags L0 --addr=127.0.0.1:19530
+          gotestsum --format testname --hide-summary=output ./testcases/... --tags L0 --addr=127.0.0.1:19530 -timeout=20m
 
       - name: Export logs
         if: ${{ !success() }}

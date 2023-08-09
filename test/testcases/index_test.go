@@ -172,7 +172,6 @@ func TestCreateIndexBinaryIvfFlat(t *testing.T) {
 
 // test create binary index with unsupported metrics type
 func TestCreateBinaryIndexNotSupportedMetricsType(t *testing.T) {
-	t.Skip("https://github.com/milvus-io/milvus/issues/26038")
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect
 	mc := createMilvusClient(ctx, t)
@@ -215,6 +214,30 @@ func TestCreateIndexWithoutName(t *testing.T) {
 	// describe index return index with default name
 	indexes, _ := mc.DescribeIndex(ctx, collName, common.DefaultFloatVecFieldName)
 	expIndex := entity.NewGenericIndex(common.DefaultIndexName, idx.IndexType(), idx.Params())
+	common.CheckIndexResult(t, indexes, expIndex)
+}
+
+// test create auto index
+func TestCreateIndexWithoutIndexTypeParams(t *testing.T) {
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	// connect
+	mc := createMilvusClient(ctx, t)
+
+	// create default collection with flush data
+	collName, _ := createCollectionWithDataIndex(ctx, t, mc, false, false, false)
+
+	// create index
+	idx := entity.NewGenericIndex("", "", nil)
+	err := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false)
+	common.CheckErr(t, err, true)
+
+	// describe index
+	indexes, _ := mc.DescribeIndex(ctx, collName, common.DefaultFloatVecFieldName)
+	expParams := map[string]string{
+		"metric_type": string(entity.IP),
+		"index_type":  string(entity.AUTOINDEX),
+	}
+	expIndex := entity.NewGenericIndex(common.DefaultIndexName, entity.AUTOINDEX, expParams)
 	common.CheckIndexResult(t, indexes, expIndex)
 }
 
