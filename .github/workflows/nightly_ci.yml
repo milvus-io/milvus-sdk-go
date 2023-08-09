@@ -16,7 +16,7 @@ on:
 
 jobs:
   nightly-master:
-    name: Run Nightly CI
+    name: Run Nightly CI(master)
     runs-on: ubuntu-latest
     timeout-minutes: 90
     env:
@@ -73,7 +73,7 @@ jobs:
         gotestsum --format testname --hide-summary=output ./testcases/... --tags L0,L1,L2,L3 --addr=127.0.0.1:19530 -timeout=60m
   
   nightly-v2_2_x:
-    name: Run Nightly CI
+    name: Run Nightly CI(v2.2.x)
     runs-on: ubuntu-latest
     timeout-minutes: 90
     env:
