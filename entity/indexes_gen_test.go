@@ -570,3 +570,44 @@ func TestIndexGPUIvfPQ(t *testing.T){
 	})
 }
 
+func TestIndexSCANN(t *testing.T){
+	
+	var nlist int
+
+	mt := L2
+	
+
+	t.Run("valid usage case", func(t *testing.T){
+		
+		nlist = 100
+		idx0, err := NewIndexSCANN(mt, 
+			nlist,
+		)
+		assert.Nil(t, err)
+		assert.NotNil(t, idx0)
+		assert.Equal(t, "SCANN", idx0.Name())
+		assert.EqualValues(t, "IVF_FLAT", idx0.IndexType())
+		assert.NotNil(t, idx0.Params())
+		assert.False(t, idx0.SupportBinary())
+		
+	})
+
+	t.Run("invalid usage case", func(t *testing.T){
+		
+		nlist = 0
+		idx0, err := NewIndexSCANN(mt, 
+			nlist,
+		)
+		assert.NotNil(t, err)
+		assert.Nil(t, idx0)
+		
+		nlist = 65537
+		idx1, err := NewIndexSCANN(mt, 
+			nlist,
+		)
+		assert.NotNil(t, err)
+		assert.Nil(t, idx1)
+		
+	})
+}
+

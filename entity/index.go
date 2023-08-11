@@ -36,6 +36,7 @@ const (
 	IvfHNSW    IndexType = "IVF_HNSW"
 	AUTOINDEX  IndexType = "AUTOINDEX"
 	DISKANN    IndexType = "DISKANN"
+	SCANN      IndexType = "SCANN"
 
 	GPUIvfFlat IndexType = "GPU_IVF_FLAT"
 	GPUIvfPQ   IndexType = "GPU_IVF_PQ"

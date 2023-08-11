@@ -708,6 +708,41 @@ func main() {
 					"nprobe = 65537",
 				},
 			},
+			{
+				IdxName: "SCANN",
+				IdxType: entity.IvfFlat,
+				ConstructParams: []idxParam{
+					{
+						Name:           "nlist",
+						ValidationRule: "[1, 65536]",
+					},
+				},
+				SearchParams: []idxParam{
+					{
+						Name:           "nprobe",
+						ValidationRule: "[1, 65536]", // [1, nlist], refer to index construct param, not supported yet
+					},
+					{
+						Name:           "reorder_k",
+						ValidationRule: "[1, 9223372036854775807]", // [topk, MAX_INT], refer to index construct param, not supported yet
+					},
+				},
+				ValidExamples: []string{
+					"nlist = 100",
+				},
+				InvalidExamples: []string{
+					"nlist = 0",
+					"nlist = 65537",
+				},
+				ValidSearchParams: []string{
+					"nprobe, reorder_k = 10, 200",
+				},
+				InvalidSearchParams: []string{
+					"nprobe, reorder_k = 0, 200",
+					"nprobe, reorder_k = 65537, 200",
+					"nprobe, reorder_k = 10, -1",
+				},
+			},
 		},
 	}
 

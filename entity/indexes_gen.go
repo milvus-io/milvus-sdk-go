@@ -724,3 +724,59 @@ func NewIndexGPUIvfPQ(metricType MetricType,
 	}, nil
 }
 
+
+var _ Index = &IndexSCANN{}
+
+// IndexSCANN idx type for IVF_FLAT
+type IndexSCANN struct { //auto generated fields
+	nlist int
+	metricType MetricType
+}
+
+// Name returns index type name, implementing Index interface
+func(i *IndexSCANN) Name() string {
+	return "SCANN"
+}
+
+// IndexType returns IndexType, implementing Index interface
+func(i *IndexSCANN) IndexType() IndexType {
+	return IndexType("IVF_FLAT")
+}
+
+// SupportBinary returns whether index type support binary vector
+func(i *IndexSCANN) SupportBinary() bool {
+	return 0 & 2 > 0
+}
+
+// Params returns index construction params, implementing Index interface
+func(i *IndexSCANN) Params() map[string]string {
+	params := map[string]string {//auto generated mapping 
+		"nlist": fmt.Sprintf("%v",i.nlist),
+	}
+	bs, _ := json.Marshal(params)
+	return map[string]string {
+		"params": string(bs),
+		"index_type": string(i.IndexType()),
+		"metric_type": string(i.metricType),
+	}
+}
+
+// NewIndexSCANN create index with construction parameters
+func NewIndexSCANN(metricType MetricType, 
+	nlist int,
+) (*IndexSCANN, error) {
+	// auto generate parameters validation code, if any
+	if nlist < 1 {
+		return nil, errors.New("nlist has to be in range [1, 65536]")
+	}
+	if nlist > 65536 {
+		return nil, errors.New("nlist has to be in range [1, 65536]")
+	}
+	
+	return &IndexSCANN{ 
+	//auto generated setting
+	nlist: nlist,
+	metricType: metricType,
+	}, nil
+}
+

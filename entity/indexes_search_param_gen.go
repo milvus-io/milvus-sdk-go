@@ -380,3 +380,45 @@ func NewIndexGPUIvfPQSearchParam(
 	return sp, nil
 }
 
+var _ SearchParam = &IndexSCANNSearchParam{}
+
+// IndexSCANNSearchParam search param struct for index type IVF_FLAT
+type IndexSCANNSearchParam struct { //auto generated fields
+	baseSearchParams
+	
+	nprobe int
+	reorder_k int
+}
+
+// NewIndexSCANNSearchParam create index search param
+func NewIndexSCANNSearchParam(
+	nprobe int,
+
+	reorder_k int,
+) (*IndexSCANNSearchParam, error) {
+	// auto generate parameters validation code, if any
+	if nprobe < 1 {
+		return nil, errors.New("nprobe has to be in range [1, 65536]")
+	}
+	if nprobe > 65536 {
+		return nil, errors.New("nprobe has to be in range [1, 65536]")
+	}
+	
+	if reorder_k < 1 {
+		return nil, errors.New("reorder_k has to be in range [1, 9223372036854775807]")
+	}
+	if reorder_k > 9223372036854775807 {
+		return nil, errors.New("reorder_k has to be in range [1, 9223372036854775807]")
+	}
+	
+	sp := &IndexSCANNSearchParam{
+		baseSearchParams: newBaseSearchParams(),
+	}
+	
+	//auto generated setting
+	sp.params["nprobe"] = nprobe
+	sp.params["reorder_k"] = reorder_k
+
+	return sp, nil
+}
+
