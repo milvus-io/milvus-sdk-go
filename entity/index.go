@@ -40,6 +40,8 @@ const (
 
 	GPUIvfFlat IndexType = "GPU_IVF_FLAT"
 	GPUIvfPQ   IndexType = "GPU_IVF_PQ"
+
+	Scalar IndexType = "SCALAR"
 )
 
 // Metric Constants

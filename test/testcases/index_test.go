@@ -171,6 +171,7 @@ func TestCreateIndexNotExistField(t *testing.T) {
 
 // test create index on non-vector field
 func TestCreateIndexNotSupportedField(t *testing.T) {
+	t.Skip("scalar index shall be supported")
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect
 	mc := createMilvusClient(ctx, t)
