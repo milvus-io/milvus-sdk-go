@@ -119,7 +119,7 @@ spec:
   components:
     image: ${IMAGE_REPO}:${IMAGE_TAG}
     queryNode:
-      replicas: 2
+      replicas: 4
     dataNode:
       replicas: 1
     indexNode:
