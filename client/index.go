@@ -170,9 +170,6 @@ func (c *GrpcClient) DropIndex(ctx context.Context, collName string, fieldName s
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
-	if err := c.checkCollField(ctx, collName, fieldName); err != nil {
-		return err
-	}
 
 	idxDef := getIndexDef(opts...)
 	req := &server.DropIndexRequest{
