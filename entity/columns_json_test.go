@@ -67,6 +67,12 @@ func (s *ColumnJSONBytesSuite) TestAttrMethods() {
 		s.NoError(err)
 		s.Equal(item, val)
 
+		err = column.AppendValue(&struct{ Tag string }{Tag: "abc"})
+		s.NoError(err)
+
+		err = column.AppendValue(map[string]interface{}{"Value": 123})
+		s.NoError(err)
+
 		err = column.AppendValue(1)
 		s.Error(err)
 	})
