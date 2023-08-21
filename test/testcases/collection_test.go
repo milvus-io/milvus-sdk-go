@@ -24,7 +24,7 @@ func TestCreateCollection(t *testing.T) {
 	// prepare
 	defaultFields := [][]*entity.Field{
 		common.GenDefaultFields(false),
-		common.GenDefaultBinaryFields(false, common.DefaultDimStr),
+		common.GenDefaultBinaryFields(false, common.DefaultDim),
 		common.GenDefaultVarcharFields(false),
 	}
 	for _, fields := range defaultFields {
@@ -55,7 +55,7 @@ func TestCreateAutoIdCollection(t *testing.T) {
 	// prepare
 	defaultFields := [][]*entity.Field{
 		common.GenDefaultFields(true),
-		common.GenDefaultBinaryFields(true, common.DefaultDimStr),
+		common.GenDefaultBinaryFields(true, common.DefaultDim),
 		common.GenDefaultVarcharFields(true),
 	}
 	for _, fields := range defaultFields {
@@ -111,9 +111,13 @@ func TestCreateCollectionInvalidName(t *testing.T) {
 	}
 
 	for _, invalidName := range invalidNames {
+		field := common.GenField(invalidName.name, entity.FieldTypeInt64, common.WithIsPrimaryKey(true))
+		if invalidName.name == "" {
+			field.WithName("")
+		}
 		invalidField := []*entity.Field{
-			common.GenScalaField(invalidName.name, entity.FieldTypeInt64, true, false),
-			common.GenVectorField(common.DefaultBinaryVecFieldName, entity.FieldTypeBinaryVector, common.DefaultDimStr),
+			field,
+			common.GenField(common.DefaultBinaryVecFieldName, entity.FieldTypeBinaryVector, common.WithDim(common.DefaultDim)),
 		}
 		schema := &entity.Schema{
 			CollectionName: common.GenRandomString(6),
@@ -151,27 +155,47 @@ func TestCreateCollectionInvalidFields(t *testing.T) {
 		errMsg string
 	}
 	invalidFields := []invalidFieldsStruct{
-		// // create collection without pk field
-		{fields: []*entity.Field{common.GenVectorField(common.DefaultFloatVecFieldName, entity.FieldTypeFloatVector, common.DefaultDimStr)},
+		// create collection without pk field
+		{fields: []*entity.Field{common.GenField(common.DefaultFloatVecFieldName, entity.FieldTypeFloatVector, common.WithDim(common.DefaultDim))},
 			errMsg: "primary key is not specified"},
 
 		// create collection without vector field
-		{fields: []*entity.Field{common.GenScalaField(common.DefaultIntFieldName, entity.FieldTypeInt64, true, false)},
+		{fields: []*entity.Field{common.GenField(common.DefaultIntFieldName, entity.FieldTypeInt64, common.WithIsPrimaryKey(true))},
 			errMsg: "vector field not set"},
 
 		// create collection with multi pk fields
 		{fields: []*entity.Field{
-			common.GenScalaField(common.DefaultIntFieldName, entity.FieldTypeInt64, true, false),
-			common.GenScalaField(common.DefaultFloatVecFieldName, entity.FieldTypeInt64, true, true),
-			common.GenVectorField(common.DefaultBinaryVecFieldName, entity.FieldTypeBinaryVector, common.DefaultDimStr),
+			common.GenField(common.DefaultIntFieldName, entity.FieldTypeInt64, common.WithIsPrimaryKey(true)),
+			common.GenField(common.DefaultFloatVecFieldName, entity.FieldTypeInt64, common.WithIsPrimaryKey(true), common.WithAutoID(true)),
+			common.GenField(common.DefaultBinaryVecFieldName, entity.FieldTypeBinaryVector, common.WithDim(common.DefaultDim)),
 		}, errMsg: "only one primary key only"},
 
 		// create collection with multi vector fields
 		{fields: []*entity.Field{
-			common.GenScalaField(common.DefaultIntFieldName, entity.FieldTypeInt64, true, false),
-			common.GenVectorField(common.DefaultFloatVecFieldName, entity.FieldTypeFloatVector, common.DefaultDimStr),
-			common.GenVectorField(common.DefaultBinaryVecFieldName, entity.FieldTypeBinaryVector, common.DefaultDimStr),
+			common.GenField(common.DefaultIntFieldName, entity.FieldTypeInt64, common.WithIsPrimaryKey(true)),
+			common.GenField(common.DefaultFloatVecFieldName, entity.FieldTypeFloatVector, common.WithDim(common.DefaultDim)),
+			common.GenField(common.DefaultBinaryVecFieldName, entity.FieldTypeBinaryVector, common.WithDim(common.DefaultDim)),
 		}, errMsg: "multiple vector fields is not supported"},
+
+		// create collection with None field type
+		{fields: []*entity.Field{
+			common.GenField(common.DefaultIntFieldName, entity.FieldTypeInt64, common.WithIsPrimaryKey(true)),
+			common.GenField("", entity.FieldTypeNone),
+			common.GenField(common.DefaultFloatVecFieldName, entity.FieldTypeFloatVector, common.WithDim(common.DefaultDim)),
+		}, errMsg: "data type None is not valid"},
+
+		// create collection with String field type
+		{fields: []*entity.Field{
+			common.GenField(common.DefaultIntFieldName, entity.FieldTypeInt64, common.WithIsPrimaryKey(true)),
+			common.GenField("", entity.FieldTypeString),
+			common.GenField(common.DefaultFloatVecFieldName, entity.FieldTypeFloatVector, common.WithDim(common.DefaultDim)),
+		}, errMsg: "string data type not supported yet, please use VarChar type instead"},
+
+		// varchar field not specify max_length
+		{fields: []*entity.Field{
+			common.GenField(common.DefaultVarcharFieldName, entity.FieldTypeVarChar, common.WithIsPrimaryKey(true)),
+			common.GenField(common.DefaultFloatVecFieldName, entity.FieldTypeFloatVector, common.WithDim(common.DefaultDim)),
+		}, errMsg: "type param(max_length) should be specified for varChar field"},
 	}
 
 	for _, invalidField := range invalidFields {
@@ -196,12 +220,13 @@ func TestCreateCollectionNonInt64AutoField(t *testing.T) {
 		entity.FieldTypeVarChar,
 		entity.FieldTypeString,
 		entity.FieldTypeNone,
+		entity.FieldTypeJSON,
 	}
 	for _, fieldType := range invalidPkFields {
 		fields := []*entity.Field{
-			common.GenScalaField("non-auto-id", fieldType, false, true),
-			common.GenScalaField(common.DefaultIntFieldName, entity.FieldTypeInt64, true, true),
-			common.GenVectorField(common.DefaultFloatVecFieldName, entity.FieldTypeFloatVector, common.DefaultDimStr),
+			common.GenField("non-auto-id", fieldType, common.WithAutoID(true)),
+			common.GenField(common.DefaultIntFieldName, entity.FieldTypeInt64, common.WithIsPrimaryKey(true), common.WithAutoID(true)),
+			common.GenField(common.DefaultFloatVecFieldName, entity.FieldTypeFloatVector, common.WithDim(common.DefaultDim)),
 		}
 		schema := common.GenSchema(common.GenRandomString(6), true, fields)
 		errNonInt64Field := mc.CreateCollection(ctx, schema, common.DefaultShards)
@@ -216,10 +241,10 @@ func TestCreateCollectionDuplicateField(t *testing.T) {
 
 	// duplicate field
 	fields := []*entity.Field{
-		common.GenScalaField(common.DefaultIntFieldName, entity.FieldTypeInt64, true, false),
-		common.GenScalaField(common.DefaultFloatFieldName, entity.FieldTypeFloat, false, false),
-		common.GenScalaField(common.DefaultFloatFieldName, entity.FieldTypeFloat, false, false),
-		common.GenVectorField(common.DefaultFloatVecFieldName, entity.FieldTypeFloatVector, common.DefaultDimStr),
+		common.GenField(common.DefaultIntFieldName, entity.FieldTypeInt64, common.WithIsPrimaryKey(true)),
+		common.GenField(common.DefaultFloatFieldName, entity.FieldTypeFloat),
+		common.GenField(common.DefaultFloatFieldName, entity.FieldTypeFloat),
+		common.GenField(common.DefaultFloatVecFieldName, entity.FieldTypeFloatVector, common.WithDim(common.DefaultDim)),
 	}
 
 	collName := common.GenRandomString(6)
@@ -242,15 +267,43 @@ func TestCreateCollectionInvalidPkType(t *testing.T) {
 		entity.FieldTypeDouble,
 		entity.FieldTypeString,
 		entity.FieldTypeNone,
+		entity.FieldTypeJSON,
 	}
 	for _, fieldType := range invalidPkFields {
 		fields := []*entity.Field{
-			common.GenScalaField("invalid", fieldType, true, false),
-			common.GenVectorField(common.DefaultFloatVecFieldName, entity.FieldTypeFloatVector, common.DefaultDimStr),
+			common.GenField("invalid", fieldType, common.WithIsPrimaryKey(true)),
+			common.GenField(common.DefaultFloatVecFieldName, entity.FieldTypeFloatVector, common.WithDim(common.DefaultDim)),
 		}
 		schema := common.GenSchema(common.GenRandomString(6), false, fields)
 		errWithoutPk := mc.CreateCollection(ctx, schema, common.DefaultShards)
 		common.CheckErr(t, errWithoutPk, false, "only int64 and varchar column can be primary key for now")
+	}
+}
+
+// test create collection with partition key not supported field type
+func TestCreateCollectionInvalidPartitionKeyType(t *testing.T) {
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	mc := createMilvusClient(ctx, t)
+
+	invalidPkFields := []entity.FieldType{
+		entity.FieldTypeBool,
+		entity.FieldTypeInt8,
+		entity.FieldTypeInt16,
+		entity.FieldTypeInt32,
+		entity.FieldTypeFloat,
+		entity.FieldTypeDouble,
+		entity.FieldTypeJSON,
+	}
+	pkField := common.GenField(common.DefaultIntFieldName, entity.FieldTypeInt64, common.WithIsPrimaryKey(true))
+	for _, fieldType := range invalidPkFields {
+		fields := []*entity.Field{
+			pkField,
+			common.GenField("invalid", fieldType, common.WithIsPartitionKey(true)),
+			common.GenField(common.DefaultFloatVecFieldName, entity.FieldTypeFloatVector, common.WithDim(common.DefaultDim)),
+		}
+		schema := common.GenSchema(common.GenRandomString(6), false, fields)
+		errWithoutPk := mc.CreateCollection(ctx, schema, common.DefaultShards)
+		common.CheckErr(t, errWithoutPk, false, "the data type of partition key should be Int64 or VarChar")
 	}
 }
 
@@ -260,9 +313,9 @@ func TestCreateCollectionMultiAutoId(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	fields := []*entity.Field{
-		common.GenScalaField(common.DefaultIntFieldName, entity.FieldTypeInt64, true, true),
-		common.GenScalaField("dupInt", entity.FieldTypeInt64, false, true),
-		common.GenVectorField(common.DefaultFloatVecFieldName, entity.FieldTypeFloatVector, common.DefaultDimStr),
+		common.GenField(common.DefaultIntFieldName, entity.FieldTypeInt64, common.WithIsPrimaryKey(true), common.WithAutoID(true)),
+		common.GenField("dupInt", entity.FieldTypeInt64, common.WithAutoID(true)),
+		common.GenField(common.DefaultFloatVecFieldName, entity.FieldTypeFloatVector, common.WithDim(common.DefaultDim)),
 	}
 	schema := common.GenSchema(common.GenRandomString(6), false, fields)
 	errWithoutPk := mc.CreateCollection(ctx, schema, common.DefaultShards)
@@ -277,8 +330,8 @@ func TestCreateCollectionInconsistentAutoId(t *testing.T) {
 
 	fields := []*entity.Field{
 		// autoId true
-		common.GenScalaField(common.DefaultIntFieldName, entity.FieldTypeInt64, true, true),
-		common.GenVectorField(common.DefaultFloatVecFieldName, entity.FieldTypeFloatVector, common.DefaultDimStr),
+		common.GenField(common.DefaultIntFieldName, entity.FieldTypeInt64, common.WithIsPrimaryKey(true), common.WithAutoID(true)),
+		common.GenField(common.DefaultFloatVecFieldName, entity.FieldTypeFloatVector, common.WithDim(common.DefaultDim)),
 	}
 	// autoId false
 	collName := common.GenRandomString(6)
@@ -286,8 +339,8 @@ func TestCreateCollectionInconsistentAutoId(t *testing.T) {
 	errWithoutPk := mc.CreateCollection(ctx, schema, common.DefaultShards)
 	common.CheckErr(t, errWithoutPk, true, "only one auto id is available")
 	collection, _ := mc.DescribeCollection(ctx, collName)
-	log.Printf("collection schema AutoId is %v)", collection.Schema.AutoID)
-	log.Printf("collection pk field AutoId is %v)", collection.Schema.Fields[0].AutoID)
+	log.Printf("collection schema AutoID is %v)", collection.Schema.AutoID)
+	log.Printf("collection pk field AutoID is %v)", collection.Schema.Fields[0].AutoID)
 }
 
 // test create collection with field description and schema description
@@ -295,18 +348,12 @@ func TestCreateCollectionDescription(t *testing.T) {
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	mc := createMilvusClient(ctx, t)
 
+	// gen field with description
+	pkField := common.GenField(common.DefaultIntFieldName, entity.FieldTypeInt64, common.WithIsPrimaryKey(true),
+		common.WithFieldDescription("pk field"))
+	vecField := common.GenField("", entity.FieldTypeFloatVector, common.WithDim(common.DefaultDim))
 	var fields = []*entity.Field{
-		{
-			Name:        common.DefaultIntFieldName,
-			DataType:    entity.FieldTypeInt64,
-			PrimaryKey:  true,
-			Description: "pk field",
-		},
-		{
-			Name:       common.DefaultFloatVecFieldName,
-			DataType:   entity.FieldTypeFloatVector,
-			TypeParams: map[string]string{entity.TypeParamDim: common.DefaultDimStr},
-		},
+		pkField, vecField,
 	}
 	schema := &entity.Schema{
 		CollectionName: common.GenRandomString(6),
@@ -343,13 +390,81 @@ func TestCreateCollectionInvalidDim(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create binary collection with autoID true
+	pkField := common.GenField("", entity.FieldTypeInt64, common.WithIsPrimaryKey(true), common.WithAutoID(true))
 	for _, invalidDim := range invalidDims {
 		collName := common.GenRandomString(6)
-		binaryFields := common.GenDefaultBinaryFields(true, invalidDim.dim)
-		schema := common.GenSchema(collName, true, binaryFields)
+		binaryFields := entity.NewField().
+			WithName(common.DefaultFloatVecFieldName).
+			WithDataType(entity.FieldTypeBinaryVector).
+			WithTypeParams(entity.TypeParamDim, invalidDim.dim)
+		schema := common.GenSchema(collName, true, []*entity.Field{pkField, binaryFields})
 		errCreate := mc.CreateCollection(ctx, schema, common.DefaultShards)
 		common.CheckErr(t, errCreate, false, invalidDim.errMsg)
 	}
+}
+
+func TestCreateJsonCollection(t *testing.T) {
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	mc := createMilvusClient(ctx, t)
+
+	// fields
+	fields := common.GenDefaultFields(true)
+	for i := 0; i < 2; i++ {
+		jsonField1 := common.GenField("", entity.FieldTypeJSON)
+		fields = append(fields, jsonField1)
+	}
+
+	// schema
+	collName := common.GenRandomString(6)
+	schema := common.GenSchema(collName, false, fields)
+
+	// create collection
+	err := mc.CreateCollection(ctx, schema, common.DefaultShards)
+	common.CheckErr(t, err, true)
+
+	// check describe collection
+	collection, _ := mc.DescribeCollection(ctx, collName)
+	common.CheckCollection(t, collection, collName, common.DefaultShards, schema, common.DefaultConsistencyLevel)
+
+	// check collName in ListCollections
+	collections, errListCollection := mc.ListCollections(ctx)
+	common.CheckErr(t, errListCollection, true)
+	common.CheckContainsCollection(t, collections, collName)
+}
+
+// test create collection enable dynamic field
+func TestCreateCollectionDynamicSchema(t *testing.T) {
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	mc := createMilvusClient(ctx, t)
+
+	collName := common.GenRandomString(6)
+	schema := common.GenSchema(collName, false, common.GenDefaultFields(false), common.WithEnableDynamicField(true))
+
+	err := mc.CreateCollection(ctx, schema, common.DefaultShards)
+	common.CheckErr(t, err, true)
+
+	// check describe collection
+	collection, _ := mc.DescribeCollection(ctx, collName)
+	common.CheckCollection(t, collection, collName, common.DefaultShards, schema, common.DefaultConsistencyLevel)
+
+	// check collName in ListCollections
+	collections, errListCollection := mc.ListCollections(ctx)
+	common.CheckErr(t, errListCollection, true)
+	common.CheckContainsCollection(t, collections, collName)
+}
+
+// test create collection contains field name: $meta -> error
+func TestCreateCollectionFieldMeta(t *testing.T) {
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	mc := createMilvusClient(ctx, t)
+
+	collName := common.GenRandomString(6)
+	fields := common.GenDefaultFields(true)
+	fields = append(fields, common.GenField(common.DefaultDynamicFieldName, entity.FieldTypeJSON))
+	schema := common.GenSchema(collName, false, fields, common.WithEnableDynamicField(true))
+
+	err := mc.CreateCollection(ctx, schema, common.DefaultShards)
+	common.CheckErr(t, err, false, fmt.Sprintf("Invalid field name: %s. The first character of a field name must be an underscore or letter", common.DefaultDynamicFieldName))
 }
 
 // -- Get Collection Statistics --

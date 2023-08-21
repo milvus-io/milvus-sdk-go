@@ -82,6 +82,21 @@ func createMilvusClient(ctx context.Context, t *testing.T, cfg ...client.Config)
 }
 
 // create default collection
+func createCustomerCollection(ctx context.Context, t *testing.T, mc *base.MilvusClient, schema *entity.Schema,
+	shardsNum int32, opts ...client.CreateCollectionOption) {
+	t.Helper()
+
+	// create default collection with customer schema
+	errCreateCollection := mc.CreateCollection(ctx, schema, shardsNum, opts...)
+	common.CheckErr(t, errCreateCollection, true)
+
+	// close connect and drop collection after each case
+	t.Cleanup(func() {
+		_ = mc.DropCollection(ctx, schema.CollectionName)
+	})
+}
+
+// create default collection
 func createDefaultCollection(ctx context.Context, t *testing.T, mc *base.MilvusClient, autoID bool, shards int32, opts ...client.CreateCollectionOption) string {
 	t.Helper()
 
@@ -102,7 +117,7 @@ func createDefaultCollection(ctx context.Context, t *testing.T, mc *base.MilvusC
 }
 
 // create default collection
-func createDefaultBinaryCollection(ctx context.Context, t *testing.T, mc *base.MilvusClient, autoID bool, dim string) string {
+func createDefaultBinaryCollection(ctx context.Context, t *testing.T, mc *base.MilvusClient, autoID bool, dim int64) string {
 	t.Helper()
 
 	// prepare schema
@@ -146,7 +161,6 @@ func createDefaultVarcharCollection(ctx context.Context, t *testing.T, mc *base.
 func createCollectionWithDataIndex(ctx context.Context, t *testing.T, mc *base.MilvusClient, autoID bool, withIndex bool, opts ...client.CreateCollectionOption) (string, entity.Column) {
 	// collection
 	collName := createDefaultCollection(ctx, t, mc, autoID, common.DefaultShards, opts...)
-
 	// insert data
 	var ids entity.Column
 	intColumn, floatColumn, vecColumn := common.GenDefaultColumnData(0, common.DefaultNb, common.DefaultDim)
@@ -176,7 +190,7 @@ func createCollectionWithDataIndex(ctx context.Context, t *testing.T, mc *base.M
 
 func createBinaryCollectionWithDataIndex(ctx context.Context, t *testing.T, mc *base.MilvusClient, autoID bool, withIndex bool) (string, entity.Column) {
 	// collection
-	collName := createDefaultBinaryCollection(ctx, t, mc, autoID, common.DefaultDimStr)
+	collName := createDefaultBinaryCollection(ctx, t, mc, autoID, common.DefaultDim)
 
 	// insert data
 	var ids entity.Column
@@ -228,6 +242,146 @@ func createVarcharCollectionWithDataIndex(ctx context.Context, t *testing.T, mc 
 	return collName, ids
 }
 
+type CollectionFieldsType string
+
+const (
+	Int64FloatVec     CollectionFieldsType = "PkInt64FloatVec"     // int64 + float + floatVec
+	Int64BinaryVec    CollectionFieldsType = "Int64BinaryVec"      // int64 + float + binaryVec
+	VarcharBinaryVec  CollectionFieldsType = "PkVarcharBinaryVec"  // varchar + binaryVec
+	Int64FloatVecJSON CollectionFieldsType = "PkInt64FloatVecJson" // int64 + float + floatVec + json
+	AllFields         CollectionFieldsType = "AllFields"           // all scalar fields + floatVec
+	CustomerFields    CollectionFieldsType = "CustomerFields"      // customer fields
+)
+
+type CollectionParams struct {
+	CollectionFieldsType CollectionFieldsType // collection fields type
+	AutoID               bool                 // autoId
+	EnableDynamicField   bool                 // enable dynamic field
+	ShardsNum            int32
+	Fields               []*entity.Field
+	Dim                  int64
+	MaxLength            int64
+}
+
+func createCollection(ctx context.Context, t *testing.T, mc *base.MilvusClient, cp CollectionParams, opts ...client.CreateCollectionOption) string {
+	collName := common.GenRandomString(4)
+	var fields []*entity.Field
+	// fields
+	switch cp.CollectionFieldsType {
+	// int64 + float + floatVec
+	case Int64FloatVec:
+		fields = common.GenDefaultFields(cp.AutoID)
+		// int64 + float + binaryVec
+	case Int64BinaryVec:
+		fields = common.GenDefaultBinaryFields(cp.AutoID, cp.Dim)
+	case VarcharBinaryVec:
+		fields = common.GenDefaultVarcharFields(cp.AutoID)
+	case Int64FloatVecJSON:
+		fields = common.GenDefaultFields(cp.AutoID)
+		jsonField := common.GenField(common.DefaultJSONFieldName, entity.FieldTypeJSON)
+		fields = append(fields, jsonField)
+	case AllFields:
+		fields = common.GenAllFields()
+	case CustomerFields:
+		fields = cp.Fields
+	}
+
+	// schema
+	schema := common.GenSchema(collName, cp.AutoID, fields, common.WithEnableDynamicField(cp.EnableDynamicField))
+
+	// create collection
+	err := mc.CreateCollection(ctx, schema, cp.ShardsNum, opts...)
+	common.CheckErr(t, err, true)
+
+	return collName
+}
+
+type DataParams struct {
+	CollectionName       string // insert data into which collection
+	PartitionName        string
+	CollectionFieldsType CollectionFieldsType // collection fields type
+	start                int                  // start
+	nb                   int                  // insert how many data
+	dim                  int64
+	EnableDynamicField   bool // whether insert dynamic field data
+	WithRows             bool
+	Data                 []entity.Column
+	Rows                 []interface{}
+}
+
+func insertData(ctx context.Context, t *testing.T, mc *base.MilvusClient, dp DataParams) (entity.Column, error) {
+	// todo autoid
+	// prepare data
+	var data []entity.Column
+	rows := make([]interface{}, 0, dp.nb)
+	switch dp.CollectionFieldsType {
+
+	// int64 + float + floatVec
+	case Int64FloatVec:
+		if dp.WithRows {
+			rows = common.GenDefaultRows(dp.start, dp.nb, dp.dim, dp.EnableDynamicField)
+		} else {
+			intColumn, floatColumn, vecColumn := common.GenDefaultColumnData(dp.start, dp.nb, dp.dim)
+			data = append(data, intColumn, floatColumn, vecColumn)
+		}
+
+		// int64 + float + binaryVec
+	case Int64BinaryVec:
+		if dp.WithRows {
+			rows = common.GenDefaultBinaryRows(dp.start, dp.nb, dp.dim, dp.EnableDynamicField)
+		} else {
+			intColumn, floatColumn, binaryColumn := common.GenDefaultBinaryData(dp.start, dp.nb, dp.dim)
+			data = append(data, intColumn, floatColumn, binaryColumn)
+		}
+	// varchar + binary
+	case VarcharBinaryVec:
+		if dp.WithRows {
+			rows = common.GenDefaultVarcharRows(dp.start, dp.nb, dp.dim, dp.EnableDynamicField)
+		} else {
+			varcharColumn, binaryColumn := common.GenDefaultVarcharData(dp.start, dp.nb, dp.dim)
+			data = append(data, varcharColumn, binaryColumn)
+		}
+
+		// default + json
+	case Int64FloatVecJSON:
+		if dp.WithRows {
+			rows = common.GenDefaultJSONRows(dp.start, dp.nb, dp.dim, dp.EnableDynamicField)
+		} else {
+			intColumn, floatColumn, vecColumn := common.GenDefaultColumnData(dp.start, dp.nb, dp.dim)
+			jsonColumn := common.GenDefaultJSONData(common.DefaultJSONFieldName, dp.start, dp.nb)
+			data = append(data, intColumn, floatColumn, vecColumn, jsonColumn)
+		}
+	case AllFields:
+		if dp.WithRows {
+			rows = common.GenAllFieldsRows(dp.start, dp.nb, dp.dim, dp.EnableDynamicField)
+		}
+		data = common.GenAllFieldsData(dp.start, dp.nb, dp.dim)
+	case CustomerFields:
+		if dp.WithRows {
+			rows = dp.Rows
+		} else {
+			data = dp.Data
+		}
+	}
+
+	if dp.EnableDynamicField && !dp.WithRows {
+		data = append(data, common.GenDynamicFieldData(dp.start, dp.nb)...)
+	}
+
+	// insert
+	var ids entity.Column
+	var err error
+	if dp.WithRows {
+		ids, err = mc.InsertRows(ctx, dp.CollectionName, dp.PartitionName, rows)
+	} else {
+		ids, err = mc.Insert(ctx, dp.CollectionName, dp.PartitionName, data...)
+	}
+	common.CheckErr(t, err, true)
+	require.Equalf(t, dp.nb, ids.Len(), "Expected insert id num: %d, actual: ", dp.nb, ids.Len())
+
+	return ids, err
+}
+
 // create collection with all scala fields and insert data without flush
 func createCollectionAllFields(ctx context.Context, t *testing.T, mc *base.MilvusClient, nb int, start int) (string, entity.Column) {
 	t.Helper()
@@ -261,7 +415,7 @@ func createCollectionAllFields(ctx context.Context, t *testing.T, mc *base.Milvu
 		doubleValues = append(doubleValues, float64(i))
 		varcharValues = append(varcharValues, strconv.Itoa(i))
 		vec := make([]float32, 0, common.DefaultDim)
-		for j := 0; j < common.DefaultDim; j++ {
+		for j := 0; j < int(common.DefaultDim); j++ {
 			vec = append(vec, rand.Float32())
 		}
 		floatVectors = append(floatVectors, vec)
@@ -280,7 +434,8 @@ func createCollectionAllFields(ctx context.Context, t *testing.T, mc *base.Milvu
 		entity.NewColumnFloat("float", floatValues),
 		entity.NewColumnDouble("double", doubleValues),
 		entity.NewColumnVarChar("varchar", varcharValues),
-		entity.NewColumnFloatVector("floatVec", common.DefaultDim, floatVectors),
+		entity.NewColumnFloatVector("floatVec", int(common.DefaultDim), floatVectors),
+		common.GenDefaultJSONData("json", 0, nb),
 	)
 	common.CheckErr(t, errInsert, true)
 	require.Equal(t, nb, ids.Len())
@@ -290,13 +445,13 @@ func createCollectionAllFields(ctx context.Context, t *testing.T, mc *base.Milvu
 type HelpPartitionColumns struct {
 	PartitionName string
 	IdsColumn     entity.Column
-	VectorColumn  *entity.ColumnFloatVector
+	VectorColumn  entity.Column
 }
 
 func createInsertTwoPartitions(ctx context.Context, t *testing.T, mc *base.MilvusClient, collName string, nb int) (partitionName string, defaultPartition HelpPartitionColumns, newPartition HelpPartitionColumns) {
 	// create new partition
 	partitionName = "new"
-	mc.CreatePartition(ctx, collName, partitionName)
+	_ = mc.CreatePartition(ctx, collName, partitionName)
 
 	// insert nb into default partition, pks from 0 to nb
 	intColumn, floatColumn, vecColumn := common.GenDefaultColumnData(0, nb, common.DefaultDim)

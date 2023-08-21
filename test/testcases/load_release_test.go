@@ -100,7 +100,7 @@ func TestLoadCollectionMultiPartitions(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create collection and insert [0, nb) into default partition, [nb, nb*2) into new partition
-	collName := createDefaultCollection(ctx, t, mc, false, 2)
+	collName := createDefaultCollection(ctx, t, mc, false, common.DefaultShards)
 	createInsertTwoPartitions(ctx, t, mc, collName, common.DefaultNb)
 
 	// create index
@@ -124,13 +124,13 @@ func TestLoadCollectionMultiPartitions(t *testing.T) {
 
 // test load with empty partition name ""
 func TestLoadEmptyPartitionName(t *testing.T) {
-	t.Skip("Issue: https://github.com/milvus-io/milvus-sdk-go/issues/373")
+	//t.Skip("Issue: https://github.com/milvus-io/milvus-sdk-go/issues/373")
 	ctx := createContext(t, time.Second*common.DefaultTimeout*3)
 	// connect
 	mc := createMilvusClient(ctx, t)
 
 	// create collection and insert [0, nb) into default partition, [nb, nb*2) into new partition
-	collName := createDefaultCollection(ctx, t, mc, false, 2)
+	collName := createDefaultCollection(ctx, t, mc, false, common.DefaultShards)
 	createInsertTwoPartitions(ctx, t, mc, collName, 500)
 
 	// create index
@@ -139,7 +139,7 @@ func TestLoadEmptyPartitionName(t *testing.T) {
 
 	// load partition with empty partition names
 	errLoadEmpty := mc.LoadPartitions(ctx, collName, []string{""}, false)
-	common.CheckErr(t, errLoadEmpty, false, "empty")
+	common.CheckErr(t, errLoadEmpty, false, "request failed")
 }
 
 // test load partitions with empty slice []string{}
@@ -149,7 +149,7 @@ func TestLoadEmptyPartitionSlice(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create collection and insert [0, nb) into default partition, [nb, nb*2) into new partition
-	collName := createDefaultCollection(ctx, t, mc, false, 2)
+	collName := createDefaultCollection(ctx, t, mc, false, common.DefaultShards)
 	createInsertTwoPartitions(ctx, t, mc, collName, 500)
 
 	// create index
@@ -168,7 +168,7 @@ func TestLoadPartitionsNotExist(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create collection and insert [0, nb) into default partition, [nb, nb*2) into new partition
-	collName := createDefaultCollection(ctx, t, mc, false, 2)
+	collName := createDefaultCollection(ctx, t, mc, false, common.DefaultShards)
 	partitionName, _, _ := createInsertTwoPartitions(ctx, t, mc, collName, 500)
 
 	// create index
@@ -193,7 +193,7 @@ func TestLoadPartitions(t *testing.T) {
 
 	nb := 1000
 	// create collection and insert [0, nb) into default partition, [nb, nb*2) into new partition
-	collName := createDefaultCollection(ctx, t, mc, false, 2)
+	collName := createDefaultCollection(ctx, t, mc, false, common.DefaultShards)
 	partitionName, _, _ := createInsertTwoPartitions(ctx, t, mc, collName, nb)
 
 	// create index
@@ -220,7 +220,7 @@ func TestLoadPartitions(t *testing.T) {
 
 	//query from nb from partition
 	queryIds := entity.NewColumnInt64(common.DefaultIntFieldName, []int64{0, int64(nb)})
-	queryResultPartition, _ := mc.Query(ctx, collName, []string{}, queryIds, []string{common.DefaultIntFieldName})
+	queryResultPartition, _ := mc.QueryByPks(ctx, collName, []string{}, queryIds, []string{common.DefaultIntFieldName})
 	common.CheckQueryResult(t, queryResultPartition, []entity.Column{
 		entity.NewColumnInt64(common.DefaultIntFieldName, []int64{int64(nb)}),
 	})
@@ -234,7 +234,7 @@ func TestLoadMultiPartitions(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create collection and insert [0, nb) into default partition, [nb, nb*2) into new partition
-	collName := createDefaultCollection(ctx, t, mc, false, 2)
+	collName := createDefaultCollection(ctx, t, mc, false, common.DefaultShards)
 	partitionName, _, _ := createInsertTwoPartitions(ctx, t, mc, collName, common.DefaultNb)
 
 	// create index
@@ -247,7 +247,7 @@ func TestLoadMultiPartitions(t *testing.T) {
 
 	//query from nb from partition
 	queryIds := entity.NewColumnInt64(common.DefaultIntFieldName, []int64{0, common.DefaultNb})
-	queryResultPartition, _ := mc.Query(ctx, collName, []string{}, queryIds, []string{common.DefaultIntFieldName})
+	queryResultPartition, _ := mc.QueryByPks(ctx, collName, []string{}, queryIds, []string{common.DefaultIntFieldName})
 	common.CheckQueryResult(t, queryResultPartition, []entity.Column{
 		entity.NewColumnInt64(common.DefaultIntFieldName, []int64{common.DefaultNb}),
 	})
@@ -261,7 +261,7 @@ func TestLoadPartitionsRepeatedly(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create collection and insert [0, nb) into default partition, [nb, nb*2) into new partition
-	collName := createDefaultCollection(ctx, t, mc, false, 2)
+	collName := createDefaultCollection(ctx, t, mc, false, common.DefaultShards)
 	partitionName, _, _ := createInsertTwoPartitions(ctx, t, mc, collName, common.DefaultNb)
 
 	// create index
@@ -274,7 +274,7 @@ func TestLoadPartitionsRepeatedly(t *testing.T) {
 
 	//query from nb from partition
 	queryIds := entity.NewColumnInt64(common.DefaultIntFieldName, []int64{common.DefaultNb})
-	queryResultPartition, _ := mc.Query(ctx, collName, []string{}, queryIds, []string{common.DefaultIntFieldName})
+	queryResultPartition, _ := mc.QueryByPks(ctx, collName, []string{}, queryIds, []string{common.DefaultIntFieldName})
 	common.CheckQueryResult(t, queryResultPartition, []entity.Column{queryIds})
 }
 
@@ -286,7 +286,7 @@ func TestLoadPartitionsAsync(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create collection and insert [0, nb) into default partition, [nb, nb*2) into new partition
-	collName := createDefaultCollection(ctx, t, mc, false, 2)
+	collName := createDefaultCollection(ctx, t, mc, false, common.DefaultShards)
 	partitionName, _, _ := createInsertTwoPartitions(ctx, t, mc, collName, common.DefaultNb)
 
 	// create index
@@ -338,7 +338,7 @@ func TestReleasePartition(t *testing.T) {
 	require.False(t, collection.Loaded)
 
 	// check release success
-	_, errQuery := mc.Query(ctx, collName, []string{}, entity.NewColumnInt64(common.DefaultIntFieldName, []int64{0}),
+	_, errQuery := mc.QueryByPks(ctx, collName, []string{}, entity.NewColumnInt64(common.DefaultIntFieldName, []int64{0}),
 		[]string{common.DefaultIntFieldName})
 	// TODO change error msg or code
 	common.CheckErr(t, errQuery, false, "not loaded")
@@ -369,7 +369,7 @@ func TestReleasePartitions(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create collection and insert [0, nb) into default partition, [nb, nb*2) into new partition
-	collName := createDefaultCollection(ctx, t, mc, false, 2)
+	collName := createDefaultCollection(ctx, t, mc, false, common.DefaultShards)
 	partitionName, _, _ := createInsertTwoPartitions(ctx, t, mc, collName, common.DefaultNb)
 
 	// create index
@@ -393,7 +393,7 @@ func TestReleasePartitions(t *testing.T) {
 	}
 
 	// check release success
-	_, errQuery := mc.Query(ctx, collName, []string{partitionName}, entity.NewColumnInt64(common.DefaultIntFieldName, []int64{common.DefaultNb}),
+	_, errQuery := mc.QueryByPks(ctx, collName, []string{partitionName}, entity.NewColumnInt64(common.DefaultIntFieldName, []int64{common.DefaultNb}),
 		[]string{common.DefaultIntFieldName})
 
 	// TODO fix error msg or code
@@ -408,7 +408,7 @@ func TestReleasePartitionsNotExist(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create collection and insert [0, nb) into default partition, [nb, nb*2) into new partition
-	collName := createDefaultCollection(ctx, t, mc, false, 2)
+	collName := createDefaultCollection(ctx, t, mc, false, common.DefaultShards)
 	partitionName, _, _ := createInsertTwoPartitions(ctx, t, mc, collName, common.DefaultNb)
 
 	// create index
@@ -437,7 +437,7 @@ func TestReleasePartitionsNotExist(t *testing.T) {
 
 	// check release success
 	queryIds := entity.NewColumnInt64(common.DefaultIntFieldName, []int64{common.DefaultNb})
-	_, errQuery := mc.Query(ctx, collName, []string{partitionName}, queryIds,
+	_, errQuery := mc.QueryByPks(ctx, collName, []string{partitionName}, queryIds,
 		[]string{common.DefaultIntFieldName})
 	common.CheckErr(t, errQuery, false, "not loaded into memory when query")
 }
@@ -449,7 +449,7 @@ func TestReleaseMultiPartitions(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create collection and insert [0, nb) into default partition, [nb, nb*2) into new partition
-	collName := createDefaultCollection(ctx, t, mc, false, 2)
+	collName := createDefaultCollection(ctx, t, mc, false, common.DefaultShards)
 	partitionName, _, _ := createInsertTwoPartitions(ctx, t, mc, collName, common.DefaultNb)
 
 	// create index
@@ -472,7 +472,7 @@ func TestReleaseMultiPartitions(t *testing.T) {
 
 	// check release success
 	queryIds := entity.NewColumnInt64(common.DefaultIntFieldName, []int64{0, common.DefaultNb})
-	_, errQuery := mc.Query(ctx, collName, []string{partitionName, common.DefaultPartition}, queryIds,
+	_, errQuery := mc.QueryByPks(ctx, collName, []string{partitionName, common.DefaultPartition}, queryIds,
 		[]string{common.DefaultIntFieldName})
 	common.CheckErr(t, errQuery, false, "not loaded into memory when query")
 }
