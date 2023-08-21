@@ -21,7 +21,6 @@ const (
 
 // test highlevel api new collection
 func TestNewCollection(t *testing.T) {
-	t.Skip("https://github.com/milvus-io/milvus-sdk-go/issues/555")
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	mc := createMilvusClient(ctx, t)
 
@@ -93,7 +92,6 @@ func TestNewCollection(t *testing.T) {
 }
 
 func TestNewCollectionCustomize(t *testing.T) {
-	t.Skip("https://github.com/milvus-io/milvus-sdk-go/issues/555")
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	mc := createMilvusClient(ctx, t)
 
