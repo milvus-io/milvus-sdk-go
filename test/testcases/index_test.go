@@ -217,7 +217,6 @@ func TestCreateIndexWithoutName(t *testing.T) {
 
 // test create auto index
 func TestCreateIndexWithoutIndexTypeParams(t *testing.T) {
-	t.Skip("https://github.com/milvus-io/milvus-sdk-go/issues/555")
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect
 	mc := createMilvusClient(ctx, t)
