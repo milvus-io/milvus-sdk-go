@@ -25,7 +25,7 @@ import (
 )
 
 // ManualCompaction triggers a compaction on provided collection
-func (c *GrpcClient) ManualCompaction(ctx context.Context, collName string, toleranceDuration time.Duration) (int64, error) {
+func (c *GrpcClient) ManualCompaction(ctx context.Context, collName string, _ time.Duration) (int64, error) {
 	if c.Service == nil {
 		return 0, ErrClientNotReady
 	}

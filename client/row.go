@@ -133,7 +133,7 @@ type SearchResultByRows struct {
 }
 
 // SearchResultToRows converts search result proto to rows
-func SearchResultToRows(sch *entity.Schema, results *schema.SearchResultData, t reflect.Type, output map[string]struct{}) ([]SearchResultByRows, error) {
+func SearchResultToRows(sch *entity.Schema, results *schema.SearchResultData, t reflect.Type, _ map[string]struct{}) ([]SearchResultByRows, error) {
 	var err error
 	offset := 0
 	// new will have a pointer, so de-reference first if type is pointer to struct
@@ -162,9 +162,6 @@ func SearchResultToRows(sch *entity.Schema, results *schema.SearchResultData, t 
 			for _, field := range sch.Fields {
 				f := v.FieldByName(field.Name) // TODO silverxia field may be annotated by tags, which means the field name will not be the same
 				if !f.IsValid() {
-					if _, has := output[field.Name]; has {
-						// TODO silverxia in output field list but not defined in rows
-					}
 					continue
 				}
 				// Primary key has different field from search result
@@ -193,10 +190,6 @@ func SearchResultToRows(sch *entity.Schema, results *schema.SearchResultData, t 
 				// fieldDataList
 				fieldData, has := nameFieldData[field.Name]
 				if !has || fieldData == nil {
-					if _, has := output[field.Name]; has {
-						// TODO silverxia in output field list but not defined in rows
-					}
-
 					continue
 				}
 

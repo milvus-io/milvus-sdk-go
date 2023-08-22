@@ -138,7 +138,7 @@ func (s *MockSuiteBase) setupHasPartitionError(errorCode common.ErrorCode, err e
 		}, err)
 }
 
-func (s *MockSuiteBase) setupDescribeCollection(collName string, schema *entity.Schema) {
+func (s *MockSuiteBase) setupDescribeCollection(_ string, schema *entity.Schema) {
 	s.mock.EXPECT().DescribeCollection(mock.Anything, mock.AnythingOfType("*milvuspb.DescribeCollectionRequest")).
 		Call.Return(func(ctx context.Context, req *server.DescribeCollectionRequest) *server.DescribeCollectionResponse {
 		return &server.DescribeCollectionResponse{
