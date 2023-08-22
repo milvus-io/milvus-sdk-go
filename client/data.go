@@ -92,7 +92,7 @@ func (c *GrpcClient) Search(ctx context.Context, collName string, partitions []s
 	return sr, nil
 }
 
-func (c *GrpcClient) parseSearchResult(sch *entity.Schema, outputFields []string, fieldDataList []*schema.FieldData, idx, from, to int) ([]entity.Column, error) {
+func (c *GrpcClient) parseSearchResult(_ *entity.Schema, outputFields []string, fieldDataList []*schema.FieldData, _, from, to int) ([]entity.Column, error) {
 	//dynamicField := sch.GetDynamicField()
 	fields := make(map[string]*schema.FieldData)
 	var dynamicColumn *entity.ColumnJSONBytes

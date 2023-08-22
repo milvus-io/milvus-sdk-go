@@ -175,7 +175,7 @@ func WithGuaranteeTimestamp(gt uint64) SearchQueryOptionFunc {
 }
 
 // Deprecated: time travel is not supported since v2.3.0
-func WithTravelTimestamp(tt uint64) SearchQueryOptionFunc {
+func WithTravelTimestamp(_ uint64) SearchQueryOptionFunc {
 	return func(option *SearchQueryOption) {}
 }
 
