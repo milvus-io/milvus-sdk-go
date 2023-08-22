@@ -908,6 +908,10 @@ func (m *MockServer) GetIndexStatistics(_ context.Context, _ *server.GetIndexSta
 	panic("not implemented") // TODO: Implement
 }
 
+func (m *MockServer) AllocTimestamp(_ context.Context, _ *server.AllocTimestampRequest) (*server.AllocTimestampResponse, error) {
+	panic("not implemented")
+}
+
 func (m *MockServer) Connect(_ context.Context, _ *server.ConnectRequest) (*server.ConnectResponse, error) {
 	return &server.ConnectResponse{
 		Status:     &common.Status{ErrorCode: common.ErrorCode_Success},
