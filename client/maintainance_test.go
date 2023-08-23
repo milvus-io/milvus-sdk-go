@@ -23,8 +23,8 @@ import (
 	"github.com/cockroachdb/errors"
 
 	"github.com/golang/protobuf/proto"
-	common "github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
-	server "github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 	"github.com/stretchr/testify/assert"
 )
@@ -42,14 +42,14 @@ func TestGrpcManualCompaction(t *testing.T) {
 		mockServer.SetInjection(MDescribeCollection, describeCollectionInjection(t, testCollectionID, testCollectionName, defaultSchema()))
 		defer mockServer.DelInjection(MDescribeCollection)
 		mockServer.SetInjection(MManualCompaction, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
-			req, ok := raw.(*server.ManualCompactionRequest)
+			req, ok := raw.(*milvuspb.ManualCompactionRequest)
 			if !ok {
 				t.FailNow()
 			}
 
 			assert.Equal(t, testCollectionID, req.GetCollectionID())
 
-			resp := &server.ManualCompactionResponse{
+			resp := &milvuspb.ManualCompactionResponse{
 				CompactionID: compactionID,
 			}
 			s, err := SuccessStatus()
@@ -72,7 +72,7 @@ func TestGrpcManualCompaction(t *testing.T) {
 
 	t.Run("describe collection fail", func(t *testing.T) {
 		mockServer.SetInjection(MDescribeCollection, func(_ context.Context, _ proto.Message) (proto.Message, error) {
-			return &server.DescribeCollectionResponse{}, errors.New("mockServer.d error")
+			return &milvuspb.DescribeCollectionResponse{}, errors.New("mockServer.d error")
 		})
 		defer mockServer.DelInjection(MDescribeCollection)
 
@@ -84,7 +84,7 @@ func TestGrpcManualCompaction(t *testing.T) {
 		mockServer.SetInjection(MDescribeCollection, describeCollectionInjection(t, testCollectionID, testCollectionName, defaultSchema()))
 		defer mockServer.DelInjection(MDescribeCollection)
 		mockServer.SetInjection(MManualCompaction, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
-			resp := &server.ManualCompactionResponse{
+			resp := &milvuspb.ManualCompactionResponse{
 				CompactionID: 1001,
 			}
 			return resp, errors.New("mockServer.d grpc error")
@@ -93,11 +93,11 @@ func TestGrpcManualCompaction(t *testing.T) {
 		_, err := c.ManualCompaction(ctx, testCollectionName, 0)
 		assert.Error(t, err)
 		mockServer.SetInjection(MManualCompaction, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
-			resp := &server.ManualCompactionResponse{
+			resp := &milvuspb.ManualCompactionResponse{
 				CompactionID: 1001,
 			}
-			resp.Status = &common.Status{
-				ErrorCode: common.ErrorCode_UnexpectedError,
+			resp.Status = &commonpb.Status{
+				ErrorCode: commonpb.ErrorCode_UnexpectedError,
 			}
 			return resp, nil
 		})
@@ -117,17 +117,17 @@ func TestGrpcGetCompactionState(t *testing.T) {
 	compactionID := int64(1001)
 
 	t.Run("normal get compaction state", func(t *testing.T) {
-		state := common.CompactionState_Executing
+		state := commonpb.CompactionState_Executing
 
 		mockServer.SetInjection(MGetCompactionState, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			req, ok := raw.(*server.GetCompactionStateRequest)
+			req, ok := raw.(*milvuspb.GetCompactionStateRequest)
 			if !ok {
 				t.FailNow()
 			}
 
 			assert.Equal(t, compactionID, req.GetCompactionID())
 
-			resp := &server.GetCompactionStateResponse{
+			resp := &milvuspb.GetCompactionStateResponse{
 				State: state,
 			}
 			s, err := SuccessStatus()
@@ -140,7 +140,7 @@ func TestGrpcGetCompactionState(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, entity.CompactionStateExecuting, result)
 
-		state = common.CompactionState_Completed
+		state = commonpb.CompactionState_Completed
 		result, err = c.GetCompactionState(ctx, compactionID)
 		assert.NoError(t, err)
 		assert.Equal(t, entity.CompactionStateCompleted, result)
@@ -148,9 +148,9 @@ func TestGrpcGetCompactionState(t *testing.T) {
 
 	t.Run("get compaction Service fail", func(t *testing.T) {
 		mockServer.SetInjection(MGetCompactionState, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			resp := &server.GetCompactionStateResponse{}
-			resp.Status = &common.Status{
-				ErrorCode: common.ErrorCode_UnexpectedError,
+			resp := &milvuspb.GetCompactionStateResponse{}
+			resp.Status = &commonpb.Status{
+				ErrorCode: commonpb.ErrorCode_UnexpectedError,
 			}
 			return resp, nil
 		})
@@ -169,26 +169,26 @@ func TestGrpcGetCompactionStateWithPlans(t *testing.T) {
 	compactionID := int64(1001)
 
 	t.Run("normal get compaction state with plans", func(t *testing.T) {
-		state := common.CompactionState_Executing
+		state := commonpb.CompactionState_Executing
 		plans := []entity.CompactionPlan{
 			{Source: []int64{1, 2}, Target: 3, PlanType: entity.CompactionPlanMergeSegments},
 			{Source: []int64{4, 5}, Target: 6, PlanType: entity.CompactionPlanMergeSegments},
 		}
 
 		mockServer.SetInjection(MGetCompactionStateWithPlans, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			req, ok := raw.(*server.GetCompactionPlansRequest)
+			req, ok := raw.(*milvuspb.GetCompactionPlansRequest)
 			if !ok {
 				t.FailNow()
 			}
 
 			assert.Equal(t, compactionID, req.GetCompactionID())
 
-			resp := &server.GetCompactionPlansResponse{
+			resp := &milvuspb.GetCompactionPlansResponse{
 				State:      state,
-				MergeInfos: make([]*server.CompactionMergeInfo, 0, len(plans)),
+				MergeInfos: make([]*milvuspb.CompactionMergeInfo, 0, len(plans)),
 			}
 			for _, plan := range plans {
-				resp.MergeInfos = append(resp.MergeInfos, &server.CompactionMergeInfo{
+				resp.MergeInfos = append(resp.MergeInfos, &milvuspb.CompactionMergeInfo{
 					Sources: plan.Source,
 					Target:  plan.Target,
 				})
@@ -205,7 +205,7 @@ func TestGrpcGetCompactionStateWithPlans(t *testing.T) {
 		assert.Equal(t, entity.CompactionStateExecuting, result)
 		assert.ElementsMatch(t, plans, rPlans)
 
-		state = common.CompactionState_Completed
+		state = commonpb.CompactionState_Completed
 		result, rPlans, err = c.GetCompactionStateWithPlans(ctx, compactionID)
 		assert.NoError(t, err)
 		assert.Equal(t, entity.CompactionStateCompleted, result)
@@ -214,9 +214,9 @@ func TestGrpcGetCompactionStateWithPlans(t *testing.T) {
 
 	t.Run("get compaction Service fail", func(t *testing.T) {
 		mockServer.SetInjection(MGetCompactionStateWithPlans, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			resp := &server.GetCompactionPlansResponse{}
-			resp.Status = &common.Status{
-				ErrorCode: common.ErrorCode_UnexpectedError,
+			resp := &milvuspb.GetCompactionPlansResponse{}
+			resp.Status = &commonpb.Status{
+				ErrorCode: commonpb.ErrorCode_UnexpectedError,
 			}
 			return resp, nil
 		})

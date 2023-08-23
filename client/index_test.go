@@ -9,8 +9,8 @@ import (
 	"github.com/cockroachdb/errors"
 
 	"github.com/golang/protobuf/proto"
-	common "github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
-	server "github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 	"github.com/stretchr/testify/assert"
 )
@@ -28,7 +28,7 @@ func TestGrpcClientCreateIndex(t *testing.T) {
 		t.FailNow()
 	}
 	mockServer.SetInjection(MCreateIndex, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-		req, ok := raw.(*server.CreateIndexRequest)
+		req, ok := raw.(*milvuspb.CreateIndexRequest)
 		if !ok {
 			return BadRequestStatus()
 		}
@@ -43,7 +43,7 @@ func TestGrpcClientCreateIndex(t *testing.T) {
 
 	t.Run("test flush err", func(t *testing.T) {
 		mockServer.SetInjection(MFlush, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			resp := &server.FlushResponse{}
+			resp := &milvuspb.FlushResponse{}
 			s, err := BadRequestStatus()
 			resp.Status = s
 			return resp, err
@@ -57,8 +57,8 @@ func TestGrpcClientCreateIndex(t *testing.T) {
 		start := time.Now()
 		flag := false
 		mockServer.SetInjection(MDescribeIndex, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			req, ok := raw.(*server.DescribeIndexRequest)
-			resp := &server.DescribeIndexResponse{}
+			req, ok := raw.(*milvuspb.DescribeIndexRequest)
+			resp := &milvuspb.DescribeIndexResponse{}
 			if !ok {
 				s, err := BadRequestStatus()
 				resp.Status = s
@@ -67,15 +67,15 @@ func TestGrpcClientCreateIndex(t *testing.T) {
 			assert.Equal(t, testCollectionName, req.CollectionName)
 			assert.Equal(t, "test-index", req.IndexName)
 
-			resp.IndexDescriptions = []*server.IndexDescription{
+			resp.IndexDescriptions = []*milvuspb.IndexDescription{
 				{
 					IndexName: req.GetIndexName(),
 					FieldName: req.GetIndexName(),
-					State:     common.IndexState_InProgress,
+					State:     commonpb.IndexState_InProgress,
 				},
 			}
 			if time.Since(start) > time.Duration(buildTime)*time.Millisecond {
-				resp.IndexDescriptions[0].State = common.IndexState_Finished
+				resp.IndexDescriptions[0].State = commonpb.IndexState_Finished
 				flag = true
 			}
 
@@ -110,8 +110,8 @@ func TestGrpcClientDescribeIndex(t *testing.T) {
 
 	t.Run("normal describe index", func(t *testing.T) {
 		mockServer.SetInjection(MDescribeIndex, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			req, ok := raw.(*server.DescribeIndexRequest)
-			resp := &server.DescribeIndexResponse{}
+			req, ok := raw.(*milvuspb.DescribeIndexRequest)
+			resp := &milvuspb.DescribeIndexResponse{}
 			if !ok {
 				s, err := BadRequestStatus()
 				resp.Status = s
@@ -119,7 +119,7 @@ func TestGrpcClientDescribeIndex(t *testing.T) {
 			}
 			assert.Equal(t, fieldName, req.GetFieldName())
 			assert.Equal(t, testCollectionName, req.GetCollectionName())
-			resp.IndexDescriptions = []*server.IndexDescription{
+			resp.IndexDescriptions = []*milvuspb.IndexDescription{
 				{
 					IndexName: "_default",
 					IndexID:   1,
@@ -143,7 +143,7 @@ func TestGrpcClientDescribeIndex(t *testing.T) {
 	t.Run("Service return errors", func(t *testing.T) {
 		defer mockServer.DelInjection(MDescribeIndex)
 		mockServer.SetInjection(MDescribeIndex, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			resp := &server.DescribeIndexResponse{}
+			resp := &milvuspb.DescribeIndexResponse{}
 
 			return resp, errors.New("mockServer.d error")
 		})
@@ -152,8 +152,8 @@ func TestGrpcClientDescribeIndex(t *testing.T) {
 		assert.Error(t, err)
 
 		mockServer.SetInjection(MDescribeIndex, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			resp := &server.DescribeIndexResponse{}
-			resp.Status = &common.Status{ErrorCode: common.ErrorCode_UnexpectedError}
+			resp := &milvuspb.DescribeIndexResponse{}
+			resp.Status = &commonpb.Status{ErrorCode: commonpb.ErrorCode_UnexpectedError}
 			return resp, nil
 		})
 
@@ -174,12 +174,12 @@ func TestGrpcGetIndexBuildProgress(t *testing.T) {
 		var total, built int64
 
 		mockServer.SetInjection(MGetIndexBuildProgress, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			req, ok := raw.(*server.GetIndexBuildProgressRequest)
+			req, ok := raw.(*milvuspb.GetIndexBuildProgressRequest)
 			if !ok {
 				t.FailNow()
 			}
 			assert.Equal(t, testCollectionName, req.GetCollectionName())
-			resp := &server.GetIndexBuildProgressResponse{
+			resp := &milvuspb.GetIndexBuildProgressResponse{
 				TotalRows:   total,
 				IndexedRows: built,
 			}
@@ -199,11 +199,11 @@ func TestGrpcGetIndexBuildProgress(t *testing.T) {
 	t.Run("Service return errors", func(t *testing.T) {
 		defer mockServer.DelInjection(MGetIndexBuildProgress)
 		mockServer.SetInjection(MGetIndexBuildProgress, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			_, ok := raw.(*server.GetIndexBuildProgressRequest)
+			_, ok := raw.(*milvuspb.GetIndexBuildProgressRequest)
 			if !ok {
 				t.FailNow()
 			}
-			resp := &server.GetIndexBuildProgressResponse{}
+			resp := &milvuspb.GetIndexBuildProgressResponse{}
 			return resp, errors.New("mockServer.d error")
 		})
 
@@ -211,13 +211,13 @@ func TestGrpcGetIndexBuildProgress(t *testing.T) {
 		assert.Error(t, err)
 
 		mockServer.SetInjection(MGetIndexBuildProgress, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			_, ok := raw.(*server.GetIndexBuildProgressRequest)
+			_, ok := raw.(*milvuspb.GetIndexBuildProgressRequest)
 			if !ok {
 				t.FailNow()
 			}
-			resp := &server.GetIndexBuildProgressResponse{}
-			resp.Status = &common.Status{
-				ErrorCode: common.ErrorCode_UnexpectedError,
+			resp := &milvuspb.GetIndexBuildProgressResponse{}
+			resp.Status = &commonpb.Status{
+				ErrorCode: commonpb.ErrorCode_UnexpectedError,
 			}
 			return resp, nil
 		})

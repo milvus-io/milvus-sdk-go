@@ -14,7 +14,7 @@ package client
 import (
 	"context"
 
-	server "github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )
 
@@ -24,7 +24,7 @@ func (c *GrpcClient) ListResourceGroups(ctx context.Context) ([]string, error) {
 		return nil, ErrClientNotReady
 	}
 
-	req := &server.ListResourceGroupsRequest{}
+	req := &milvuspb.ListResourceGroupsRequest{}
 
 	resp, err := c.Service.ListResourceGroups(ctx, req)
 	if err != nil {
@@ -43,7 +43,7 @@ func (c *GrpcClient) CreateResourceGroup(ctx context.Context, rgName string) err
 		return ErrClientNotReady
 	}
 
-	req := &server.CreateResourceGroupRequest{
+	req := &milvuspb.CreateResourceGroupRequest{
 		ResourceGroup: rgName,
 	}
 
@@ -60,7 +60,7 @@ func (c *GrpcClient) DescribeResourceGroup(ctx context.Context, rgName string) (
 		return nil, ErrClientNotReady
 	}
 
-	req := &server.DescribeResourceGroupRequest{
+	req := &milvuspb.DescribeResourceGroupRequest{
 		ResourceGroup: rgName,
 	}
 
@@ -91,7 +91,7 @@ func (c *GrpcClient) DropResourceGroup(ctx context.Context, rgName string) error
 		return ErrClientNotReady
 	}
 
-	req := &server.DropResourceGroupRequest{
+	req := &milvuspb.DropResourceGroupRequest{
 		ResourceGroup: rgName,
 	}
 
@@ -108,7 +108,7 @@ func (c *GrpcClient) TransferNode(ctx context.Context, sourceRg, targetRg string
 		return ErrClientNotReady
 	}
 
-	req := &server.TransferNodeRequest{
+	req := &milvuspb.TransferNodeRequest{
 		SourceResourceGroup: sourceRg,
 		TargetResourceGroup: targetRg,
 		NumNode:             nodesNum,
@@ -127,7 +127,7 @@ func (c *GrpcClient) TransferReplica(ctx context.Context, sourceRg, targetRg str
 		return ErrClientNotReady
 	}
 
-	req := &server.TransferReplicaRequest{
+	req := &milvuspb.TransferReplicaRequest{
 		SourceResourceGroup: sourceRg,
 		TargetResourceGroup: targetRg,
 		CollectionName:      collectionName,

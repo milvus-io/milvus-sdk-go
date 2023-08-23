@@ -11,8 +11,8 @@ import (
 
 	"github.com/stretchr/testify/mock"
 
-	common "github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
-	server "github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
 )
 
 type RBACSuite struct {
@@ -27,10 +27,10 @@ func (s *RBACSuite) TestCreateRole() {
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 		defer s.resetMock()
-		s.mock.EXPECT().CreateRole(mock.Anything, mock.Anything).Run(func(ctx context.Context, req *server.CreateRoleRequest) {
+		s.mock.EXPECT().CreateRole(mock.Anything, mock.Anything).Run(func(ctx context.Context, req *milvuspb.CreateRoleRequest) {
 			s.Equal(roleName, req.GetEntity().GetName())
-		}).Return(&common.Status{
-			ErrorCode: common.ErrorCode_Success,
+		}).Return(&commonpb.Status{
+			ErrorCode: commonpb.ErrorCode_Success,
 		}, nil)
 		err := s.client.CreateRole(ctx, roleName)
 
@@ -51,8 +51,8 @@ func (s *RBACSuite) TestCreateRole() {
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 		defer s.resetMock()
-		s.mock.EXPECT().CreateRole(mock.Anything, mock.Anything).Return(&common.Status{
-			ErrorCode: common.ErrorCode_UnexpectedError,
+		s.mock.EXPECT().CreateRole(mock.Anything, mock.Anything).Return(&commonpb.Status{
+			ErrorCode: commonpb.ErrorCode_UnexpectedError,
 		}, nil)
 		err := s.client.CreateRole(ctx, roleName)
 
@@ -78,10 +78,10 @@ func (s *RBACSuite) TestDropRole() {
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 		defer s.resetMock()
-		s.mock.EXPECT().DropRole(mock.Anything, mock.Anything).Run(func(ctx context.Context, req *server.DropRoleRequest) {
+		s.mock.EXPECT().DropRole(mock.Anything, mock.Anything).Run(func(ctx context.Context, req *milvuspb.DropRoleRequest) {
 			s.Equal(roleName, req.GetRoleName())
-		}).Return(&common.Status{
-			ErrorCode: common.ErrorCode_Success,
+		}).Return(&commonpb.Status{
+			ErrorCode: commonpb.ErrorCode_Success,
 		}, nil)
 		err := s.client.DropRole(ctx, roleName)
 
@@ -102,8 +102,8 @@ func (s *RBACSuite) TestDropRole() {
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 		defer s.resetMock()
-		s.mock.EXPECT().DropRole(mock.Anything, mock.Anything).Return(&common.Status{
-			ErrorCode: common.ErrorCode_UnexpectedError,
+		s.mock.EXPECT().DropRole(mock.Anything, mock.Anything).Return(&commonpb.Status{
+			ErrorCode: commonpb.ErrorCode_UnexpectedError,
 		}, nil)
 		err := s.client.DropRole(ctx, roleName)
 
@@ -130,12 +130,12 @@ func (s *RBACSuite) TestAddUserRole() {
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 		defer s.resetMock()
-		s.mock.EXPECT().OperateUserRole(mock.Anything, mock.Anything).Run(func(ctx context.Context, req *server.OperateUserRoleRequest) {
-			s.Equal(server.OperateUserRoleType_AddUserToRole, req.GetType())
+		s.mock.EXPECT().OperateUserRole(mock.Anything, mock.Anything).Run(func(ctx context.Context, req *milvuspb.OperateUserRoleRequest) {
+			s.Equal(milvuspb.OperateUserRoleType_AddUserToRole, req.GetType())
 			s.Equal(username, req.GetUsername())
 			s.Equal(roleName, req.GetRoleName())
-		}).Return(&common.Status{
-			ErrorCode: common.ErrorCode_Success,
+		}).Return(&commonpb.Status{
+			ErrorCode: commonpb.ErrorCode_Success,
 		}, nil)
 		err := s.client.AddUserRole(ctx, username, roleName)
 
@@ -156,8 +156,8 @@ func (s *RBACSuite) TestAddUserRole() {
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 		defer s.resetMock()
-		s.mock.EXPECT().OperateUserRole(mock.Anything, mock.Anything).Return(&common.Status{
-			ErrorCode: common.ErrorCode_UnexpectedError,
+		s.mock.EXPECT().OperateUserRole(mock.Anything, mock.Anything).Return(&commonpb.Status{
+			ErrorCode: commonpb.ErrorCode_UnexpectedError,
 		}, nil)
 		err := s.client.AddUserRole(ctx, username, roleName)
 
@@ -184,12 +184,12 @@ func (s *RBACSuite) TestRemoveUserRole() {
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 		defer s.resetMock()
-		s.mock.EXPECT().OperateUserRole(mock.Anything, mock.Anything).Run(func(ctx context.Context, req *server.OperateUserRoleRequest) {
-			s.Equal(server.OperateUserRoleType_RemoveUserFromRole, req.GetType())
+		s.mock.EXPECT().OperateUserRole(mock.Anything, mock.Anything).Run(func(ctx context.Context, req *milvuspb.OperateUserRoleRequest) {
+			s.Equal(milvuspb.OperateUserRoleType_RemoveUserFromRole, req.GetType())
 			s.Equal(username, req.GetUsername())
 			s.Equal(roleName, req.GetRoleName())
-		}).Return(&common.Status{
-			ErrorCode: common.ErrorCode_Success,
+		}).Return(&commonpb.Status{
+			ErrorCode: commonpb.ErrorCode_Success,
 		}, nil)
 		err := s.client.RemoveUserRole(ctx, username, roleName)
 
@@ -210,8 +210,8 @@ func (s *RBACSuite) TestRemoveUserRole() {
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 		defer s.resetMock()
-		s.mock.EXPECT().OperateUserRole(mock.Anything, mock.Anything).Return(&common.Status{
-			ErrorCode: common.ErrorCode_UnexpectedError,
+		s.mock.EXPECT().OperateUserRole(mock.Anything, mock.Anything).Return(&commonpb.Status{
+			ErrorCode: commonpb.ErrorCode_UnexpectedError,
 		}, nil)
 		err := s.client.RemoveUserRole(ctx, username, roleName)
 
@@ -237,13 +237,13 @@ func (s *RBACSuite) TestListRoles() {
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 		defer s.resetMock()
-		s.mock.EXPECT().SelectRole(mock.Anything, mock.Anything).Run(func(ctx context.Context, req *server.SelectRoleRequest) {
+		s.mock.EXPECT().SelectRole(mock.Anything, mock.Anything).Run(func(ctx context.Context, req *milvuspb.SelectRoleRequest) {
 			s.False(req.GetIncludeUserInfo())
-		}).Return(&server.SelectRoleResponse{
-			Status: &common.Status{ErrorCode: common.ErrorCode_Success},
-			Results: []*server.RoleResult{
+		}).Return(&milvuspb.SelectRoleResponse{
+			Status: &commonpb.Status{ErrorCode: commonpb.ErrorCode_Success},
+			Results: []*milvuspb.RoleResult{
 				{
-					Role: &server.RoleEntity{
+					Role: &milvuspb.RoleEntity{
 						Name: roleName,
 					},
 				},
@@ -269,8 +269,8 @@ func (s *RBACSuite) TestListRoles() {
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 		defer s.resetMock()
-		s.mock.EXPECT().SelectRole(mock.Anything, mock.Anything).Return(&server.SelectRoleResponse{
-			Status: &common.Status{ErrorCode: common.ErrorCode_UnexpectedError},
+		s.mock.EXPECT().SelectRole(mock.Anything, mock.Anything).Return(&milvuspb.SelectRoleResponse{
+			Status: &commonpb.Status{ErrorCode: commonpb.ErrorCode_UnexpectedError},
 		}, nil)
 
 		_, err := s.client.ListRoles(ctx)
@@ -296,13 +296,13 @@ func (s *RBACSuite) TestListUser() {
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 		defer s.resetMock()
-		s.mock.EXPECT().SelectUser(mock.Anything, mock.Anything).Run(func(ctx context.Context, req *server.SelectUserRequest) {
+		s.mock.EXPECT().SelectUser(mock.Anything, mock.Anything).Run(func(ctx context.Context, req *milvuspb.SelectUserRequest) {
 			s.False(req.GetIncludeRoleInfo())
-		}).Return(&server.SelectUserResponse{
-			Status: &common.Status{ErrorCode: common.ErrorCode_Success},
-			Results: []*server.UserResult{
+		}).Return(&milvuspb.SelectUserResponse{
+			Status: &commonpb.Status{ErrorCode: commonpb.ErrorCode_Success},
+			Results: []*milvuspb.UserResult{
 				{
-					User: &server.UserEntity{
+					User: &milvuspb.UserEntity{
 						Name: userName,
 					},
 				},
@@ -328,8 +328,8 @@ func (s *RBACSuite) TestListUser() {
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 		defer s.resetMock()
-		s.mock.EXPECT().SelectUser(mock.Anything, mock.Anything).Return(&server.SelectUserResponse{
-			Status: &common.Status{ErrorCode: common.ErrorCode_UnexpectedError},
+		s.mock.EXPECT().SelectUser(mock.Anything, mock.Anything).Return(&milvuspb.SelectUserResponse{
+			Status: &commonpb.Status{ErrorCode: commonpb.ErrorCode_UnexpectedError},
 		}, nil)
 
 		_, err := s.client.ListUsers(ctx)
@@ -358,12 +358,12 @@ func (s *RBACSuite) TestGrant() {
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 		defer s.resetMock()
-		s.mock.EXPECT().OperatePrivilege(mock.Anything, mock.Anything).Run(func(ctx context.Context, req *server.OperatePrivilegeRequest) {
+		s.mock.EXPECT().OperatePrivilege(mock.Anything, mock.Anything).Run(func(ctx context.Context, req *milvuspb.OperatePrivilegeRequest) {
 			s.Equal(roleName, req.GetEntity().GetRole().GetName())
 			s.Equal(objectName, req.GetEntity().GetObjectName())
-			s.Equal(common.ObjectType_name[int32(objectType)], req.GetEntity().GetObject().GetName())
-			s.Equal(server.OperatePrivilegeType_Grant, req.GetType())
-		}).Return(&common.Status{ErrorCode: common.ErrorCode_Success}, nil)
+			s.Equal(commonpb.ObjectType_name[int32(objectType)], req.GetEntity().GetObject().GetName())
+			s.Equal(milvuspb.OperatePrivilegeType_Grant, req.GetType())
+		}).Return(&commonpb.Status{ErrorCode: commonpb.ErrorCode_Success}, nil)
 
 		err := s.client.Grant(ctx, roleName, objectType, objectName)
 
@@ -384,7 +384,7 @@ func (s *RBACSuite) TestGrant() {
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 		defer s.resetMock()
-		s.mock.EXPECT().OperatePrivilege(mock.Anything, mock.Anything).Return(&common.Status{ErrorCode: common.ErrorCode_UnexpectedError}, nil)
+		s.mock.EXPECT().OperatePrivilege(mock.Anything, mock.Anything).Return(&commonpb.Status{ErrorCode: commonpb.ErrorCode_UnexpectedError}, nil)
 
 		err := s.client.Grant(ctx, roleName, objectType, objectName)
 		s.Error(err)
@@ -412,12 +412,12 @@ func (s *RBACSuite) TestRevoke() {
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 		defer s.resetMock()
-		s.mock.EXPECT().OperatePrivilege(mock.Anything, mock.Anything).Run(func(ctx context.Context, req *server.OperatePrivilegeRequest) {
+		s.mock.EXPECT().OperatePrivilege(mock.Anything, mock.Anything).Run(func(ctx context.Context, req *milvuspb.OperatePrivilegeRequest) {
 			s.Equal(roleName, req.GetEntity().GetRole().GetName())
 			s.Equal(objectName, req.GetEntity().GetObjectName())
-			s.Equal(common.ObjectType_name[int32(objectType)], req.GetEntity().GetObject().GetName())
-			s.Equal(server.OperatePrivilegeType_Revoke, req.GetType())
-		}).Return(&common.Status{ErrorCode: common.ErrorCode_Success}, nil)
+			s.Equal(commonpb.ObjectType_name[int32(objectType)], req.GetEntity().GetObject().GetName())
+			s.Equal(milvuspb.OperatePrivilegeType_Revoke, req.GetType())
+		}).Return(&commonpb.Status{ErrorCode: commonpb.ErrorCode_Success}, nil)
 
 		err := s.client.Revoke(ctx, roleName, objectType, objectName)
 
@@ -438,7 +438,7 @@ func (s *RBACSuite) TestRevoke() {
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 		defer s.resetMock()
-		s.mock.EXPECT().OperatePrivilege(mock.Anything, mock.Anything).Return(&common.Status{ErrorCode: common.ErrorCode_UnexpectedError}, nil)
+		s.mock.EXPECT().OperatePrivilege(mock.Anything, mock.Anything).Return(&commonpb.Status{ErrorCode: commonpb.ErrorCode_UnexpectedError}, nil)
 
 		err := s.client.Revoke(ctx, roleName, objectType, objectName)
 		s.Error(err)

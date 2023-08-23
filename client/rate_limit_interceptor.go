@@ -25,8 +25,8 @@ import (
 	"google.golang.org/grpc/status"
 
 	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
-	common "github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
-	server "github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
 )
 
 // ref: https://github.com/grpc-ecosystem/go-grpc-middleware
@@ -51,7 +51,7 @@ func RetryOnRateLimitInterceptor(maxRetry uint, maxBackoff time.Duration, backof
 			}
 			lastErr = invoker(parentCtx, method, req, reply, cc, opts...)
 			rspStatus := getResultStatus(reply)
-			if retryOnRateLimit(parentCtx) && rspStatus.GetErrorCode() == common.ErrorCode_RateLimit {
+			if retryOnRateLimit(parentCtx) && rspStatus.GetErrorCode() == commonpb.ErrorCode_RateLimit {
 				continue
 			}
 			return lastErr
@@ -69,19 +69,19 @@ func retryOnRateLimit(ctx context.Context) bool {
 }
 
 // getResultStatus returns status of response.
-func getResultStatus(reply interface{}) *common.Status {
+func getResultStatus(reply interface{}) *commonpb.Status {
 	switch r := reply.(type) {
-	case *common.Status:
+	case *commonpb.Status:
 		return r
-	case *server.MutationResult:
+	case *milvuspb.MutationResult:
 		return r.GetStatus()
-	case *server.BoolResponse:
+	case *milvuspb.BoolResponse:
 		return r.GetStatus()
-	case *server.SearchResults:
+	case *milvuspb.SearchResults:
 		return r.GetStatus()
-	case *server.QueryResults:
+	case *milvuspb.QueryResults:
 		return r.GetStatus()
-	case *server.FlushResponse:
+	case *milvuspb.FlushResponse:
 		return r.GetStatus()
 	default:
 		return nil

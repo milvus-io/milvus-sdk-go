@@ -9,8 +9,8 @@ import (
 	"github.com/cockroachdb/errors"
 
 	"github.com/golang/protobuf/proto"
-	common "github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
-	server "github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -21,8 +21,8 @@ import (
 // partition name request in partitionNames if flag is true
 func hasPartitionInjection(t *testing.T, collName string, mustIn bool, partitionNames ...string) func(context.Context, proto.Message) (proto.Message, error) {
 	return func(_ context.Context, raw proto.Message) (proto.Message, error) {
-		req, ok := raw.(*server.HasPartitionRequest)
-		resp := &server.BoolResponse{}
+		req, ok := raw.(*milvuspb.HasPartitionRequest)
+		resp := &milvuspb.BoolResponse{}
 		if !ok {
 			s, err := BadRequestStatus()
 			resp.Status = s
@@ -53,8 +53,8 @@ func TestGrpcClientCreatePartition(t *testing.T) {
 
 	mockServer.SetInjection(MHasCollection, hasCollectionDefault)
 	mockServer.SetInjection(MHasPartition, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-		req, ok := raw.(*server.HasPartitionRequest)
-		resp := &server.BoolResponse{}
+		req, ok := raw.(*milvuspb.HasPartitionRequest)
+		resp := &milvuspb.BoolResponse{}
 		if !ok {
 			s, err := BadRequestStatus()
 			resp.Status = s
@@ -99,8 +99,8 @@ func TestGrpcClientHasPartition(t *testing.T) {
 // default partition interception for ShowPartitions, generates testCollection related paritition data
 func getPartitionsInterception(t *testing.T, collName string, partitions ...*entity.Partition) func(ctx context.Context, raw proto.Message) (proto.Message, error) {
 	return func(ctx context.Context, raw proto.Message) (proto.Message, error) {
-		req, ok := raw.(*server.ShowPartitionsRequest)
-		resp := &server.ShowPartitionsResponse{}
+		req, ok := raw.(*milvuspb.ShowPartitionsRequest)
+		resp := &milvuspb.ShowPartitionsResponse{}
 		if !ok {
 			s, err := BadRequestStatus()
 			resp.Status = s
@@ -177,7 +177,7 @@ func TestGrpcClientReleasePartitions(t *testing.T) {
 	mockServer.SetInjection(MHasCollection, hasCollectionDefault)
 	mockServer.SetInjection(MHasPartition, hasPartitionInjection(t, testCollectionName, true, "_part1", "_part2", "_part3", "_part4"))
 	mockServer.SetInjection(MReleasePartitions, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-		req, ok := raw.(*server.ReleasePartitionsRequest)
+		req, ok := raw.(*milvuspb.ReleasePartitionsRequest)
 		if !ok {
 			return BadRequestStatus()
 		}
@@ -219,7 +219,7 @@ func TestGrpcShowPartitions(t *testing.T) {
 
 	t.Run("bad response", func(t *testing.T) {
 		mockServer.SetInjection(MShowPartitions, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
-			resp := &server.ShowPartitionsResponse{}
+			resp := &milvuspb.ShowPartitionsResponse{}
 			resp.PartitionIDs = make([]int64, 0, len(partitions))
 			for _, part := range partitions {
 				resp.PartitionIDs = append(resp.PartitionIDs, part.ID)
@@ -234,7 +234,7 @@ func TestGrpcShowPartitions(t *testing.T) {
 
 	t.Run("Service error", func(t *testing.T) {
 		mockServer.SetInjection(MShowPartitions, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			return &server.ShowPartitionsResponse{}, errors.New("always fail")
+			return &milvuspb.ShowPartitionsResponse{}, errors.New("always fail")
 		})
 		defer mockServer.DelInjection(MShowPartitions)
 
@@ -242,8 +242,8 @@ func TestGrpcShowPartitions(t *testing.T) {
 		assert.Error(t, err)
 
 		mockServer.SetInjection(MShowPartitions, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			return &server.ShowPartitionsResponse{
-				Status: &common.Status{ErrorCode: common.ErrorCode_UnexpectedError},
+			return &milvuspb.ShowPartitionsResponse{
+				Status: &commonpb.Status{ErrorCode: commonpb.ErrorCode_UnexpectedError},
 			}, nil
 		})
 		_, err = c.ShowPartitions(ctx, testCollectionName)
@@ -265,17 +265,17 @@ func (s *PartitionSuite) TestLoadPartitions() {
 
 	s.Run("normal_run_async", func() {
 		defer s.resetMock()
-		s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).
-			Return(&server.BoolResponse{Status: &common.Status{}, Value: true}, nil)
-		s.mock.EXPECT().HasPartition(mock.Anything, mock.Anything).Run(func(_ context.Context, req *server.HasPartitionRequest) {
+		s.mock.EXPECT().HasCollection(mock.Anything, &milvuspb.HasCollectionRequest{CollectionName: testCollectionName}).
+			Return(&milvuspb.BoolResponse{Status: &commonpb.Status{}, Value: true}, nil)
+		s.mock.EXPECT().HasPartition(mock.Anything, mock.Anything).Run(func(_ context.Context, req *milvuspb.HasPartitionRequest) {
 			s.Equal(testCollectionName, req.GetCollectionName())
 			_, ok := mPartNames[req.GetPartitionName()]
 			s.True(ok)
-		}).Return(&server.BoolResponse{Status: &common.Status{}, Value: true}, nil)
-		s.mock.EXPECT().LoadPartitions(mock.Anything, mock.Anything).Run(func(_ context.Context, req *server.LoadPartitionsRequest) {
+		}).Return(&milvuspb.BoolResponse{Status: &commonpb.Status{}, Value: true}, nil)
+		s.mock.EXPECT().LoadPartitions(mock.Anything, mock.Anything).Run(func(_ context.Context, req *milvuspb.LoadPartitionsRequest) {
 			s.Equal(testCollectionName, req.GetCollectionName())
 			s.ElementsMatch(partNames, req.GetPartitionNames())
-		}).Return(&common.Status{ErrorCode: common.ErrorCode_Success}, nil)
+		}).Return(&commonpb.Status{ErrorCode: commonpb.ErrorCode_Success}, nil)
 
 		err := c.LoadPartitions(ctx, testCollectionName, partNames, true)
 		s.NoError(err)
@@ -283,19 +283,19 @@ func (s *PartitionSuite) TestLoadPartitions() {
 
 	s.Run("normal_run_sync", func() {
 		defer s.resetMock()
-		s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).
-			Return(&server.BoolResponse{Status: &common.Status{}, Value: true}, nil)
-		s.mock.EXPECT().HasPartition(mock.Anything, mock.Anything).Run(func(_ context.Context, req *server.HasPartitionRequest) {
+		s.mock.EXPECT().HasCollection(mock.Anything, &milvuspb.HasCollectionRequest{CollectionName: testCollectionName}).
+			Return(&milvuspb.BoolResponse{Status: &commonpb.Status{}, Value: true}, nil)
+		s.mock.EXPECT().HasPartition(mock.Anything, mock.Anything).Run(func(_ context.Context, req *milvuspb.HasPartitionRequest) {
 			s.Equal(testCollectionName, req.GetCollectionName())
 			_, ok := mPartNames[req.GetPartitionName()]
 			s.True(ok)
-		}).Return(&server.BoolResponse{Status: &common.Status{}, Value: true}, nil)
-		s.mock.EXPECT().LoadPartitions(mock.Anything, mock.Anything).Run(func(_ context.Context, req *server.LoadPartitionsRequest) {
+		}).Return(&milvuspb.BoolResponse{Status: &commonpb.Status{}, Value: true}, nil)
+		s.mock.EXPECT().LoadPartitions(mock.Anything, mock.Anything).Run(func(_ context.Context, req *milvuspb.LoadPartitionsRequest) {
 			s.Equal(testCollectionName, req.GetCollectionName())
 			s.ElementsMatch(partNames, req.GetPartitionNames())
-		}).Return(&common.Status{ErrorCode: common.ErrorCode_Success}, nil)
+		}).Return(&commonpb.Status{ErrorCode: commonpb.ErrorCode_Success}, nil)
 		s.mock.EXPECT().GetLoadingProgress(mock.Anything, mock.Anything).
-			Return(&server.GetLoadingProgressResponse{Status: &common.Status{ErrorCode: common.ErrorCode_Success}, Progress: 100}, nil)
+			Return(&milvuspb.GetLoadingProgressResponse{Status: &commonpb.Status{ErrorCode: commonpb.ErrorCode_Success}, Progress: 100}, nil)
 
 		err := c.LoadPartitions(ctx, testCollectionName, partNames, false)
 		s.NoError(err)
@@ -304,8 +304,8 @@ func (s *PartitionSuite) TestLoadPartitions() {
 	s.Run("has_collection_failure", func() {
 		s.Run("return_false", func() {
 			defer s.resetMock()
-			s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).
-				Return(&server.BoolResponse{Status: &common.Status{}, Value: false}, nil)
+			s.mock.EXPECT().HasCollection(mock.Anything, &milvuspb.HasCollectionRequest{CollectionName: testCollectionName}).
+				Return(&milvuspb.BoolResponse{Status: &commonpb.Status{}, Value: false}, nil)
 
 			err := c.LoadPartitions(ctx, testCollectionName, partNames, false)
 			s.Error(err)
@@ -313,7 +313,7 @@ func (s *PartitionSuite) TestLoadPartitions() {
 
 		s.Run("return_error", func() {
 			defer s.resetMock()
-			s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).
+			s.mock.EXPECT().HasCollection(mock.Anything, &milvuspb.HasCollectionRequest{CollectionName: testCollectionName}).
 				Return(nil, errors.New("mock error"))
 
 			err := c.LoadPartitions(ctx, testCollectionName, partNames, false)
@@ -324,10 +324,10 @@ func (s *PartitionSuite) TestLoadPartitions() {
 	s.Run("has_partition_failure", func() {
 		s.Run("return_false", func() {
 			defer s.resetMock()
-			s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).
-				Return(&server.BoolResponse{Status: &common.Status{}, Value: true}, nil)
+			s.mock.EXPECT().HasCollection(mock.Anything, &milvuspb.HasCollectionRequest{CollectionName: testCollectionName}).
+				Return(&milvuspb.BoolResponse{Status: &commonpb.Status{}, Value: true}, nil)
 			s.mock.EXPECT().HasPartition(mock.Anything, mock.Anything).
-				Return(&server.BoolResponse{Status: &common.Status{}, Value: false}, nil)
+				Return(&milvuspb.BoolResponse{Status: &commonpb.Status{}, Value: false}, nil)
 
 			err := c.LoadPartitions(ctx, testCollectionName, partNames, false)
 			s.Error(err)
@@ -335,8 +335,8 @@ func (s *PartitionSuite) TestLoadPartitions() {
 
 		s.Run("return_error", func() {
 			defer s.resetMock()
-			s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).
-				Return(&server.BoolResponse{Status: &common.Status{}, Value: true}, nil)
+			s.mock.EXPECT().HasCollection(mock.Anything, &milvuspb.HasCollectionRequest{CollectionName: testCollectionName}).
+				Return(&milvuspb.BoolResponse{Status: &commonpb.Status{}, Value: true}, nil)
 			s.mock.EXPECT().HasPartition(mock.Anything, mock.Anything).
 				Return(nil, errors.New("mock"))
 
@@ -348,17 +348,17 @@ func (s *PartitionSuite) TestLoadPartitions() {
 	s.Run("load_partitions_failure", func() {
 		s.Run("fail_status_code", func() {
 			defer s.resetMock()
-			s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).
-				Return(&server.BoolResponse{Status: &common.Status{}, Value: true}, nil)
-			s.mock.EXPECT().HasPartition(mock.Anything, mock.Anything).Run(func(_ context.Context, req *server.HasPartitionRequest) {
+			s.mock.EXPECT().HasCollection(mock.Anything, &milvuspb.HasCollectionRequest{CollectionName: testCollectionName}).
+				Return(&milvuspb.BoolResponse{Status: &commonpb.Status{}, Value: true}, nil)
+			s.mock.EXPECT().HasPartition(mock.Anything, mock.Anything).Run(func(_ context.Context, req *milvuspb.HasPartitionRequest) {
 				s.Equal(testCollectionName, req.GetCollectionName())
 				_, ok := mPartNames[req.GetPartitionName()]
 				s.True(ok)
-			}).Return(&server.BoolResponse{Status: &common.Status{}, Value: true}, nil)
-			s.mock.EXPECT().LoadPartitions(mock.Anything, mock.Anything).Run(func(_ context.Context, req *server.LoadPartitionsRequest) {
+			}).Return(&milvuspb.BoolResponse{Status: &commonpb.Status{}, Value: true}, nil)
+			s.mock.EXPECT().LoadPartitions(mock.Anything, mock.Anything).Run(func(_ context.Context, req *milvuspb.LoadPartitionsRequest) {
 				s.Equal(testCollectionName, req.GetCollectionName())
 				s.ElementsMatch(partNames, req.GetPartitionNames())
-			}).Return(&common.Status{ErrorCode: common.ErrorCode_UnexpectedError}, nil)
+			}).Return(&commonpb.Status{ErrorCode: commonpb.ErrorCode_UnexpectedError}, nil)
 
 			err := c.LoadPartitions(ctx, testCollectionName, partNames, true)
 			s.Error(err)
@@ -366,17 +366,17 @@ func (s *PartitionSuite) TestLoadPartitions() {
 
 		s.Run("return_error", func() {
 			defer s.resetMock()
-			s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).
-				Return(&server.BoolResponse{Status: &common.Status{}, Value: true}, nil)
-			s.mock.EXPECT().HasPartition(mock.Anything, mock.Anything).Run(func(_ context.Context, req *server.HasPartitionRequest) {
+			s.mock.EXPECT().HasCollection(mock.Anything, &milvuspb.HasCollectionRequest{CollectionName: testCollectionName}).
+				Return(&milvuspb.BoolResponse{Status: &commonpb.Status{}, Value: true}, nil)
+			s.mock.EXPECT().HasPartition(mock.Anything, mock.Anything).Run(func(_ context.Context, req *milvuspb.HasPartitionRequest) {
 				s.Equal(testCollectionName, req.GetCollectionName())
 				_, ok := mPartNames[req.GetPartitionName()]
 				s.True(ok)
-			}).Return(&server.BoolResponse{Status: &common.Status{}, Value: true}, nil)
-			s.mock.EXPECT().LoadPartitions(mock.Anything, mock.Anything).Run(func(_ context.Context, req *server.LoadPartitionsRequest) {
+			}).Return(&milvuspb.BoolResponse{Status: &commonpb.Status{}, Value: true}, nil)
+			s.mock.EXPECT().LoadPartitions(mock.Anything, mock.Anything).Run(func(_ context.Context, req *milvuspb.LoadPartitionsRequest) {
 				s.Equal(testCollectionName, req.GetCollectionName())
 				s.ElementsMatch(partNames, req.GetPartitionNames())
-			}).Return(&common.Status{ErrorCode: common.ErrorCode_UnexpectedError}, nil)
+			}).Return(&commonpb.Status{ErrorCode: commonpb.ErrorCode_UnexpectedError}, nil)
 
 			err := c.LoadPartitions(ctx, testCollectionName, partNames, true)
 			s.Error(err)
@@ -385,17 +385,17 @@ func (s *PartitionSuite) TestLoadPartitions() {
 
 	s.Run("get_loading_progress_failure", func() {
 		defer s.resetMock()
-		s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).
-			Return(&server.BoolResponse{Status: &common.Status{}, Value: true}, nil)
-		s.mock.EXPECT().HasPartition(mock.Anything, mock.Anything).Run(func(_ context.Context, req *server.HasPartitionRequest) {
+		s.mock.EXPECT().HasCollection(mock.Anything, &milvuspb.HasCollectionRequest{CollectionName: testCollectionName}).
+			Return(&milvuspb.BoolResponse{Status: &commonpb.Status{}, Value: true}, nil)
+		s.mock.EXPECT().HasPartition(mock.Anything, mock.Anything).Run(func(_ context.Context, req *milvuspb.HasPartitionRequest) {
 			s.Equal(testCollectionName, req.GetCollectionName())
 			_, ok := mPartNames[req.GetPartitionName()]
 			s.True(ok)
-		}).Return(&server.BoolResponse{Status: &common.Status{}, Value: true}, nil)
-		s.mock.EXPECT().LoadPartitions(mock.Anything, mock.Anything).Run(func(_ context.Context, req *server.LoadPartitionsRequest) {
+		}).Return(&milvuspb.BoolResponse{Status: &commonpb.Status{}, Value: true}, nil)
+		s.mock.EXPECT().LoadPartitions(mock.Anything, mock.Anything).Run(func(_ context.Context, req *milvuspb.LoadPartitionsRequest) {
 			s.Equal(testCollectionName, req.GetCollectionName())
 			s.ElementsMatch(partNames, req.GetPartitionNames())
-		}).Return(&common.Status{ErrorCode: common.ErrorCode_Success}, nil)
+		}).Return(&commonpb.Status{ErrorCode: commonpb.ErrorCode_Success}, nil)
 		s.mock.EXPECT().GetLoadingProgress(mock.Anything, mock.Anything).
 			Return(nil, errors.New("mock error"))
 

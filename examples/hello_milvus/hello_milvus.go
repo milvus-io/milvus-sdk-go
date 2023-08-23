@@ -13,10 +13,10 @@ import (
 
 const (
 	milvusAddr     = `localhost:19530`
-	nEntities, dim = 3000, 8
+	nEntities, dim = 3000, 128
 	collectionName = "hello_milvus"
 
-	msgFmt                         = "\n==== %s ====\n"
+	msgFmt                         = "==== %s ====\n"
 	idCol, randomCol, embeddingCol = "ID", "random", "embeddings"
 	topK                           = 3
 )
@@ -24,12 +24,12 @@ const (
 func main() {
 	ctx := context.Background()
 
-	fmt.Printf(msgFmt, "start connecting to Milvus")
+	log.Printf(msgFmt, "start connecting to Milvus")
 	c, err := client.NewClient(ctx, client.Config{
 		Address: milvusAddr,
 	})
 	if err != nil {
-		log.Fatalf("failed to connect to milvus, err: %v", err)
+		log.Fatal("failed to connect to milvus, err: ", err.Error())
 	}
 	defer c.Close()
 
@@ -43,40 +43,18 @@ func main() {
 	}
 
 	// create collection
-	fmt.Printf(msgFmt, "create collection `hello_milvus")
-	schema := &entity.Schema{
-		CollectionName: collectionName,
-		Description:    "hello_milvus is the simplest demo to introduce the APIs",
-		AutoID:         false,
-		Fields: []*entity.Field{
-			{
-				Name:       idCol,
-				DataType:   entity.FieldTypeInt64,
-				PrimaryKey: true,
-				AutoID:     false,
-			},
-			{
-				Name:       randomCol,
-				DataType:   entity.FieldTypeDouble,
-				PrimaryKey: false,
-				AutoID:     false,
-			},
-			{
-				Name:     embeddingCol,
-				DataType: entity.FieldTypeFloatVector,
-				TypeParams: map[string]string{
-					entity.TypeParamDim: fmt.Sprintf("%d", dim),
-				},
-			},
-		},
-	}
+	log.Printf(msgFmt, fmt.Sprintf("create collection, `%s`", collectionName))
+	schema := entity.NewSchema().WithName(collectionName).WithDescription("hello_milvus is the simplest demo to introduce the APIs").
+		WithField(entity.NewField().WithName(idCol).WithDataType(entity.FieldTypeInt64).WithIsPrimaryKey(true).WithIsAutoID(false)).
+		WithField(entity.NewField().WithName(randomCol).WithDataType(entity.FieldTypeDouble)).
+		WithField(entity.NewField().WithName(embeddingCol).WithDataType(entity.FieldTypeFloatVector).WithDim(dim))
 
 	if err := c.CreateCollection(ctx, schema, entity.DefaultShardNumber); err != nil { // use default shard number
 		log.Fatalf("create collection failed, err: %v", err)
 	}
 
 	// insert data
-	fmt.Printf(msgFmt, "start inserting random entities")
+	log.Printf(msgFmt, "start inserting random entities")
 	idList, randomList := make([]int64, 0, nEntities), make([]float64, 0, nEntities)
 	embeddingList := make([][]float32, 0, nEntities)
 
@@ -109,7 +87,7 @@ func main() {
 	}
 
 	// build index
-	fmt.Printf(msgFmt, "start creating index IVF_FLAT")
+	log.Printf(msgFmt, "start creating index IVF_FLAT")
 	idx, err := entity.NewIndexIvfFlat(entity.L2, 128)
 	if err != nil {
 		log.Fatalf("failed to create ivf flat index, err: %v", err)
@@ -118,13 +96,13 @@ func main() {
 		log.Fatalf("failed to create index, err: %v", err)
 	}
 
-	fmt.Printf(msgFmt, "start loading collection")
+	log.Printf(msgFmt, "start loading collection")
 	err = c.LoadCollection(ctx, collectionName, false)
 	if err != nil {
 		log.Fatalf("failed to load collection, err: %v", err)
 	}
 
-	fmt.Printf(msgFmt, "start searcching based on vector similarity")
+	log.Printf(msgFmt, "start searcching based on vector similarity")
 	vec2search := []entity.Vector{
 		entity.FloatVector(embeddingList[len(embeddingList)-2]),
 		entity.FloatVector(embeddingList[len(embeddingList)-1]),
@@ -138,14 +116,14 @@ func main() {
 		log.Fatalf("failed to search collection, err: %v", err)
 	}
 
-	fmt.Println("results:")
+	log.Println("results:")
 	for _, res := range sRet {
 		printResult(&res)
 	}
-	fmt.Printf("\tsearch latency: %dms\n", end.Sub(begin)/time.Millisecond)
+	log.Printf("\tsearch latency: %dms\n", end.Sub(begin)/time.Millisecond)
 
 	// hybrid search
-	fmt.Printf(msgFmt, "start hybrid searching with `random > 0.5`")
+	log.Printf(msgFmt, "start hybrid searching with `random > 0.5`")
 	begin = time.Now()
 	sRet2, err := c.Search(ctx, collectionName, nil, "random > 0.5",
 		[]string{randomCol}, vec2search, embeddingCol, entity.L2, topK, sp)
@@ -153,20 +131,20 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to search collection, err: %v", err)
 	}
-	fmt.Println("results:")
+	log.Println("results:")
 	for _, res := range sRet2 {
 		printResult(&res)
 	}
-	fmt.Printf("\tsearch latency: %dms\n", end.Sub(begin)/time.Millisecond)
+	log.Printf("\tsearch latency: %dms\n", end.Sub(begin)/time.Millisecond)
 
 	// delete data
-	fmt.Printf(msgFmt, "start deleting with expr ``")
+	log.Printf(msgFmt, "start deleting with expr ``")
 	pks := entity.NewColumnInt64(idCol, []int64{0, 1})
 	sRet3, err := c.QueryByPks(ctx, collectionName, nil, pks, []string{randomCol})
 	if err != nil {
 		log.Fatalf("failed to query result, err: %v", err)
 	}
-	fmt.Println("results:")
+	log.Println("results:")
 	idlist := make([]int64, 0)
 	randList := make([]float64, 0)
 
@@ -191,7 +169,7 @@ func main() {
 			}
 		}
 	}
-	fmt.Printf("\tids: %#v, randoms: %#v\n", idlist, randList)
+	log.Printf("\tids: %#v, randoms: %#v\n", idlist, randList)
 
 	if err := c.DeleteByPks(ctx, collectionName, "", pks); err != nil {
 		log.Fatalf("failed to delete by pks, err: %v", err)
@@ -202,7 +180,7 @@ func main() {
 	}
 
 	// drop collection
-	fmt.Printf(msgFmt, "drop collection `hello_milvus`")
+	log.Printf(msgFmt, "drop collection `hello_milvus`")
 	if err := c.DropCollection(ctx, collectionName); err != nil {
 		log.Fatalf("failed to drop collection, err: %v", err)
 	}
@@ -229,5 +207,5 @@ func printResult(sRet *client.SearchResult) {
 		randoms = append(randoms, val)
 		scores = append(scores, sRet.Scores[i])
 	}
-	fmt.Printf("\trandoms: %v, scores: %v\n", randoms, scores)
+	log.Printf("\trandoms: %v, scores: %v\n", randoms, scores)
 }

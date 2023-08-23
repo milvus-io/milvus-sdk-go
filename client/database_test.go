@@ -7,7 +7,7 @@ import (
 	"github.com/go-faker/faker/v4"
 	"github.com/go-faker/faker/v4/pkg/options"
 	"github.com/golang/protobuf/proto"
-	server "github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -24,7 +24,7 @@ func TestGrpcClientListDatabases(t *testing.T) {
 	for _, singleCase := range caseList {
 		mockServer.SetInjection(MListDatabase, func(ctx context.Context, m proto.Message) (proto.Message, error) {
 			s, err := SuccessStatus()
-			resp := &server.ListDatabasesResponse{
+			resp := &milvuspb.ListDatabasesResponse{
 				Status:  s,
 				DbNames: singleCase.DBName,
 			}

@@ -21,8 +21,8 @@ import (
 	"testing"
 
 	"github.com/golang/protobuf/proto"
-	common "github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
-	server "github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -34,14 +34,14 @@ func TestGrpcCreateAlias(t *testing.T) {
 	t.Run("normal create alias", func(t *testing.T) {
 
 		mockServer.SetInjection(MCreateAlias, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			req, ok := raw.(*server.CreateAliasRequest)
+			req, ok := raw.(*milvuspb.CreateAliasRequest)
 			if !ok {
 				t.FailNow()
 			}
 			assert.Equal(t, "testcoll", req.CollectionName)
 			assert.Equal(t, "collAlias", req.Alias)
 
-			return &common.Status{ErrorCode: common.ErrorCode_Success}, nil
+			return &commonpb.Status{ErrorCode: commonpb.ErrorCode_Success}, nil
 		})
 		defer mockServer.DelInjection(MCreateAlias)
 		err := c.CreateAlias(ctx, "testcoll", "collAlias")
@@ -51,17 +51,17 @@ func TestGrpcCreateAlias(t *testing.T) {
 	t.Run("alias duplicated", func(t *testing.T) {
 		m := make(map[string]struct{})
 		mockServer.SetInjection(MCreateAlias, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			req, ok := raw.(*server.CreateAliasRequest)
+			req, ok := raw.(*milvuspb.CreateAliasRequest)
 			if !ok {
 				t.FailNow()
 			}
-			status := common.ErrorCode_Success
+			status := commonpb.ErrorCode_Success
 			_, has := m[req.GetAlias()]
 			if has {
-				status = common.ErrorCode_UnexpectedError
+				status = commonpb.ErrorCode_UnexpectedError
 			}
 			m[req.GetAlias()] = struct{}{}
-			return &common.Status{ErrorCode: status}, nil
+			return &commonpb.Status{ErrorCode: status}, nil
 		})
 		defer mockServer.DelInjection(MCreateAlias)
 
@@ -81,13 +81,13 @@ func TestGrpcDropAlias(t *testing.T) {
 
 	t.Run("normal drop alias", func(t *testing.T) {
 		mockServer.SetInjection(MDropAlias, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			req, ok := raw.(*server.DropAliasRequest)
+			req, ok := raw.(*milvuspb.DropAliasRequest)
 			if !ok {
 				t.FailNow()
 			}
 			assert.Equal(t, "collAlias", req.Alias)
 
-			return &common.Status{ErrorCode: common.ErrorCode_Success}, nil
+			return &commonpb.Status{ErrorCode: commonpb.ErrorCode_Success}, nil
 		})
 		defer mockServer.DelInjection(MDropAlias)
 		err := c.DropAlias(ctx, "collAlias")
@@ -96,13 +96,13 @@ func TestGrpcDropAlias(t *testing.T) {
 
 	t.Run("drop alias error", func(t *testing.T) {
 		mockServer.SetInjection(MDropAlias, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			req, ok := raw.(*server.DropAliasRequest)
+			req, ok := raw.(*milvuspb.DropAliasRequest)
 			if !ok {
 				t.FailNow()
 			}
 			assert.Equal(t, "collAlias", req.Alias)
 
-			return &common.Status{ErrorCode: common.ErrorCode_UnexpectedError}, nil
+			return &commonpb.Status{ErrorCode: commonpb.ErrorCode_UnexpectedError}, nil
 		})
 		defer mockServer.DelInjection(MDropAlias)
 		err := c.DropAlias(ctx, "collAlias")
@@ -120,14 +120,14 @@ func TestGrpcAlterAlias(t *testing.T) {
 
 	t.Run("normal alter alias", func(t *testing.T) {
 		mockServer.SetInjection(MAlterAlias, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			req, ok := raw.(*server.AlterAliasRequest)
+			req, ok := raw.(*milvuspb.AlterAliasRequest)
 			if !ok {
 				t.FailNow()
 			}
 			assert.Equal(t, collName, req.CollectionName)
 			assert.Equal(t, aliasName, req.Alias)
 
-			return &common.Status{ErrorCode: common.ErrorCode_Success}, nil
+			return &commonpb.Status{ErrorCode: commonpb.ErrorCode_Success}, nil
 		})
 		defer mockServer.DelInjection(MAlterAlias)
 		err := c.AlterAlias(ctx, collName, aliasName)
@@ -136,14 +136,14 @@ func TestGrpcAlterAlias(t *testing.T) {
 
 	t.Run("alter alias error", func(t *testing.T) {
 		mockServer.SetInjection(MAlterAlias, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			req, ok := raw.(*server.AlterAliasRequest)
+			req, ok := raw.(*milvuspb.AlterAliasRequest)
 			if !ok {
 				t.FailNow()
 			}
 			assert.Equal(t, collName, req.CollectionName)
 			assert.Equal(t, aliasName, req.Alias)
 
-			return &common.Status{ErrorCode: common.ErrorCode_UnexpectedError}, nil
+			return &commonpb.Status{ErrorCode: commonpb.ErrorCode_UnexpectedError}, nil
 		})
 		defer mockServer.DelInjection(MAlterAlias)
 		err := c.AlterAlias(ctx, collName, aliasName)

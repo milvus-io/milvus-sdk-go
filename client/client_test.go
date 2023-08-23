@@ -20,8 +20,8 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/test/bufconn"
 
-	common "github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
-	server "github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )
 
@@ -78,7 +78,7 @@ func TestMain(m *testing.M) {
 	mockServer = &MockServer{
 		Injections: make(map[ServiceMethod]TestInjection),
 	}
-	server.RegisterMilvusServiceServer(s, mockServer)
+	milvuspb.RegisterMilvusServiceServer(s, mockServer)
 	go func() {
 		if err := s.Serve(lis); err != nil {
 			log.Fatalf("Server exited with error: %v", err)
@@ -112,11 +112,11 @@ func testClient(ctx context.Context, t *testing.T) Client {
 
 func TestHandleRespStatus(t *testing.T) {
 	assert.NotNil(t, handleRespStatus(nil))
-	assert.Nil(t, handleRespStatus(&common.Status{
-		ErrorCode: common.ErrorCode_Success,
+	assert.Nil(t, handleRespStatus(&commonpb.Status{
+		ErrorCode: commonpb.ErrorCode_Success,
 	}))
-	assert.NotNil(t, handleRespStatus(&common.Status{
-		ErrorCode: common.ErrorCode_UnexpectedError,
+	assert.NotNil(t, handleRespStatus(&commonpb.Status{
+		ErrorCode: commonpb.ErrorCode_UnexpectedError,
 	}))
 }
 

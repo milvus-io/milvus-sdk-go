@@ -15,7 +15,7 @@ import (
 	"math/rand"
 	"testing"
 
-	server "github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 	"github.com/stretchr/testify/assert"
 )
@@ -48,7 +48,7 @@ func TestCreateCollectionWithPartitionNum(t *testing.T) {
 func TestLoadCollectionWithReplicaNumber(t *testing.T) {
 	opt := WithReplicaNumber(testMultiReplicaNumber)
 	assert.NotNil(t, opt)
-	req := &server.LoadCollectionRequest{}
+	req := &milvuspb.LoadCollectionRequest{}
 
 	assert.NotPanics(t, func() {
 		opt(req)

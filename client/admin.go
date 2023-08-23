@@ -14,15 +14,15 @@ package client
 import (
 	"context"
 
-	server "github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
 )
 
-// GetVersion returns milvus server version information.
+// GetVersion returns milvus milvuspb.version information.
 func (c *GrpcClient) GetVersion(ctx context.Context) (string, error) {
 	if c.Service == nil {
 		return "", ErrClientNotReady
 	}
-	resp, err := c.Service.GetVersion(ctx, &server.GetVersionRequest{})
+	resp, err := c.Service.GetVersion(ctx, &milvuspb.GetVersionRequest{})
 	if err != nil {
 		return "", err
 	}

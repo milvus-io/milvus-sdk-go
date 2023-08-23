@@ -9,9 +9,9 @@ import (
 	"github.com/cockroachdb/errors"
 
 	"github.com/golang/protobuf/proto"
-	common "github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
-	server "github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
-	schema "github.com/milvus-io/milvus-proto/go-api/v2/schemapb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/schemapb"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -36,18 +36,18 @@ func TestCreateCollectionByRow(t *testing.T) {
 		mockServer.DelInjection(MHasCollection)
 		shardsNum := int32(1)
 		mockServer.SetInjection(MCreateCollection, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
-			req, ok := raw.(*server.CreateCollectionRequest)
+			req, ok := raw.(*milvuspb.CreateCollectionRequest)
 			if !ok {
-				return &common.Status{ErrorCode: common.ErrorCode_IllegalArgument}, errors.New("illegal request type")
+				return &commonpb.Status{ErrorCode: commonpb.ErrorCode_IllegalArgument}, errors.New("illegal request type")
 			}
 			assert.Equal(t, "ValidStruct", req.GetCollectionName())
-			sschema := &schema.CollectionSchema{}
+			sschema := &schemapb.CollectionSchema{}
 			if !assert.Nil(t, proto.Unmarshal(req.GetSchema(), sschema)) {
 				assert.Equal(t, 8, len(sschema.Fields))
 				assert.Equal(t, shardsNum, req.GetShardsNum())
 			}
 
-			return &common.Status{ErrorCode: common.ErrorCode_Success}, nil
+			return &commonpb.Status{ErrorCode: commonpb.ErrorCode_Success}, nil
 		})
 		assert.Nil(t, c.CreateCollectionByRow(ctx, &ValidStruct{}, shardsNum))
 	})
@@ -56,7 +56,7 @@ func TestCreateCollectionByRow(t *testing.T) {
 		//Duplicated
 		m := make(map[string]struct{})
 		mockServer.SetInjection(MCreateCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			req, ok := raw.(*server.CreateCollectionRequest)
+			req, ok := raw.(*milvuspb.CreateCollectionRequest)
 			if !ok {
 				return BadRequestStatus()
 			}
@@ -65,8 +65,8 @@ func TestCreateCollectionByRow(t *testing.T) {
 			return SuccessStatus()
 		})
 		mockServer.SetInjection(MHasCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			req, ok := raw.(*server.HasCollectionRequest)
-			resp := &server.BoolResponse{}
+			req, ok := raw.(*milvuspb.HasCollectionRequest)
+			resp := &milvuspb.BoolResponse{}
 			if !ok {
 				return BadRequestStatus()
 			}
@@ -115,14 +115,14 @@ func (s *InsertByRowsSuite) TestFails() {
 
 	s.Run("fail_hascollection_errcode", func() {
 		defer s.resetMock()
-		s.setupHasCollectionError(common.ErrorCode_UnexpectedError, nil)
+		s.setupHasCollectionError(commonpb.ErrorCode_UnexpectedError, nil)
 		_, err := c.InsertByRows(ctx, testCollectionName, partName, []entity.Row{entity.RowBase{}})
 		s.Error(err)
 	})
 
 	s.Run("fail_hascollection_error", func() {
 		defer s.resetMock()
-		s.setupHasCollectionError(common.ErrorCode_Success, errors.New("mock error"))
+		s.setupHasCollectionError(commonpb.ErrorCode_Success, errors.New("mock error"))
 		_, err := c.InsertByRows(ctx, testCollectionName, partName, []entity.Row{entity.RowBase{}})
 		s.Error(err)
 	})
@@ -138,7 +138,7 @@ func (s *InsertByRowsSuite) TestFails() {
 	s.Run("fail_haspartition_error", func() {
 		defer s.resetMock()
 		s.setupHasCollection(testCollectionName)
-		s.setupHasPartitionError(common.ErrorCode_Success, errors.New("mock error"))
+		s.setupHasPartitionError(commonpb.ErrorCode_Success, errors.New("mock error"))
 		_, err := c.InsertByRows(ctx, testCollectionName, partName, []entity.Row{entity.RowBase{}})
 		s.Error(err)
 	})
@@ -146,7 +146,7 @@ func (s *InsertByRowsSuite) TestFails() {
 	s.Run("fail_haspartition_errcode", func() {
 		defer s.resetMock()
 		s.setupHasCollection(testCollectionName)
-		s.setupHasPartitionError(common.ErrorCode_UnexpectedError, nil)
+		s.setupHasPartitionError(commonpb.ErrorCode_UnexpectedError, nil)
 		_, err := c.InsertByRows(ctx, testCollectionName, partName, []entity.Row{entity.RowBase{}})
 		s.Error(err)
 	})
@@ -155,7 +155,7 @@ func (s *InsertByRowsSuite) TestFails() {
 		defer s.resetMock()
 		s.setupHasCollection(testCollectionName)
 		s.setupHasPartition(testCollectionName, partName)
-		s.setupDescribeCollectionError(common.ErrorCode_Success, errors.New("mock error"))
+		s.setupDescribeCollectionError(commonpb.ErrorCode_Success, errors.New("mock error"))
 		_, err := c.InsertByRows(ctx, testCollectionName, partName, []entity.Row{entity.RowBase{}})
 		s.Error(err)
 	})
@@ -164,7 +164,7 @@ func (s *InsertByRowsSuite) TestFails() {
 		defer s.resetMock()
 		s.setupHasCollection(testCollectionName)
 		s.setupHasPartition(testCollectionName, partName)
-		s.setupDescribeCollectionError(common.ErrorCode_UnexpectedError, nil)
+		s.setupDescribeCollectionError(commonpb.ErrorCode_UnexpectedError, nil)
 		_, err := c.InsertByRows(ctx, testCollectionName, partName, []entity.Row{entity.RowBase{}})
 		s.Error(err)
 	})
@@ -258,13 +258,13 @@ func (s *InsertByRowsSuite) TestSuccess() {
 		)
 
 		s.mock.EXPECT().Insert(mock.Anything, mock.AnythingOfType("*milvuspb.InsertRequest")).
-			Run(func(_ context.Context, req *server.InsertRequest) {
+			Run(func(_ context.Context, req *milvuspb.InsertRequest) {
 				s.Equal(testCollectionName, req.GetCollectionName())
 				s.Equal(partName, req.GetPartitionName())
 				s.Equal(2, len(req.GetFieldsData()))
-			}).Return(&server.MutationResult{
-			Status: &common.Status{ErrorCode: common.ErrorCode_Success},
-			IDs:    &schema.IDs{IdField: &schema.IDs_IntId{IntId: &schema.LongArray{Data: []int64{100}}}},
+			}).Return(&milvuspb.MutationResult{
+			Status: &commonpb.Status{ErrorCode: commonpb.ErrorCode_Success},
+			IDs:    &schemapb.IDs{IdField: &schemapb.IDs_IntId{IntId: &schemapb.LongArray{Data: []int64{100}}}},
 		}, nil)
 		type row struct {
 			entity.RowBase
@@ -289,13 +289,13 @@ func (s *InsertByRowsSuite) TestSuccess() {
 		)
 
 		s.mock.EXPECT().Insert(mock.Anything, mock.AnythingOfType("*milvuspb.InsertRequest")).
-			Run(func(_ context.Context, req *server.InsertRequest) {
+			Run(func(_ context.Context, req *milvuspb.InsertRequest) {
 				s.Equal(testCollectionName, req.GetCollectionName())
 				s.Equal(partName, req.GetPartitionName())
 				s.Equal(3, len(req.GetFieldsData()))
-			}).Return(&server.MutationResult{
-			Status: &common.Status{ErrorCode: common.ErrorCode_Success},
-			IDs:    &schema.IDs{IdField: &schema.IDs_IntId{IntId: &schema.LongArray{Data: []int64{100}}}},
+			}).Return(&milvuspb.MutationResult{
+			Status: &commonpb.Status{ErrorCode: commonpb.ErrorCode_Success},
+			IDs:    &schemapb.IDs{IdField: &schemapb.IDs_IntId{IntId: &schemapb.LongArray{Data: []int64{100}}}},
 		}, nil)
 		type row struct {
 			entity.RowBase
@@ -318,10 +318,10 @@ func TestInsertByRows(t *testing.T) {
 
 func TestSearchResultToRows(t *testing.T) {
 	t.Run("successful test cases", func(t *testing.T) {
-		sr := &schema.SearchResultData{
+		sr := &schemapb.SearchResultData{
 			NumQueries: 1,
 			TopK:       3,
-			FieldsData: []*schema.FieldData{
+			FieldsData: []*schemapb.FieldData{
 				longFieldData("ID", []int64{1, 2, 3}),
 				intFieldData("Attr1", []int32{1, 2, 3}),
 				intFieldData("Attr2", []int32{1, 2, 3}),
@@ -332,9 +332,9 @@ func TestSearchResultToRows(t *testing.T) {
 				floatVectorFieldData("Vector", 4, []float32{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}),
 			},
 			Scores: []float32{0.1, 0.2, 0.3},
-			Ids: &schema.IDs{
-				IdField: &schema.IDs_IntId{
-					IntId: &schema.LongArray{
+			Ids: &schemapb.IDs{
+				IdField: &schemapb.IDs_IntId{
+					IntId: &schemapb.LongArray{
 						Data: []int64{1, 2, 3},
 					},
 				},
@@ -584,33 +584,33 @@ func TestSetFieldValue(t *testing.T) {
 	})
 }
 
-func emptyFieldData() *schema.FieldData {
-	return &schema.FieldData{}
+func emptyFieldData() *schemapb.FieldData {
+	return &schemapb.FieldData{}
 }
-func emptyScalarFieldData() *schema.FieldData {
-	return &schema.FieldData{
-		Field: &schema.FieldData_Scalars{
-			Scalars: &schema.ScalarField{},
+func emptyScalarFieldData() *schemapb.FieldData {
+	return &schemapb.FieldData{
+		Field: &schemapb.FieldData_Scalars{
+			Scalars: &schemapb.ScalarField{},
 		},
 	}
 }
 
-func emptyVectorFieldData() *schema.FieldData {
-	return &schema.FieldData{
-		Field: &schema.FieldData_Vectors{
-			Vectors: &schema.VectorField{},
+func emptyVectorFieldData() *schemapb.FieldData {
+	return &schemapb.FieldData{
+		Field: &schemapb.FieldData_Vectors{
+			Vectors: &schemapb.VectorField{},
 		},
 	}
 }
 
-func boolFieldData(name string, data []bool) *schema.FieldData {
-	return &schema.FieldData{
+func boolFieldData(name string, data []bool) *schemapb.FieldData {
+	return &schemapb.FieldData{
 		FieldName: name,
-		Type:      schema.DataType_Bool,
-		Field: &schema.FieldData_Scalars{
-			Scalars: &schema.ScalarField{
-				Data: &schema.ScalarField_BoolData{
-					BoolData: &schema.BoolArray{
+		Type:      schemapb.DataType_Bool,
+		Field: &schemapb.FieldData_Scalars{
+			Scalars: &schemapb.ScalarField{
+				Data: &schemapb.ScalarField_BoolData{
+					BoolData: &schemapb.BoolArray{
 						Data: data,
 					},
 				},
@@ -619,14 +619,14 @@ func boolFieldData(name string, data []bool) *schema.FieldData {
 	}
 }
 
-func intFieldData(name string, data []int32) *schema.FieldData {
-	return &schema.FieldData{
+func intFieldData(name string, data []int32) *schemapb.FieldData {
+	return &schemapb.FieldData{
 		FieldName: name,
 		// Type not determined
-		Field: &schema.FieldData_Scalars{
-			Scalars: &schema.ScalarField{
-				Data: &schema.ScalarField_IntData{
-					IntData: &schema.IntArray{
+		Field: &schemapb.FieldData_Scalars{
+			Scalars: &schemapb.ScalarField{
+				Data: &schemapb.ScalarField_IntData{
+					IntData: &schemapb.IntArray{
 						Data: data,
 					},
 				},
@@ -635,14 +635,14 @@ func intFieldData(name string, data []int32) *schema.FieldData {
 	}
 }
 
-func longFieldData(name string, data []int64) *schema.FieldData {
-	return &schema.FieldData{
+func longFieldData(name string, data []int64) *schemapb.FieldData {
+	return &schemapb.FieldData{
 		FieldName: name,
-		Type:      schema.DataType_Int64,
-		Field: &schema.FieldData_Scalars{
-			Scalars: &schema.ScalarField{
-				Data: &schema.ScalarField_LongData{
-					LongData: &schema.LongArray{
+		Type:      schemapb.DataType_Int64,
+		Field: &schemapb.FieldData_Scalars{
+			Scalars: &schemapb.ScalarField{
+				Data: &schemapb.ScalarField_LongData{
+					LongData: &schemapb.LongArray{
 						Data: data,
 					},
 				},
@@ -651,14 +651,14 @@ func longFieldData(name string, data []int64) *schema.FieldData {
 	}
 }
 
-func floatFieldData(name string, data []float32) *schema.FieldData {
-	return &schema.FieldData{
+func floatFieldData(name string, data []float32) *schemapb.FieldData {
+	return &schemapb.FieldData{
 		FieldName: name,
-		Type:      schema.DataType_Float,
-		Field: &schema.FieldData_Scalars{
-			Scalars: &schema.ScalarField{
-				Data: &schema.ScalarField_FloatData{
-					FloatData: &schema.FloatArray{
+		Type:      schemapb.DataType_Float,
+		Field: &schemapb.FieldData_Scalars{
+			Scalars: &schemapb.ScalarField{
+				Data: &schemapb.ScalarField_FloatData{
+					FloatData: &schemapb.FloatArray{
 						Data: data,
 					},
 				},
@@ -667,14 +667,14 @@ func floatFieldData(name string, data []float32) *schema.FieldData {
 	}
 }
 
-func doubleFieldData(name string, data []float64) *schema.FieldData {
-	return &schema.FieldData{
+func doubleFieldData(name string, data []float64) *schemapb.FieldData {
+	return &schemapb.FieldData{
 		FieldName: name,
-		Type:      schema.DataType_Double,
-		Field: &schema.FieldData_Scalars{
-			Scalars: &schema.ScalarField{
-				Data: &schema.ScalarField_DoubleData{
-					DoubleData: &schema.DoubleArray{
+		Type:      schemapb.DataType_Double,
+		Field: &schemapb.FieldData_Scalars{
+			Scalars: &schemapb.ScalarField{
+				Data: &schemapb.ScalarField_DoubleData{
+					DoubleData: &schemapb.DoubleArray{
 						Data: data,
 					},
 				},
@@ -683,14 +683,14 @@ func doubleFieldData(name string, data []float64) *schema.FieldData {
 	}
 }
 
-func stringFieldData(name string, data []string) *schema.FieldData {
-	return &schema.FieldData{
+func stringFieldData(name string, data []string) *schemapb.FieldData {
+	return &schemapb.FieldData{
 		FieldName: name,
-		Type:      schema.DataType_String,
-		Field: &schema.FieldData_Scalars{
-			Scalars: &schema.ScalarField{
-				Data: &schema.ScalarField_StringData{
-					StringData: &schema.StringArray{
+		Type:      schemapb.DataType_String,
+		Field: &schemapb.FieldData_Scalars{
+			Scalars: &schemapb.ScalarField{
+				Data: &schemapb.ScalarField_StringData{
+					StringData: &schemapb.StringArray{
 						Data: data,
 					},
 				},
@@ -699,15 +699,15 @@ func stringFieldData(name string, data []string) *schema.FieldData {
 	}
 }
 
-func floatVectorFieldData(name string, dim int, data []float32) *schema.FieldData {
-	return &schema.FieldData{
+func floatVectorFieldData(name string, dim int, data []float32) *schemapb.FieldData {
+	return &schemapb.FieldData{
 		FieldName: name,
-		Type:      schema.DataType_FloatVector,
-		Field: &schema.FieldData_Vectors{
-			Vectors: &schema.VectorField{
+		Type:      schemapb.DataType_FloatVector,
+		Field: &schemapb.FieldData_Vectors{
+			Vectors: &schemapb.VectorField{
 				Dim: int64(dim),
-				Data: &schema.VectorField_FloatVector{
-					FloatVector: &schema.FloatArray{
+				Data: &schemapb.VectorField_FloatVector{
+					FloatVector: &schemapb.FloatArray{
 						Data: data,
 					},
 				},
@@ -716,14 +716,14 @@ func floatVectorFieldData(name string, dim int, data []float32) *schema.FieldDat
 	}
 }
 
-func binaryVectorFieldData(name string, data []byte) *schema.FieldData {
-	return &schema.FieldData{
+func binaryVectorFieldData(name string, data []byte) *schemapb.FieldData {
+	return &schemapb.FieldData{
 		FieldName: name,
-		Type:      schema.DataType_BinaryVector,
-		Field: &schema.FieldData_Vectors{
-			Vectors: &schema.VectorField{
+		Type:      schemapb.DataType_BinaryVector,
+		Field: &schemapb.FieldData_Vectors{
+			Vectors: &schemapb.VectorField{
 				Dim: int64(8 * len(data)),
-				Data: &schema.VectorField_BinaryVector{
+				Data: &schemapb.VectorField_BinaryVector{
 					BinaryVector: data,
 				},
 			},

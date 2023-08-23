@@ -8,15 +8,16 @@ import (
 	"github.com/cockroachdb/errors"
 
 	"github.com/golang/protobuf/proto"
-	common "github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
 	"github.com/milvus-io/milvus-proto/go-api/v2/federpb"
-	server "github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
-	schema "github.com/milvus-io/milvus-proto/go-api/v2/schemapb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/schemapb"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 	"github.com/milvus-io/milvus-sdk-go/v2/mocks"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
 )
 
@@ -36,12 +37,12 @@ func (s *MockSuiteBase) SetupSuite() {
 
 	s.mock = &mocks.MilvusServiceServer{}
 
-	server.RegisterMilvusServiceServer(s.svr, s.mock)
+	milvuspb.RegisterMilvusServiceServer(s.svr, s.mock)
 
 	go func() {
 		s.T().Log("start mock server")
 		if err := s.svr.Serve(s.lis); err != nil {
-			s.Fail("failed to server mock server", err.Error())
+			s.Fail("failed to start mock server", err.Error())
 		}
 	}()
 	s.setupConnect()
@@ -62,7 +63,7 @@ func (s *MockSuiteBase) SetupTest() {
 		DisableConn: true,
 		DialOptions: []grpc.DialOption{
 			grpc.WithBlock(),
-			grpc.WithInsecure(),
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
 			grpc.WithContextDialer(s.mockDialer),
 		},
 	})
@@ -88,16 +89,16 @@ func (s *MockSuiteBase) resetMock() {
 
 func (s *MockSuiteBase) setupConnect() {
 	s.mock.EXPECT().Connect(mock.Anything, mock.AnythingOfType("*milvuspb.ConnectRequest")).
-		Return(&server.ConnectResponse{
-			Status:     &common.Status{},
+		Return(&milvuspb.ConnectResponse{
+			Status:     &commonpb.Status{},
 			Identifier: 1,
 		}, nil).Maybe()
 }
 
 func (s *MockSuiteBase) setupHasCollection(collNames ...string) {
 	s.mock.EXPECT().HasCollection(mock.Anything, mock.AnythingOfType("*milvuspb.HasCollectionRequest")).
-		Call.Return(func(ctx context.Context, req *server.HasCollectionRequest) *server.BoolResponse {
-		resp := &server.BoolResponse{Status: &common.Status{}}
+		Call.Return(func(ctx context.Context, req *milvuspb.HasCollectionRequest) *milvuspb.BoolResponse {
+		resp := &milvuspb.BoolResponse{Status: &commonpb.Status{}}
 		for _, collName := range collNames {
 			if req.GetCollectionName() == collName {
 				resp.Value = true
@@ -108,17 +109,17 @@ func (s *MockSuiteBase) setupHasCollection(collNames ...string) {
 	}, nil)
 }
 
-func (s *MockSuiteBase) setupHasCollectionError(errorCode common.ErrorCode, err error) {
+func (s *MockSuiteBase) setupHasCollectionError(errorCode commonpb.ErrorCode, err error) {
 	s.mock.EXPECT().HasCollection(mock.Anything, mock.AnythingOfType("*milvuspb.HasCollectionRequest")).
-		Return(&server.BoolResponse{
-			Status: &common.Status{ErrorCode: errorCode},
+		Return(&milvuspb.BoolResponse{
+			Status: &commonpb.Status{ErrorCode: errorCode},
 		}, err)
 }
 
 func (s *MockSuiteBase) setupHasPartition(collName string, partNames ...string) {
 	s.mock.EXPECT().HasPartition(mock.Anything, mock.AnythingOfType("*milvuspb.HasPartitionRequest")).
-		Call.Return(func(ctx context.Context, req *server.HasPartitionRequest) *server.BoolResponse {
-		resp := &server.BoolResponse{Status: &common.Status{}}
+		Call.Return(func(ctx context.Context, req *milvuspb.HasPartitionRequest) *milvuspb.BoolResponse {
+		resp := &milvuspb.BoolResponse{Status: &commonpb.Status{}}
 		if req.GetCollectionName() == collName {
 			for _, partName := range partNames {
 				if req.GetPartitionName() == partName {
@@ -131,38 +132,38 @@ func (s *MockSuiteBase) setupHasPartition(collName string, partNames ...string) 
 	}, nil)
 }
 
-func (s *MockSuiteBase) setupHasPartitionError(errorCode common.ErrorCode, err error) {
+func (s *MockSuiteBase) setupHasPartitionError(errorCode commonpb.ErrorCode, err error) {
 	s.mock.EXPECT().HasPartition(mock.Anything, mock.AnythingOfType("*milvuspb.HasPartitionRequest")).
-		Return(&server.BoolResponse{
-			Status: &common.Status{ErrorCode: errorCode},
+		Return(&milvuspb.BoolResponse{
+			Status: &commonpb.Status{ErrorCode: errorCode},
 		}, err)
 }
 
 func (s *MockSuiteBase) setupDescribeCollection(_ string, schema *entity.Schema) {
 	s.mock.EXPECT().DescribeCollection(mock.Anything, mock.AnythingOfType("*milvuspb.DescribeCollectionRequest")).
-		Call.Return(func(ctx context.Context, req *server.DescribeCollectionRequest) *server.DescribeCollectionResponse {
-		return &server.DescribeCollectionResponse{
-			Status: &common.Status{ErrorCode: common.ErrorCode_Success},
+		Call.Return(func(ctx context.Context, req *milvuspb.DescribeCollectionRequest) *milvuspb.DescribeCollectionResponse {
+		return &milvuspb.DescribeCollectionResponse{
+			Status: &commonpb.Status{ErrorCode: commonpb.ErrorCode_Success},
 			Schema: schema.ProtoMessage(),
 		}
 	}, nil)
 }
 
-func (s *MockSuiteBase) setupDescribeCollectionError(errorCode common.ErrorCode, err error) {
+func (s *MockSuiteBase) setupDescribeCollectionError(errorCode commonpb.ErrorCode, err error) {
 	s.mock.EXPECT().DescribeCollection(mock.Anything, mock.AnythingOfType("*milvuspb.DescribeCollectionRequest")).
-		Return(&server.DescribeCollectionResponse{
-			Status: &common.Status{ErrorCode: errorCode},
+		Return(&milvuspb.DescribeCollectionResponse{
+			Status: &commonpb.Status{ErrorCode: errorCode},
 		}, err)
 }
 
-func (s *MockSuiteBase) getInt64FieldData(name string, data []int64) *schema.FieldData {
-	return &schema.FieldData{
-		Type:      schema.DataType_Int64,
+func (s *MockSuiteBase) getInt64FieldData(name string, data []int64) *schemapb.FieldData {
+	return &schemapb.FieldData{
+		Type:      schemapb.DataType_Int64,
 		FieldName: name,
-		Field: &schema.FieldData_Scalars{
-			Scalars: &schema.ScalarField{
-				Data: &schema.ScalarField_LongData{
-					LongData: &schema.LongArray{
+		Field: &schemapb.FieldData_Scalars{
+			Scalars: &schemapb.ScalarField{
+				Data: &schemapb.ScalarField_LongData{
+					LongData: &schemapb.LongArray{
 						Data: data,
 					},
 				},
@@ -171,14 +172,14 @@ func (s *MockSuiteBase) getInt64FieldData(name string, data []int64) *schema.Fie
 	}
 }
 
-func (s *MockSuiteBase) getVarcharFieldData(name string, data []string) *schema.FieldData {
-	return &schema.FieldData{
-		Type:      schema.DataType_VarChar,
+func (s *MockSuiteBase) getVarcharFieldData(name string, data []string) *schemapb.FieldData {
+	return &schemapb.FieldData{
+		Type:      schemapb.DataType_VarChar,
 		FieldName: name,
-		Field: &schema.FieldData_Scalars{
-			Scalars: &schema.ScalarField{
-				Data: &schema.ScalarField_StringData{
-					StringData: &schema.StringArray{
+		Field: &schemapb.FieldData_Scalars{
+			Scalars: &schemapb.ScalarField{
+				Data: &schemapb.ScalarField_StringData{
+					StringData: &schemapb.StringArray{
 						Data: data,
 					},
 				},
@@ -187,14 +188,14 @@ func (s *MockSuiteBase) getVarcharFieldData(name string, data []string) *schema.
 	}
 }
 
-func (s *MockSuiteBase) getJSONBytesFieldData(name string, data [][]byte, isDynamic bool) *schema.FieldData {
-	return &schema.FieldData{
-		Type:      schema.DataType_JSON,
+func (s *MockSuiteBase) getJSONBytesFieldData(name string, data [][]byte, isDynamic bool) *schemapb.FieldData {
+	return &schemapb.FieldData{
+		Type:      schemapb.DataType_JSON,
 		FieldName: name,
-		Field: &schema.FieldData_Scalars{
-			Scalars: &schema.ScalarField{
-				Data: &schema.ScalarField_JsonData{
-					JsonData: &schema.JSONArray{
+		Field: &schemapb.FieldData_Scalars{
+			Scalars: &schemapb.ScalarField{
+				Data: &schemapb.ScalarField_JsonData{
+					JsonData: &schemapb.JSONArray{
 						Data: data,
 					},
 				},
@@ -204,15 +205,15 @@ func (s *MockSuiteBase) getJSONBytesFieldData(name string, data [][]byte, isDyna
 	}
 }
 
-func (s *MockSuiteBase) getFloatVectorFieldData(name string, dim int64, data []float32) *schema.FieldData {
-	return &schema.FieldData{
-		Type:      schema.DataType_FloatVector,
+func (s *MockSuiteBase) getFloatVectorFieldData(name string, dim int64, data []float32) *schemapb.FieldData {
+	return &schemapb.FieldData{
+		Type:      schemapb.DataType_FloatVector,
 		FieldName: name,
-		Field: &schema.FieldData_Vectors{
-			Vectors: &schema.VectorField{
+		Field: &schemapb.FieldData_Vectors{
+			Vectors: &schemapb.VectorField{
 				Dim: dim,
-				Data: &schema.VectorField_FloatVector{
-					FloatVector: &schema.FloatArray{
+				Data: &schemapb.VectorField_FloatVector{
+					FloatVector: &schemapb.FloatArray{
 						Data: data,
 					},
 				},
@@ -327,572 +328,572 @@ func (m *MockServer) DelInjection(n ServiceMethod) {
 
 // -- database --
 // ListDatabases list all database in milvus cluster.
-func (m *MockServer) ListDatabases(ctx context.Context, req *server.ListDatabasesRequest) (*server.ListDatabasesResponse, error) {
+func (m *MockServer) ListDatabases(ctx context.Context, req *milvuspb.ListDatabasesRequest) (*milvuspb.ListDatabasesResponse, error) {
 	f := m.GetInjection(MListDatabase)
 	if f != nil {
 		r, err := f(ctx, req)
-		return r.(*server.ListDatabasesResponse), err
+		return r.(*milvuspb.ListDatabasesResponse), err
 	}
-	r := &server.ListDatabasesResponse{}
+	r := &milvuspb.ListDatabasesResponse{}
 	s, err := SuccessStatus()
 	r.Status = s
 	return r, err
 }
 
 // CreateDatabase create database with the given name.
-func (m *MockServer) CreateDatabase(ctx context.Context, req *server.CreateDatabaseRequest) (*common.Status, error) {
+func (m *MockServer) CreateDatabase(ctx context.Context, req *milvuspb.CreateDatabaseRequest) (*commonpb.Status, error) {
 	f := m.GetInjection(MCreateDatabase)
 	if f != nil {
 		r, err := f(ctx, req)
-		return r.(*common.Status), err
+		return r.(*commonpb.Status), err
 	}
 	return SuccessStatus()
 }
 
 // DropDatabase drop database with the given db name.
-func (m *MockServer) DropDatabase(ctx context.Context, req *server.DropDatabaseRequest) (*common.Status, error) {
+func (m *MockServer) DropDatabase(ctx context.Context, req *milvuspb.DropDatabaseRequest) (*commonpb.Status, error) {
 	f := m.GetInjection(MDropDatabase)
 	if f != nil {
 		r, err := f(ctx, req)
-		return r.(*common.Status), err
+		return r.(*commonpb.Status), err
 	}
 	return SuccessStatus()
 }
 
-func (m *MockServer) CreateCollection(ctx context.Context, req *server.CreateCollectionRequest) (*common.Status, error) {
+func (m *MockServer) CreateCollection(ctx context.Context, req *milvuspb.CreateCollectionRequest) (*commonpb.Status, error) {
 	f := m.GetInjection(MCreateCollection)
 	if f != nil {
 		r, err := f(ctx, req)
-		return r.(*common.Status), err
+		return r.(*commonpb.Status), err
 	}
 	return SuccessStatus()
 }
 
-func (m *MockServer) DropCollection(ctx context.Context, req *server.DropCollectionRequest) (*common.Status, error) {
+func (m *MockServer) DropCollection(ctx context.Context, req *milvuspb.DropCollectionRequest) (*commonpb.Status, error) {
 	f := m.GetInjection(MDropCollection)
 	if f != nil {
 		r, err := f(ctx, req)
-		return r.(*common.Status), err
+		return r.(*commonpb.Status), err
 	}
 
 	return SuccessStatus()
 }
 
-func (m *MockServer) HasCollection(ctx context.Context, req *server.HasCollectionRequest) (*server.BoolResponse, error) {
+func (m *MockServer) HasCollection(ctx context.Context, req *milvuspb.HasCollectionRequest) (*milvuspb.BoolResponse, error) {
 	f := m.GetInjection(MHasCollection)
 	if f != nil {
 		r, err := f(ctx, req)
-		return r.(*server.BoolResponse), err
+		return r.(*milvuspb.BoolResponse), err
 	}
 	s, err := SuccessStatus()
-	return &server.BoolResponse{Status: s, Value: false}, err
+	return &milvuspb.BoolResponse{Status: s, Value: false}, err
 }
 
-func (m *MockServer) LoadCollection(ctx context.Context, req *server.LoadCollectionRequest) (*common.Status, error) {
+func (m *MockServer) LoadCollection(ctx context.Context, req *milvuspb.LoadCollectionRequest) (*commonpb.Status, error) {
 	f := m.GetInjection(MLoadCollection)
 	if f != nil {
 		r, err := f(ctx, req)
-		return r.(*common.Status), err
+		return r.(*commonpb.Status), err
 	}
 	return SuccessStatus()
 }
 
-func (m *MockServer) ReleaseCollection(ctx context.Context, req *server.ReleaseCollectionRequest) (*common.Status, error) {
+func (m *MockServer) ReleaseCollection(ctx context.Context, req *milvuspb.ReleaseCollectionRequest) (*commonpb.Status, error) {
 	f := m.GetInjection(MReleaseCollection)
 	if f != nil {
 		r, err := f(ctx, req)
-		return r.(*common.Status), err
+		return r.(*commonpb.Status), err
 	}
 	return SuccessStatus()
 }
 
-func (m *MockServer) DescribeCollection(ctx context.Context, req *server.DescribeCollectionRequest) (*server.DescribeCollectionResponse, error) {
+func (m *MockServer) DescribeCollection(ctx context.Context, req *milvuspb.DescribeCollectionRequest) (*milvuspb.DescribeCollectionResponse, error) {
 	f := m.GetInjection(MDescribeCollection)
 	if f != nil {
 		r, err := f(ctx, req)
-		return r.(*server.DescribeCollectionResponse), err
+		return r.(*milvuspb.DescribeCollectionResponse), err
 	}
-	r := &server.DescribeCollectionResponse{}
+	r := &milvuspb.DescribeCollectionResponse{}
 	s, err := SuccessStatus()
 	r.Status = s
 	return r, err
 }
 
-func (m *MockServer) GetCollectionStatistics(ctx context.Context, req *server.GetCollectionStatisticsRequest) (*server.GetCollectionStatisticsResponse, error) {
+func (m *MockServer) GetCollectionStatistics(ctx context.Context, req *milvuspb.GetCollectionStatisticsRequest) (*milvuspb.GetCollectionStatisticsResponse, error) {
 	f := m.GetInjection(MGetCollectionStatistics)
 	if f != nil {
 		r, err := f(ctx, req)
-		return r.(*server.GetCollectionStatisticsResponse), err
+		return r.(*milvuspb.GetCollectionStatisticsResponse), err
 	}
-	r := &server.GetCollectionStatisticsResponse{}
+	r := &milvuspb.GetCollectionStatisticsResponse{}
 	s, err := SuccessStatus()
 	r.Status = s
 	return r, err
 }
 
-func (m *MockServer) ShowCollections(ctx context.Context, req *server.ShowCollectionsRequest) (*server.ShowCollectionsResponse, error) {
+func (m *MockServer) ShowCollections(ctx context.Context, req *milvuspb.ShowCollectionsRequest) (*milvuspb.ShowCollectionsResponse, error) {
 	f := m.GetInjection(MShowCollections)
 	if f != nil {
 		r, err := f(ctx, req)
-		return r.(*server.ShowCollectionsResponse), err
+		return r.(*milvuspb.ShowCollectionsResponse), err
 	}
 	s, err := SuccessStatus()
-	return &server.ShowCollectionsResponse{Status: s}, err
+	return &milvuspb.ShowCollectionsResponse{Status: s}, err
 }
 
-func (m *MockServer) AlterCollection(ctx context.Context, req *server.AlterCollectionRequest) (*common.Status, error) {
+func (m *MockServer) AlterCollection(ctx context.Context, req *milvuspb.AlterCollectionRequest) (*commonpb.Status, error) {
 	f := m.GetInjection(MAlterCollection)
 	if f != nil {
 		r, err := f(ctx, req)
-		return r.(*common.Status), err
+		return r.(*commonpb.Status), err
 	}
 	return SuccessStatus()
 }
 
-func (m *MockServer) CreatePartition(ctx context.Context, req *server.CreatePartitionRequest) (*common.Status, error) {
+func (m *MockServer) CreatePartition(ctx context.Context, req *milvuspb.CreatePartitionRequest) (*commonpb.Status, error) {
 	f := m.GetInjection(MCreatePartition)
 	if f != nil {
 		r, err := f(ctx, req)
-		return r.(*common.Status), err
+		return r.(*commonpb.Status), err
 	}
 	return SuccessStatus()
 }
 
-func (m *MockServer) DropPartition(ctx context.Context, req *server.DropPartitionRequest) (*common.Status, error) {
+func (m *MockServer) DropPartition(ctx context.Context, req *milvuspb.DropPartitionRequest) (*commonpb.Status, error) {
 	f := m.GetInjection(MDropPartition)
 	if f != nil {
 		r, err := f(ctx, req)
-		return r.(*common.Status), err
+		return r.(*commonpb.Status), err
 	}
 	return SuccessStatus()
 }
 
-func (m *MockServer) HasPartition(ctx context.Context, req *server.HasPartitionRequest) (*server.BoolResponse, error) {
+func (m *MockServer) HasPartition(ctx context.Context, req *milvuspb.HasPartitionRequest) (*milvuspb.BoolResponse, error) {
 	f := m.GetInjection(MHasPartition)
 	if f != nil {
 		r, err := f(ctx, req)
-		return r.(*server.BoolResponse), err
+		return r.(*milvuspb.BoolResponse), err
 	}
 	s, err := SuccessStatus()
-	return &server.BoolResponse{Status: s, Value: false}, err
+	return &milvuspb.BoolResponse{Status: s, Value: false}, err
 }
 
-func (m *MockServer) LoadPartitions(ctx context.Context, req *server.LoadPartitionsRequest) (*common.Status, error) {
+func (m *MockServer) LoadPartitions(ctx context.Context, req *milvuspb.LoadPartitionsRequest) (*commonpb.Status, error) {
 	f := m.GetInjection(MLoadPartitions)
 	if f != nil {
 		r, err := f(ctx, req)
-		return r.(*common.Status), err
+		return r.(*commonpb.Status), err
 	}
 	return SuccessStatus()
 }
 
-func (m *MockServer) ReleasePartitions(ctx context.Context, req *server.ReleasePartitionsRequest) (*common.Status, error) {
+func (m *MockServer) ReleasePartitions(ctx context.Context, req *milvuspb.ReleasePartitionsRequest) (*commonpb.Status, error) {
 	f := m.GetInjection(MReleasePartitions)
 	if f != nil {
 		r, err := f(ctx, req)
-		return r.(*common.Status), err
+		return r.(*commonpb.Status), err
 	}
 	return SuccessStatus()
 }
 
-func (m *MockServer) GetPartitionStatistics(_ context.Context, _ *server.GetPartitionStatisticsRequest) (*server.GetPartitionStatisticsResponse, error) {
+func (m *MockServer) GetPartitionStatistics(_ context.Context, _ *milvuspb.GetPartitionStatisticsRequest) (*milvuspb.GetPartitionStatisticsResponse, error) {
 	panic("not implemented") // TODO: Implement
 }
 
-func (m *MockServer) ShowPartitions(ctx context.Context, req *server.ShowPartitionsRequest) (*server.ShowPartitionsResponse, error) {
+func (m *MockServer) ShowPartitions(ctx context.Context, req *milvuspb.ShowPartitionsRequest) (*milvuspb.ShowPartitionsResponse, error) {
 	f := m.GetInjection(MShowPartitions)
 	if f != nil {
 		r, err := f(ctx, req)
-		return r.(*server.ShowPartitionsResponse), err
+		return r.(*milvuspb.ShowPartitionsResponse), err
 	}
 	s, err := SuccessStatus()
-	return &server.ShowPartitionsResponse{Status: s}, err
+	return &milvuspb.ShowPartitionsResponse{Status: s}, err
 }
 
-func (m *MockServer) GetLoadingProgress(ctx context.Context, req *server.GetLoadingProgressRequest) (*server.GetLoadingProgressResponse, error) {
+func (m *MockServer) GetLoadingProgress(ctx context.Context, req *milvuspb.GetLoadingProgressRequest) (*milvuspb.GetLoadingProgressResponse, error) {
 	f := m.GetInjection(MGetLoadingProgress)
 	if f != nil {
 		r, err := f(ctx, req)
-		return r.(*server.GetLoadingProgressResponse), err
+		return r.(*milvuspb.GetLoadingProgressResponse), err
 	}
 	s, err := SuccessStatus()
-	return &server.GetLoadingProgressResponse{Status: s}, err
+	return &milvuspb.GetLoadingProgressResponse{Status: s}, err
 }
 
-func (m *MockServer) GetLoadState(ctx context.Context, req *server.GetLoadStateRequest) (*server.GetLoadStateResponse, error) {
+func (m *MockServer) GetLoadState(ctx context.Context, req *milvuspb.GetLoadStateRequest) (*milvuspb.GetLoadStateResponse, error) {
 	f := m.GetInjection(MGetLoadState)
 	if f != nil {
 		r, err := f(ctx, req)
-		return r.(*server.GetLoadStateResponse), err
+		return r.(*milvuspb.GetLoadStateResponse), err
 	}
 	s, err := SuccessStatus()
-	return &server.GetLoadStateResponse{Status: s}, err
+	return &milvuspb.GetLoadStateResponse{Status: s}, err
 }
 
-func (m *MockServer) CreateIndex(ctx context.Context, req *server.CreateIndexRequest) (*common.Status, error) {
+func (m *MockServer) CreateIndex(ctx context.Context, req *milvuspb.CreateIndexRequest) (*commonpb.Status, error) {
 	f := m.GetInjection(MCreateIndex)
 	if f != nil {
 		r, err := f(ctx, req)
-		return r.(*common.Status), err
+		return r.(*commonpb.Status), err
 	}
 	return SuccessStatus()
 }
 
-func (m *MockServer) DescribeIndex(ctx context.Context, req *server.DescribeIndexRequest) (*server.DescribeIndexResponse, error) {
+func (m *MockServer) DescribeIndex(ctx context.Context, req *milvuspb.DescribeIndexRequest) (*milvuspb.DescribeIndexResponse, error) {
 	f := m.GetInjection(MDescribeIndex)
 	if f != nil {
 		r, err := f(ctx, req)
-		return r.(*server.DescribeIndexResponse), err
+		return r.(*milvuspb.DescribeIndexResponse), err
 	}
 	s, err := SuccessStatus()
-	return &server.DescribeIndexResponse{Status: s}, err
+	return &milvuspb.DescribeIndexResponse{Status: s}, err
 }
 
-func (m *MockServer) GetIndexState(ctx context.Context, req *server.GetIndexStateRequest) (*server.GetIndexStateResponse, error) {
+func (m *MockServer) GetIndexState(ctx context.Context, req *milvuspb.GetIndexStateRequest) (*milvuspb.GetIndexStateResponse, error) {
 	f := m.GetInjection(MGetIndexState)
 	if f != nil {
 		r, err := f(ctx, req)
-		return r.(*server.GetIndexStateResponse), err
+		return r.(*milvuspb.GetIndexStateResponse), err
 	}
 	s, err := SuccessStatus()
-	return &server.GetIndexStateResponse{Status: s}, err
+	return &milvuspb.GetIndexStateResponse{Status: s}, err
 }
 
-func (m *MockServer) GetIndexBuildProgress(ctx context.Context, req *server.GetIndexBuildProgressRequest) (*server.GetIndexBuildProgressResponse, error) {
+func (m *MockServer) GetIndexBuildProgress(ctx context.Context, req *milvuspb.GetIndexBuildProgressRequest) (*milvuspb.GetIndexBuildProgressResponse, error) {
 	f := m.GetInjection(MGetIndexBuildProgress)
 	if f != nil {
 		r, err := f(ctx, req)
-		return r.(*server.GetIndexBuildProgressResponse), err
+		return r.(*milvuspb.GetIndexBuildProgressResponse), err
 	}
 	s, err := SuccessStatus()
-	return &server.GetIndexBuildProgressResponse{Status: s}, err
+	return &milvuspb.GetIndexBuildProgressResponse{Status: s}, err
 }
 
-func (m *MockServer) DropIndex(ctx context.Context, req *server.DropIndexRequest) (*common.Status, error) {
+func (m *MockServer) DropIndex(ctx context.Context, req *milvuspb.DropIndexRequest) (*commonpb.Status, error) {
 	f := m.GetInjection(MDropIndex)
 	if f != nil {
 		r, err := f(ctx, req)
-		return r.(*common.Status), err
+		return r.(*commonpb.Status), err
 	}
 	return SuccessStatus()
 }
 
-func (m *MockServer) Insert(ctx context.Context, req *server.InsertRequest) (*server.MutationResult, error) {
+func (m *MockServer) Insert(ctx context.Context, req *milvuspb.InsertRequest) (*milvuspb.MutationResult, error) {
 	f := m.GetInjection(MInsert)
 	if f != nil {
 		r, err := f(ctx, req)
-		return r.(*server.MutationResult), err
+		return r.(*milvuspb.MutationResult), err
 	}
 	s, err := SuccessStatus()
-	return &server.MutationResult{Status: s}, err
+	return &milvuspb.MutationResult{Status: s}, err
 }
 
-func (m *MockServer) Search(ctx context.Context, req *server.SearchRequest) (*server.SearchResults, error) {
+func (m *MockServer) Search(ctx context.Context, req *milvuspb.SearchRequest) (*milvuspb.SearchResults, error) {
 	f := m.GetInjection(MSearch)
 	if f != nil {
 		r, err := f(ctx, req)
-		return r.(*server.SearchResults), err
+		return r.(*milvuspb.SearchResults), err
 	}
 	s, err := SuccessStatus()
-	return &server.SearchResults{Status: s}, err
+	return &milvuspb.SearchResults{Status: s}, err
 }
 
-func (m *MockServer) Flush(ctx context.Context, req *server.FlushRequest) (*server.FlushResponse, error) {
+func (m *MockServer) Flush(ctx context.Context, req *milvuspb.FlushRequest) (*milvuspb.FlushResponse, error) {
 	f := m.GetInjection(MFlush)
 	if f != nil {
 		r, err := f(ctx, req)
-		return r.(*server.FlushResponse), err
+		return r.(*milvuspb.FlushResponse), err
 	}
 	s, err := SuccessStatus()
-	return &server.FlushResponse{Status: s}, err
+	return &milvuspb.FlushResponse{Status: s}, err
 }
 
-func (m *MockServer) Query(ctx context.Context, req *server.QueryRequest) (*server.QueryResults, error) {
+func (m *MockServer) Query(ctx context.Context, req *milvuspb.QueryRequest) (*milvuspb.QueryResults, error) {
 	f := m.GetInjection(MQuery)
 	if f != nil {
 		r, err := f(ctx, req)
-		return r.(*server.QueryResults), err
+		return r.(*milvuspb.QueryResults), err
 	}
 	s, err := SuccessStatus()
-	return &server.QueryResults{Status: s}, err
+	return &milvuspb.QueryResults{Status: s}, err
 }
 
-func (m *MockServer) GetPersistentSegmentInfo(ctx context.Context, req *server.GetPersistentSegmentInfoRequest) (*server.GetPersistentSegmentInfoResponse, error) {
+func (m *MockServer) GetPersistentSegmentInfo(ctx context.Context, req *milvuspb.GetPersistentSegmentInfoRequest) (*milvuspb.GetPersistentSegmentInfoResponse, error) {
 	f := m.GetInjection(MGetPersistentSegmentInfo)
 	if f != nil {
 		r, err := f(ctx, req)
-		return r.(*server.GetPersistentSegmentInfoResponse), err
+		return r.(*milvuspb.GetPersistentSegmentInfoResponse), err
 	}
 	s, err := SuccessStatus()
-	return &server.GetPersistentSegmentInfoResponse{Status: s}, err
+	return &milvuspb.GetPersistentSegmentInfoResponse{Status: s}, err
 }
 
-func (m *MockServer) GetQuerySegmentInfo(ctx context.Context, req *server.GetQuerySegmentInfoRequest) (*server.GetQuerySegmentInfoResponse, error) {
+func (m *MockServer) GetQuerySegmentInfo(ctx context.Context, req *milvuspb.GetQuerySegmentInfoRequest) (*milvuspb.GetQuerySegmentInfoResponse, error) {
 	f := m.GetInjection(MGetQuerySegmentInfo)
 	if f != nil {
 		r, err := f(ctx, req)
-		return r.(*server.GetQuerySegmentInfoResponse), err
+		return r.(*milvuspb.GetQuerySegmentInfoResponse), err
 	}
 	s, err := SuccessStatus()
-	return &server.GetQuerySegmentInfoResponse{Status: s}, err
+	return &milvuspb.GetQuerySegmentInfoResponse{Status: s}, err
 }
 
-func (m *MockServer) Dummy(_ context.Context, _ *server.DummyRequest) (*server.DummyResponse, error) {
+func (m *MockServer) Dummy(_ context.Context, _ *milvuspb.DummyRequest) (*milvuspb.DummyResponse, error) {
 	panic("not implemented") // TODO: Implement
 }
 
 // TODO: remove
-func (m *MockServer) RegisterLink(_ context.Context, _ *server.RegisterLinkRequest) (*server.RegisterLinkResponse, error) {
+func (m *MockServer) RegisterLink(_ context.Context, _ *milvuspb.RegisterLinkRequest) (*milvuspb.RegisterLinkResponse, error) {
 	panic("not implemented") // TODO: Implement
 }
 
-func (m *MockServer) CalcDistance(ctx context.Context, req *server.CalcDistanceRequest) (*server.CalcDistanceResults, error) {
+func (m *MockServer) CalcDistance(ctx context.Context, req *milvuspb.CalcDistanceRequest) (*milvuspb.CalcDistanceResults, error) {
 	f := m.GetInjection(MCalcDistance)
 	if f != nil {
 		r, err := f(ctx, req)
-		return r.(*server.CalcDistanceResults), err
+		return r.(*milvuspb.CalcDistanceResults), err
 	}
-	resp := &server.CalcDistanceResults{}
+	resp := &milvuspb.CalcDistanceResults{}
 	s, err := SuccessStatus()
 	resp.Status = s
 	return resp, err
 }
 
-func (m *MockServer) Delete(ctx context.Context, req *server.DeleteRequest) (*server.MutationResult, error) {
+func (m *MockServer) Delete(ctx context.Context, req *milvuspb.DeleteRequest) (*milvuspb.MutationResult, error) {
 	f := m.GetInjection(MDelete)
 	if f != nil {
 		r, err := f(ctx, req)
-		return r.(*server.MutationResult), err
+		return r.(*milvuspb.MutationResult), err
 	}
-	resp := &server.MutationResult{}
+	resp := &milvuspb.MutationResult{}
 	s, err := SuccessStatus()
 	resp.Status = s
 	return resp, err
 }
 
 // https://wiki.lfaidata.foundation/display/MIL/MEP+8+--+Add+metrics+for+proxy
-func (m *MockServer) GetMetrics(_ context.Context, _ *server.GetMetricsRequest) (*server.GetMetricsResponse, error) {
+func (m *MockServer) GetMetrics(_ context.Context, _ *milvuspb.GetMetricsRequest) (*milvuspb.GetMetricsResponse, error) {
 	panic("not implemented") // TODO: Implement
 }
 
-func (m *MockServer) CreateAlias(ctx context.Context, req *server.CreateAliasRequest) (*common.Status, error) {
+func (m *MockServer) CreateAlias(ctx context.Context, req *milvuspb.CreateAliasRequest) (*commonpb.Status, error) {
 	f := m.GetInjection(MCreateAlias)
 	if f != nil {
 		r, err := f(ctx, req)
-		return r.(*common.Status), err
+		return r.(*commonpb.Status), err
 	}
 	return SuccessStatus()
 }
 
-func (m *MockServer) DropAlias(ctx context.Context, req *server.DropAliasRequest) (*common.Status, error) {
+func (m *MockServer) DropAlias(ctx context.Context, req *milvuspb.DropAliasRequest) (*commonpb.Status, error) {
 	f := m.GetInjection(MDropAlias)
 	if f != nil {
 		r, err := f(ctx, req)
-		return r.(*common.Status), err
+		return r.(*commonpb.Status), err
 	}
 	return SuccessStatus()
 }
 
-func (m *MockServer) AlterAlias(ctx context.Context, req *server.AlterAliasRequest) (*common.Status, error) {
+func (m *MockServer) AlterAlias(ctx context.Context, req *milvuspb.AlterAliasRequest) (*commonpb.Status, error) {
 	f := m.GetInjection(MAlterAlias)
 	if f != nil {
 		r, err := f(ctx, req)
-		return r.(*common.Status), err
+		return r.(*commonpb.Status), err
 	}
 
 	return SuccessStatus()
 }
 
-func (m *MockServer) GetFlushState(ctx context.Context, req *server.GetFlushStateRequest) (*server.GetFlushStateResponse, error) {
+func (m *MockServer) GetFlushState(ctx context.Context, req *milvuspb.GetFlushStateRequest) (*milvuspb.GetFlushStateResponse, error) {
 	f := m.GetInjection(MGetFlushState)
 	if f != nil {
 		r, err := f(ctx, req)
-		return r.(*server.GetFlushStateResponse), err
+		return r.(*milvuspb.GetFlushStateResponse), err
 	}
 
-	resp := &server.GetFlushStateResponse{}
+	resp := &milvuspb.GetFlushStateResponse{}
 	s, err := SuccessStatus()
 	resp.Status = s
 	return resp, err
 }
 
-func (m *MockServer) LoadBalance(_ context.Context, _ *server.LoadBalanceRequest) (*common.Status, error) {
+func (m *MockServer) LoadBalance(_ context.Context, _ *milvuspb.LoadBalanceRequest) (*commonpb.Status, error) {
 	panic("not implemented") // TODO: Implement
 }
 
-func (m *MockServer) GetCompactionState(ctx context.Context, req *server.GetCompactionStateRequest) (*server.GetCompactionStateResponse, error) {
+func (m *MockServer) GetCompactionState(ctx context.Context, req *milvuspb.GetCompactionStateRequest) (*milvuspb.GetCompactionStateResponse, error) {
 	f := m.GetInjection(MGetCompactionState)
 	if f != nil {
 		r, err := f(ctx, req)
-		return r.(*server.GetCompactionStateResponse), err
+		return r.(*milvuspb.GetCompactionStateResponse), err
 	}
 
-	resp := &server.GetCompactionStateResponse{}
+	resp := &milvuspb.GetCompactionStateResponse{}
 	s, err := SuccessStatus()
 	resp.Status = s
 	return resp, err
 }
 
-func (m *MockServer) ManualCompaction(ctx context.Context, req *server.ManualCompactionRequest) (*server.ManualCompactionResponse, error) {
+func (m *MockServer) ManualCompaction(ctx context.Context, req *milvuspb.ManualCompactionRequest) (*milvuspb.ManualCompactionResponse, error) {
 	f := m.GetInjection(MManualCompaction)
 	if f != nil {
 		r, err := f(ctx, req)
-		return r.(*server.ManualCompactionResponse), err
+		return r.(*milvuspb.ManualCompactionResponse), err
 	}
-	resp := &server.ManualCompactionResponse{}
+	resp := &milvuspb.ManualCompactionResponse{}
 	s, err := SuccessStatus()
 	resp.Status = s
 	return resp, err
 }
 
-func (m *MockServer) GetCompactionStateWithPlans(ctx context.Context, req *server.GetCompactionPlansRequest) (*server.GetCompactionPlansResponse, error) {
+func (m *MockServer) GetCompactionStateWithPlans(ctx context.Context, req *milvuspb.GetCompactionPlansRequest) (*milvuspb.GetCompactionPlansResponse, error) {
 	f := m.GetInjection(MGetCompactionStateWithPlans)
 	if f != nil {
 		r, err := f(ctx, req)
-		return r.(*server.GetCompactionPlansResponse), err
+		return r.(*milvuspb.GetCompactionPlansResponse), err
 	}
 
-	resp := &server.GetCompactionPlansResponse{}
+	resp := &milvuspb.GetCompactionPlansResponse{}
 	s, err := SuccessStatus()
 	resp.Status = s
 	return resp, err
 }
 
-func (m *MockServer) GetReplicas(ctx context.Context, req *server.GetReplicasRequest) (*server.GetReplicasResponse, error) {
+func (m *MockServer) GetReplicas(ctx context.Context, req *milvuspb.GetReplicasRequest) (*milvuspb.GetReplicasResponse, error) {
 	f := m.GetInjection(MGetReplicas)
 	if f != nil {
 		r, err := f(ctx, req)
-		return r.(*server.GetReplicasResponse), err
+		return r.(*milvuspb.GetReplicasResponse), err
 	}
-	resp := &server.GetReplicasResponse{}
+	resp := &milvuspb.GetReplicasResponse{}
 	s, err := SuccessStatus()
 	resp.Status = s
 	return resp, err
 }
 
 // https://wiki.lfaidata.foundation/display/MIL/MEP+24+--+Support+bulk+load
-func (m *MockServer) Import(_ context.Context, _ *server.ImportRequest) (*server.ImportResponse, error) {
+func (m *MockServer) Import(_ context.Context, _ *milvuspb.ImportRequest) (*milvuspb.ImportResponse, error) {
 	panic("not implemented") // TODO: Implement
 }
 
-func (m *MockServer) GetImportState(_ context.Context, _ *server.GetImportStateRequest) (*server.GetImportStateResponse, error) {
+func (m *MockServer) GetImportState(_ context.Context, _ *milvuspb.GetImportStateRequest) (*milvuspb.GetImportStateResponse, error) {
 	panic("not implemented") // TODO: Implement
 }
 
-func (m *MockServer) ListImportTasks(_ context.Context, _ *server.ListImportTasksRequest) (*server.ListImportTasksResponse, error) {
+func (m *MockServer) ListImportTasks(_ context.Context, _ *milvuspb.ListImportTasksRequest) (*milvuspb.ListImportTasksResponse, error) {
 	panic("not implemented") // TODO: Implement
 }
 
 // https://wiki.lfaidata.foundation/display/MIL/MEP+27+--+Support+Basic+Authentication
-func (m *MockServer) CreateCredential(ctx context.Context, req *server.CreateCredentialRequest) (*common.Status, error) {
+func (m *MockServer) CreateCredential(ctx context.Context, req *milvuspb.CreateCredentialRequest) (*commonpb.Status, error) {
 	f := m.GetInjection(MCreateCredential)
 	if f != nil {
 		r, err := f(ctx, req)
-		return r.(*common.Status), err
+		return r.(*commonpb.Status), err
 	}
 	return SuccessStatus()
 }
 
-func (m *MockServer) UpdateCredential(ctx context.Context, req *server.UpdateCredentialRequest) (*common.Status, error) {
+func (m *MockServer) UpdateCredential(ctx context.Context, req *milvuspb.UpdateCredentialRequest) (*commonpb.Status, error) {
 	f := m.GetInjection(MUpdateCredential)
 	if f != nil {
 		r, err := f(ctx, req)
-		return r.(*common.Status), err
+		return r.(*commonpb.Status), err
 	}
 	return SuccessStatus()
 }
 
-func (m *MockServer) DeleteCredential(ctx context.Context, req *server.DeleteCredentialRequest) (*common.Status, error) {
+func (m *MockServer) DeleteCredential(ctx context.Context, req *milvuspb.DeleteCredentialRequest) (*commonpb.Status, error) {
 	f := m.GetInjection(MDeleteCredential)
 	if f != nil {
 		r, err := f(ctx, req)
-		return r.(*common.Status), err
+		return r.(*commonpb.Status), err
 	}
 	return SuccessStatus()
 }
 
-func (m *MockServer) ListCredUsers(ctx context.Context, req *server.ListCredUsersRequest) (*server.ListCredUsersResponse, error) {
+func (m *MockServer) ListCredUsers(ctx context.Context, req *milvuspb.ListCredUsersRequest) (*milvuspb.ListCredUsersResponse, error) {
 	f := m.GetInjection(MListCredUsers)
 	if f != nil {
 		r, err := f(ctx, req)
-		return r.(*server.ListCredUsersResponse), err
+		return r.(*milvuspb.ListCredUsersResponse), err
 	}
-	resp := &server.ListCredUsersResponse{}
+	resp := &milvuspb.ListCredUsersResponse{}
 	s, err := SuccessStatus()
 	resp.Status = s
 	return resp, err
 }
 
 // https://wiki.lfaidata.foundation/display/MIL/MEP+29+--+Support+Role-Based+Access+Control
-func (m *MockServer) CreateRole(_ context.Context, _ *server.CreateRoleRequest) (*common.Status, error) {
+func (m *MockServer) CreateRole(_ context.Context, _ *milvuspb.CreateRoleRequest) (*commonpb.Status, error) {
 	panic("not implemented") // TODO: Implement
 }
 
-func (m *MockServer) DropRole(_ context.Context, _ *server.DropRoleRequest) (*common.Status, error) {
+func (m *MockServer) DropRole(_ context.Context, _ *milvuspb.DropRoleRequest) (*commonpb.Status, error) {
 	panic("not implemented") // TODO: Implement
 }
 
-func (m *MockServer) OperateUserRole(_ context.Context, _ *server.OperateUserRoleRequest) (*common.Status, error) {
+func (m *MockServer) OperateUserRole(_ context.Context, _ *milvuspb.OperateUserRoleRequest) (*commonpb.Status, error) {
 	panic("not implemented") // TODO: Implement
 }
 
-func (m *MockServer) SelectRole(_ context.Context, _ *server.SelectRoleRequest) (*server.SelectRoleResponse, error) {
+func (m *MockServer) SelectRole(_ context.Context, _ *milvuspb.SelectRoleRequest) (*milvuspb.SelectRoleResponse, error) {
 	panic("not implemented") // TODO: Implement
 }
 
-func (m *MockServer) SelectUser(_ context.Context, _ *server.SelectUserRequest) (*server.SelectUserResponse, error) {
+func (m *MockServer) SelectUser(_ context.Context, _ *milvuspb.SelectUserRequest) (*milvuspb.SelectUserResponse, error) {
 	panic("not implemented") // TODO: Implement
 }
 
-func (m *MockServer) OperatePrivilege(_ context.Context, _ *server.OperatePrivilegeRequest) (*common.Status, error) {
+func (m *MockServer) OperatePrivilege(_ context.Context, _ *milvuspb.OperatePrivilegeRequest) (*commonpb.Status, error) {
 	panic("not implemented") // TODO: Implement
 }
 
-func (m *MockServer) SelectGrant(_ context.Context, _ *server.SelectGrantRequest) (*server.SelectGrantResponse, error) {
+func (m *MockServer) SelectGrant(_ context.Context, _ *milvuspb.SelectGrantRequest) (*milvuspb.SelectGrantResponse, error) {
 	panic("not implemented") // TODO: Implement
 }
 
-func (m *MockServer) CreateResourceGroup(_ context.Context, _ *server.CreateResourceGroupRequest) (*common.Status, error) {
+func (m *MockServer) CreateResourceGroup(_ context.Context, _ *milvuspb.CreateResourceGroupRequest) (*commonpb.Status, error) {
 	panic("not implemented") // TODO: Implement
 }
 
-func (m *MockServer) DropResourceGroup(_ context.Context, _ *server.DropResourceGroupRequest) (*common.Status, error) {
+func (m *MockServer) DropResourceGroup(_ context.Context, _ *milvuspb.DropResourceGroupRequest) (*commonpb.Status, error) {
 	panic("not implemented") // TODO: Implement
 }
 
-func (m *MockServer) TransferNode(_ context.Context, _ *server.TransferNodeRequest) (*common.Status, error) {
+func (m *MockServer) TransferNode(_ context.Context, _ *milvuspb.TransferNodeRequest) (*commonpb.Status, error) {
 	panic("not implemented") // TODO: Implement
 }
 
-func (m *MockServer) TransferReplica(_ context.Context, _ *server.TransferReplicaRequest) (*common.Status, error) {
+func (m *MockServer) TransferReplica(_ context.Context, _ *milvuspb.TransferReplicaRequest) (*commonpb.Status, error) {
 	panic("not implemented") // TODO: Implement
 }
 
-func (m *MockServer) ListResourceGroups(_ context.Context, _ *server.ListResourceGroupsRequest) (*server.ListResourceGroupsResponse, error) {
+func (m *MockServer) ListResourceGroups(_ context.Context, _ *milvuspb.ListResourceGroupsRequest) (*milvuspb.ListResourceGroupsResponse, error) {
 	panic("not implemented") // TODO: Implement
 }
 
-func (m *MockServer) DescribeResourceGroup(_ context.Context, _ *server.DescribeResourceGroupRequest) (*server.DescribeResourceGroupResponse, error) {
+func (m *MockServer) DescribeResourceGroup(_ context.Context, _ *milvuspb.DescribeResourceGroupRequest) (*milvuspb.DescribeResourceGroupResponse, error) {
 	panic("not implemented") // TODO: Implement
 }
 
-func (m *MockServer) RenameCollection(_ context.Context, _ *server.RenameCollectionRequest) (*common.Status, error) {
+func (m *MockServer) RenameCollection(_ context.Context, _ *milvuspb.RenameCollectionRequest) (*commonpb.Status, error) {
 	panic("not implemented") // TODO: Implement
 }
 
-func (m *MockServer) DescribeAlias(_ context.Context, _ *server.DescribeAliasRequest) (*server.DescribeAliasResponse, error) {
+func (m *MockServer) DescribeAlias(_ context.Context, _ *milvuspb.DescribeAliasRequest) (*milvuspb.DescribeAliasResponse, error) {
 	panic("not implemented") // TODO: Implement
 }
 
-func (m *MockServer) ListAliases(_ context.Context, _ *server.ListAliasesRequest) (*server.ListAliasesResponse, error) {
+func (m *MockServer) ListAliases(_ context.Context, _ *milvuspb.ListAliasesRequest) (*milvuspb.ListAliasesResponse, error) {
 	panic("not implemented") // TODO: Implement
 }
 
-func (m *MockServer) FlushAll(_ context.Context, _ *server.FlushAllRequest) (*server.FlushAllResponse, error) {
+func (m *MockServer) FlushAll(_ context.Context, _ *milvuspb.FlushAllRequest) (*milvuspb.FlushAllResponse, error) {
 	panic("not implemented") // TODO: Implement
 }
 
-func (m *MockServer) GetFlushAllState(_ context.Context, _ *server.GetFlushAllStateRequest) (*server.GetFlushAllStateResponse, error) {
+func (m *MockServer) GetFlushAllState(_ context.Context, _ *milvuspb.GetFlushAllStateRequest) (*milvuspb.GetFlushAllStateResponse, error) {
 	panic("not implemented") // TODO: Implement
 }
 
@@ -904,80 +905,80 @@ func (m *MockServer) DescribeSegmentIndexData(_ context.Context, _ *federpb.Desc
 	panic("not implemented") // TODO: Implement
 }
 
-func (m *MockServer) GetIndexStatistics(_ context.Context, _ *server.GetIndexStatisticsRequest) (*server.GetIndexStatisticsResponse, error) {
+func (m *MockServer) GetIndexStatistics(_ context.Context, _ *milvuspb.GetIndexStatisticsRequest) (*milvuspb.GetIndexStatisticsResponse, error) {
 	panic("not implemented") // TODO: Implement
 }
 
-func (m *MockServer) AllocTimestamp(_ context.Context, _ *server.AllocTimestampRequest) (*server.AllocTimestampResponse, error) {
+func (m *MockServer) AllocTimestamp(_ context.Context, _ *milvuspb.AllocTimestampRequest) (*milvuspb.AllocTimestampResponse, error) {
 	panic("not implemented")
 }
 
-func (m *MockServer) Connect(_ context.Context, _ *server.ConnectRequest) (*server.ConnectResponse, error) {
-	return &server.ConnectResponse{
-		Status:     &common.Status{ErrorCode: common.ErrorCode_Success},
+func (m *MockServer) Connect(_ context.Context, _ *milvuspb.ConnectRequest) (*milvuspb.ConnectResponse, error) {
+	return &milvuspb.ConnectResponse{
+		Status:     &commonpb.Status{ErrorCode: commonpb.ErrorCode_Success},
 		Identifier: 1,
 	}, nil
 }
 
-//func (m *MockServer) DescribePartition(ctx context.Context, req *server.DescribePartitionRequest) (*server.DescribePartitionResponse, error) {
+//func (m *MockServer) DescribePartition(ctx context.Context, req *milvuspb.DescribePartitionRequest) (*milvuspb.DescribePartitionResponse, error) {
 //	panic("not implemented") // TODO: Implement
 //}
 
-func (m *MockServer) GetComponentStates(ctx context.Context, req *server.GetComponentStatesRequest) (*server.ComponentStates, error) {
+func (m *MockServer) GetComponentStates(ctx context.Context, req *milvuspb.GetComponentStatesRequest) (*milvuspb.ComponentStates, error) {
 	f := m.GetInjection(MGetComponentStates)
 	if f != nil {
 		r, err := f(ctx, req)
-		return r.(*server.ComponentStates), err
+		return r.(*milvuspb.ComponentStates), err
 	}
 	s, err := SuccessStatus()
-	return &server.ComponentStates{Status: s}, err
+	return &milvuspb.ComponentStates{Status: s}, err
 }
 
-func (m *MockServer) GetVersion(ctx context.Context, req *server.GetVersionRequest) (*server.GetVersionResponse, error) {
+func (m *MockServer) GetVersion(ctx context.Context, req *milvuspb.GetVersionRequest) (*milvuspb.GetVersionResponse, error) {
 	f := m.GetInjection(MGetVersion)
 	if f != nil {
 		r, err := f(ctx, req)
-		return r.(*server.GetVersionResponse), err
+		return r.(*milvuspb.GetVersionResponse), err
 	}
 	s, err := SuccessStatus()
-	return &server.GetVersionResponse{Status: s}, err
+	return &milvuspb.GetVersionResponse{Status: s}, err
 }
 
-func (m *MockServer) CheckHealth(ctx context.Context, req *server.CheckHealthRequest) (*server.CheckHealthResponse, error) {
+func (m *MockServer) CheckHealth(ctx context.Context, req *milvuspb.CheckHealthRequest) (*milvuspb.CheckHealthResponse, error) {
 	f := m.GetInjection(MCheckHealth)
 	if f != nil {
 		r, err := f(ctx, req)
-		return r.(*server.CheckHealthResponse), err
+		return r.(*milvuspb.CheckHealthResponse), err
 	}
 	s, err := SuccessStatus()
-	return &server.CheckHealthResponse{Status: s}, err
+	return &milvuspb.CheckHealthResponse{Status: s}, err
 }
 
-func getSuccessStatus() *common.Status {
-	return &common.Status{ErrorCode: common.ErrorCode_Success}
+func getSuccessStatus() *commonpb.Status {
+	return &commonpb.Status{ErrorCode: commonpb.ErrorCode_Success}
 }
 
-func SuccessStatus() (*common.Status, error) {
-	return &common.Status{ErrorCode: common.ErrorCode_Success}, nil
+func SuccessStatus() (*commonpb.Status, error) {
+	return &commonpb.Status{ErrorCode: commonpb.ErrorCode_Success}, nil
 }
 
-func BadRequestStatus() (*common.Status, error) {
-	return &common.Status{ErrorCode: common.ErrorCode_IllegalArgument}, errors.New("illegal request type")
+func BadRequestStatus() (*commonpb.Status, error) {
+	return &commonpb.Status{ErrorCode: commonpb.ErrorCode_IllegalArgument}, errors.New("illegal request type")
 }
 
-func BadStatus() (*common.Status, error) {
-	return &common.Status{
-		ErrorCode: common.ErrorCode_UnexpectedError,
+func BadStatus() (*commonpb.Status, error) {
+	return &commonpb.Status{
+		ErrorCode: commonpb.ErrorCode_UnexpectedError,
 		Reason:    "fail reason",
 	}, nil
 }
 
-func (m *MockServer) Upsert(ctx context.Context, req *server.UpsertRequest) (*server.MutationResult, error) {
+func (m *MockServer) Upsert(ctx context.Context, req *milvuspb.UpsertRequest) (*milvuspb.MutationResult, error) {
 	f := m.GetInjection(MUpsert)
 	if f != nil {
 		r, err := f(ctx, req)
-		return r.(*server.MutationResult), err
+		return r.(*milvuspb.MutationResult), err
 	}
 	s, err := SuccessStatus()
-	return &server.MutationResult{Status: s}, err
+	return &milvuspb.MutationResult{Status: s}, err
 }

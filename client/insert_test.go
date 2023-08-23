@@ -16,9 +16,9 @@ import (
 	"testing"
 
 	"github.com/cockroachdb/errors"
-	common "github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
-	server "github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
-	schema "github.com/milvus-io/milvus-proto/go-api/v2/schemapb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/schemapb"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -108,13 +108,13 @@ func (s *InsertSuite) TestInsertFail() {
 		)
 
 		s.mock.EXPECT().Insert(mock.Anything, mock.AnythingOfType("*milvuspb.InsertRequest")).
-			Run(func(ctx context.Context, req *server.InsertRequest) {
+			Run(func(ctx context.Context, req *milvuspb.InsertRequest) {
 				s.Equal(1, len(req.GetFieldsData()))
-			}).Return(&server.MutationResult{
-			Status: &common.Status{},
-			IDs: &schema.IDs{
-				IdField: &schema.IDs_IntId{
-					IntId: &schema.LongArray{
+			}).Return(&milvuspb.MutationResult{
+			Status: &commonpb.Status{},
+			IDs: &schemapb.IDs{
+				IdField: &schemapb.IDs_IntId{
+					IntId: &schemapb.LongArray{
 						Data: []int64{1},
 					},
 				},
@@ -157,7 +157,7 @@ func (s *InsertSuite) TestInsertFail() {
 		)
 
 		s.mock.EXPECT().Insert(mock.Anything, mock.AnythingOfType("*milvuspb.InsertRequest")).Return(
-			&server.MutationResult{Status: &common.Status{ErrorCode: common.ErrorCode_UnexpectedError}}, nil,
+			&milvuspb.MutationResult{Status: &commonpb.Status{ErrorCode: commonpb.ErrorCode_UnexpectedError}}, nil,
 		)
 
 		_, err := c.Insert(ctx, testCollectionName, "partition_1",
@@ -205,13 +205,13 @@ func (s *InsertSuite) TestInsertSuccess() {
 		)
 
 		s.mock.EXPECT().Insert(mock.Anything, mock.AnythingOfType("*milvuspb.InsertRequest")).
-			Run(func(ctx context.Context, req *server.InsertRequest) {
+			Run(func(ctx context.Context, req *milvuspb.InsertRequest) {
 				s.Equal(1, len(req.GetFieldsData()))
-			}).Return(&server.MutationResult{
-			Status: &common.Status{},
-			IDs: &schema.IDs{
-				IdField: &schema.IDs_IntId{
-					IntId: &schema.LongArray{
+			}).Return(&milvuspb.MutationResult{
+			Status: &commonpb.Status{},
+			IDs: &schemapb.IDs{
+				IdField: &schemapb.IDs_IntId{
+					IntId: &schemapb.LongArray{
 						Data: []int64{1},
 					},
 				},
@@ -238,7 +238,7 @@ func (s *InsertSuite) TestInsertSuccess() {
 		)
 
 		s.mock.EXPECT().Insert(mock.Anything, mock.AnythingOfType("*milvuspb.InsertRequest")).
-			Run(func(ctx context.Context, req *server.InsertRequest) {
+			Run(func(ctx context.Context, req *milvuspb.InsertRequest) {
 				s.Equal(2, len(req.GetFieldsData()))
 				var found bool
 				for _, fd := range req.GetFieldsData() {
@@ -248,11 +248,11 @@ func (s *InsertSuite) TestInsertSuccess() {
 					}
 				}
 				s.True(found)
-			}).Return(&server.MutationResult{
-			Status: &common.Status{},
-			IDs: &schema.IDs{
-				IdField: &schema.IDs_IntId{
-					IntId: &schema.LongArray{
+			}).Return(&milvuspb.MutationResult{
+			Status: &commonpb.Status{},
+			IDs: &schemapb.IDs{
+				IdField: &schemapb.IDs_IntId{
+					IntId: &schemapb.LongArray{
 						Data: []int64{1},
 					},
 				},
@@ -280,13 +280,13 @@ func (s *InsertSuite) TestInsertSuccess() {
 		)
 
 		s.mock.EXPECT().Insert(mock.Anything, mock.AnythingOfType("*milvuspb.InsertRequest")).
-			Run(func(ctx context.Context, req *server.InsertRequest) {
+			Run(func(ctx context.Context, req *milvuspb.InsertRequest) {
 				s.Equal(2, len(req.GetFieldsData()))
-			}).Return(&server.MutationResult{
-			Status: &common.Status{},
-			IDs: &schema.IDs{
-				IdField: &schema.IDs_IntId{
-					IntId: &schema.LongArray{
+			}).Return(&milvuspb.MutationResult{
+			Status: &commonpb.Status{},
+			IDs: &schemapb.IDs{
+				IdField: &schemapb.IDs_IntId{
+					IntId: &schemapb.LongArray{
 						Data: []int64{1},
 					},
 				},

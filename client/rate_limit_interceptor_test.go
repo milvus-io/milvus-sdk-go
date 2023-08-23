@@ -25,7 +25,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 
-	common "github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
 )
 
 var mockInvokerError error
@@ -51,7 +51,7 @@ func TestRateLimitInterceptor(t *testing.T) {
 	ctx := context.Background()
 
 	// with retry
-	mockInvokerReply = &common.Status{ErrorCode: common.ErrorCode_RateLimit}
+	mockInvokerReply = &commonpb.Status{ErrorCode: commonpb.ErrorCode_RateLimit}
 	resetMockInvokeTimes()
 	err := inter(ctx, "", nil, mockInvokerReply, nil, mockInvoker)
 	assert.NoError(t, err)
