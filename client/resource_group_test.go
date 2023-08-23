@@ -21,8 +21,8 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
-	common "github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
-	server "github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
 )
 
 type ResourceGroupSuite struct {
@@ -43,7 +43,7 @@ func (s *ResourceGroupSuite) TestListResourceGroups() {
 		}
 
 		s.mock.EXPECT().ListResourceGroups(mock.Anything, mock.AnythingOfType("*milvuspb.ListResourceGroupsRequest")).
-			Return(&server.ListResourceGroupsResponse{Status: &common.Status{}, ResourceGroups: rgs}, nil)
+			Return(&milvuspb.ListResourceGroupsResponse{Status: &commonpb.Status{}, ResourceGroups: rgs}, nil)
 
 		result, err := c.ListResourceGroups(ctx)
 		s.NoError(err)
@@ -64,7 +64,7 @@ func (s *ResourceGroupSuite) TestListResourceGroups() {
 		defer s.resetMock()
 
 		s.mock.EXPECT().ListResourceGroups(mock.Anything, mock.AnythingOfType("*milvuspb.ListResourceGroupsRequest")).
-			Return(&server.ListResourceGroupsResponse{Status: &common.Status{ErrorCode: common.ErrorCode_UnexpectedError}}, nil)
+			Return(&milvuspb.ListResourceGroupsResponse{Status: &commonpb.Status{ErrorCode: commonpb.ErrorCode_UnexpectedError}}, nil)
 
 		_, err := c.ListResourceGroups(ctx)
 		s.Error(err)
@@ -81,10 +81,10 @@ func (s *ResourceGroupSuite) TestCreateResourceGroup() {
 		rgName := randStr(10)
 
 		s.mock.EXPECT().CreateResourceGroup(mock.Anything, mock.AnythingOfType("*milvuspb.CreateResourceGroupRequest")).
-			Run(func(_ context.Context, req *server.CreateResourceGroupRequest) {
+			Run(func(_ context.Context, req *milvuspb.CreateResourceGroupRequest) {
 				s.Equal(rgName, req.GetResourceGroup())
 			}).
-			Return(&common.Status{}, nil)
+			Return(&commonpb.Status{}, nil)
 
 		err := c.CreateResourceGroup(ctx, rgName)
 		s.NoError(err)
@@ -96,7 +96,7 @@ func (s *ResourceGroupSuite) TestCreateResourceGroup() {
 		rgName := randStr(10)
 
 		s.mock.EXPECT().CreateResourceGroup(mock.Anything, mock.AnythingOfType("*milvuspb.CreateResourceGroupRequest")).
-			Run(func(_ context.Context, req *server.CreateResourceGroupRequest) {
+			Run(func(_ context.Context, req *milvuspb.CreateResourceGroupRequest) {
 				s.Equal(rgName, req.GetResourceGroup())
 			}).
 			Return(nil, errors.New("mocked grpc error"))
@@ -111,10 +111,10 @@ func (s *ResourceGroupSuite) TestCreateResourceGroup() {
 		rgName := randStr(10)
 
 		s.mock.EXPECT().CreateResourceGroup(mock.Anything, mock.AnythingOfType("*milvuspb.CreateResourceGroupRequest")).
-			Run(func(_ context.Context, req *server.CreateResourceGroupRequest) {
+			Run(func(_ context.Context, req *milvuspb.CreateResourceGroupRequest) {
 				s.Equal(rgName, req.GetResourceGroup())
 			}).
-			Return(&common.Status{ErrorCode: common.ErrorCode_UnexpectedError}, nil)
+			Return(&commonpb.Status{ErrorCode: commonpb.ErrorCode_UnexpectedError}, nil)
 
 		err := c.CreateResourceGroup(ctx, rgName)
 		s.Error(err)
@@ -149,14 +149,14 @@ func (s *ResourceGroupSuite) TestDescribeResourceGroup() {
 		}
 
 		s.mock.EXPECT().DescribeResourceGroup(mock.Anything, mock.AnythingOfType("*milvuspb.DescribeResourceGroupRequest")).
-			Run(func(_ context.Context, req *server.DescribeResourceGroupRequest) {
+			Run(func(_ context.Context, req *milvuspb.DescribeResourceGroupRequest) {
 				s.Equal(rgName, req.GetResourceGroup())
 			}).
-			Call.Return(func(_ context.Context, req *server.DescribeResourceGroupRequest) *server.DescribeResourceGroupResponse {
+			Call.Return(func(_ context.Context, req *milvuspb.DescribeResourceGroupRequest) *milvuspb.DescribeResourceGroupResponse {
 
-			return &server.DescribeResourceGroupResponse{
-				Status: &common.Status{},
-				ResourceGroup: &server.ResourceGroup{
+			return &milvuspb.DescribeResourceGroupResponse{
+				Status: &commonpb.Status{},
+				ResourceGroup: &milvuspb.ResourceGroup{
 					Name:             rgName,
 					Capacity:         capacity,
 					NumAvailableNode: available,
@@ -183,7 +183,7 @@ func (s *ResourceGroupSuite) TestDescribeResourceGroup() {
 		rgName := randStr(10)
 
 		s.mock.EXPECT().DescribeResourceGroup(mock.Anything, mock.AnythingOfType("*milvuspb.DescribeResourceGroupRequest")).
-			Run(func(_ context.Context, req *server.DescribeResourceGroupRequest) {
+			Run(func(_ context.Context, req *milvuspb.DescribeResourceGroupRequest) {
 				s.Equal(rgName, req.GetResourceGroup())
 			}).
 			Return(nil, errors.New("mocked grpc error"))
@@ -198,10 +198,10 @@ func (s *ResourceGroupSuite) TestDescribeResourceGroup() {
 		rgName := randStr(10)
 
 		s.mock.EXPECT().DescribeResourceGroup(mock.Anything, mock.AnythingOfType("*milvuspb.DescribeResourceGroupRequest")).
-			Run(func(_ context.Context, req *server.DescribeResourceGroupRequest) {
+			Run(func(_ context.Context, req *milvuspb.DescribeResourceGroupRequest) {
 				s.Equal(rgName, req.GetResourceGroup())
 			}).
-			Return(&server.DescribeResourceGroupResponse{Status: &common.Status{ErrorCode: common.ErrorCode_UnexpectedError}}, nil)
+			Return(&milvuspb.DescribeResourceGroupResponse{Status: &commonpb.Status{ErrorCode: commonpb.ErrorCode_UnexpectedError}}, nil)
 
 		_, err := c.DescribeResourceGroup(ctx, rgName)
 		s.Error(err)
@@ -218,10 +218,10 @@ func (s *ResourceGroupSuite) TestDropResourceGroup() {
 		rgName := randStr(10)
 
 		s.mock.EXPECT().DropResourceGroup(mock.Anything, mock.AnythingOfType("*milvuspb.DropResourceGroupRequest")).
-			Run(func(_ context.Context, req *server.DropResourceGroupRequest) {
+			Run(func(_ context.Context, req *milvuspb.DropResourceGroupRequest) {
 				s.Equal(rgName, req.GetResourceGroup())
 			}).
-			Return(&common.Status{}, nil)
+			Return(&commonpb.Status{}, nil)
 
 		err := c.DropResourceGroup(ctx, rgName)
 		s.NoError(err)
@@ -233,7 +233,7 @@ func (s *ResourceGroupSuite) TestDropResourceGroup() {
 		rgName := randStr(10)
 
 		s.mock.EXPECT().DropResourceGroup(mock.Anything, mock.AnythingOfType("*milvuspb.DropResourceGroupRequest")).
-			Run(func(_ context.Context, req *server.DropResourceGroupRequest) {
+			Run(func(_ context.Context, req *milvuspb.DropResourceGroupRequest) {
 				s.Equal(rgName, req.GetResourceGroup())
 			}).
 			Return(nil, errors.New("mocked grpc error"))
@@ -248,10 +248,10 @@ func (s *ResourceGroupSuite) TestDropResourceGroup() {
 		rgName := randStr(10)
 
 		s.mock.EXPECT().DropResourceGroup(mock.Anything, mock.AnythingOfType("*milvuspb.DropResourceGroupRequest")).
-			Run(func(_ context.Context, req *server.DropResourceGroupRequest) {
+			Run(func(_ context.Context, req *milvuspb.DropResourceGroupRequest) {
 				s.Equal(rgName, req.GetResourceGroup())
 			}).
-			Return(&common.Status{ErrorCode: common.ErrorCode_UnexpectedError}, nil)
+			Return(&commonpb.Status{ErrorCode: commonpb.ErrorCode_UnexpectedError}, nil)
 
 		err := c.DropResourceGroup(ctx, rgName)
 		s.Error(err)
@@ -270,12 +270,12 @@ func (s *ResourceGroupSuite) TestTransferNodes() {
 		nodeNum := rand.Int31n(5) + 1
 
 		s.mock.EXPECT().TransferNode(mock.Anything, mock.AnythingOfType("*milvuspb.TransferNodeRequest")).
-			Run(func(_ context.Context, req *server.TransferNodeRequest) {
+			Run(func(_ context.Context, req *milvuspb.TransferNodeRequest) {
 				s.Equal(sourceRg, req.GetSourceResourceGroup())
 				s.Equal(targetRg, req.GetTargetResourceGroup())
 				s.Equal(nodeNum, req.GetNumNode())
 			}).
-			Return(&common.Status{}, nil)
+			Return(&commonpb.Status{}, nil)
 
 		err := c.TransferNode(ctx, sourceRg, targetRg, nodeNum)
 		s.NoError(err)
@@ -289,7 +289,7 @@ func (s *ResourceGroupSuite) TestTransferNodes() {
 		nodeNum := rand.Int31n(5) + 1
 
 		s.mock.EXPECT().TransferNode(mock.Anything, mock.AnythingOfType("*milvuspb.TransferNodeRequest")).
-			Run(func(_ context.Context, req *server.TransferNodeRequest) {
+			Run(func(_ context.Context, req *milvuspb.TransferNodeRequest) {
 				s.Equal(sourceRg, req.GetSourceResourceGroup())
 				s.Equal(targetRg, req.GetTargetResourceGroup())
 				s.Equal(nodeNum, req.GetNumNode())
@@ -308,12 +308,12 @@ func (s *ResourceGroupSuite) TestTransferNodes() {
 		nodeNum := rand.Int31n(5) + 1
 
 		s.mock.EXPECT().TransferNode(mock.Anything, mock.AnythingOfType("*milvuspb.TransferNodeRequest")).
-			Run(func(_ context.Context, req *server.TransferNodeRequest) {
+			Run(func(_ context.Context, req *milvuspb.TransferNodeRequest) {
 				s.Equal(sourceRg, req.GetSourceResourceGroup())
 				s.Equal(targetRg, req.GetTargetResourceGroup())
 				s.Equal(nodeNum, req.GetNumNode())
 			}).
-			Return(&common.Status{ErrorCode: common.ErrorCode_UnexpectedError}, nil)
+			Return(&commonpb.Status{ErrorCode: commonpb.ErrorCode_UnexpectedError}, nil)
 
 		err := c.TransferNode(ctx, sourceRg, targetRg, nodeNum)
 		s.Error(err)
@@ -333,12 +333,12 @@ func (s *ResourceGroupSuite) TestTransferReplica() {
 		replicaNum := rand.Int63n(5) + 1
 
 		s.mock.EXPECT().TransferReplica(mock.Anything, mock.AnythingOfType("*milvuspb.TransferReplicaRequest")).
-			Run(func(_ context.Context, req *server.TransferReplicaRequest) {
+			Run(func(_ context.Context, req *milvuspb.TransferReplicaRequest) {
 				s.Equal(sourceRg, req.GetSourceResourceGroup())
 				s.Equal(targetRg, req.GetTargetResourceGroup())
 				s.Equal(replicaNum, req.GetNumReplica())
 			}).
-			Return(&common.Status{}, nil)
+			Return(&commonpb.Status{}, nil)
 
 		err := c.TransferReplica(ctx, sourceRg, targetRg, collName, replicaNum)
 		s.NoError(err)
@@ -353,7 +353,7 @@ func (s *ResourceGroupSuite) TestTransferReplica() {
 		replicaNum := rand.Int63n(5) + 1
 
 		s.mock.EXPECT().TransferReplica(mock.Anything, mock.AnythingOfType("*milvuspb.TransferReplicaRequest")).
-			Run(func(_ context.Context, req *server.TransferReplicaRequest) {
+			Run(func(_ context.Context, req *milvuspb.TransferReplicaRequest) {
 				s.Equal(sourceRg, req.GetSourceResourceGroup())
 				s.Equal(targetRg, req.GetTargetResourceGroup())
 				s.Equal(replicaNum, req.GetNumReplica())
@@ -373,12 +373,12 @@ func (s *ResourceGroupSuite) TestTransferReplica() {
 		replicaNum := rand.Int63n(5) + 1
 
 		s.mock.EXPECT().TransferReplica(mock.Anything, mock.AnythingOfType("*milvuspb.TransferReplicaRequest")).
-			Run(func(_ context.Context, req *server.TransferReplicaRequest) {
+			Run(func(_ context.Context, req *milvuspb.TransferReplicaRequest) {
 				s.Equal(sourceRg, req.GetSourceResourceGroup())
 				s.Equal(targetRg, req.GetTargetResourceGroup())
 				s.Equal(replicaNum, req.GetNumReplica())
 			}).
-			Return(&common.Status{ErrorCode: common.ErrorCode_UnexpectedError}, nil)
+			Return(&commonpb.Status{ErrorCode: commonpb.ErrorCode_UnexpectedError}, nil)
 
 		err := c.TransferReplica(ctx, sourceRg, targetRg, collName, replicaNum)
 		s.Error(err)

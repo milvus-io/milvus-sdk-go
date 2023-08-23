@@ -46,32 +46,10 @@ func main() {
 	}
 
 	// define collection schema, see film.csv
-	schema := &entity.Schema{
-		CollectionName: collectionName,
-		Description:    "this is the example collection for insert and search",
-		AutoID:         false,
-		Fields: []*entity.Field{
-			{
-				Name:       "ID",
-				DataType:   entity.FieldTypeInt64, // int64 only for now
-				PrimaryKey: true,
-				AutoID:     false,
-			},
-			{
-				Name:       "Year",
-				DataType:   entity.FieldTypeInt32,
-				PrimaryKey: false,
-				AutoID:     false,
-			},
-			{
-				Name:     "Vector",
-				DataType: entity.FieldTypeFloatVector,
-				TypeParams: map[string]string{
-					entity.TypeParamDim: "8",
-				},
-			},
-		},
-	}
+	schema := entity.NewSchema().WithName(collectionName).WithDescription("this is the example collection for insert and search").
+		WithField(entity.NewField().WithName("ID").WithDataType(entity.FieldTypeInt64).WithIsPrimaryKey(true)).
+		WithField(entity.NewField().WithName("Year").WithDataType(entity.FieldTypeInt32)).
+		WithField(entity.NewField().WithName("Vector").WithDataType(entity.FieldTypeFloatVector).WithDim(8))
 
 	err = c.CreateCollection(ctx, schema, entity.DefaultShardNumber) // only 1 shard
 	if err != nil {

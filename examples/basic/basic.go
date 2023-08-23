@@ -9,14 +9,20 @@ import (
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )
 
+const (
+	// Milvus instance proxy address, may verify in your env/settings
+	milvusAddr = `localhost:19530`
+
+	collectionName      = `gosdk_basic_collection`
+	dim                 = 128
+	idCol, embeddingCol = "ID", "embeddings"
+)
+
 // basic milvus operation example
 func main() {
-	// Milvus instance proxy address, may verify in your env/settings
-	milvusAddr := `localhost:19530`
-
-	// setup context for client creation, use 2 seconds here
+	// setup context for client creation, use 10 seconds here
 	ctx := context.Background()
-	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
 	c, err := client.NewClient(ctx, client.Config{
@@ -26,8 +32,6 @@ func main() {
 		// handling error and exit, to make example simple here
 		log.Fatal("failed to connect to milvus:", err.Error())
 	}
-
-	collectionName := `gosdk_basic_collection`
 
 	// first, lets check the collection exists
 	collExists, err := c.HasCollection(ctx, collectionName)
@@ -41,28 +45,12 @@ func main() {
 	}
 
 	// define collection schema
-	schema := &entity.Schema{
-		CollectionName: collectionName,
-		Description:    "this is the basic example collection",
-		AutoID:         true,
-		Fields: []*entity.Field{
-			// currently primary key field is compulsory, and only int64 is allowd
-			{
-				Name:       "int64",
-				DataType:   entity.FieldTypeInt64,
-				PrimaryKey: true,
-				AutoID:     true,
-			},
-			// also the vector field is needed
-			{
-				Name:     "vector",
-				DataType: entity.FieldTypeFloatVector,
-				TypeParams: map[string]string{ // the vector dim may changed def method in release
-					entity.TypeParamDim: "128",
-				},
-			},
-		},
-	}
+	schema := entity.NewSchema().WithName(collectionName).WithDescription("this is the basic example collection").
+		// currently primary key field is compulsory, and only int64 is allowed
+		WithField(entity.NewField().WithName(idCol).WithDataType(entity.FieldTypeInt64).WithIsPrimaryKey(true).WithIsAutoID(false)).
+		// also the vector field is needed
+		WithField(entity.NewField().WithName(embeddingCol).WithDataType(entity.FieldTypeFloatVector).WithDim(dim))
+
 	err = c.CreateCollection(ctx, schema, entity.DefaultShardNumber)
 	if err != nil {
 		log.Fatal("failed to create collection:", err.Error())

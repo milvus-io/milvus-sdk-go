@@ -20,7 +20,7 @@ import (
 	"context"
 	"time"
 
-	server "github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )
 
@@ -38,7 +38,7 @@ func (c *GrpcClient) ManualCompaction(ctx context.Context, collName string, _ ti
 		return 0, err
 	}
 
-	req := &server.ManualCompactionRequest{
+	req := &milvuspb.ManualCompactionRequest{
 		CollectionID: coll.ID,
 	}
 
@@ -61,7 +61,7 @@ func (c *GrpcClient) GetCompactionState(ctx context.Context, id int64) (entity.C
 		return entity.CompcationStateUndefined, ErrClientNotReady
 	}
 
-	req := &server.GetCompactionStateRequest{CompactionID: id}
+	req := &milvuspb.GetCompactionStateRequest{CompactionID: id}
 	resp, err := c.Service.GetCompactionState(ctx, req)
 	if err != nil {
 		return entity.CompcationStateUndefined, err
@@ -82,7 +82,7 @@ func (c *GrpcClient) GetCompactionStateWithPlans(ctx context.Context, id int64) 
 		return entity.CompcationStateUndefined, nil, ErrClientNotReady
 	}
 
-	req := &server.GetCompactionPlansRequest{
+	req := &milvuspb.GetCompactionPlansRequest{
 		CompactionID: id,
 	}
 	resp, err := c.Service.GetCompactionStateWithPlans(ctx, req)

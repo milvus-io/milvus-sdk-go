@@ -16,7 +16,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 
-	server "github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )
 
@@ -102,18 +102,18 @@ func WithCollectionProperty(key, value string) CreateCollectionOption {
 }
 
 // LoadCollectionOption is an option that is used to modify LoadCollectionRequest
-type LoadCollectionOption func(*server.LoadCollectionRequest)
+type LoadCollectionOption func(*milvuspb.LoadCollectionRequest)
 
 // WithReplicaNumber specifies a specific ReplicaNumber, rather than using the default ReplicaNumber.
 func WithReplicaNumber(rn int32) LoadCollectionOption {
-	return func(req *server.LoadCollectionRequest) {
+	return func(req *milvuspb.LoadCollectionRequest) {
 		req.ReplicaNumber = rn
 	}
 }
 
 // WithResourceGroups specifies some specific ResourceGroup(s) to load the replica(s), rather than using the default ResourceGroup.
 func WithResourceGroups(rgs []string) LoadCollectionOption {
-	return func(req *server.LoadCollectionRequest) {
+	return func(req *milvuspb.LoadCollectionRequest) {
 		req.ResourceGroups = rgs
 	}
 }
@@ -215,11 +215,11 @@ func makeSearchQueryOption(collName string, opts ...SearchQueryOptionFunc) (*Sea
 }
 
 // BulkInsertOption is an option that is used to modify ImportRequest
-type BulkInsertOption func(request *server.ImportRequest)
+type BulkInsertOption func(request *milvuspb.ImportRequest)
 
 // WithStartTs specifies a specific startTs
 func WithStartTs(startTs int64) BulkInsertOption {
-	return func(req *server.ImportRequest) {
+	return func(req *milvuspb.ImportRequest) {
 		optionMap := entity.KvPairsMap(req.GetOptions())
 		optionMap["start_ts"] = fmt.Sprint(startTs)
 		req.Options = entity.MapKvPairs(optionMap)
@@ -228,7 +228,7 @@ func WithStartTs(startTs int64) BulkInsertOption {
 
 // WithEndTs specifies a specific endTs
 func WithEndTs(endTs int64) BulkInsertOption {
-	return func(req *server.ImportRequest) {
+	return func(req *milvuspb.ImportRequest) {
 		optionMap := entity.KvPairsMap(req.GetOptions())
 		optionMap["end_ts"] = fmt.Sprint(endTs)
 		req.Options = entity.MapKvPairs(optionMap)

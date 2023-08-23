@@ -18,8 +18,8 @@ import (
 
 	"github.com/cockroachdb/errors"
 
-	common "github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
-	server "github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )
 
@@ -39,7 +39,7 @@ func (c *GrpcClient) CreatePartition(ctx context.Context, collName string, parti
 		return fmt.Errorf("partition %s of collection %s already exists", partitionName, collName)
 	}
 
-	req := &server.CreatePartitionRequest{
+	req := &milvuspb.CreatePartitionRequest{
 		DbName:         "", //reserved
 		CollectionName: collName,
 		PartitionName:  partitionName,
@@ -73,7 +73,7 @@ func (c *GrpcClient) DropPartition(ctx context.Context, collName string, partiti
 	if err := c.checkPartitionExists(ctx, collName, partitionName); err != nil {
 		return err
 	}
-	req := &server.DropPartitionRequest{
+	req := &milvuspb.DropPartitionRequest{
 		DbName:         "",
 		CollectionName: collName,
 		PartitionName:  partitionName,
@@ -90,7 +90,7 @@ func (c *GrpcClient) HasPartition(ctx context.Context, collName string, partitio
 	if c.Service == nil {
 		return false, ErrClientNotReady
 	}
-	req := &server.HasPartitionRequest{
+	req := &milvuspb.HasPartitionRequest{
 		DbName:         "", // reserved
 		CollectionName: collName,
 		PartitionName:  partitionName,
@@ -99,7 +99,7 @@ func (c *GrpcClient) HasPartition(ctx context.Context, collName string, partitio
 	if err != nil {
 		return false, err
 	}
-	if resp.GetStatus().GetErrorCode() != common.ErrorCode_Success {
+	if resp.GetStatus().GetErrorCode() != commonpb.ErrorCode_Success {
 		return false, errors.New("request failed")
 	}
 	return resp.GetValue(), nil
@@ -110,7 +110,7 @@ func (c *GrpcClient) ShowPartitions(ctx context.Context, collName string) ([]*en
 	if c.Service == nil {
 		return []*entity.Partition{}, ErrClientNotReady
 	}
-	req := &server.ShowPartitionsRequest{
+	req := &milvuspb.ShowPartitionsRequest{
 		DbName:         "", // reserved
 		CollectionName: collName,
 	}
@@ -150,7 +150,7 @@ func (c *GrpcClient) LoadPartitions(ctx context.Context, collName string, partit
 		}
 	}
 
-	req := &server.LoadPartitionsRequest{
+	req := &milvuspb.LoadPartitionsRequest{
 		DbName:         "", // reserved
 		CollectionName: collName,
 		PartitionNames: partitionNames,
@@ -199,7 +199,7 @@ func (c *GrpcClient) ReleasePartitions(ctx context.Context, collName string, par
 			return err
 		}
 	}
-	req := &server.ReleasePartitionsRequest{
+	req := &milvuspb.ReleasePartitionsRequest{
 		DbName:         "", // reserved
 		CollectionName: collName,
 		PartitionNames: partitionNames,

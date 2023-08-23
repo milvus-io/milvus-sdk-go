@@ -19,7 +19,7 @@ package client
 import (
 	"context"
 
-	server "github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )
 
@@ -47,7 +47,7 @@ func (c *GrpcClient) CreateDatabase(ctx context.Context, dbName string) error {
 	if c.config.hasFlags(disableDatabase) {
 		return ErrFeatureNotSupported
 	}
-	req := &server.CreateDatabaseRequest{
+	req := &milvuspb.CreateDatabaseRequest{
 		DbName: dbName,
 	}
 	resp, err := c.Service.CreateDatabase(ctx, req)
@@ -66,7 +66,7 @@ func (c *GrpcClient) ListDatabases(ctx context.Context) ([]entity.Database, erro
 		return nil, ErrFeatureNotSupported
 	}
 
-	req := &server.ListDatabasesRequest{}
+	req := &milvuspb.ListDatabasesRequest{}
 	resp, err := c.Service.ListDatabases(ctx, req)
 	if err != nil {
 		return nil, err
@@ -92,7 +92,7 @@ func (c *GrpcClient) DropDatabase(ctx context.Context, dbName string) error {
 		return ErrFeatureNotSupported
 	}
 
-	req := &server.DropDatabaseRequest{
+	req := &milvuspb.DropDatabaseRequest{
 		DbName: dbName,
 	}
 	resp, err := c.Service.DropDatabase(ctx, req)

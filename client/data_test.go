@@ -20,9 +20,9 @@ import (
 	"github.com/cockroachdb/errors"
 
 	"github.com/golang/protobuf/proto"
-	common "github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
-	server "github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
-	schema "github.com/milvus-io/milvus-proto/go-api/v2/schemapb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/schemapb"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -51,8 +51,8 @@ func TestGrpcClientFlush(t *testing.T) {
 		start := time.Now()
 		flag := false
 		mockServer.SetInjection(MFlush, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			req, ok := raw.(*server.FlushRequest)
-			resp := &server.FlushResponse{}
+			req, ok := raw.(*milvuspb.FlushRequest)
+			resp := &milvuspb.FlushResponse{}
 			if !ok {
 				s, err := BadRequestStatus()
 				resp.Status = s
@@ -60,8 +60,8 @@ func TestGrpcClientFlush(t *testing.T) {
 			}
 			assert.ElementsMatch(t, []string{testCollectionName}, req.GetCollectionNames())
 
-			resp.CollSegIDs = make(map[string]*schema.LongArray)
-			resp.CollSegIDs[testCollectionName] = &schema.LongArray{
+			resp.CollSegIDs = make(map[string]*schemapb.LongArray)
+			resp.CollSegIDs[testCollectionName] = &schemapb.LongArray{
 				Data: segments,
 			}
 
@@ -71,8 +71,8 @@ func TestGrpcClientFlush(t *testing.T) {
 		})
 
 		mockServer.SetInjection(MGetFlushState, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			req, ok := raw.(*server.GetFlushStateRequest)
-			resp := &server.GetFlushStateResponse{}
+			req, ok := raw.(*milvuspb.GetFlushStateRequest)
+			resp := &milvuspb.GetFlushStateResponse{}
 			if !ok {
 				s, err := BadRequestStatus()
 				resp.Status = s
@@ -161,8 +161,8 @@ func TestGrpcClientUpsert(t *testing.T) {
 
 	vector := generateFloatVector(4096, testVectorDim)
 	mockServer.SetInjection(MUpsert, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-		req, ok := raw.(*server.UpsertRequest)
-		resp := &server.MutationResult{}
+		req, ok := raw.(*milvuspb.UpsertRequest)
+		resp := &milvuspb.MutationResult{}
 		if !ok {
 			s, err := BadRequestStatus()
 			resp.Status = s
@@ -170,12 +170,12 @@ func TestGrpcClientUpsert(t *testing.T) {
 		}
 		assert.EqualValues(t, 4096, req.GetNumRows())
 		assert.Equal(t, testCollectionName, req.GetCollectionName())
-		intIds := &schema.IDs_IntId{
-			IntId: &schema.LongArray{
+		intIds := &schemapb.IDs_IntId{
+			IntId: &schemapb.LongArray{
 				Data: make([]int64, 4096),
 			},
 		}
-		resp.IDs = &schema.IDs{
+		resp.IDs = &schemapb.IDs{
 			IdField: intIds,
 		}
 		s, err := SuccessStatus()
@@ -202,14 +202,14 @@ func TestGrpcDeleteByPks(t *testing.T) {
 		mockServer.SetInjection(MHasPartition, hasPartitionInjection(t, testCollectionName, true, partName))
 		defer mockServer.DelInjection(MHasPartition)
 		mockServer.SetInjection(MDelete, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			req, ok := raw.(*server.DeleteRequest)
+			req, ok := raw.(*milvuspb.DeleteRequest)
 			if !ok {
 				t.FailNow()
 			}
 			assert.Equal(t, testCollectionName, req.GetCollectionName())
 			assert.Equal(t, partName, req.GetPartitionName())
 
-			resp := &server.MutationResult{}
+			resp := &milvuspb.MutationResult{}
 			s, err := SuccessStatus()
 			resp.Status = s
 			return resp, err
@@ -248,7 +248,7 @@ func TestGrpcDeleteByPks(t *testing.T) {
 
 	t.Run("delete services fail", func(t *testing.T) {
 		mockServer.SetInjection(MDelete, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			resp := &server.MutationResult{}
+			resp := &milvuspb.MutationResult{}
 			return resp, errors.New("mockServer.d error")
 		})
 
@@ -256,9 +256,9 @@ func TestGrpcDeleteByPks(t *testing.T) {
 		assert.Error(t, err)
 
 		mockServer.SetInjection(MDelete, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			resp := &server.MutationResult{}
-			resp.Status = &common.Status{
-				ErrorCode: common.ErrorCode_UnexpectedError,
+			resp := &milvuspb.MutationResult{}
+			resp.Status = &commonpb.Status{
+				ErrorCode: commonpb.ErrorCode_UnexpectedError,
 			}
 			return resp, nil
 		})
@@ -306,7 +306,7 @@ func (s *SearchSuite) TestSearchFail() {
 	s.Run("fail_describecollection_error", func() {
 		defer s.resetMock()
 
-		s.setupDescribeCollectionError(common.ErrorCode_Success, errors.New("mock error"))
+		s.setupDescribeCollectionError(commonpb.ErrorCode_Success, errors.New("mock error"))
 
 		_, err := c.Search(ctx, testCollectionName, []string{partName}, "", []string{"ID"}, []entity.Vector{entity.FloatVector(vectors[0])}, "vector",
 			entity.L2, 5, sp, WithSearchQueryConsistencyLevel(entity.ClStrong))
@@ -316,7 +316,7 @@ func (s *SearchSuite) TestSearchFail() {
 	s.Run("fail_describecollection_errcode", func() {
 		defer s.resetMock()
 
-		s.setupDescribeCollectionError(common.ErrorCode_UnexpectedError, nil)
+		s.setupDescribeCollectionError(commonpb.ErrorCode_UnexpectedError, nil)
 
 		_, err := c.Search(ctx, testCollectionName, []string{partName}, "", []string{"ID"}, []entity.Vector{entity.FloatVector(vectors[0])}, "vector",
 			entity.L2, 5, sp, WithSearchQueryConsistencyLevel(entity.ClStrong))
@@ -350,7 +350,7 @@ func (s *SearchSuite) TestSearchFail() {
 
 		s.setupDescribeCollection(testCollectionName, s.sch)
 		s.mock.EXPECT().Search(mock.Anything, mock.AnythingOfType("*milvuspb.SearchRequest")).
-			Return(&server.SearchResults{Status: &common.Status{ErrorCode: common.ErrorCode_UnexpectedError}}, nil)
+			Return(&milvuspb.SearchResults{Status: &commonpb.Status{ErrorCode: commonpb.ErrorCode_UnexpectedError}}, nil)
 
 		_, err := c.Search(ctx, testCollectionName, []string{partName}, "", []string{"ID"}, []entity.Vector{entity.FloatVector(vectors[0])}, "vector",
 			entity.L2, 5, sp, WithSearchQueryConsistencyLevel(entity.ClStrong))
@@ -375,24 +375,24 @@ func (s *SearchSuite) TestSearchSuccess() {
 		defer s.resetMock()
 		s.setupDescribeCollection(testCollectionName, s.sch)
 		s.mock.EXPECT().Search(mock.Anything, mock.AnythingOfType("*milvuspb.SearchRequest")).
-			Run(func(_ context.Context, req *server.SearchRequest) {
+			Run(func(_ context.Context, req *milvuspb.SearchRequest) {
 				s.Equal(testCollectionName, req.GetCollectionName())
 				s.Equal(expr, req.GetDsl())
-				s.Equal(common.DslType_BoolExprV1, req.GetDslType())
+				s.Equal(commonpb.DslType_BoolExprV1, req.GetDslType())
 				s.ElementsMatch([]string{"ID"}, req.GetOutputFields())
 				s.ElementsMatch([]string{partName}, req.GetPartitionNames())
 			}).
-			Return(&server.SearchResults{
+			Return(&milvuspb.SearchResults{
 				Status: getSuccessStatus(),
-				Results: &schema.SearchResultData{
+				Results: &schemapb.SearchResultData{
 					NumQueries: 1,
 					TopK:       10,
-					FieldsData: []*schema.FieldData{
+					FieldsData: []*schemapb.FieldData{
 						s.getInt64FieldData("ID", []int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}),
 					},
-					Ids: &schema.IDs{
-						IdField: &schema.IDs_IntId{
-							IntId: &schema.LongArray{
+					Ids: &schemapb.IDs{
+						IdField: &schemapb.IDs_IntId{
+							IntId: &schemapb.LongArray{
 								Data: []int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
 							},
 						},
@@ -414,27 +414,27 @@ func (s *SearchSuite) TestSearchSuccess() {
 		defer s.resetMock()
 		s.setupDescribeCollection(testCollectionName, s.schDynamic)
 		s.mock.EXPECT().Search(mock.Anything, mock.AnythingOfType("*milvuspb.SearchRequest")).
-			Run(func(_ context.Context, req *server.SearchRequest) {
+			Run(func(_ context.Context, req *milvuspb.SearchRequest) {
 				s.Equal(testCollectionName, req.GetCollectionName())
 				s.Equal(expr, req.GetDsl())
-				s.Equal(common.DslType_BoolExprV1, req.GetDslType())
+				s.Equal(commonpb.DslType_BoolExprV1, req.GetDslType())
 				s.ElementsMatch([]string{"A", "B"}, req.GetOutputFields())
 				s.ElementsMatch([]string{partName}, req.GetPartitionNames())
 			}).
-			Return(&server.SearchResults{
+			Return(&milvuspb.SearchResults{
 				Status: getSuccessStatus(),
-				Results: &schema.SearchResultData{
+				Results: &schemapb.SearchResultData{
 					NumQueries: 1,
 					TopK:       2,
-					FieldsData: []*schema.FieldData{
+					FieldsData: []*schemapb.FieldData{
 						s.getJSONBytesFieldData("", [][]byte{
 							[]byte(`{"A": 123, "B": "456"}`),
 							[]byte(`{"B": "abc", "A": 456}`),
 						}, true),
 					},
-					Ids: &schema.IDs{
-						IdField: &schema.IDs_IntId{
-							IntId: &schema.LongArray{
+					Ids: &schemapb.IDs{
+						IdField: &schemapb.IDs_IntId{
+							IntId: &schemapb.LongArray{
 								Data: []int64{1, 2},
 							},
 						},
@@ -508,7 +508,7 @@ func (s *QuerySuite) GetFail() {
 
 	s.Run("describe_failed", func() {
 		defer s.resetMock()
-		s.setupDescribeCollectionError(common.ErrorCode_Success, errors.New("mock error"))
+		s.setupDescribeCollectionError(commonpb.ErrorCode_Success, errors.New("mock error"))
 
 		_, err := c.Get(ctx, testCollectionName, idCol)
 		s.Error(err)
@@ -535,7 +535,7 @@ func (s *QuerySuite) TestQueryByPksFail() {
 
 	s.Run("query_failed", func() {
 		defer s.resetMock()
-		s.setupDescribeCollectionError(common.ErrorCode_Success, errors.New("mock error"))
+		s.setupDescribeCollectionError(commonpb.ErrorCode_Success, errors.New("mock error"))
 
 		_, err := c.QueryByPks(ctx, testCollectionName, []string{partName}, idCol, []string{"ID"})
 		s.Error(err)
@@ -559,7 +559,7 @@ func (s *QuerySuite) TestQueryFail() {
 	s.Run("fail_describecollection_error", func() {
 		defer s.resetMock()
 
-		s.setupDescribeCollectionError(common.ErrorCode_Success, errors.New("mock error"))
+		s.setupDescribeCollectionError(commonpb.ErrorCode_Success, errors.New("mock error"))
 
 		_, err := c.Query(ctx, testCollectionName, []string{partName}, "", []string{"ID"}, WithSearchQueryConsistencyLevel(entity.ClStrong))
 		s.Error(err)
@@ -568,7 +568,7 @@ func (s *QuerySuite) TestQueryFail() {
 	s.Run("fail_describecollection_errcode", func() {
 		defer s.resetMock()
 
-		s.setupDescribeCollectionError(common.ErrorCode_UnexpectedError, nil)
+		s.setupDescribeCollectionError(commonpb.ErrorCode_UnexpectedError, nil)
 
 		_, err := c.Query(ctx, testCollectionName, []string{partName}, "", []string{"ID"}, WithSearchQueryConsistencyLevel(entity.ClStrong))
 		s.Error(err)
@@ -599,7 +599,7 @@ func (s *QuerySuite) TestQueryFail() {
 
 		s.setupDescribeCollection(testCollectionName, s.sch)
 		s.mock.EXPECT().Query(mock.Anything, mock.AnythingOfType("*milvuspb.QueryRequest")).
-			Return(&server.QueryResults{Status: &common.Status{ErrorCode: common.ErrorCode_UnexpectedError}}, nil)
+			Return(&milvuspb.QueryResults{Status: &commonpb.Status{ErrorCode: commonpb.ErrorCode_UnexpectedError}}, nil)
 
 		_, err := c.Query(ctx, testCollectionName, []string{partName}, "ID in {1}", []string{"ID"}, WithSearchQueryConsistencyLevel(entity.ClStrong))
 		s.Error(err)
@@ -610,16 +610,16 @@ func (s *QuerySuite) TestQueryFail() {
 
 		s.setupDescribeCollection(testCollectionName, s.sch)
 		s.mock.EXPECT().Query(mock.Anything, mock.AnythingOfType("*milvuspb.QueryRequest")).
-			Return(&server.QueryResults{
-				Status: &common.Status{ErrorCode: common.ErrorCode_Success},
-				FieldsData: []*schema.FieldData{
+			Return(&milvuspb.QueryResults{
+				Status: &commonpb.Status{ErrorCode: commonpb.ErrorCode_Success},
+				FieldsData: []*schemapb.FieldData{
 					{
 						FieldName: "ID",
-						Type:      schema.DataType_String, //wrong data type here
-						Field: &schema.FieldData_Scalars{
-							Scalars: &schema.ScalarField{
-								Data: &schema.ScalarField_LongData{
-									LongData: &schema.LongArray{
+						Type:      schemapb.DataType_String, //wrong data type here
+						Field: &schemapb.FieldData_Scalars{
+							Scalars: &schemapb.ScalarField{
+								Data: &schemapb.ScalarField_LongData{
+									LongData: &schemapb.LongArray{
 										Data: []int64{1},
 									},
 								},
@@ -649,10 +649,10 @@ func (s *QuerySuite) TestQuerySuccess() {
 
 		s.setupDescribeCollection(testCollectionName, s.sch)
 		s.mock.EXPECT().Query(mock.Anything, mock.AnythingOfType("*milvuspb.QueryRequest")).
-			Run(func(_ context.Context, req *server.QueryRequest) {}).
-			Return(&server.QueryResults{
+			Run(func(_ context.Context, req *milvuspb.QueryRequest) {}).
+			Return(&milvuspb.QueryResults{
 				Status: getSuccessStatus(),
-				FieldsData: []*schema.FieldData{
+				FieldsData: []*schemapb.FieldData{
 					s.getInt64FieldData("ID", []int64{1}),
 					s.getFloatVectorFieldData("vector", 1, []float32{0.1}),
 				},
@@ -680,10 +680,10 @@ func (s *QuerySuite) TestQuerySuccess() {
 
 		s.setupDescribeCollection(testCollectionName, s.schDynamic)
 		s.mock.EXPECT().Query(mock.Anything, mock.AnythingOfType("*milvuspb.QueryRequest")).
-			Run(func(_ context.Context, req *server.QueryRequest) {}).
-			Return(&server.QueryResults{
+			Run(func(_ context.Context, req *milvuspb.QueryRequest) {}).
+			Return(&milvuspb.QueryResults{
 				Status: getSuccessStatus(),
-				FieldsData: []*schema.FieldData{
+				FieldsData: []*schemapb.FieldData{
 					s.getVarcharFieldData("ID", []string{"1"}),
 					s.getFloatVectorFieldData("vector", 1, []float32{0.1}),
 					s.getJSONBytesFieldData("$meta", [][]byte{
@@ -734,8 +734,8 @@ func TestGrpcCalcDistanceWithIDs(t *testing.T) {
 
 	c := testClient(ctx, t)
 	mockServer.SetInjection(MDescribeCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-		req, ok := raw.(*server.DescribeCollectionRequest)
-		resp := &server.DescribeCollectionResponse{}
+		req, ok := raw.(*milvuspb.DescribeCollectionRequest)
+		resp := &milvuspb.DescribeCollectionResponse{}
 		if !ok {
 			s, err := BadRequestStatus()
 			resp.Status = s
@@ -780,8 +780,8 @@ func TestGrpcCalcDistanceWithIDs(t *testing.T) {
 
 	t.Run("valid calls", func(t *testing.T) {
 		mockServer.SetInjection(MCalcDistance, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			req, ok := raw.(*server.CalcDistanceRequest)
-			resp := &server.CalcDistanceResults{}
+			req, ok := raw.(*milvuspb.CalcDistanceRequest)
+			resp := &milvuspb.CalcDistanceResults{}
 			if !ok {
 				s, err := BadRequestStatus()
 				resp.Status = s
@@ -817,8 +817,8 @@ func TestGrpcCalcDistanceWithIDs(t *testing.T) {
 				dr = len(valuesRight.GetFloatVector().GetData()) / int(valuesRight.Dim)
 			}
 
-			resp.Array = &server.CalcDistanceResults_FloatDist{
-				FloatDist: &schema.FloatArray{
+			resp.Array = &milvuspb.CalcDistanceResults_FloatDist{
+				FloatDist: &schemapb.FloatArray{
 					Data: make([]float32, dl*dr),
 				},
 			}
@@ -845,8 +845,8 @@ func TestGrpcCalcDistanceWithIDs(t *testing.T) {
 
 		// test IntDistance,
 		mockServer.SetInjection(MCalcDistance, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			req, ok := raw.(*server.CalcDistanceRequest)
-			resp := &server.CalcDistanceResults{}
+			req, ok := raw.(*milvuspb.CalcDistanceRequest)
+			resp := &milvuspb.CalcDistanceResults{}
 			if !ok {
 				s, err := BadRequestStatus()
 				resp.Status = s
@@ -882,8 +882,8 @@ func TestGrpcCalcDistanceWithIDs(t *testing.T) {
 				dr = len(valuesRight.GetFloatVector().GetData()) / int(valuesRight.Dim)
 			}
 
-			resp.Array = &server.CalcDistanceResults_IntDist{
-				IntDist: &schema.IntArray{
+			resp.Array = &milvuspb.CalcDistanceResults_IntDist{
+				IntDist: &schemapb.IntArray{
 					Data: make([]int32, dl*dr),
 				},
 			}
@@ -899,8 +899,8 @@ func TestGrpcCalcDistanceWithIDs(t *testing.T) {
 
 		// test str id
 		mockServer.SetInjection(MDescribeCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			req, ok := raw.(*server.DescribeCollectionRequest)
-			resp := &server.DescribeCollectionResponse{}
+			req, ok := raw.(*milvuspb.DescribeCollectionRequest)
+			resp := &milvuspb.DescribeCollectionResponse{}
 			if !ok {
 				s, err := BadRequestStatus()
 				resp.Status = s
@@ -918,8 +918,8 @@ func TestGrpcCalcDistanceWithIDs(t *testing.T) {
 			return resp, err
 		})
 		mockServer.SetInjection(MCalcDistance, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			req, ok := raw.(*server.CalcDistanceRequest)
-			resp := &server.CalcDistanceResults{}
+			req, ok := raw.(*milvuspb.CalcDistanceRequest)
+			resp := &milvuspb.CalcDistanceResults{}
 			if !ok {
 				s, err := BadRequestStatus()
 				resp.Status = s
@@ -940,8 +940,8 @@ func TestGrpcCalcDistanceWithIDs(t *testing.T) {
 			// this injection returns float distance
 			dl := len(idsLeft.IdArray.GetStrId().Data)
 
-			resp.Array = &server.CalcDistanceResults_FloatDist{
-				FloatDist: &schema.FloatArray{
+			resp.Array = &milvuspb.CalcDistanceResults_FloatDist{
+				FloatDist: &schemapb.FloatArray{
 					Data: make([]float32, dl),
 				},
 			}
@@ -1002,9 +1002,9 @@ func TestEstRowSize(t *testing.T) {
 	columnFv := entity.NewColumnFloatVector(testVectorField, testVectorDim, generateFloatVector(1, testVectorDim))
 	columnBv := entity.NewColumnBinaryVector("binary_vector", testVectorDim, generateBinaryVector(1, testVectorDim))
 
-	sr := &server.SearchResults{
-		Results: &schema.SearchResultData{
-			FieldsData: []*schema.FieldData{
+	sr := &milvuspb.SearchResults{
+		Results: &schemapb.SearchResultData{
+			FieldsData: []*schemapb.FieldData{
 				columnID.FieldData(),
 				columnAttr1.FieldData(),
 				columnAttr2.FieldData(),
@@ -1031,9 +1031,9 @@ func TestEstRowSize(t *testing.T) {
 	columnFv = entity.NewColumnFloatVector(testVectorField, testVectorDim, generateFloatVector(2, testVectorDim))
 	columnBv = entity.NewColumnBinaryVector("binary_vector", testVectorDim, generateBinaryVector(2, testVectorDim))
 
-	sr = &server.SearchResults{
-		Results: &schema.SearchResultData{
-			FieldsData: []*schema.FieldData{
+	sr = &milvuspb.SearchResults{
+		Results: &schemapb.SearchResultData{
+			FieldsData: []*schemapb.FieldData{
 				columnID.FieldData(),
 				columnAttr1.FieldData(),
 				columnAttr2.FieldData(),
@@ -1089,7 +1089,7 @@ func TestVector2PlaceHolder(t *testing.T) {
 
 		phv := vector2Placeholder(vectors)
 		assert.Equal(t, "$0", phv.Tag)
-		assert.Equal(t, common.PlaceholderType_FloatVector, phv.Type)
+		assert.Equal(t, commonpb.PlaceholderType_FloatVector, phv.Type)
 		require.Equal(t, len(vectors), len(phv.Values))
 		for idx, line := range phv.Values {
 			assert.Equal(t, vectors[idx].Serialize(), line)
@@ -1105,7 +1105,7 @@ func TestVector2PlaceHolder(t *testing.T) {
 
 		phv := vector2Placeholder(vectors)
 		assert.Equal(t, "$0", phv.Tag)
-		assert.Equal(t, common.PlaceholderType_BinaryVector, phv.Type)
+		assert.Equal(t, commonpb.PlaceholderType_BinaryVector, phv.Type)
 		require.Equal(t, len(vectors), len(phv.Values))
 		for idx, line := range phv.Values {
 			assert.Equal(t, vectors[idx].Serialize(), line)

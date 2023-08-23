@@ -21,9 +21,9 @@ import (
 
 	"github.com/cockroachdb/errors"
 
-	common "github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
-	server "github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
-	schema "github.com/milvus-io/milvus-proto/go-api/v2/schemapb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/schemapb"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )
 
@@ -92,9 +92,9 @@ func (c *GrpcClient) Search(ctx context.Context, collName string, partitions []s
 	return sr, nil
 }
 
-func (c *GrpcClient) parseSearchResult(_ *entity.Schema, outputFields []string, fieldDataList []*schema.FieldData, _, from, to int) ([]entity.Column, error) {
+func (c *GrpcClient) parseSearchResult(_ *entity.Schema, outputFields []string, fieldDataList []*schemapb.FieldData, _, from, to int) ([]entity.Column, error) {
 	//dynamicField := sch.GetDynamicField()
-	fields := make(map[string]*schema.FieldData)
+	fields := make(map[string]*schemapb.FieldData)
 	var dynamicColumn *entity.ColumnJSONBytes
 	for _, fieldData := range fieldDataList {
 		fields[fieldData.GetFieldName()] = fieldData
@@ -141,7 +141,7 @@ func PKs2Expr(backName string, ids entity.Column) string {
 	case entity.FieldTypeInt64:
 		expr = fmt.Sprintf("%s in %s", pkName, strings.Join(strings.Fields(fmt.Sprint(ids.FieldData().GetScalars().GetLongData().GetData())), ","))
 	case entity.FieldTypeVarChar:
-		data := ids.FieldData().GetScalars().GetData().(*schema.ScalarField_StringData).StringData.Data
+		data := ids.FieldData().GetScalars().GetData().(*schemapb.ScalarField_StringData).StringData.Data
 		for i := range data {
 			data[i] = fmt.Sprintf("\"%s\"", data[i])
 		}
@@ -215,7 +215,7 @@ func (c *GrpcClient) Query(ctx context.Context, collectionName string, partition
 		return nil, err
 	}
 
-	req := &server.QueryRequest{
+	req := &milvuspb.QueryRequest{
 		DbName:             "", // reserved field
 		CollectionName:     collectionName,
 		Expr:               expr,
@@ -224,13 +224,13 @@ func (c *GrpcClient) Query(ctx context.Context, collectionName string, partition
 		GuaranteeTimestamp: option.GuaranteeTimestamp,
 	}
 	if option.Offset > 0 {
-		req.QueryParams = append(req.QueryParams, &common.KeyValuePair{Key: offsetKey, Value: strconv.FormatInt(option.Offset, 10)})
+		req.QueryParams = append(req.QueryParams, &commonpb.KeyValuePair{Key: offsetKey, Value: strconv.FormatInt(option.Offset, 10)})
 	}
 	if option.Limit > 0 {
-		req.QueryParams = append(req.QueryParams, &common.KeyValuePair{Key: limitKey, Value: strconv.FormatInt(option.Limit, 10)})
+		req.QueryParams = append(req.QueryParams, &commonpb.KeyValuePair{Key: limitKey, Value: strconv.FormatInt(option.Limit, 10)})
 	}
 	if option.IgnoreGrowing {
-		req.QueryParams = append(req.QueryParams, &common.KeyValuePair{Key: ignoreGrowingKey, Value: strconv.FormatBool(option.IgnoreGrowing)})
+		req.QueryParams = append(req.QueryParams, &commonpb.KeyValuePair{Key: ignoreGrowingKey, Value: strconv.FormatBool(option.IgnoreGrowing)})
 	}
 
 	resp, err := c.Service.Query(ctx, req)
@@ -284,7 +284,7 @@ func getVectorField(schema *entity.Schema) *entity.Field {
 
 func prepareSearchRequest(collName string, partitions []string,
 	expr string, outputFields []string, vectors []entity.Vector, vectorField string,
-	metricType entity.MetricType, topK int, sp entity.SearchParam, opt *SearchQueryOption) (*server.SearchRequest, error) {
+	metricType entity.MetricType, topK int, sp entity.SearchParam, opt *SearchQueryOption) (*milvuspb.SearchRequest, error) {
 	params := sp.Params()
 	params[forTuningKey] = opt.ForTuning
 	bs, err := json.Marshal(params)
@@ -301,13 +301,13 @@ func prepareSearchRequest(collName string, partitions []string,
 		ignoreGrowingKey: strconv.FormatBool(opt.IgnoreGrowing),
 		offsetKey:        fmt.Sprintf("%d", opt.Offset),
 	})
-	req := &server.SearchRequest{
+	req := &milvuspb.SearchRequest{
 		DbName:             "",
 		CollectionName:     collName,
 		PartitionNames:     partitions,
 		Dsl:                expr,
 		PlaceholderGroup:   vector2PlaceholderGroupBytes(vectors),
-		DslType:            common.DslType_BoolExprV1,
+		DslType:            commonpb.DslType_BoolExprV1,
 		OutputFields:       outputFields,
 		SearchParams:       searchParams,
 		GuaranteeTimestamp: opt.GuaranteeTimestamp,
@@ -321,7 +321,7 @@ func (c *GrpcClient) GetPersistentSegmentInfo(ctx context.Context, collName stri
 	if c.Service == nil {
 		return []*entity.Segment{}, ErrClientNotReady
 	}
-	req := &server.GetPersistentSegmentInfoRequest{
+	req := &milvuspb.GetPersistentSegmentInfoRequest{
 		DbName:         "", // reserved
 		CollectionName: collName,
 	}
@@ -351,7 +351,7 @@ func (c *GrpcClient) GetQuerySegmentInfo(ctx context.Context, collName string) (
 	if c.Service == nil {
 		return []*entity.Segment{}, ErrClientNotReady
 	}
-	req := &server.GetQuerySegmentInfoRequest{
+	req := &milvuspb.GetQuerySegmentInfoRequest{
 		DbName:         "", // reserved
 		CollectionName: collName,
 	}
@@ -402,7 +402,7 @@ func (c *GrpcClient) CalcDistance(ctx context.Context, collName string, partitio
 		return nil, err
 	}
 
-	req := &server.CalcDistanceRequest{
+	req := &milvuspb.CalcDistanceRequest{
 		OpLeft:  columnToVectorsArray(collName, partitions, opLeft),
 		OpRight: columnToVectorsArray(collName, partitions, opRight),
 		Params: entity.MapKvPairs(map[string]string{
@@ -431,45 +431,45 @@ func (c *GrpcClient) CalcDistance(ctx context.Context, collName string, partitio
 	return nil, errors.New("distance field not supported")
 }
 
-func columnToVectorsArray(collName string, partitions []string, column entity.Column) *server.VectorsArray {
-	result := &server.VectorsArray{}
+func columnToVectorsArray(collName string, partitions []string, column entity.Column) *milvuspb.VectorsArray {
+	result := &milvuspb.VectorsArray{}
 	switch column.Type() {
 	case entity.FieldTypeInt64: // int64 id
 		int64Column, ok := column.(*entity.ColumnInt64)
 		if !ok {
 			return nil // server shall report error
 		}
-		ids := &server.VectorIDs{
+		ids := &milvuspb.VectorIDs{
 			CollectionName: collName,
 			PartitionNames: partitions,
 			FieldName:      column.Name(), // TODO use field name or column name?
-			IdArray: &schema.IDs{
-				IdField: &schema.IDs_IntId{
-					IntId: &schema.LongArray{
+			IdArray: &schemapb.IDs{
+				IdField: &schemapb.IDs_IntId{
+					IntId: &schemapb.LongArray{
 						Data: int64Column.Data(),
 					},
 				},
 			},
 		}
-		result.Array = &server.VectorsArray_IdArray{IdArray: ids}
+		result.Array = &milvuspb.VectorsArray_IdArray{IdArray: ids}
 	case entity.FieldTypeString: // string id
 		stringColumn, ok := column.(*entity.ColumnString)
 		if !ok {
 			return nil
 		}
-		ids := &server.VectorIDs{
+		ids := &milvuspb.VectorIDs{
 			CollectionName: collName,
 			PartitionNames: partitions,
 			FieldName:      column.Name(),
-			IdArray: &schema.IDs{
-				IdField: &schema.IDs_StrId{
-					StrId: &schema.StringArray{
+			IdArray: &schemapb.IDs{
+				IdField: &schemapb.IDs_StrId{
+					StrId: &schemapb.StringArray{
 						Data: stringColumn.Data(),
 					},
 				},
 			},
 		}
-		result.Array = &server.VectorsArray_IdArray{IdArray: ids}
+		result.Array = &milvuspb.VectorsArray_IdArray{IdArray: ids}
 	case entity.FieldTypeFloatVector:
 		fvColumn, ok := column.(*entity.ColumnFloatVector)
 		if !ok {
@@ -480,10 +480,10 @@ func columnToVectorsArray(collName string, partitions []string, column entity.Co
 		for _, row := range fvdata {
 			data = append(data, row...)
 		}
-		result.Array = &server.VectorsArray_DataArray{DataArray: &schema.VectorField{
+		result.Array = &milvuspb.VectorsArray_DataArray{DataArray: &schemapb.VectorField{
 			Dim: int64(fvColumn.Dim()),
-			Data: &schema.VectorField_FloatVector{
-				FloatVector: &schema.FloatArray{
+			Data: &schemapb.VectorField_FloatVector{
+				FloatVector: &schemapb.FloatArray{
 					Data: data,
 				},
 			},
@@ -498,9 +498,9 @@ func columnToVectorsArray(collName string, partitions []string, column entity.Co
 		for _, row := range bvdata {
 			data = append(data, row...)
 		}
-		result.Array = &server.VectorsArray_DataArray{DataArray: &schema.VectorField{
+		result.Array = &milvuspb.VectorsArray_DataArray{DataArray: &schemapb.VectorField{
 			Dim: int64(bvColumn.Dim()),
-			Data: &schema.VectorField_BinaryVector{
+			Data: &schemapb.VectorField_BinaryVector{
 				BinaryVector: data,
 			},
 		}}

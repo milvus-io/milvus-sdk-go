@@ -8,8 +8,8 @@ import (
 	"github.com/cockroachdb/errors"
 
 	"github.com/golang/protobuf/proto"
-	server "github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
-	schema "github.com/milvus-io/milvus-proto/go-api/v2/schemapb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/schemapb"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )
 
@@ -40,7 +40,7 @@ func (c *GrpcClient) CreateCollectionByRow(ctx context.Context, row entity.Row, 
 		return err
 	}
 	// compose request and invoke Service
-	req := &server.CreateCollectionRequest{
+	req := &milvuspb.CreateCollectionRequest{
 		DbName:         "", // reserved fields, not used for now
 		CollectionName: sch.CollectionName,
 		Schema:         bs,
@@ -99,7 +99,7 @@ func (c *GrpcClient) InsertRows(ctx context.Context, collName string, partitionN
 	}
 	//fieldData
 	// 2. do insert request
-	req := &server.InsertRequest{
+	req := &milvuspb.InsertRequest{
 		DbName:         "", // reserved
 		CollectionName: collName,
 		PartitionName:  partitionName,
@@ -133,7 +133,7 @@ type SearchResultByRows struct {
 }
 
 // SearchResultToRows converts search result proto to rows
-func SearchResultToRows(sch *entity.Schema, results *schema.SearchResultData, t reflect.Type, _ map[string]struct{}) ([]SearchResultByRows, error) {
+func SearchResultToRows(sch *entity.Schema, results *schemapb.SearchResultData, t reflect.Type, _ map[string]struct{}) ([]SearchResultByRows, error) {
 	var err error
 	offset := 0
 	// new will have a pointer, so de-reference first if type is pointer to struct
@@ -142,7 +142,7 @@ func SearchResultToRows(sch *entity.Schema, results *schema.SearchResultData, t 
 	}
 	sr := make([]SearchResultByRows, 0, results.GetNumQueries())
 	fieldDataList := results.GetFieldsData()
-	nameFieldData := make(map[string]*schema.FieldData)
+	nameFieldData := make(map[string]*schemapb.FieldData)
 	for _, fieldData := range fieldDataList {
 		nameFieldData[fieldData.FieldName] = fieldData
 	}
@@ -220,7 +220,7 @@ var (
 )
 
 // SetFieldValue set row field value with reflection
-func SetFieldValue(field *entity.Field, f reflect.Value, fieldData *schema.FieldData, idx int) error {
+func SetFieldValue(field *entity.Field, f reflect.Value, fieldData *schemapb.FieldData, idx int) error {
 	scalars := fieldData.GetScalars()
 	vectors := fieldData.GetVectors()
 	// This switch part is messy

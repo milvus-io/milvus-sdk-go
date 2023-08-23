@@ -19,8 +19,8 @@ package client
 import (
 	"context"
 
-	common "github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
-	server "github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )
 
@@ -30,8 +30,8 @@ func (c *GrpcClient) CreateRole(ctx context.Context, name string) error {
 		return ErrClientNotReady
 	}
 
-	req := &server.CreateRoleRequest{
-		Entity: &server.RoleEntity{
+	req := &milvuspb.CreateRoleRequest{
+		Entity: &milvuspb.RoleEntity{
 			Name: name,
 		},
 	}
@@ -49,7 +49,7 @@ func (c *GrpcClient) DropRole(ctx context.Context, name string) error {
 		return ErrClientNotReady
 	}
 
-	req := &server.DropRoleRequest{
+	req := &milvuspb.DropRoleRequest{
 		RoleName: name,
 	}
 
@@ -67,10 +67,10 @@ func (c *GrpcClient) AddUserRole(ctx context.Context, username string, role stri
 		return ErrClientNotReady
 	}
 
-	req := &server.OperateUserRoleRequest{
+	req := &milvuspb.OperateUserRoleRequest{
 		Username: username,
 		RoleName: role,
-		Type:     server.OperateUserRoleType_AddUserToRole,
+		Type:     milvuspb.OperateUserRoleType_AddUserToRole,
 	}
 
 	resp, err := c.Service.OperateUserRole(ctx, req)
@@ -87,10 +87,10 @@ func (c *GrpcClient) RemoveUserRole(ctx context.Context, username string, role s
 		return ErrClientNotReady
 	}
 
-	req := &server.OperateUserRoleRequest{
+	req := &milvuspb.OperateUserRoleRequest{
 		Username: username,
 		RoleName: role,
-		Type:     server.OperateUserRoleType_RemoveUserFromRole,
+		Type:     milvuspb.OperateUserRoleType_RemoveUserFromRole,
 	}
 
 	resp, err := c.Service.OperateUserRole(ctx, req)
@@ -107,7 +107,7 @@ func (c *GrpcClient) ListRoles(ctx context.Context) ([]entity.Role, error) {
 		return nil, ErrClientNotReady
 	}
 
-	req := &server.SelectRoleRequest{}
+	req := &milvuspb.SelectRoleRequest{}
 
 	resp, err := c.Service.SelectRole(ctx, req)
 	if err != nil {
@@ -131,7 +131,7 @@ func (c *GrpcClient) ListUsers(ctx context.Context) ([]entity.User, error) {
 		return nil, ErrClientNotReady
 	}
 
-	req := &server.SelectUserRequest{}
+	req := &milvuspb.SelectUserRequest{}
 
 	resp, err := c.Service.SelectUser(ctx, req)
 	if err != nil {
@@ -155,17 +155,17 @@ func (c *GrpcClient) Grant(ctx context.Context, role string, objectType entity.P
 		return ErrClientNotReady
 	}
 
-	req := &server.OperatePrivilegeRequest{
-		Entity: &server.GrantEntity{
-			Role: &server.RoleEntity{
+	req := &milvuspb.OperatePrivilegeRequest{
+		Entity: &milvuspb.GrantEntity{
+			Role: &milvuspb.RoleEntity{
 				Name: role,
 			},
-			Object: &server.ObjectEntity{
-				Name: common.ObjectType_name[int32(objectType)],
+			Object: &milvuspb.ObjectEntity{
+				Name: commonpb.ObjectType_name[int32(objectType)],
 			},
 			ObjectName: object,
 		},
-		Type: server.OperatePrivilegeType_Grant,
+		Type: milvuspb.OperatePrivilegeType_Grant,
 	}
 
 	resp, err := c.Service.OperatePrivilege(ctx, req)
@@ -182,17 +182,17 @@ func (c *GrpcClient) Revoke(ctx context.Context, role string, objectType entity.
 		return ErrClientNotReady
 	}
 
-	req := &server.OperatePrivilegeRequest{
-		Entity: &server.GrantEntity{
-			Role: &server.RoleEntity{
+	req := &milvuspb.OperatePrivilegeRequest{
+		Entity: &milvuspb.GrantEntity{
+			Role: &milvuspb.RoleEntity{
 				Name: role,
 			},
-			Object: &server.ObjectEntity{
-				Name: common.ObjectType_name[int32(objectType)],
+			Object: &milvuspb.ObjectEntity{
+				Name: commonpb.ObjectType_name[int32(objectType)],
 			},
 			ObjectName: object,
 		},
-		Type: server.OperatePrivilegeType_Revoke,
+		Type: milvuspb.OperatePrivilegeType_Revoke,
 	}
 
 	resp, err := c.Service.OperatePrivilege(ctx, req)

@@ -3,7 +3,7 @@ package client
 import (
 	"context"
 
-	server "github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
 	"github.com/milvus-io/milvus-sdk-go/v2/internal/utils/crypto"
 )
 
@@ -12,7 +12,7 @@ func (c *GrpcClient) CreateCredential(ctx context.Context, username string, pass
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
-	req := &server.CreateCredentialRequest{
+	req := &milvuspb.CreateCredentialRequest{
 		Username: username,
 		Password: crypto.Base64Encode(password),
 	}
@@ -32,7 +32,7 @@ func (c *GrpcClient) UpdateCredential(ctx context.Context, username string, oldP
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
-	req := &server.UpdateCredentialRequest{
+	req := &milvuspb.UpdateCredentialRequest{
 		Username:    username,
 		OldPassword: crypto.Base64Encode(oldPassword),
 		NewPassword: crypto.Base64Encode(newPassword),
@@ -53,7 +53,7 @@ func (c *GrpcClient) DeleteCredential(ctx context.Context, username string) erro
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
-	req := &server.DeleteCredentialRequest{
+	req := &milvuspb.DeleteCredentialRequest{
 		Username: username,
 	}
 	resp, err := c.Service.DeleteCredential(ctx, req)
@@ -72,7 +72,7 @@ func (c *GrpcClient) ListCredUsers(ctx context.Context) ([]string, error) {
 	if c.Service == nil {
 		return nil, ErrClientNotReady
 	}
-	req := &server.ListCredUsersRequest{}
+	req := &milvuspb.ListCredUsersRequest{}
 	resp, err := c.Service.ListCredUsers(ctx, req)
 	if err != nil {
 		return nil, err

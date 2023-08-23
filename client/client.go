@@ -21,10 +21,6 @@ import (
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )
 
-const (
-	sdkVerion = `v2.3.0-pre+dev`
-)
-
 // Client is the interface used to communicate with Milvus
 type Client interface {
 	// -- client --

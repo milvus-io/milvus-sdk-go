@@ -53,9 +53,9 @@ func TestPartitionKeyDefaultInt64(t *testing.T) {
 		common.GenColumnData(0, 10, entity.FieldTypeInt64, partitionKeyFieldName),
 		common.GenColumnData(0, 10, entity.FieldTypeInt64, common.DefaultIntFieldName),
 	}
-	for _, queryId := range queryIds {
+	for _, queryID := range queryIds {
 		queryResult, errQuery := mc.QueryByPks(ctx, schema.CollectionName, []string{},
-		    queryId,
+			queryID,
 			[]string{common.DefaultIntFieldName},
 		)
 		common.CheckErr(t, errQuery, true)
@@ -133,9 +133,9 @@ func TestPartitionKeyDefaultVarchar(t *testing.T) {
 		common.GenColumnData(0, 10, entity.FieldTypeVarChar, partitionKeyFieldName),
 		common.GenColumnData(0, 10, entity.FieldTypeInt64, common.DefaultIntFieldName),
 	}
-	for _, queryId := range queryIds {
+	for _, queryID := range queryIds {
 		queryResult, errQuery := mc.QueryByPks(ctx, schema.CollectionName, []string{},
-			queryId,
+			queryID,
 			[]string{common.DefaultIntFieldName},
 		)
 		common.CheckErr(t, errQuery, true)

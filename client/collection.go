@@ -20,20 +20,20 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 
-	common "github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
-	server "github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
 )
 
 // handles response status
 // if status is nil returns ErrStatusNil
-// if status.ErrorCode is common.ErrorCode_Success, returns nil
+// if status.ErrorCode is commonpb.ErrorCode_Success, returns nil
 // otherwise, try use Reason into ErrServiceFailed
 // if Reason is empty, returns ErrServiceFailed with default string
-func handleRespStatus(status *common.Status) error {
+func handleRespStatus(status *commonpb.Status) error {
 	if status == nil {
 		return ErrStatusNil
 	}
-	if status.ErrorCode != common.ErrorCode_Success {
+	if status.ErrorCode != commonpb.ErrorCode_Success {
 		if status.GetReason() != "" {
 			return ErrServiceFailed(errors.New(status.GetReason()))
 		}
@@ -48,7 +48,7 @@ func (c *GrpcClient) ListCollections(ctx context.Context) ([]*entity.Collection,
 	if c.Service == nil {
 		return []*entity.Collection{}, ErrClientNotReady
 	}
-	req := &server.ShowCollectionsRequest{
+	req := &milvuspb.ShowCollectionsRequest{
 		DbName:    "",
 		TimeStamp: 0, // means now
 	}
@@ -150,7 +150,7 @@ func (c *GrpcClient) requestCreateCollection(ctx context.Context, sch *entity.Sc
 		return err
 	}
 
-	req := &server.CreateCollectionRequest{
+	req := &milvuspb.CreateCollectionRequest{
 		DbName:           "", // reserved fields, not used for now
 		CollectionName:   sch.CollectionName,
 		Schema:           bs,
@@ -247,7 +247,7 @@ func (c *GrpcClient) DescribeCollection(ctx context.Context, collName string) (*
 	if c.Service == nil {
 		return nil, ErrClientNotReady
 	}
-	req := &server.DescribeCollectionRequest{
+	req := &milvuspb.DescribeCollectionRequest{
 		CollectionName: collName,
 	}
 	resp, err := c.Service.DescribeCollection(ctx, req)
@@ -287,7 +287,7 @@ func (c *GrpcClient) DropCollection(ctx context.Context, collName string) error 
 		return err
 	}
 
-	req := &server.DropCollectionRequest{
+	req := &milvuspb.DropCollectionRequest{
 		CollectionName: collName,
 	}
 	resp, err := c.Service.DropCollection(ctx, req)
@@ -307,7 +307,7 @@ func (c *GrpcClient) HasCollection(ctx context.Context, collName string) (bool, 
 		return false, ErrClientNotReady
 	}
 
-	req := &server.HasCollectionRequest{
+	req := &milvuspb.HasCollectionRequest{
 		DbName:         "", // reserved
 		CollectionName: collName,
 		TimeStamp:      0, // 0 for now
@@ -333,7 +333,7 @@ func (c *GrpcClient) GetCollectionStatistics(ctx context.Context, collName strin
 		return nil, err
 	}
 
-	req := &server.GetCollectionStatisticsRequest{
+	req := &milvuspb.GetCollectionStatisticsRequest{
 		CollectionName: collName,
 	}
 	resp, err := c.Service.GetCollectionStatistics(ctx, req)
@@ -355,8 +355,8 @@ func (c *GrpcClient) ShowCollection(ctx context.Context, collName string) (*enti
 		return nil, err
 	}
 
-	req := &server.ShowCollectionsRequest{
-		Type:            server.ShowType_InMemory,
+	req := &milvuspb.ShowCollectionsRequest{
+		Type:            milvuspb.ShowType_InMemory,
 		CollectionNames: []string{collName},
 	}
 
@@ -387,7 +387,7 @@ func (c *GrpcClient) RenameCollection(ctx context.Context, collName, newName str
 		return err
 	}
 
-	req := &server.RenameCollectionRequest{
+	req := &milvuspb.RenameCollectionRequest{
 		OldName: collName,
 		NewName: newName,
 	}
@@ -408,7 +408,7 @@ func (c *GrpcClient) LoadCollection(ctx context.Context, collName string, async 
 		return err
 	}
 
-	req := &server.LoadCollectionRequest{
+	req := &milvuspb.LoadCollectionRequest{
 		CollectionName: collName,
 		ReplicaNumber:  1, // default replica number
 	}
@@ -455,7 +455,7 @@ func (c *GrpcClient) ReleaseCollection(ctx context.Context, collName string) err
 		return err
 	}
 
-	req := &server.ReleaseCollectionRequest{
+	req := &milvuspb.ReleaseCollectionRequest{
 		DbName:         "", // reserved
 		CollectionName: collName,
 	}
@@ -476,7 +476,7 @@ func (c *GrpcClient) GetReplicas(ctx context.Context, collName string) ([]*entit
 		return nil, err
 	}
 
-	req := &server.GetReplicasRequest{
+	req := &milvuspb.GetReplicasRequest{
 		CollectionID:   coll.ID,
 		WithShardNodes: true, // return nodes by default
 	}
@@ -518,7 +518,7 @@ func (c *GrpcClient) GetLoadingProgress(ctx context.Context, collName string, pa
 		return 0, err
 	}
 
-	req := &server.GetLoadingProgressRequest{
+	req := &milvuspb.GetLoadingProgressRequest{
 		CollectionName: collName,
 		PartitionNames: partitionNames,
 	}
@@ -539,7 +539,7 @@ func (c *GrpcClient) GetLoadState(ctx context.Context, collName string, partitio
 		return 0, err
 	}
 
-	req := &server.GetLoadStateRequest{
+	req := &milvuspb.GetLoadStateRequest{
 		CollectionName: collName,
 		PartitionNames: partitionNames,
 	}
@@ -566,20 +566,20 @@ func (c *GrpcClient) AlterCollection(ctx context.Context, collName string, attrs
 
 	keys := make(map[string]struct{})
 
-	props := make([]*common.KeyValuePair, 0, len(attrs))
+	props := make([]*commonpb.KeyValuePair, 0, len(attrs))
 	for _, attr := range attrs {
 		k, v := attr.KeyValue()
 		if _, exists := keys[k]; exists {
 			return errors.New("duplicated attributed received")
 		}
 		keys[k] = struct{}{}
-		props = append(props, &common.KeyValuePair{
+		props = append(props, &commonpb.KeyValuePair{
 			Key:   k,
 			Value: v,
 		})
 	}
 
-	req := &server.AlterCollectionRequest{
+	req := &milvuspb.AlterCollectionRequest{
 		CollectionName: collName,
 		Properties:     props,
 	}
@@ -592,8 +592,8 @@ func (c *GrpcClient) AlterCollection(ctx context.Context, collName string, attrs
 }
 
 func (c *GrpcClient) getLoadingProgress(ctx context.Context, collectionName string, partitionNames ...string) (int64, error) {
-	req := &server.GetLoadingProgressRequest{
-		Base:           &common.MsgBase{},
+	req := &milvuspb.GetLoadingProgressRequest{
+		Base:           &commonpb.MsgBase{},
 		DbName:         "",
 		CollectionName: collectionName,
 		PartitionNames: partitionNames,

@@ -7,8 +7,9 @@ import (
 	"strconv"
 	"time"
 
-	common "github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
-	server "github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
+	"github.com/milvus-io/milvus-sdk-go/v2/common"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -19,8 +20,8 @@ var _ Client = &GrpcClient{}
 
 // GrpcClient  uses default grpc Service definition to connect with Milvus2.0
 type GrpcClient struct {
-	Conn    *grpc.ClientConn           // grpc connection instance
-	Service server.MilvusServiceClient // Service client stub
+	Conn    *grpc.ClientConn             // grpc connection instance
+	Service milvuspb.MilvusServiceClient // Service client stub
 
 	config *Config // No thread safety
 }
@@ -36,7 +37,7 @@ func (c *GrpcClient) connect(ctx context.Context, addr string, opts ...grpc.Dial
 	}
 
 	c.Conn = conn
-	c.Service = server.NewMilvusServiceClient(c.Conn)
+	c.Service = milvuspb.NewMilvusServiceClient(c.Conn)
 
 	if !c.config.DisableConn {
 		err = c.connectInternal(ctx)
@@ -54,10 +55,10 @@ func (c *GrpcClient) connectInternal(ctx context.Context) error {
 		return err
 	}
 
-	req := &server.ConnectRequest{
-		ClientInfo: &common.ClientInfo{
+	req := &milvuspb.ConnectRequest{
+		ClientInfo: &commonpb.ClientInfo{
 			SdkType:    "Golang",
-			SdkVersion: "v2.2.4",
+			SdkVersion: common.SDKVersion,
 			LocalTime:  time.Now().String(),
 			User:       c.config.Username,
 			Host:       hostName,
@@ -81,7 +82,7 @@ func (c *GrpcClient) connectInternal(ctx context.Context) error {
 		return err
 	}
 
-	if resp.GetStatus().GetErrorCode() != common.ErrorCode_Success {
+	if resp.GetStatus().GetErrorCode() != commonpb.ErrorCode_Success {
 		return fmt.Errorf("connect fail, %s", resp.Status.Reason)
 	}
 

@@ -19,9 +19,9 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/golang/protobuf/proto"
-	common "github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
-	server "github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
-	schema "github.com/milvus-io/milvus-proto/go-api/v2/schemapb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/schemapb"
 
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )
@@ -59,7 +59,7 @@ func (c *GrpcClient) Insert(ctx context.Context, collName string, partitionName 
 	}
 
 	// 2. do insert request
-	req := &server.InsertRequest{
+	req := &milvuspb.InsertRequest{
 		DbName:         "", // reserved
 		CollectionName: collName,
 		PartitionName:  partitionName,
@@ -80,7 +80,7 @@ func (c *GrpcClient) Insert(ctx context.Context, collName string, partitionName 
 	return entity.IDColumns(resp.GetIDs(), 0, -1)
 }
 
-func (c *GrpcClient) processInsertColumns(colSchema *entity.Schema, columns ...entity.Column) ([]*schema.FieldData, int, error) {
+func (c *GrpcClient) processInsertColumns(colSchema *entity.Schema, columns ...entity.Column) ([]*schemapb.FieldData, int, error) {
 	// setup dynamic related var
 	isDynamic := colSchema.EnableDynamicField
 
@@ -151,7 +151,7 @@ func (c *GrpcClient) processInsertColumns(colSchema *entity.Schema, columns ...e
 		}
 	}
 
-	fieldsData := make([]*schema.FieldData, 0, len(mNameColumn)+1)
+	fieldsData := make([]*schemapb.FieldData, 0, len(mNameColumn)+1)
 	for _, fixedColumn := range mNameColumn {
 		fieldsData = append(fieldsData, fixedColumn.FieldData())
 	}
@@ -167,7 +167,7 @@ func (c *GrpcClient) processInsertColumns(colSchema *entity.Schema, columns ...e
 	return fieldsData, rowSize, nil
 }
 
-func (c *GrpcClient) mergeDynamicColumns(dynamicName string, rowSize int, columns []entity.Column) (*schema.FieldData, error) {
+func (c *GrpcClient) mergeDynamicColumns(dynamicName string, rowSize int, columns []entity.Column) (*schemapb.FieldData, error) {
 	values := make([][]byte, 0, rowSize)
 	for i := 0; i < rowSize; i++ {
 		m := make(map[string]interface{})
@@ -181,13 +181,13 @@ func (c *GrpcClient) mergeDynamicColumns(dynamicName string, rowSize int, column
 		}
 		values = append(values, bs)
 	}
-	return &schema.FieldData{
-		Type:      schema.DataType_JSON,
+	return &schemapb.FieldData{
+		Type:      schemapb.DataType_JSON,
 		FieldName: dynamicName,
-		Field: &schema.FieldData_Scalars{
-			Scalars: &schema.ScalarField{
-				Data: &schema.ScalarField_JsonData{
-					JsonData: &schema.JSONArray{
+		Field: &schemapb.FieldData_Scalars{
+			Scalars: &schemapb.ScalarField{
+				Data: &schemapb.ScalarField_JsonData{
+					JsonData: &schemapb.JSONArray{
 						Data: values,
 					},
 				},
@@ -206,7 +206,7 @@ func (c *GrpcClient) Flush(ctx context.Context, collName string, async bool) err
 	if err := c.checkCollectionExists(ctx, collName); err != nil {
 		return err
 	}
-	req := &server.FlushRequest{
+	req := &milvuspb.FlushRequest{
 		DbName:          "", // reserved,
 		CollectionNames: []string{collName},
 	}
@@ -222,7 +222,7 @@ func (c *GrpcClient) Flush(ctx context.Context, collName string, async bool) err
 		ids := segmentIDs.GetData()
 		if has && len(ids) > 0 {
 			flushed := func() bool {
-				resp, err := c.Service.GetFlushState(ctx, &server.GetFlushStateRequest{
+				resp, err := c.Service.GetFlushState(ctx, &milvuspb.GetFlushStateRequest{
 					SegmentIDs: ids,
 				})
 				if err != nil {
@@ -282,7 +282,7 @@ func (c *GrpcClient) DeleteByPks(ctx context.Context, collName string, partition
 
 	expr := PKs2Expr(pkf.Name, ids)
 
-	req := &server.DeleteRequest{
+	req := &milvuspb.DeleteRequest{
 		DbName:         "",
 		CollectionName: collName,
 		PartitionName:  partitionName,
@@ -369,7 +369,7 @@ func (c *GrpcClient) Upsert(ctx context.Context, collName string, partitionName 
 	}
 
 	// 2. do upsert request
-	req := &server.UpsertRequest{
+	req := &milvuspb.UpsertRequest{
 		DbName:         "", // reserved
 		CollectionName: collName,
 		PartitionName:  partitionName,
@@ -398,7 +398,7 @@ func (c *GrpcClient) BulkInsert(ctx context.Context, collName string, partitionN
 	if c.Service == nil {
 		return 0, ErrClientNotReady
 	}
-	req := &server.ImportRequest{
+	req := &milvuspb.ImportRequest{
 		CollectionName: collName,
 		PartitionName:  partitionName,
 		Files:          files,
@@ -424,7 +424,7 @@ func (c *GrpcClient) GetBulkInsertState(ctx context.Context, taskID int64) (*ent
 	if c.Service == nil {
 		return nil, ErrClientNotReady
 	}
-	req := &server.GetImportStateRequest{
+	req := &milvuspb.GetImportStateRequest{
 		Task: taskID,
 	}
 	resp, err := c.Service.GetImportState(ctx, req)
@@ -452,7 +452,7 @@ func (c *GrpcClient) ListBulkInsertTasks(ctx context.Context, collName string, l
 	if c.Service == nil {
 		return nil, ErrClientNotReady
 	}
-	req := &server.ListImportTasksRequest{
+	req := &milvuspb.ListImportTasksRequest{
 		CollectionName: collName,
 		Limit:          limit,
 	}
@@ -482,8 +482,8 @@ func (c *GrpcClient) ListBulkInsertTasks(ctx context.Context, collName string, l
 }
 
 func vector2PlaceholderGroupBytes(vectors []entity.Vector) []byte {
-	phg := &common.PlaceholderGroup{
-		Placeholders: []*common.PlaceholderValue{
+	phg := &commonpb.PlaceholderGroup{
+		Placeholders: []*commonpb.PlaceholderValue{
 			vector2Placeholder(vectors),
 		},
 	}
@@ -492,9 +492,9 @@ func vector2PlaceholderGroupBytes(vectors []entity.Vector) []byte {
 	return bs
 }
 
-func vector2Placeholder(vectors []entity.Vector) *common.PlaceholderValue {
-	var placeHolderType common.PlaceholderType
-	ph := &common.PlaceholderValue{
+func vector2Placeholder(vectors []entity.Vector) *commonpb.PlaceholderValue {
+	var placeHolderType commonpb.PlaceholderType
+	ph := &commonpb.PlaceholderValue{
 		Tag:    "$0",
 		Values: make([][]byte, 0, len(vectors)),
 	}
@@ -503,9 +503,9 @@ func vector2Placeholder(vectors []entity.Vector) *common.PlaceholderValue {
 	}
 	switch vectors[0].(type) {
 	case entity.FloatVector:
-		placeHolderType = common.PlaceholderType_FloatVector
+		placeHolderType = commonpb.PlaceholderType_FloatVector
 	case entity.BinaryVector:
-		placeHolderType = common.PlaceholderType_BinaryVector
+		placeHolderType = commonpb.PlaceholderType_BinaryVector
 	}
 	ph.Type = placeHolderType
 	for _, vector := range vectors {

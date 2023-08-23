@@ -19,7 +19,7 @@ package client
 import (
 	"context"
 
-	server "github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
+	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
 )
 
 // CreateAlias creates an alias for collection
@@ -28,7 +28,7 @@ func (c *GrpcClient) CreateAlias(ctx context.Context, collName string, alias str
 		return ErrClientNotReady
 	}
 
-	req := &server.CreateAliasRequest{
+	req := &milvuspb.CreateAliasRequest{
 		DbName:         "", // reserved
 		CollectionName: collName,
 		Alias:          alias,
@@ -51,7 +51,7 @@ func (c *GrpcClient) DropAlias(ctx context.Context, alias string) error {
 		return ErrClientNotReady
 	}
 
-	req := &server.DropAliasRequest{
+	req := &milvuspb.DropAliasRequest{
 		DbName: "", // reserved
 		Alias:  alias,
 	}
@@ -73,7 +73,7 @@ func (c *GrpcClient) AlterAlias(ctx context.Context, collName string, alias stri
 		return ErrClientNotReady
 	}
 
-	req := &server.AlterAliasRequest{
+	req := &milvuspb.AlterAliasRequest{
 		DbName:         "", // reserved
 		CollectionName: collName,
 		Alias:          alias,
