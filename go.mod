@@ -7,7 +7,7 @@ require (
 	github.com/go-faker/faker/v4 v4.1.0
 	github.com/golang/protobuf v1.5.2
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
-	github.com/milvus-io/milvus-proto/go-api/v2 v2.3.0-dev.1
+	github.com/milvus-io/milvus-proto/go-api/v2 v2.3.0
 	github.com/stretchr/testify v1.8.1
 	github.com/tidwall/gjson v1.14.4
 	google.golang.org/grpc v1.48.0
