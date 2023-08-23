@@ -25,12 +25,13 @@ func TestFieldSchema(t *testing.T) {
 		NewField().WithName("int_field").WithDataType(FieldTypeInt64).WithIsAutoID(true).WithIsPrimaryKey(true).WithDescription("int_field desc"),
 		NewField().WithName("string_field").WithDataType(FieldTypeString).WithIsAutoID(false).WithIsPrimaryKey(true).WithIsDynamic(false).WithTypeParams("max_len", "32").WithDescription("string_field desc"),
 		NewField().WithName("partition_key").WithDataType(FieldTypeInt32).WithIsPartitionKey(true),
-		NewField().WithName("default_value_bool").WithDataType(FieldTypeBool).WithDefaultValueBool(true),
-		NewField().WithName("default_value_int").WithDataType(FieldTypeInt32).WithDefaultValueInt(1),
-		NewField().WithName("default_value_long").WithDataType(FieldTypeInt64).WithDefaultValueLong(1),
-		NewField().WithName("default_value_float").WithDataType(FieldTypeFloat).WithDefaultValueFloat(1),
-		NewField().WithName("default_value_double").WithDataType(FieldTypeDouble).WithDefaultValueDouble(1),
-		NewField().WithName("default_value_string").WithDataType(FieldTypeString).WithDefaultValueString("a"),
+		/*
+			NewField().WithName("default_value_bool").WithDataType(FieldTypeBool).WithDefaultValueBool(true),
+			NewField().WithName("default_value_int").WithDataType(FieldTypeInt32).WithDefaultValueInt(1),
+			NewField().WithName("default_value_long").WithDataType(FieldTypeInt64).WithDefaultValueLong(1),
+			NewField().WithName("default_value_float").WithDataType(FieldTypeFloat).WithDefaultValueFloat(1),
+			NewField().WithName("default_value_double").WithDataType(FieldTypeDouble).WithDefaultValueDouble(1),
+			NewField().WithName("default_value_string").WithDataType(FieldTypeString).WithDefaultValueString("a"),*/
 	}
 
 	for _, field := range fields {
@@ -41,7 +42,6 @@ func TestFieldSchema(t *testing.T) {
 		assert.Equal(t, field.AutoID, fieldSchema.GetAutoID())
 		assert.Equal(t, field.PrimaryKey, fieldSchema.GetIsPrimaryKey())
 		assert.Equal(t, field.IsPartitionKey, fieldSchema.GetIsPartitionKey())
-		assert.Equal(t, field.DefaultValue, fieldSchema.GetDefaultValue())
 		assert.Equal(t, field.IsDynamic, fieldSchema.GetIsDynamic())
 		assert.Equal(t, field.Description, fieldSchema.GetDescription())
 		assert.Equal(t, field.TypeParams, KvPairsMap(fieldSchema.GetTypeParams()))
@@ -56,7 +56,6 @@ func TestFieldSchema(t *testing.T) {
 		assert.Equal(t, field.Description, nf.Description)
 		assert.Equal(t, field.IsDynamic, nf.IsDynamic)
 		assert.Equal(t, field.IsPartitionKey, nf.IsPartitionKey)
-		assert.Equal(t, field.DefaultValue, nf.DefaultValue)
 		assert.EqualValues(t, field.TypeParams, nf.TypeParams)
 	}
 

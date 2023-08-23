@@ -269,13 +269,14 @@ func (s *InsertSuite) TestInsertSuccess() {
 	})
 
 	s.Run("missing_field_with_default_value", func() {
+		s.T().Skip("skip for default value test")
 		defer s.resetMock()
 		s.setupHasCollection(testCollectionName)
 		s.setupHasPartition(testCollectionName, "partition_1")
 
 		s.setupDescribeCollection(testCollectionName, entity.NewSchema().
 			WithField(entity.NewField().WithIsPrimaryKey(true).WithIsAutoID(true).WithName("ID").WithDataType(entity.FieldTypeInt64)).
-			WithField(entity.NewField().WithName("default_value").WithDataType(entity.FieldTypeInt64).WithDefaultValueLong(1)).
+			WithField(entity.NewField().WithName("default_value").WithDataType(entity.FieldTypeInt64)).
 			WithField(entity.NewField().WithName("vector").WithDataType(entity.FieldTypeFloatVector).WithTypeParams(entity.TypeParamDim, "128")),
 		)
 

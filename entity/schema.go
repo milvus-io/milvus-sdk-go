@@ -137,7 +137,6 @@ type Field struct {
 	IndexParams    map[string]string
 	IsDynamic      bool
 	IsPartitionKey bool
-	DefaultValue   *schema.ValueField
 }
 
 // ProtoMessage generates corresponding FieldSchema
@@ -153,7 +152,6 @@ func (f *Field) ProtoMessage() *schema.FieldSchema {
 		IndexParams:    MapKvPairs(f.IndexParams),
 		IsDynamic:      f.IsDynamic,
 		IsPartitionKey: f.IsPartitionKey,
-		DefaultValue:   f.DefaultValue,
 	}
 }
 
@@ -200,6 +198,7 @@ func (f *Field) WithIsPartitionKey(isPartitionKey bool) *Field {
 	return f
 }
 
+/*
 func (f *Field) WithDefaultValueBool(defaultValue bool) *Field {
 	f.DefaultValue = &schema.ValueField{
 		Data: &schema.ValueField_BoolData{
@@ -252,7 +251,7 @@ func (f *Field) WithDefaultValueString(defaultValue string) *Field {
 		},
 	}
 	return f
-}
+}*/
 
 func (f *Field) WithTypeParams(key string, value string) *Field {
 	if f.TypeParams == nil {
@@ -290,7 +289,6 @@ func (f *Field) ReadProto(p *schema.FieldSchema) *Field {
 	f.IndexParams = KvPairsMap(p.GetIndexParams())
 	f.IsDynamic = p.GetIsDynamic()
 	f.IsPartitionKey = p.GetIsPartitionKey()
-	f.DefaultValue = p.GetDefaultValue()
 
 	return f
 }
