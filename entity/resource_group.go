@@ -1,6 +1,6 @@
 package entity
 
-//ResourceGroup information model struct.
+// ResourceGroup information model struct.
 type ResourceGroup struct {
 	Name                 string
 	Capacity             int32

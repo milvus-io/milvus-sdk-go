@@ -293,7 +293,7 @@ type Tserver struct {
 	SuccessCount uint
 }
 
-func (s *Tserver) SayHello(ctx context.Context, in *helloworld.HelloRequest) (*helloworld.HelloReply, error) {
+func (s *Tserver) SayHello(_ context.Context, in *helloworld.HelloRequest) (*helloworld.HelloReply, error) {
 	log.Printf("Received: %s", in.Name)
 	s.reqCounter++
 	if s.reqCounter%s.SuccessCount == 0 {

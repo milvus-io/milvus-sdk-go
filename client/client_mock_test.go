@@ -127,7 +127,7 @@ func (s *MockSuiteBase) setupHasPartitionError(errorCode common.ErrorCode, err e
 		}, err)
 }
 
-func (s *MockSuiteBase) setupDescribeCollection(collName string, schema *entity.Schema) {
+func (s *MockSuiteBase) setupDescribeCollection(_ string, schema *entity.Schema) {
 	s.mock.EXPECT().DescribeCollection(mock.Anything, mock.AnythingOfType("*milvuspb.DescribeCollectionRequest")).
 		Call.Return(func(ctx context.Context, req *server.DescribeCollectionRequest) *server.DescribeCollectionResponse {
 		return &server.DescribeCollectionResponse{
@@ -902,15 +902,15 @@ func (m *MockServer) RenameCollection(_ context.Context, _ *server.RenameCollect
 	panic("not implemented") // TODO: Implement
 }
 
-func (m *MockServer) FlushAll(_a0 context.Context, _a1 *server.FlushAllRequest) (*server.FlushAllResponse, error) {
+func (m *MockServer) FlushAll(_ context.Context, _ *server.FlushAllRequest) (*server.FlushAllResponse, error) {
 	panic("not implemented")
 }
 
-func (m *MockServer) GetFlushAllState(_a0 context.Context, _a1 *server.GetFlushAllStateRequest) (*server.GetFlushAllStateResponse, error) {
+func (m *MockServer) GetFlushAllState(_ context.Context, _ *server.GetFlushAllStateRequest) (*server.GetFlushAllStateResponse, error) {
 	panic("not implemented")
 }
 
-func (m *MockServer) GetIndexStatistics(_a0 context.Context, _a1 *server.GetIndexStatisticsRequest) (*server.GetIndexStatisticsResponse, error) {
+func (m *MockServer) GetIndexStatistics(_ context.Context, _ *server.GetIndexStatisticsRequest) (*server.GetIndexStatisticsResponse, error) {
 	panic("not implemented")
 }
 
