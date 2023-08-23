@@ -54,7 +54,7 @@ func (c *GrpcClient) connectInternal(ctx context.Context) error {
 	req := &server.ConnectRequest{
 		ClientInfo: &common.ClientInfo{
 			SdkType:    "Golang",
-			SdkVersion: "v2.2.4",
+			SdkVersion: "v2.2.8",
 			LocalTime:  time.Now().String(),
 			User:       c.config.Username,
 			Host:       hostName,
