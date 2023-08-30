@@ -235,6 +235,15 @@ func WithEndTs(endTs int64) BulkInsertOption {
 	}
 }
 
+// IsBackup specifies it is triggered by backup tool
+func IsBackup() BulkInsertOption {
+	return func(req *milvuspb.ImportRequest) {
+		optionMap := entity.KvPairsMap(req.GetOptions())
+		optionMap["backup"] = "true"
+		req.Options = entity.MapKvPairs(optionMap)
+	}
+}
+
 type getOption struct {
 	partitionNames []string
 	outputFields   []string
