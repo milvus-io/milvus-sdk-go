@@ -66,7 +66,7 @@ func TestSearchCollectionNotExist(t *testing.T) {
 		common.DefaultTopK,
 		sp,
 	)
-	common.CheckErr(t, errSearch, false, "can't find collection: collName")
+	common.CheckErr(t, errSearch, false, "collection not found")
 }
 
 // test search empty collection -> return empty
@@ -561,11 +561,11 @@ func TestSearchInvalidVectors(t *testing.T) {
 		{vectors: common.GenSearchVectors(common.DefaultNq, 64, entity.FieldTypeFloatVector), errMsg: "vector dimension mismatch"},
 
 		// vector type not match
-		{vectors: common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeBinaryVector), errMsg: "fail to search on all shard leaders"},
+		{vectors: common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeBinaryVector), errMsg: "failed to search"},
 
 		// empty vectors
 		{vectors: []entity.Vector{}, errMsg: "nq [0] is invalid"},
-		{vectors: []entity.Vector{entity.FloatVector{}}, errMsg: "fail to search on all shard leaders"},
+		{vectors: []entity.Vector{entity.FloatVector{}}, errMsg: "failed to search"},
 	}
 
 	sp, _ := entity.NewIndexHNSWSearchParam(74)

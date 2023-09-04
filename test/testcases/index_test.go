@@ -176,8 +176,6 @@ func TestCreateBinaryIndexNotSupportedMetricsType(t *testing.T) {
 
 	// create BinIvfFlat, BinFlat index with not supported metric type
 	invalidMetricTypes := []entity.MetricType{
-		entity.SUBSTRUCTURE,
-		entity.SUPERSTRUCTURE,
 		entity.L2,
 		entity.TANIMOTO,
 	}
@@ -185,12 +183,12 @@ func TestCreateBinaryIndexNotSupportedMetricsType(t *testing.T) {
 		// create BinFlat
 		idxBinFlat, _ := entity.NewIndexBinFlat(metricType, 128)
 		err := mc.CreateIndex(ctx, collName, common.DefaultBinaryVecFieldName, idxBinFlat, false, client.WithIndexName("my_index"))
-		common.CheckErr(t, err, false, "supported: [HAMMING JACCARD]")
+		common.CheckErr(t, err, false, "supported: [HAMMING JACCARD SUBSTRUCTURE SUPERSTRUCTURE]")
 
 		// create BinIvfFlat index
 		idxBinIvfFlat, _ := entity.NewIndexBinIvfFlat(metricType, 128)
 		errIvf := mc.CreateIndex(ctx, collName, common.DefaultBinaryVecFieldName, idxBinIvfFlat, false, client.WithIndexName("my_index2"))
-		common.CheckErr(t, errIvf, false, "supported: [HAMMING JACCARD]")
+		common.CheckErr(t, errIvf, false, "supported: [HAMMING JACCARD SUBSTRUCTURE SUPERSTRUCTURE]")
 	}
 
 }
