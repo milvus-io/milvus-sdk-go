@@ -136,7 +136,6 @@ func (c *GrpcClient) CreateIndex(ctx context.Context, collName string, fieldName
 }
 
 // DescribeIndex describe index
-// Deprecate please use DescribeIndexV2 instead.
 func (c *GrpcClient) DescribeIndex(ctx context.Context, collName string, fieldName string, opts ...IndexOption) ([]entity.Index, error) {
 	if c.Service == nil {
 		return []entity.Index{}, ErrClientNotReady
@@ -190,7 +189,6 @@ func (c *GrpcClient) DropIndex(ctx context.Context, collName string, fieldName s
 }
 
 // GetIndexState get index state
-// Deprecate please use DescribeIndexV2 instead.
 func (c *GrpcClient) GetIndexState(ctx context.Context, collName string, fieldName string, opts ...IndexOption) (entity.IndexState, error) {
 	if c.Service == nil {
 		return entity.IndexState(commonpb.IndexState_Failed), ErrClientNotReady
@@ -218,7 +216,6 @@ func (c *GrpcClient) GetIndexState(ctx context.Context, collName string, fieldNa
 }
 
 // GetIndexBuildProgress get index building progress
-// Deprecate please use DescribeIndexV2 instead.
 func (c *GrpcClient) GetIndexBuildProgress(ctx context.Context, collName string, fieldName string, opts ...IndexOption) (total, indexed int64, err error) {
 	if c.Service == nil {
 		return 0, 0, ErrClientNotReady
