@@ -130,6 +130,8 @@ type Client interface {
 	FlushV2(ctx context.Context, collName string, async bool) ([]int64, []int64, int64, error)
 	// DeleteByPks deletes entries related to provided primary keys
 	DeleteByPks(ctx context.Context, collName string, partitionName string, ids entity.Column) error
+	// Delete deletes entries match expression
+	Delete(ctx context.Context, collName string, partitionName string, expr string) error
 	// Upsert column-based data of collection, returns id column values
 	Upsert(ctx context.Context, collName string, partitionName string, columns ...entity.Column) (entity.Column, error)
 	// Search search with bool expression

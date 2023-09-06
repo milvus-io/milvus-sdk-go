@@ -267,6 +267,72 @@ func TestGrpcDeleteByPks(t *testing.T) {
 	})
 }
 
+func TestGrpcDelete(t *testing.T) {
+	ctx := context.Background()
+
+	c := testClient(ctx, t)
+	defer c.Close()
+
+	mockServer.SetInjection(MDescribeCollection, describeCollectionInjection(t, 1, testCollectionName, defaultSchema()))
+	defer mockServer.DelInjection(MDescribeCollection)
+
+	t.Run("normal delete by pks", func(t *testing.T) {
+		partName := "testPart"
+		mockServer.SetInjection(MHasPartition, hasPartitionInjection(t, testCollectionName, true, partName))
+		defer mockServer.DelInjection(MHasPartition)
+		mockServer.SetInjection(MDelete, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+			req, ok := raw.(*milvuspb.DeleteRequest)
+			if !ok {
+				t.FailNow()
+			}
+			assert.Equal(t, testCollectionName, req.GetCollectionName())
+			assert.Equal(t, partName, req.GetPartitionName())
+
+			resp := &milvuspb.MutationResult{}
+			s, err := SuccessStatus()
+			resp.Status = s
+			return resp, err
+		})
+		defer mockServer.DelInjection(MDelete)
+
+		err := c.Delete(ctx, testCollectionName, partName, "")
+		assert.NoError(t, err)
+	})
+
+	t.Run("Bad request deletes", func(t *testing.T) {
+		partName := "testPart"
+		mockServer.SetInjection(MHasPartition, hasPartitionInjection(t, testCollectionName, false, partName))
+		defer mockServer.DelInjection(MHasPartition)
+
+		// non-exist collection
+		err := c.Delete(ctx, "non-exists-collection", "", "")
+		assert.Error(t, err)
+
+		// non-exist parition
+		err = c.Delete(ctx, testCollectionName, "non-exists-part", "")
+		assert.Error(t, err)
+	})
+	t.Run("delete services fail", func(t *testing.T) {
+		mockServer.SetInjection(MDelete, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+			resp := &milvuspb.MutationResult{}
+			return resp, errors.New("mockServer.d error")
+		})
+
+		err := c.Delete(ctx, testCollectionName, "", "")
+		assert.Error(t, err)
+
+		mockServer.SetInjection(MDelete, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+			resp := &milvuspb.MutationResult{}
+			resp.Status = &commonpb.Status{
+				ErrorCode: commonpb.ErrorCode_UnexpectedError,
+			}
+			return resp, nil
+		})
+		err = c.Delete(ctx, testCollectionName, "", "")
+		assert.Error(t, err)
+	})
+}
+
 type SearchSuite struct {
 	MockSuiteBase
 	sch        *entity.Schema
