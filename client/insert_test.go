@@ -35,14 +35,14 @@ func (s *InsertSuite) TestInsertFail() {
 
 	s.Run("collection_not_exist", func() {
 		defer s.resetMock()
-		s.setupHasCollection()
+		s.setupDescribeCollectionError(common.ErrorCode_CollectionNotExists, nil)
 		_, err := c.Insert(ctx, testCollectionName, "")
 		s.Error(err)
 	})
 
 	s.Run("partition_not_exist", func() {
 		defer s.resetMock()
-		s.setupHasCollection(testCollectionName)
+		s.setupDescribeCollection(testCollectionName, nil)
 		s.setupHasPartition(testCollectionName)
 
 		_, err := c.Insert(ctx, testCollectionName, "partition_name")
@@ -51,7 +51,7 @@ func (s *InsertSuite) TestInsertFail() {
 
 	s.Run("field_not_exist", func() {
 		defer s.resetMock()
-		s.setupHasCollection(testCollectionName)
+		s.setupDescribeCollection(testCollectionName, nil)
 		s.setupHasPartition(testCollectionName, "partition_1")
 		s.setupDescribeCollection(testCollectionName, entity.NewSchema().
 			WithField(entity.NewField().WithIsPrimaryKey(true).WithIsAutoID(true).WithName("ID").WithDataType(entity.FieldTypeInt64)).
@@ -66,7 +66,7 @@ func (s *InsertSuite) TestInsertFail() {
 
 	s.Run("missing_field", func() {
 		defer s.resetMock()
-		s.setupHasCollection(testCollectionName)
+		s.setupDescribeCollection(testCollectionName, nil)
 		s.setupHasPartition(testCollectionName, "partition_1")
 
 		s.setupDescribeCollection(testCollectionName, entity.NewSchema().
@@ -82,7 +82,7 @@ func (s *InsertSuite) TestInsertFail() {
 
 	s.Run("column_len_not_match", func() {
 		defer s.resetMock()
-		s.setupHasCollection(testCollectionName)
+		s.setupDescribeCollection(testCollectionName, nil)
 		s.setupHasPartition(testCollectionName, "partition_1")
 
 		s.setupDescribeCollection(testCollectionName, entity.NewSchema().
@@ -99,28 +99,12 @@ func (s *InsertSuite) TestInsertFail() {
 
 	s.Run("duplicated column", func() {
 		defer s.resetMock()
-		s.setupHasCollection(testCollectionName)
 		s.setupHasPartition(testCollectionName, "partition_1")
 
 		s.setupDescribeCollection(testCollectionName, entity.NewSchema().
 			WithField(entity.NewField().WithIsPrimaryKey(true).WithIsAutoID(true).WithName("ID").WithDataType(entity.FieldTypeInt64)).
 			WithField(entity.NewField().WithName("vector").WithDataType(entity.FieldTypeFloatVector).WithTypeParams(entity.TypeParamDim, "128")),
 		)
-
-		s.mock.EXPECT().Insert(mock.Anything, mock.AnythingOfType("*milvuspb.InsertRequest")).
-			Run(func(ctx context.Context, req *server.InsertRequest) {
-				s.Equal(1, len(req.GetFieldsData()))
-			}).Return(&server.MutationResult{
-			Status: &common.Status{},
-			IDs: &schema.IDs{
-				IdField: &schema.IDs_IntId{
-					IntId: &schema.LongArray{
-						Data: []int64{1},
-					},
-				},
-			},
-		}, nil)
-
 		_, err := c.Insert(ctx, testCollectionName, "partition_1",
 			entity.NewColumnFloatVector("vector", 128, generateFloatVector(1, 128)),
 			entity.NewColumnFloatVector("vector", 128, generateFloatVector(1, 128)),
@@ -131,7 +115,7 @@ func (s *InsertSuite) TestInsertFail() {
 
 	s.Run("dim_not_match", func() {
 		defer s.resetMock()
-		s.setupHasCollection(testCollectionName)
+		s.setupDescribeCollection(testCollectionName, nil)
 		s.setupHasPartition(testCollectionName, "partition_1")
 
 		s.setupDescribeCollection(testCollectionName, entity.NewSchema().
@@ -148,7 +132,6 @@ func (s *InsertSuite) TestInsertFail() {
 
 	s.Run("server_insert_fail", func() {
 		defer s.resetMock()
-		s.setupHasCollection(testCollectionName)
 		s.setupHasPartition(testCollectionName, "partition_1")
 
 		s.setupDescribeCollection(testCollectionName, entity.NewSchema().
@@ -169,7 +152,6 @@ func (s *InsertSuite) TestInsertFail() {
 
 	s.Run("server_connection_error", func() {
 		defer s.resetMock()
-		s.setupHasCollection(testCollectionName)
 		s.setupHasPartition(testCollectionName, "partition_1")
 
 		s.setupDescribeCollection(testCollectionName, entity.NewSchema().
@@ -196,7 +178,6 @@ func (s *InsertSuite) TestInsertSuccess() {
 
 	s.Run("non_dynamic_schema", func() {
 		defer s.resetMock()
-		s.setupHasCollection(testCollectionName)
 		s.setupHasPartition(testCollectionName, "partition_1")
 
 		s.setupDescribeCollection(testCollectionName, entity.NewSchema().
@@ -228,7 +209,6 @@ func (s *InsertSuite) TestInsertSuccess() {
 
 	s.Run("dynamic_field_schema", func() {
 		defer s.resetMock()
-		s.setupHasCollection(testCollectionName)
 		s.setupHasPartition(testCollectionName, "partition_1")
 
 		s.setupDescribeCollection(testCollectionName, entity.NewSchema().

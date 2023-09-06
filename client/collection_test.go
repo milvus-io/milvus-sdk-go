@@ -33,103 +33,9 @@ var hasCollectionDefault = func(_ context.Context, raw proto.Message) (proto.Mes
 	return resp, err
 }
 
-func TestGrpcClientDropCollection(t *testing.T) {
-	ctx := context.Background()
-	c := testClient(ctx, t)
-
-	mockServer.SetInjection(MHasCollection, hasCollectionDefault)
-	mockServer.SetInjection(MDropCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-		req, ok := (raw).(*server.DropCollectionRequest)
-		if !ok {
-			return BadRequestStatus()
-		}
-		if req.GetCollectionName() != testCollectionName { // in mock server, assume testCollection exists only
-			return BadRequestStatus()
-		}
-		return SuccessStatus()
-	})
-
-	t.Run("Test Normal drop", func(t *testing.T) {
-		assert.Nil(t, c.DropCollection(ctx, testCollectionName))
-	})
-
-	t.Run("Test drop non-existing collection", func(t *testing.T) {
-		assert.NotNil(t, c.DropCollection(ctx, "AAAAAAAAAANonExists"))
-	})
-}
-
-func TestReleaseCollection(t *testing.T) {
-	ctx := context.Background()
-
-	c := testClient(ctx, t)
-
-	mockServer.SetInjection(MReleaseCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-		req, ok := raw.(*server.ReleaseCollectionRequest)
-		if !ok {
-			return BadRequestStatus()
-		}
-		assert.Equal(t, testCollectionName, req.GetCollectionName())
-		return SuccessStatus()
-	})
-
-	c.ReleaseCollection(ctx, testCollectionName)
-}
-
-func TestGrpcClientHasCollection(t *testing.T) {
-	ctx := context.Background()
-
-	c := testClient(ctx, t)
-
-	mockServer.SetInjection(MHasCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-		req, ok := raw.(*server.HasCollectionRequest)
-		resp := &server.BoolResponse{}
-		if !ok {
-			s, err := BadRequestStatus()
-			assert.Fail(t, err.Error())
-			resp.Status = s
-			return resp, err
-		}
-		assert.Equal(t, req.CollectionName, testCollectionName)
-
-		s, err := SuccessStatus()
-		resp.Status, resp.Value = s, true
-		return resp, err
-	})
-
-	has, err := c.HasCollection(ctx, testCollectionName)
-	assert.Nil(t, err)
-	assert.True(t, has)
-}
-
-// return injection asserts collection name matchs
-// partition name request in partitionNames if flag is true
-func hasCollectionInjection(t *testing.T, mustIn bool, collNames ...string) func(context.Context, proto.Message) (proto.Message, error) {
+func describeCollectionInjection(_ *testing.T, collID int64, collName string, sch *entity.Schema) func(_ context.Context, raw proto.Message) (proto.Message, error) {
 	return func(_ context.Context, raw proto.Message) (proto.Message, error) {
-		req, ok := raw.(*server.HasCollectionRequest)
-		resp := &server.BoolResponse{}
-		if !ok {
-			s, err := BadRequestStatus()
-			resp.Status = s
-			return resp, err
-		}
-		if mustIn {
-			resp.Value = assert.Contains(t, collNames, req.GetCollectionName())
-		} else {
-			for _, pn := range collNames {
-				if pn == req.GetCollectionName() {
-					resp.Value = true
-				}
-			}
-		}
-		s, err := SuccessStatus()
-		resp.Status = s
-		return resp, err
-	}
-}
-
-func describeCollectionInjection(t *testing.T, collID int64, collName string, sch *entity.Schema) func(_ context.Context, raw proto.Message) (proto.Message, error) {
-	return func(_ context.Context, raw proto.Message) (proto.Message, error) {
-		req, ok := raw.(*server.DescribeCollectionRequest)
+		_, ok := raw.(*server.DescribeCollectionRequest)
 		resp := &server.DescribeCollectionResponse{}
 		if !ok {
 			s, err := BadRequestStatus()
@@ -137,11 +43,10 @@ func describeCollectionInjection(t *testing.T, collID int64, collName string, sc
 			return resp, err
 		}
 
-		assert.Equal(t, collName, req.GetCollectionName())
-
 		sch := sch
 		resp.Schema = sch.ProtoMessage()
 		resp.CollectionID = collID
+		resp.CollectionName = collName
 
 		s, err := SuccessStatus()
 		resp.Status = s
@@ -199,98 +104,6 @@ func TestGrpcClientGetCollectionStatistics(t *testing.T) {
 	}
 }
 
-func TestGrpcClientGetReplicas(t *testing.T) {
-	ctx := context.Background()
-	c := testClient(ctx, t)
-
-	replicaID := rand.Int63()
-	nodeIds := []int64{1, 2, 3, 4}
-	mockServer.SetInjection(MHasCollection, hasCollectionDefault)
-	defer mockServer.DelInjection(MHasCollection)
-
-	mockServer.SetInjection(MShowCollections, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-		s, err := SuccessStatus()
-		resp := &server.ShowCollectionsResponse{
-			Status:              s,
-			CollectionIds:       []int64{testCollectionID},
-			CollectionNames:     []string{testCollectionName},
-			InMemoryPercentages: []int64{100},
-		}
-		return resp, err
-	})
-	defer mockServer.DelInjection(MShowCollections)
-
-	mockServer.SetInjection(MGetReplicas, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
-		req, ok := raw.(*server.GetReplicasRequest)
-		resp := &server.GetReplicasResponse{}
-		if !ok {
-			s, err := BadRequestStatus()
-			resp.Status = s
-			return resp, err
-		}
-
-		assert.Equal(t, testCollectionID, req.CollectionID)
-
-		s, err := SuccessStatus()
-		resp.Status = s
-		resp.Replicas = []*server.ReplicaInfo{{
-			ReplicaID: replicaID,
-			ShardReplicas: []*server.ShardReplica{
-				{
-					LeaderID:      1,
-					DmChannelName: "DML_channel_v1",
-				},
-				{
-					LeaderID:   2,
-					LeaderAddr: "DML_channel_v2",
-				},
-			},
-			NodeIds: nodeIds,
-		}}
-		return resp, err
-	})
-
-	t.Run("get replicas normal", func(t *testing.T) {
-		groups, err := c.GetReplicas(ctx, testCollectionName)
-		assert.Nil(t, err)
-		assert.NotNil(t, groups)
-		assert.Equal(t, 1, len(groups))
-
-		assert.Equal(t, replicaID, groups[0].ReplicaID)
-		assert.Equal(t, nodeIds, groups[0].NodeIDs)
-		assert.Equal(t, 2, len(groups[0].ShardReplicas))
-	})
-
-	t.Run("get replicas invalid name", func(t *testing.T) {
-		_, err := c.GetReplicas(ctx, "invalid name")
-		assert.Error(t, err)
-	})
-
-	t.Run("get replicas grpc error", func(t *testing.T) {
-		mockServer.SetInjection(MGetReplicas, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
-			return &server.GetReplicasResponse{}, errors.New("mocked grpc error")
-		})
-		_, err := c.GetReplicas(ctx, testCollectionName)
-		assert.Error(t, err)
-	})
-
-	t.Run("get replicas server error", func(t *testing.T) {
-		mockServer.SetInjection(MGetReplicas, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
-			return &server.GetReplicasResponse{
-				Status: &common.Status{
-					ErrorCode: common.ErrorCode_UnexpectedError,
-					Reason:    "Service is not healthy",
-				},
-				Replicas: nil,
-			}, nil
-		})
-		_, err := c.GetReplicas(ctx, testCollectionName)
-		assert.Error(t, err)
-	})
-
-	mockServer.DelInjection(MGetReplicas)
-}
-
 func TestGrpcClientGetLoadingProgress(t *testing.T) {
 	ctx := context.Background()
 	c := testClient(ctx, t)
@@ -317,7 +130,6 @@ func TestGrpcClientGetLoadingProgress(t *testing.T) {
 	progress, err := c.GetLoadingProgress(ctx, testCollectionName, []string{})
 	assert.NoError(t, err)
 	assert.Equal(t, int64(100), progress)
-
 }
 
 func TestGrpcClientGetLoadState(t *testing.T) {
@@ -455,7 +267,6 @@ func (s *CollectionSuite) TestCreateCollection() {
 				s.Equal(common.ConsistencyLevel_Bounded, req.GetConsistencyLevel())
 			}).
 			Return(&common.Status{ErrorCode: common.ErrorCode_Success}, nil)
-		s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).Return(&server.BoolResponse{Status: &common.Status{}, Value: false}, nil)
 
 		err := c.CreateCollection(ctx, ds, shardsNum)
 		s.NoError(err)
@@ -482,7 +293,6 @@ func (s *CollectionSuite) TestCreateCollection() {
 
 			}).
 			Return(&common.Status{ErrorCode: common.ErrorCode_Success}, nil)
-		s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).Return(&server.BoolResponse{Status: &common.Status{}, Value: false}, nil)
 
 		err := c.CreateCollection(ctx, ds, shardsNum, WithConsistencyLevel(entity.ClEventually))
 		s.NoError(err)
@@ -506,14 +316,14 @@ func (s *CollectionSuite) TestCreateCollection() {
 					WithField(entity.NewField().WithName("vector").WithDataType(entity.FieldTypeFloatVector).WithDim(128)),
 			},
 			{
-				name: "multiple primary key",
+				name: "multiple_primary_key",
 				schema: entity.NewSchema().WithName(testCollectionName).
 					WithField(entity.NewField().WithName("int64").WithDataType(entity.FieldTypeInt64).WithIsPrimaryKey(true)).
 					WithField(entity.NewField().WithName("int64_2").WithDataType(entity.FieldTypeInt64).WithIsPrimaryKey(true)).
 					WithField(entity.NewField().WithName("vector").WithDataType(entity.FieldTypeFloatVector).WithDim(128)),
 			},
 			{
-				name: "multiple auto id",
+				name: "multiple_auto_id",
 				schema: entity.NewSchema().WithName(testCollectionName).
 					WithField(entity.NewField().WithName("int64").WithDataType(entity.FieldTypeInt64).WithIsPrimaryKey(true).WithIsAutoID(true)).
 					WithField(entity.NewField().WithName("int64_2").WithDataType(entity.FieldTypeInt64).WithIsAutoID(true)).
@@ -538,7 +348,6 @@ func (s *CollectionSuite) TestCreateCollection() {
 	s.Run("server_returns_error", func() {
 		s.Run("create_collection_error", func() {
 			defer s.resetMock()
-			s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).Return(&server.BoolResponse{Status: &common.Status{}, Value: false}, nil)
 			s.mock.EXPECT().CreateCollection(mock.Anything, mock.AnythingOfType("*milvuspb.CreateCollectionRequest")).
 				Return(nil, errors.New("mocked grpc error"))
 
@@ -548,7 +357,6 @@ func (s *CollectionSuite) TestCreateCollection() {
 
 		s.Run("create_collection_fail", func() {
 			defer s.resetMock()
-			s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).Return(&server.BoolResponse{Status: &common.Status{}, Value: false}, nil)
 			s.mock.EXPECT().CreateCollection(mock.Anything, mock.AnythingOfType("*milvuspb.CreateCollectionRequest")).
 				Return(&common.Status{ErrorCode: common.ErrorCode_UnexpectedError}, nil)
 
@@ -617,9 +425,7 @@ func (s *CollectionSuite) TestNewCollection() {
 				created = true
 			}).
 			Return(&common.Status{ErrorCode: common.ErrorCode_Success}, nil)
-		s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).Call.Return(func(_ context.Context, _ *server.HasCollectionRequest) *server.BoolResponse {
-			return &server.BoolResponse{Status: &common.Status{}, Value: created}
-		}, nil)
+
 		s.mock.EXPECT().CreateIndex(mock.Anything, mock.Anything).Return(&common.Status{ErrorCode: common.ErrorCode_Success}, nil)
 		s.mock.EXPECT().Flush(mock.Anything, mock.Anything).Return(&server.FlushResponse{
 			Status:     &common.Status{ErrorCode: common.ErrorCode_Success},
@@ -636,14 +442,19 @@ func (s *CollectionSuite) TestNewCollection() {
 			Status:   &common.Status{ErrorCode: common.ErrorCode_Success},
 			Progress: 100,
 		}, nil)
-		s.mock.EXPECT().DescribeCollection(mock.Anything, mock.Anything).Return(&server.DescribeCollectionResponse{
-			Status: &common.Status{ErrorCode: common.ErrorCode_Success},
-			Schema: &schema.CollectionSchema{
-				Fields: []*schema.FieldSchema{
-					{Name: "id", DataType: schema.DataType_VarChar},
-					{Name: "vector", DataType: schema.DataType_FloatVector},
-				},
-			},
+		s.mock.EXPECT().DescribeCollection(mock.Anything, mock.Anything).Call.Return(func(_ context.Context, _ *server.DescribeCollectionRequest) *server.DescribeCollectionResponse {
+			if created {
+				return &server.DescribeCollectionResponse{
+					Status: &common.Status{},
+					Schema: &schema.CollectionSchema{
+						Fields: []*schema.FieldSchema{
+							{Name: "id", DataType: schema.DataType_VarChar},
+							{Name: "vector", DataType: schema.DataType_FloatVector},
+						},
+					},
+				}
+			}
+			return &server.DescribeCollectionResponse{Status: &common.Status{ErrorCode: common.ErrorCode_CollectionNotExists}}
 		}, nil)
 
 		err := c.NewCollection(ctx, testCollectionName, testVectorDim)
@@ -673,9 +484,6 @@ func (s *CollectionSuite) TestNewCollection() {
 				created = true
 			}).
 			Return(&common.Status{ErrorCode: common.ErrorCode_Success}, nil)
-		s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).Call.Return(func(_ context.Context, _ *server.HasCollectionRequest) *server.BoolResponse {
-			return &server.BoolResponse{Status: &common.Status{}, Value: created}
-		}, nil)
 		s.mock.EXPECT().CreateIndex(mock.Anything, mock.Anything).Return(&common.Status{ErrorCode: common.ErrorCode_Success}, nil)
 		s.mock.EXPECT().Flush(mock.Anything, mock.Anything).Return(&server.FlushResponse{
 			Status:     &common.Status{ErrorCode: common.ErrorCode_Success},
@@ -692,14 +500,19 @@ func (s *CollectionSuite) TestNewCollection() {
 			Status:   &common.Status{ErrorCode: common.ErrorCode_Success},
 			Progress: 100,
 		}, nil)
-		s.mock.EXPECT().DescribeCollection(mock.Anything, mock.Anything).Return(&server.DescribeCollectionResponse{
-			Status: &common.Status{ErrorCode: common.ErrorCode_Success},
-			Schema: &schema.CollectionSchema{
-				Fields: []*schema.FieldSchema{
-					{Name: "my_pk", DataType: schema.DataType_VarChar},
-					{Name: "embedding", DataType: schema.DataType_FloatVector},
-				},
-			},
+		s.mock.EXPECT().DescribeCollection(mock.Anything, mock.Anything).Call.Return(func(_ context.Context, _ *server.DescribeCollectionRequest) *server.DescribeCollectionResponse {
+			if created {
+				return &server.DescribeCollectionResponse{
+					Status: &common.Status{},
+					Schema: &schema.CollectionSchema{
+						Fields: []*schema.FieldSchema{
+							{Name: "my_pk", DataType: schema.DataType_VarChar},
+							{Name: "embedding", DataType: schema.DataType_FloatVector},
+						},
+					},
+				}
+			}
+			return &server.DescribeCollectionResponse{Status: &common.Status{ErrorCode: common.ErrorCode_CollectionNotExists}}
 		}, nil)
 
 		err := c.NewCollection(ctx, testCollectionName, testVectorDim, WithPKFieldName("my_pk"), WithPKFieldType(entity.FieldTypeVarChar), WithVectorFieldName("embedding"), WithConsistencyLevel(entity.ClEventually))
@@ -722,7 +535,7 @@ func (s *CollectionSuite) TestAlterCollection() {
 	s.Run("normal_run", func() {
 		defer s.resetMock()
 
-		s.setupHasCollection(testCollectionName)
+		s.setupDescribeCollection(testCollectionName, nil)
 		s.mock.EXPECT().AlterCollection(mock.Anything, mock.AnythingOfType("*milvuspb.AlterCollectionRequest")).
 			Return(&common.Status{}, nil)
 
@@ -733,11 +546,7 @@ func (s *CollectionSuite) TestAlterCollection() {
 	s.Run("collection_not_exist", func() {
 		defer s.resetMock()
 
-		s.mock.EXPECT().HasCollection(mock.Anything, mock.AnythingOfType("*milvuspb.HasCollectionRequest")).
-			Return(&server.BoolResponse{
-				Status: &common.Status{},
-				Value:  false,
-			}, nil)
+		s.setupDescribeCollectionError(common.ErrorCode_CollectionNotExists, nil)
 
 		err := c.AlterCollection(ctx, testCollectionName, entity.CollectionTTL(100000))
 		s.Error(err)
@@ -746,7 +555,7 @@ func (s *CollectionSuite) TestAlterCollection() {
 	s.Run("no_attributes", func() {
 		defer s.resetMock()
 
-		s.setupHasCollection(testCollectionName)
+		s.setupDescribeCollection(testCollectionName, nil)
 		err := c.AlterCollection(ctx, testCollectionName)
 		s.Error(err)
 	})
@@ -754,7 +563,7 @@ func (s *CollectionSuite) TestAlterCollection() {
 	s.Run("request_fails", func() {
 		defer s.resetMock()
 
-		s.setupHasCollection(testCollectionName)
+		s.setupDescribeCollection(testCollectionName, nil)
 		s.mock.EXPECT().AlterCollection(mock.Anything, mock.AnythingOfType("*milvuspb.AlterCollectionRequest")).
 			Return(nil, errors.New("mocked"))
 
@@ -765,7 +574,7 @@ func (s *CollectionSuite) TestAlterCollection() {
 	s.Run("server_return_error", func() {
 		defer s.resetMock()
 
-		s.setupHasCollection(testCollectionName)
+		s.setupDescribeCollection(testCollectionName, nil)
 		s.mock.EXPECT().AlterCollection(mock.Anything, mock.AnythingOfType("*milvuspb.AlterCollectionRequest")).
 			Return(&common.Status{ErrorCode: common.ErrorCode_UnexpectedError}, nil)
 
@@ -788,8 +597,7 @@ func (s *CollectionSuite) TestLoadCollection() {
 
 	s.Run("normal_run_async", func() {
 		defer s.resetMock()
-		s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).
-			Return(&server.BoolResponse{Status: &common.Status{}, Value: true}, nil)
+		s.setupDescribeCollection(testCollectionName, nil)
 
 		s.mock.EXPECT().LoadCollection(mock.Anything, mock.Anything).Return(&common.Status{ErrorCode: common.ErrorCode_Success}, nil)
 
@@ -799,8 +607,7 @@ func (s *CollectionSuite) TestLoadCollection() {
 
 	s.Run("normal_run_sync", func() {
 		defer s.resetMock()
-		s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).
-			Return(&server.BoolResponse{Status: &common.Status{}, Value: true}, nil)
+		s.setupDescribeCollection(testCollectionName, nil)
 
 		s.mock.EXPECT().LoadCollection(mock.Anything, mock.Anything).Return(&common.Status{ErrorCode: common.ErrorCode_Success}, nil)
 		s.mock.EXPECT().GetLoadingProgress(mock.Anything, mock.Anything).
@@ -809,14 +616,13 @@ func (s *CollectionSuite) TestLoadCollection() {
 				Progress: 100,
 			}, nil)
 
-		err := c.LoadCollection(ctx, testCollectionName, true)
+		err := c.LoadCollection(ctx, testCollectionName, false)
 		s.NoError(err)
 	})
 
 	s.Run("load_default_replica", func() {
 		defer s.resetMock()
-		s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).
-			Return(&server.BoolResponse{Status: &common.Status{}, Value: true}, nil)
+		s.setupDescribeCollection(testCollectionName, nil)
 
 		s.mock.EXPECT().LoadCollection(mock.Anything, mock.Anything).Run(func(_ context.Context, req *server.LoadCollectionRequest) {
 			s.Equal(testDefaultReplicaNumber, req.GetReplicaNumber())
@@ -829,8 +635,7 @@ func (s *CollectionSuite) TestLoadCollection() {
 
 	s.Run("load_multiple_replica", func() {
 		defer s.resetMock()
-		s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).
-			Return(&server.BoolResponse{Status: &common.Status{}, Value: true}, nil)
+		s.setupDescribeCollection(testCollectionName, nil)
 
 		s.mock.EXPECT().LoadCollection(mock.Anything, mock.Anything).Run(func(_ context.Context, req *server.LoadCollectionRequest) {
 			s.Equal(testMultiReplicaNumber, req.GetReplicaNumber())
@@ -844,8 +649,7 @@ func (s *CollectionSuite) TestLoadCollection() {
 	s.Run("has_collection_failure", func() {
 		s.Run("return_false", func() {
 			defer s.resetMock()
-			s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).
-				Return(&server.BoolResponse{Status: &common.Status{}, Value: false}, nil)
+			s.setupDescribeCollectionError(common.ErrorCode_CollectionNotExists, nil)
 
 			err := c.LoadCollection(ctx, testCollectionName, true)
 			s.Error(err)
@@ -853,8 +657,7 @@ func (s *CollectionSuite) TestLoadCollection() {
 
 		s.Run("return_error", func() {
 			defer s.resetMock()
-			s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).
-				Return(nil, errors.New("mock error"))
+			s.setupDescribeCollectionError(common.ErrorCode_UnexpectedError, errors.New("mocked error"))
 
 			err := c.LoadCollection(ctx, testCollectionName, true)
 			s.Error(err)
@@ -864,8 +667,7 @@ func (s *CollectionSuite) TestLoadCollection() {
 	s.Run("load_collection_failure", func() {
 		s.Run("failure_status", func() {
 			defer s.resetMock()
-			s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).
-				Return(&server.BoolResponse{Status: &common.Status{}, Value: true}, nil)
+			s.setupDescribeCollection(testCollectionName, nil)
 
 			s.mock.EXPECT().LoadCollection(mock.Anything, mock.Anything).
 				Return(&common.Status{ErrorCode: common.ErrorCode_UnexpectedError}, nil)
@@ -875,8 +677,8 @@ func (s *CollectionSuite) TestLoadCollection() {
 		})
 
 		s.Run("return_error", func() {
-			s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).
-				Return(&server.BoolResponse{Status: &common.Status{}, Value: true}, nil)
+			defer s.resetMock()
+			s.setupDescribeCollection(testCollectionName, nil)
 
 			s.mock.EXPECT().LoadCollection(mock.Anything, mock.Anything).
 				Return(nil, errors.New("mock error"))
@@ -888,8 +690,7 @@ func (s *CollectionSuite) TestLoadCollection() {
 
 	s.Run("get_loading_progress_failure", func() {
 		defer s.resetMock()
-		s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).
-			Return(&server.BoolResponse{Status: &common.Status{}, Value: true}, nil)
+		s.setupDescribeCollection(testCollectionName, nil)
 
 		s.mock.EXPECT().LoadCollection(mock.Anything, mock.Anything).Return(&common.Status{ErrorCode: common.ErrorCode_Success}, nil)
 		s.mock.EXPECT().GetLoadingProgress(mock.Anything, mock.Anything).
@@ -902,6 +703,320 @@ func (s *CollectionSuite) TestLoadCollection() {
 	s.Run("service_not_ready", func() {
 		c := &GrpcClient{}
 		err := c.LoadCollection(ctx, testCollectionName, false)
+		s.ErrorIs(err, ErrClientNotReady)
+	})
+}
+
+func (s *CollectionSuite) TestDropCollection() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	c := s.client
+
+	s.Run("normal_run", func() {
+		defer s.resetMock()
+
+		s.setupDescribeCollection(testCollectionName, nil)
+		s.mock.EXPECT().DropCollection(mock.Anything, mock.Anything).Run(func(_ context.Context, req *server.DropCollectionRequest) {
+			s.Equal(testCollectionName, req.GetCollectionName())
+		}).Return(&common.Status{}, nil)
+
+		err := c.DropCollection(ctx, testCollectionName)
+		s.NoError(err)
+	})
+
+	s.Run("coll_not_exists", func() {
+		defer s.resetMock()
+
+		s.setupDescribeCollectionError(common.ErrorCode_CollectionNotExists, nil)
+
+		err := c.DropCollection(ctx, testCollectionName)
+		s.Error(err)
+	})
+
+	s.Run("drop_collection_fail", func() {
+		s.Run("return_error", func() {
+			defer s.resetMock()
+
+			s.setupDescribeCollection(testCollectionName, nil)
+			s.mock.EXPECT().DropCollection(mock.Anything, mock.Anything).Return(nil, errors.New("mocked"))
+
+			err := c.DropCollection(ctx, testCollectionName)
+			s.Error(err)
+		})
+
+		s.Run("return_error_status", func() {
+			defer s.resetMock()
+
+			s.setupDescribeCollection(testCollectionName, nil)
+			s.mock.EXPECT().DropCollection(mock.Anything, mock.Anything).
+				Return(&common.Status{ErrorCode: common.ErrorCode_UnexpectedError}, nil)
+
+			err := c.DropCollection(ctx, testCollectionName)
+			s.Error(err)
+		})
+	})
+
+	s.Run("service_not_ready", func() {
+		c := &GrpcClient{}
+		err := c.DropCollection(ctx, testCollectionName)
+		s.ErrorIs(err, ErrClientNotReady)
+	})
+}
+
+func (s *CollectionSuite) TestReleaseCollection() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	c := s.client
+
+	s.Run("normal_run", func() {
+		defer s.resetMock()
+
+		s.setupDescribeCollection(testCollectionName, nil)
+		s.mock.EXPECT().ReleaseCollection(mock.Anything, mock.Anything).Run(func(_ context.Context, req *server.ReleaseCollectionRequest) {
+			s.Equal(testCollectionName, req.GetCollectionName())
+		}).Return(&common.Status{}, nil)
+
+		err := c.ReleaseCollection(ctx, testCollectionName)
+		s.NoError(err)
+	})
+
+	s.Run("coll_not_exists", func() {
+		defer s.resetMock()
+
+		s.setupDescribeCollectionError(common.ErrorCode_CollectionNotExists, nil)
+
+		err := c.ReleaseCollection(ctx, testCollectionName)
+		s.Error(err)
+	})
+
+	s.Run("release_collection_fail", func() {
+		s.Run("return_error", func() {
+			defer s.resetMock()
+
+			s.setupDescribeCollection(testCollectionName, nil)
+			s.mock.EXPECT().ReleaseCollection(mock.Anything, mock.Anything).Return(nil, errors.New("mocked"))
+
+			err := c.ReleaseCollection(ctx, testCollectionName)
+			s.Error(err)
+		})
+
+		s.Run("return_error_status", func() {
+			defer s.resetMock()
+
+			s.setupDescribeCollection(testCollectionName, nil)
+			s.mock.EXPECT().ReleaseCollection(mock.Anything, mock.Anything).
+				Return(&common.Status{ErrorCode: common.ErrorCode_UnexpectedError}, nil)
+
+			err := c.ReleaseCollection(ctx, testCollectionName)
+			s.Error(err)
+		})
+	})
+
+	s.Run("service_not_ready", func() {
+		c := &GrpcClient{}
+		err := c.ReleaseCollection(ctx, testCollectionName)
+		s.ErrorIs(err, ErrClientNotReady)
+	})
+}
+
+func (s *CollectionSuite) TestHasCollection() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	c := s.client
+
+	s.Run("normal_run", func() {
+		defer s.resetMock()
+
+		s.setupDescribeCollection(testCollectionName, nil)
+		s.mock.EXPECT().DescribeCollection(mock.Anything, mock.Anything).Run(func(_ context.Context, req *server.DescribeCollectionRequest) {
+			s.Equal(testCollectionName, req.GetCollectionName())
+		}).Return(&server.DescribeCollectionResponse{Status: &common.Status{ErrorCode: common.ErrorCode_Success}}, nil)
+
+		result, err := c.HasCollection(ctx, testCollectionName)
+		s.NoError(err)
+		s.True(result)
+	})
+
+	s.Run("coll_not_exists", func() {
+		defer s.resetMock()
+
+		s.setupDescribeCollectionError(common.ErrorCode_CollectionNotExists, nil)
+
+		result, err := c.HasCollection(ctx, testCollectionName)
+		s.NoError(err)
+		s.False(result)
+	})
+
+	s.Run("return_unexpected_oldreason", func() {
+		defer s.resetMock()
+
+		s.mock.EXPECT().DescribeCollection(mock.Anything, mock.Anything).
+			Return(&server.DescribeCollectionResponse{
+				Status: &common.Status{ErrorCode: common.ErrorCode_UnexpectedError, Reason: "can't find collection"},
+			}, nil)
+
+		result, err := c.HasCollection(ctx, testCollectionName)
+		s.NoError(err)
+		s.False(result)
+	})
+
+	s.Run("return_unexpected_other", func() {
+		defer s.resetMock()
+
+		s.mock.EXPECT().DescribeCollection(mock.Anything, mock.Anything).
+			Return(&server.DescribeCollectionResponse{
+				Status: &common.Status{ErrorCode: common.ErrorCode_UnexpectedError, Reason: "server not ready"},
+			}, nil)
+
+		result, err := c.HasCollection(ctx, testCollectionName)
+		s.Error(err)
+		s.False(result)
+	})
+
+	s.Run("return_error", func() {
+		defer s.resetMock()
+
+		s.setupDescribeCollectionError(common.ErrorCode_UnexpectedError, errors.New("mocked"))
+		_, err := c.HasCollection(ctx, testCollectionName)
+		s.Error(err)
+	})
+
+	s.Run("service_not_ready", func() {
+		c := &GrpcClient{}
+		_, err := c.HasCollection(ctx, testCollectionName)
+		s.ErrorIs(err, ErrClientNotReady)
+	})
+}
+
+func (s *CollectionSuite) TestDescribeCollection() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	c := s.client
+	sch := entity.NewSchema().WithName(testCollectionName).
+		WithField(entity.NewField().WithName("ID").WithDataType(entity.FieldTypeInt64).WithIsPrimaryKey(true)).
+		WithField(entity.NewField().WithName("vector").WithDataType(entity.FieldTypeFloatVector).WithDim(testVectorDim))
+
+	s.Run("normal_run", func() {
+		defer s.resetMock()
+
+		s.setupDescribeCollection(testCollectionName, sch)
+
+		coll, err := c.DescribeCollection(ctx, testCollectionName)
+		s.NoError(err)
+		s.Equal(testCollectionName, coll.Schema.CollectionName)
+	})
+
+	s.Run("describe_fail", func() {
+		s.Run("return_err", func() {
+			defer s.resetMock()
+
+			s.setupDescribeCollectionError(common.ErrorCode_UnexpectedError, errors.New("mocked"))
+
+			_, err := c.DescribeCollection(ctx, testCollectionName)
+			s.Error(err)
+		})
+
+		s.Run("return_err_status", func() {
+			defer s.resetMock()
+
+			s.setupDescribeCollectionError(common.ErrorCode_UnexpectedError, nil)
+
+			_, err := c.DescribeCollection(ctx, testCollectionName)
+			s.Error(err)
+		})
+	})
+
+	s.Run("service_not_ready", func() {
+		c := &GrpcClient{}
+		_, err := c.DescribeCollection(ctx, testCollectionName)
+		s.ErrorIs(err, ErrClientNotReady)
+	})
+}
+
+func (s *CollectionSuite) TestGetReplicas() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	c := s.client
+	replicaID := rand.Int63()
+	nodeIds := []int64{1, 2, 3, 4}
+
+	s.Run("normal_run", func() {
+		defer s.resetMock()
+
+		s.setupShowCollection(testCollectionName)
+		s.mock.EXPECT().GetReplicas(mock.Anything, mock.Anything).Run(func(_ context.Context, req *server.GetReplicasRequest) {
+			s.Equal(testCollectionID, req.GetCollectionID())
+			s.True(req.GetWithShardNodes())
+		}).Return(&server.GetReplicasResponse{
+			Status: &common.Status{},
+			Replicas: []*server.ReplicaInfo{{
+				ReplicaID: replicaID,
+				ShardReplicas: []*server.ShardReplica{
+					{
+						LeaderID:      1,
+						DmChannelName: "DML_channel_v1",
+					},
+					{
+						LeaderID:   2,
+						LeaderAddr: "DML_channel_v2",
+					},
+				},
+				NodeIds: nodeIds,
+			}},
+		}, nil)
+
+		groups, err := c.GetReplicas(ctx, testCollectionName)
+		s.NoError(err)
+		s.NotNil(groups)
+		s.Equal(1, len(groups))
+
+		s.Equal(replicaID, groups[0].ReplicaID)
+		s.Equal(nodeIds, groups[0].NodeIDs)
+		s.Equal(2, len(groups[0].ShardReplicas))
+	})
+
+	s.Run("collection_not_exists", func() {
+		defer s.resetMock()
+
+		s.setupShowCollectionError(common.ErrorCode_CollectionNotExists, nil)
+
+		_, err := c.GetReplicas(ctx, testCollectionName)
+		s.Error(err)
+	})
+
+	s.Run("get_replica_fail", func() {
+		s.Run("return_err", func() {
+			defer s.resetMock()
+
+			s.setupShowCollection(testCollectionName)
+			s.mock.EXPECT().GetReplicas(mock.Anything, mock.Anything).
+				Return(nil, errors.New("mocked"))
+
+			_, err := c.GetReplicas(ctx, testCollectionName)
+			s.Error(err)
+		})
+
+		s.Run("return_fail_status", func() {
+			defer s.resetMock()
+
+			s.setupShowCollection(testCollectionName)
+			s.mock.EXPECT().GetReplicas(mock.Anything, mock.Anything).
+				Return(&server.GetReplicasResponse{
+					Status: &common.Status{ErrorCode: common.ErrorCode_UnexpectedError}}, nil)
+
+			_, err := c.GetReplicas(ctx, testCollectionName)
+			s.Error(err)
+		})
+	})
+
+	s.Run("service_not_ready", func() {
+		c := &GrpcClient{}
+		_, err := c.GetReplicas(ctx, testCollectionName)
 		s.ErrorIs(err, ErrClientNotReady)
 	})
 }
