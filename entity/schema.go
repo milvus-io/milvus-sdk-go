@@ -89,6 +89,9 @@ func (s *Schema) WithField(f *Field) *Schema {
 
 // ProtoMessage returns corresponding server.CollectionSchema
 func (s *Schema) ProtoMessage() *schema.CollectionSchema {
+	if s == nil {
+		return nil
+	}
 	r := &schema.CollectionSchema{
 		Name:               s.CollectionName,
 		Description:        s.Description,

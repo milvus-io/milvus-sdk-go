@@ -50,7 +50,7 @@ func TestGrpcClientCreatePartition(t *testing.T) {
 
 	partitionName := fmt.Sprintf("_part_%d", rand.Int())
 
-	mockServer.SetInjection(MHasCollection, hasCollectionDefault)
+	mockServer.SetInjection(MDescribeCollection, describeCollectionInjection(t, testCollectionID, testCollectionName, nil))
 	mockServer.SetInjection(MHasPartition, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 		req, ok := raw.(*server.HasPartitionRequest)
 		resp := &server.BoolResponse{}
@@ -74,7 +74,7 @@ func TestGrpcClientDropPartition(t *testing.T) {
 	partitionName := fmt.Sprintf("_part_%d", rand.Int())
 	ctx := context.Background()
 	c := testClient(ctx, t)
-	mockServer.SetInjection(MHasCollection, hasCollectionDefault)
+	mockServer.SetInjection(MDescribeCollection, describeCollectionInjection(t, testCollectionID, testCollectionName, nil))
 	mockServer.SetInjection(MHasPartition, hasPartitionInjection(t, testCollectionName, true, partitionName)) // injection has assertion of collName & parition name
 	assert.Nil(t, c.DropPartition(ctx, testCollectionName, partitionName))
 }
@@ -83,7 +83,7 @@ func TestGrpcClientHasPartition(t *testing.T) {
 	partitionName := fmt.Sprintf("_part_%d", rand.Int())
 	ctx := context.Background()
 	c := testClient(ctx, t)
-	mockServer.SetInjection(MHasCollection, hasCollectionDefault)
+	mockServer.SetInjection(MDescribeCollection, describeCollectionInjection(t, testCollectionID, testCollectionName, nil))
 	mockServer.SetInjection(MHasPartition, hasPartitionInjection(t, testCollectionName, false, partitionName)) // injection has assertion of collName & parition name
 
 	r, err := c.HasPartition(ctx, testCollectionName, "_default_part")
@@ -173,7 +173,7 @@ func TestGrpcClientReleasePartitions(t *testing.T) {
 	c := testClient(ctx, t)
 
 	parts := []string{"_part1", "_part2"}
-	mockServer.SetInjection(MHasCollection, hasCollectionDefault)
+	mockServer.SetInjection(MDescribeCollection, describeCollectionInjection(t, testCollectionID, testCollectionName, nil))
 	mockServer.SetInjection(MHasPartition, hasPartitionInjection(t, testCollectionName, true, "_part1", "_part2", "_part3", "_part4"))
 	mockServer.SetInjection(MReleasePartitions, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 		req, ok := raw.(*server.ReleasePartitionsRequest)
@@ -263,8 +263,7 @@ func (s *PartitionSuite) TestLoadPartitions() {
 
 	s.Run("normal_run_async", func() {
 		defer s.resetMock()
-		s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).
-			Return(&server.BoolResponse{Status: &common.Status{}, Value: true}, nil)
+		s.setupDescribeCollection(testCollectionName, nil)
 		s.mock.EXPECT().HasPartition(mock.Anything, mock.Anything).Run(func(_ context.Context, req *server.HasPartitionRequest) {
 			s.Equal(testCollectionName, req.GetCollectionName())
 			_, ok := mPartNames[req.GetPartitionName()]
@@ -281,8 +280,7 @@ func (s *PartitionSuite) TestLoadPartitions() {
 
 	s.Run("normal_run_sync", func() {
 		defer s.resetMock()
-		s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).
-			Return(&server.BoolResponse{Status: &common.Status{}, Value: true}, nil)
+		s.setupDescribeCollection(testCollectionName, nil)
 		s.mock.EXPECT().HasPartition(mock.Anything, mock.Anything).Run(func(_ context.Context, req *server.HasPartitionRequest) {
 			s.Equal(testCollectionName, req.GetCollectionName())
 			_, ok := mPartNames[req.GetPartitionName()]
@@ -302,8 +300,7 @@ func (s *PartitionSuite) TestLoadPartitions() {
 	s.Run("has_collection_failure", func() {
 		s.Run("return_false", func() {
 			defer s.resetMock()
-			s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).
-				Return(&server.BoolResponse{Status: &common.Status{}, Value: false}, nil)
+			s.setupDescribeCollectionError(common.ErrorCode_CollectionNotExists, nil)
 
 			err := c.LoadPartitions(ctx, testCollectionName, partNames, false)
 			s.Error(err)
@@ -311,8 +308,7 @@ func (s *PartitionSuite) TestLoadPartitions() {
 
 		s.Run("return_error", func() {
 			defer s.resetMock()
-			s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).
-				Return(nil, errors.New("mock error"))
+			s.setupDescribeCollectionError(common.ErrorCode_CollectionNotExists, errors.New("mocked"))
 
 			err := c.LoadPartitions(ctx, testCollectionName, partNames, false)
 			s.Error(err)
@@ -322,8 +318,7 @@ func (s *PartitionSuite) TestLoadPartitions() {
 	s.Run("has_partition_failure", func() {
 		s.Run("return_false", func() {
 			defer s.resetMock()
-			s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).
-				Return(&server.BoolResponse{Status: &common.Status{}, Value: true}, nil)
+			s.setupDescribeCollection(testCollectionName, nil)
 			s.mock.EXPECT().HasPartition(mock.Anything, mock.Anything).
 				Return(&server.BoolResponse{Status: &common.Status{}, Value: false}, nil)
 
@@ -333,8 +328,7 @@ func (s *PartitionSuite) TestLoadPartitions() {
 
 		s.Run("return_error", func() {
 			defer s.resetMock()
-			s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).
-				Return(&server.BoolResponse{Status: &common.Status{}, Value: true}, nil)
+			s.setupDescribeCollection(testCollectionName, nil)
 			s.mock.EXPECT().HasPartition(mock.Anything, mock.Anything).
 				Return(nil, errors.New("mock"))
 
@@ -346,8 +340,7 @@ func (s *PartitionSuite) TestLoadPartitions() {
 	s.Run("load_partitions_failure", func() {
 		s.Run("fail_status_code", func() {
 			defer s.resetMock()
-			s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).
-				Return(&server.BoolResponse{Status: &common.Status{}, Value: true}, nil)
+			s.setupDescribeCollection(testCollectionName, nil)
 			s.mock.EXPECT().HasPartition(mock.Anything, mock.Anything).Run(func(_ context.Context, req *server.HasPartitionRequest) {
 				s.Equal(testCollectionName, req.GetCollectionName())
 				_, ok := mPartNames[req.GetPartitionName()]
@@ -364,8 +357,7 @@ func (s *PartitionSuite) TestLoadPartitions() {
 
 		s.Run("return_error", func() {
 			defer s.resetMock()
-			s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).
-				Return(&server.BoolResponse{Status: &common.Status{}, Value: true}, nil)
+			s.setupDescribeCollection(testCollectionName, nil)
 			s.mock.EXPECT().HasPartition(mock.Anything, mock.Anything).Run(func(_ context.Context, req *server.HasPartitionRequest) {
 				s.Equal(testCollectionName, req.GetCollectionName())
 				_, ok := mPartNames[req.GetPartitionName()]
@@ -383,8 +375,7 @@ func (s *PartitionSuite) TestLoadPartitions() {
 
 	s.Run("get_loading_progress_failure", func() {
 		defer s.resetMock()
-		s.mock.EXPECT().HasCollection(mock.Anything, &server.HasCollectionRequest{CollectionName: testCollectionName}).
-			Return(&server.BoolResponse{Status: &common.Status{}, Value: true}, nil)
+		s.setupDescribeCollection(testCollectionName, nil)
 		s.mock.EXPECT().HasPartition(mock.Anything, mock.Anything).Run(func(_ context.Context, req *server.HasPartitionRequest) {
 			s.Equal(testCollectionName, req.GetCollectionName())
 			_, ok := mPartNames[req.GetPartitionName()]

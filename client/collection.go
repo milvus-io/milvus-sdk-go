@@ -14,6 +14,7 @@ package client
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -332,20 +333,31 @@ func (c *GrpcClient) HasCollection(ctx context.Context, collName string) (bool, 
 		return false, ErrClientNotReady
 	}
 
-	req := &server.HasCollectionRequest{
+	req := &server.DescribeCollectionRequest{
 		DbName:         "", // reserved
 		CollectionName: collName,
 		TimeStamp:      0, // 0 for now
 	}
 
-	resp, err := c.Service.HasCollection(ctx, req)
+	resp, err := c.Service.DescribeCollection(ctx, req)
 	if err != nil {
 		return false, err
+	}
+
+	if resp.GetStatus().GetErrorCode() == common.ErrorCode_CollectionNotExists {
+		return false, nil
+	}
+	// backward compatibility
+	if resp.GetStatus().GetErrorCode() == common.ErrorCode_UnexpectedError {
+		if strings.Contains(resp.GetStatus().GetReason(), "can't find collection") {
+			return false, nil
+		}
 	}
 	if err := handleRespStatus(resp.GetStatus()); err != nil {
 		return false, err
 	}
-	return resp.GetValue(), nil
+
+	return true, nil
 }
 
 // GetCollectionStatistcis show collection statistics

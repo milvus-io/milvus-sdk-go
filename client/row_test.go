@@ -34,6 +34,17 @@ func TestCreateCollectionByRow(t *testing.T) {
 	}
 	t.Run("Test normal creation", func(t *testing.T) {
 		mockServer.DelInjection(MHasCollection)
+		mockServer.DelInjection(MDescribeCollection)
+		mockServer.SetInjection(MDescribeCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+			_, ok := raw.(*server.DescribeCollectionRequest)
+			resp := &server.DescribeCollectionResponse{}
+			if !ok {
+				return BadRequestStatus()
+			}
+			resp.Status = &common.Status{ErrorCode: common.ErrorCode_CollectionNotExists}
+
+			return resp, nil
+		})
 		shardsNum := int32(1)
 		mockServer.SetInjection(MCreateCollection, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
 			req, ok := raw.(*server.CreateCollectionRequest)
@@ -64,17 +75,23 @@ func TestCreateCollectionByRow(t *testing.T) {
 
 			return SuccessStatus()
 		})
-		mockServer.SetInjection(MHasCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			req, ok := raw.(*server.HasCollectionRequest)
-			resp := &server.BoolResponse{}
+		mockServer.SetInjection(MDescribeCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
+			req, ok := raw.(*server.DescribeCollectionRequest)
+			resp := &server.DescribeCollectionResponse{}
 			if !ok {
 				return BadRequestStatus()
 			}
 
 			_, has := m[req.GetCollectionName()]
-			resp.Value = has
-			s, err := SuccessStatus()
+			var err error
+			var s *common.Status
+			if has {
+				s, err = SuccessStatus()
+			} else {
+				s = &common.Status{ErrorCode: common.ErrorCode_CollectionNotExists}
+			}
 			resp.Status = s
+
 			return resp, err
 		})
 		assert.Nil(t, c.CreateCollectionByRow(ctx, &ValidStruct{}, 1))
@@ -108,28 +125,21 @@ func (s *InsertByRowsSuite) TestFails() {
 
 	s.Run("fail_collection_not_found", func() {
 		defer s.resetMock()
-		s.setupHasCollection()
-		_, err := c.InsertByRows(ctx, testCollectionName, partName, []entity.Row{entity.RowBase{}})
-		s.Error(err)
-	})
-
-	s.Run("fail_hascollection_errcode", func() {
-		defer s.resetMock()
-		s.setupHasCollectionError(common.ErrorCode_UnexpectedError, nil)
+		s.setupDescribeCollectionError(common.ErrorCode_CollectionNotExists, nil)
 		_, err := c.InsertByRows(ctx, testCollectionName, partName, []entity.Row{entity.RowBase{}})
 		s.Error(err)
 	})
 
 	s.Run("fail_hascollection_error", func() {
 		defer s.resetMock()
-		s.setupHasCollectionError(common.ErrorCode_Success, errors.New("mock error"))
+		s.setupDescribeCollectionError(common.ErrorCode_CollectionNotExists, errors.New("mocked"))
 		_, err := c.InsertByRows(ctx, testCollectionName, partName, []entity.Row{entity.RowBase{}})
 		s.Error(err)
 	})
 
 	s.Run("fail_partition_not_found", func() {
 		defer s.resetMock()
-		s.setupHasCollection(testCollectionName)
+		s.setupDescribeCollection(testCollectionName, nil)
 		s.setupHasPartition(testCollectionName)
 		_, err := c.InsertByRows(ctx, testCollectionName, partName, []entity.Row{entity.RowBase{}})
 		s.Error(err)
@@ -137,7 +147,7 @@ func (s *InsertByRowsSuite) TestFails() {
 
 	s.Run("fail_haspartition_error", func() {
 		defer s.resetMock()
-		s.setupHasCollection(testCollectionName)
+		s.setupDescribeCollection(testCollectionName, nil)
 		s.setupHasPartitionError(common.ErrorCode_Success, errors.New("mock error"))
 		_, err := c.InsertByRows(ctx, testCollectionName, partName, []entity.Row{entity.RowBase{}})
 		s.Error(err)
@@ -145,7 +155,7 @@ func (s *InsertByRowsSuite) TestFails() {
 
 	s.Run("fail_haspartition_errcode", func() {
 		defer s.resetMock()
-		s.setupHasCollection(testCollectionName)
+		s.setupDescribeCollection(testCollectionName, nil)
 		s.setupHasPartitionError(common.ErrorCode_UnexpectedError, nil)
 		_, err := c.InsertByRows(ctx, testCollectionName, partName, []entity.Row{entity.RowBase{}})
 		s.Error(err)
@@ -153,8 +163,6 @@ func (s *InsertByRowsSuite) TestFails() {
 
 	s.Run("fail_describecollection_error", func() {
 		defer s.resetMock()
-		s.setupHasCollection(testCollectionName)
-		s.setupHasPartition(testCollectionName, partName)
 		s.setupDescribeCollectionError(common.ErrorCode_Success, errors.New("mock error"))
 		_, err := c.InsertByRows(ctx, testCollectionName, partName, []entity.Row{entity.RowBase{}})
 		s.Error(err)
@@ -162,8 +170,6 @@ func (s *InsertByRowsSuite) TestFails() {
 
 	s.Run("fail_describecollection_errcode", func() {
 		defer s.resetMock()
-		s.setupHasCollection(testCollectionName)
-		s.setupHasPartition(testCollectionName, partName)
 		s.setupDescribeCollectionError(common.ErrorCode_UnexpectedError, nil)
 		_, err := c.InsertByRows(ctx, testCollectionName, partName, []entity.Row{entity.RowBase{}})
 		s.Error(err)
@@ -171,7 +177,6 @@ func (s *InsertByRowsSuite) TestFails() {
 
 	s.Run("fail_field_missing", func() {
 		defer s.resetMock()
-		s.setupHasCollection(testCollectionName)
 		s.setupHasPartition(testCollectionName, partName)
 		s.setupDescribeCollection(testCollectionName,
 			entity.NewSchema().
@@ -188,7 +193,6 @@ func (s *InsertByRowsSuite) TestFails() {
 
 	s.Run("fail_field_type_not_match", func() {
 		defer s.resetMock()
-		s.setupHasCollection(testCollectionName)
 		s.setupHasPartition(testCollectionName, partName)
 		s.setupDescribeCollection(testCollectionName,
 			entity.NewSchema().
@@ -206,7 +210,6 @@ func (s *InsertByRowsSuite) TestFails() {
 
 	s.Run("fail_extra_field", func() {
 		defer s.resetMock()
-		s.setupHasCollection(testCollectionName)
 		s.setupHasPartition(testCollectionName, partName)
 		s.setupDescribeCollection(testCollectionName,
 			entity.NewSchema().
@@ -225,12 +228,11 @@ func (s *InsertByRowsSuite) TestFails() {
 
 	s.Run("vector_dim_not_match", func() {
 		defer s.resetMock()
-		s.setupHasCollection(testCollectionName)
 		s.setupHasPartition(testCollectionName, partName)
 		s.setupDescribeCollection(testCollectionName,
 			entity.NewSchema().
 				WithField(entity.NewField().WithName("ID").WithDataType(entity.FieldTypeInt64).WithIsPrimaryKey(true).WithIsAutoID(true)).
-				WithField(entity.NewField().WithName("vector").WithDataType(entity.FieldTypeFloatVector).WithTypeParams(entity.TypeParamDim, "128")),
+				WithField(entity.NewField().WithName("vector").WithDataType(entity.FieldTypeFloatVector).WithDim(128)),
 		)
 		type row struct {
 			entity.RowBase
@@ -250,7 +252,6 @@ func (s *InsertByRowsSuite) TestSuccess() {
 
 	s.Run("non_dynamic", func() {
 		defer s.resetMock()
-		s.setupHasCollection(testCollectionName)
 		s.setupHasPartition(testCollectionName, partName)
 		s.setupDescribeCollection(testCollectionName, entity.NewSchema().WithName(testCollectionName).
 			WithField(entity.NewField().WithName("ID").WithDataType(entity.FieldTypeInt64).WithIsPrimaryKey(true)).
@@ -280,7 +281,6 @@ func (s *InsertByRowsSuite) TestSuccess() {
 
 	s.Run("dynamic", func() {
 		defer s.resetMock()
-		s.setupHasCollection(testCollectionName)
 		s.setupHasPartition(testCollectionName, partName)
 		s.setupDescribeCollection(testCollectionName, entity.NewSchema().
 			WithName(testCollectionName).WithDynamicFieldEnabled(true).

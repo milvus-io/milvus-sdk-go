@@ -76,6 +76,7 @@ func (s *MockSuiteBase) TearDownTest() {
 }
 
 func (s *MockSuiteBase) resetMock() {
+	s.mock.AssertExpectations(s.T())
 	MetaCache.reset()
 	if s.mock != nil {
 		s.mock.Calls = nil
@@ -134,14 +135,33 @@ func (s *MockSuiteBase) setupDescribeCollection(_ string, schema *entity.Schema)
 			Status: &common.Status{ErrorCode: common.ErrorCode_Success},
 			Schema: schema.ProtoMessage(),
 		}
-	}, nil)
+	}, nil).Maybe()
 }
 
 func (s *MockSuiteBase) setupDescribeCollectionError(errorCode common.ErrorCode, err error) {
 	s.mock.EXPECT().DescribeCollection(mock.Anything, mock.AnythingOfType("*milvuspb.DescribeCollectionRequest")).
 		Return(&server.DescribeCollectionResponse{
 			Status: &common.Status{ErrorCode: errorCode},
-		}, err)
+		}, err).Maybe()
+}
+
+func (s *MockSuiteBase) setupShowCollection(collectionName string) {
+	s.setupDescribeCollection(testCollectionName, nil)
+	s.mock.EXPECT().ShowCollections(mock.Anything, mock.Anything).
+		Return(&server.ShowCollectionsResponse{
+			Status:              &common.Status{ErrorCode: common.ErrorCode_Success},
+			CollectionNames:     []string{collectionName},
+			CollectionIds:       []int64{testCollectionID},
+			InMemoryPercentages: []int64{100},
+		}, nil).Maybe()
+}
+
+func (s *MockSuiteBase) setupShowCollectionError(errorCode common.ErrorCode, err error) {
+	s.setupDescribeCollection(testCollectionName, nil)
+	s.mock.EXPECT().ShowCollections(mock.Anything, mock.Anything).
+		Return(&server.ShowCollectionsResponse{
+			Status: &common.Status{ErrorCode: errorCode},
+		}, err).Maybe()
 }
 
 func (s *MockSuiteBase) getInt64FieldData(name string, data []int64) *schema.FieldData {

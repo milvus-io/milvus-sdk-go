@@ -65,7 +65,7 @@ func TestSearchCollectionNotExist(t *testing.T) {
 		common.DefaultTopK,
 		sp,
 	)
-	common.CheckErr(t, errSearch, false, "can't find collection: collName")
+	common.CheckErr(t, errSearch, false, "can't find collection")
 }
 
 // test search empty collection -> return empty
