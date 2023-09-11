@@ -382,6 +382,14 @@ func (mc *MilvusClient) DeleteByPks(ctx context.Context, collName string, partit
 	return err
 }
 
+// Delete deletes entries match expression
+func (mc *MilvusClient) Delete(ctx context.Context, collName string, partitionName string, expr string) error {
+	preRequest("DeleteByPks", ctx, collName, partitionName, expr)
+	err := mc.mClient.Delete(ctx, collName, partitionName, expr)
+	postResponse("DeleteByPks", err)
+	return err
+}
+
 // Search search from collection
 func (mc *MilvusClient) Search(ctx context.Context, collName string, partitions []string, expr string,
 	outputFields []string, vectors []entity.Vector, vectorField string, metricType entity.MetricType, topK int, sp entity.SearchParam, opts ...client.SearchQueryOptionFunc,

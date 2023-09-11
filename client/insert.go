@@ -299,6 +299,44 @@ func (c *GrpcClient) DeleteByPks(ctx context.Context, collName string, partition
 	return nil
 }
 
+// Delete deletes entries match expression
+func (c *GrpcClient) Delete(ctx context.Context, collName string, partitionName string, expr string) error {
+	if c.Service == nil {
+		return ErrClientNotReady
+	}
+
+	// check collection name
+	if err := c.checkCollectionExists(ctx, collName); err != nil {
+		return err
+	}
+
+	// check partition name
+	if partitionName != "" {
+		err := c.checkPartitionExists(ctx, collName, partitionName)
+		if err != nil {
+			return err
+		}
+	}
+
+	req := &milvuspb.DeleteRequest{
+		DbName:         "",
+		CollectionName: collName,
+		PartitionName:  partitionName,
+		Expr:           expr,
+	}
+
+	resp, err := c.Service.Delete(ctx, req)
+	if err != nil {
+		return err
+	}
+	err = handleRespStatus(resp.GetStatus())
+	if err != nil {
+		return err
+	}
+	MetaCache.setSessionTs(collName, resp.Timestamp)
+	return nil
+}
+
 // Upsert Index into collection with column-based format
 // collName is the collection name
 // partitionName is the partition to upsert, if not specified(empty), default partition will be used
