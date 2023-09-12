@@ -573,6 +573,7 @@ func TestIndexGPUIvfPQ(t *testing.T){
 func TestIndexSCANN(t *testing.T){
 	
 	var nlist int
+	var with_raw_data bool
 
 	mt := L2
 	
@@ -582,6 +583,7 @@ func TestIndexSCANN(t *testing.T){
 		nlist = 100
 		idx0, err := NewIndexSCANN(mt, 
 			nlist,
+			with_raw_data,
 		)
 		assert.Nil(t, err)
 		assert.NotNil(t, idx0)
@@ -590,6 +592,18 @@ func TestIndexSCANN(t *testing.T){
 		assert.NotNil(t, idx0.Params())
 		assert.False(t, idx0.SupportBinary())
 		
+		with_raw_data = true
+		idx1, err := NewIndexSCANN(mt, 
+			nlist,
+			with_raw_data,
+		)
+		assert.Nil(t, err)
+		assert.NotNil(t, idx1)
+		assert.Equal(t, "SCANN", idx1.Name())
+		assert.EqualValues(t, "IVF_FLAT", idx1.IndexType())
+		assert.NotNil(t, idx1.Params())
+		assert.False(t, idx1.SupportBinary())
+		
 	})
 
 	t.Run("invalid usage case", func(t *testing.T){
@@ -597,6 +611,7 @@ func TestIndexSCANN(t *testing.T){
 		nlist = 0
 		idx0, err := NewIndexSCANN(mt, 
 			nlist,
+			with_raw_data,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx0)
@@ -604,6 +619,7 @@ func TestIndexSCANN(t *testing.T){
 		nlist = 65537
 		idx1, err := NewIndexSCANN(mt, 
 			nlist,
+			with_raw_data,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx1)

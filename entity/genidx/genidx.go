@@ -716,6 +716,11 @@ func main() {
 						Name:           "nlist",
 						ValidationRule: "[1, 65536]",
 					},
+					{
+						Name:           "with_raw_data",
+						Type:           "bool",
+						ValidationRule: "in (false, true)",
+					},
 				},
 				SearchParams: []idxParam{
 					{
@@ -729,6 +734,7 @@ func main() {
 				},
 				ValidExamples: []string{
 					"nlist = 100",
+					"with_raw_data = true",
 				},
 				InvalidExamples: []string{
 					"nlist = 0",
