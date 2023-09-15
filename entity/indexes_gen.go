@@ -730,6 +730,7 @@ var _ Index = &IndexSCANN{}
 // IndexSCANN idx type for IVF_FLAT
 type IndexSCANN struct { //auto generated fields
 	nlist int
+	with_raw_data bool
 	metricType MetricType
 }
 
@@ -752,6 +753,7 @@ func(i *IndexSCANN) SupportBinary() bool {
 func(i *IndexSCANN) Params() map[string]string {
 	params := map[string]string {//auto generated mapping 
 		"nlist": fmt.Sprintf("%v",i.nlist),
+		"with_raw_data": fmt.Sprintf("%v",i.with_raw_data),
 	}
 	bs, _ := json.Marshal(params)
 	return map[string]string {
@@ -764,6 +766,8 @@ func(i *IndexSCANN) Params() map[string]string {
 // NewIndexSCANN create index with construction parameters
 func NewIndexSCANN(metricType MetricType, 
 	nlist int,
+
+	with_raw_data bool,
 ) (*IndexSCANN, error) {
 	// auto generate parameters validation code, if any
 	if nlist < 1 {
@@ -773,9 +777,23 @@ func NewIndexSCANN(metricType MetricType,
 		return nil, errors.New("nlist has to be in range [1, 65536]")
 	}
 	
+	validRange := []bool{false, true}
+	with_raw_dataOk := false
+	for _, v := range validRange {
+		if v == with_raw_data {
+			with_raw_dataOk = true
+			break
+		}
+	}
+	if !with_raw_dataOk {
+		return nil, errors.New("with_raw_data not valid")
+	}
+	
 	return &IndexSCANN{ 
 	//auto generated setting
 	nlist: nlist,
+	//auto generated setting
+	with_raw_data: with_raw_data,
 	metricType: metricType,
 	}, nil
 }
