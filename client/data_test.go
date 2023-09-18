@@ -36,7 +36,7 @@ func TestGrpcClientFlush(t *testing.T) {
 	c := testClient(ctx, t)
 
 	t.Run("test async flush", func(t *testing.T) {
-		assert.Nil(t, c.Flush(ctx, testCollectionName, true))
+		assert.Nil(t, c.Flush(ctx, testCollectionName, true, WithFlushMsgBase(&commonpb.MsgBase{})))
 	})
 
 	t.Run("test sync flush", func(t *testing.T) {

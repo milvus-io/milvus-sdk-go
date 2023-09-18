@@ -126,7 +126,7 @@ func (s *CollectionSuite) TestCreateCollection() {
 			Return(&commonpb.Status{ErrorCode: commonpb.ErrorCode_Success}, nil)
 		s.mock.EXPECT().HasCollection(mock.Anything, &milvuspb.HasCollectionRequest{CollectionName: testCollectionName}).Return(&milvuspb.BoolResponse{Status: &commonpb.Status{}, Value: false}, nil)
 
-		err := c.CreateCollection(ctx, ds, shardsNum)
+		err := c.CreateCollection(ctx, ds, shardsNum, WithCreateCollectionMsgBase(&commonpb.MsgBase{}))
 		s.NoError(err)
 	})
 
@@ -514,7 +514,7 @@ func (s *CollectionSuite) TestLoadCollection() {
 
 		s.mock.EXPECT().LoadCollection(mock.Anything, mock.Anything).Return(&commonpb.Status{ErrorCode: commonpb.ErrorCode_Success}, nil)
 
-		err := c.LoadCollection(ctx, testCollectionName, true)
+		err := c.LoadCollection(ctx, testCollectionName, true, WithLoadCollectionMsgBase(&commonpb.MsgBase{}))
 		s.NoError(err)
 	})
 
@@ -663,7 +663,7 @@ func TestGrpcClientDropCollection(t *testing.T) {
 	})
 
 	t.Run("Test Normal drop", func(t *testing.T) {
-		assert.Nil(t, c.DropCollection(ctx, testCollectionName))
+		assert.Nil(t, c.DropCollection(ctx, testCollectionName, WithDropCollectionMsgBase(&commonpb.MsgBase{})))
 	})
 
 	t.Run("Test drop non-existing collection", func(t *testing.T) {
@@ -685,7 +685,7 @@ func TestReleaseCollection(t *testing.T) {
 		return SuccessStatus()
 	})
 
-	c.ReleaseCollection(ctx, testCollectionName)
+	c.ReleaseCollection(ctx, testCollectionName, WithReleaseCollectionMsgBase(&commonpb.MsgBase{}))
 }
 
 func TestGrpcClientHasCollection(t *testing.T) {

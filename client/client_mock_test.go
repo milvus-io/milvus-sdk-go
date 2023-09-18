@@ -300,6 +300,8 @@ const (
 	MListDatabase   ServiceMethod = 1000
 	MCreateDatabase ServiceMethod = 1001
 	MDropDatabase   ServiceMethod = 1002
+
+	MReplicateMessage ServiceMethod = 1100
 )
 
 // injection function definition
@@ -924,8 +926,14 @@ func (m *MockServer) AllocTimestamp(_ context.Context, _ *milvuspb.AllocTimestam
 	panic("not implemented")
 }
 
-func (m *MockServer) ReplicateMessage(_ context.Context, _ *milvuspb.ReplicateMessageRequest) (*milvuspb.ReplicateMessageResponse, error) {
-	panic("not implemented")
+func (m *MockServer) ReplicateMessage(ctx context.Context, req *milvuspb.ReplicateMessageRequest) (*milvuspb.ReplicateMessageResponse, error) {
+	f := m.GetInjection(MReplicateMessage)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*milvuspb.ReplicateMessageResponse), err
+	}
+	s, err := SuccessStatus()
+	return &milvuspb.ReplicateMessageResponse{Status: s}, err
 }
 
 func (m *MockServer) Connect(_ context.Context, _ *milvuspb.ConnectRequest) (*milvuspb.ConnectResponse, error) {

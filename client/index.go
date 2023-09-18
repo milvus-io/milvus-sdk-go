@@ -58,6 +58,7 @@ type indexDef struct {
 	name           string
 	fieldName      string
 	collectionName string
+	MsgBase        *commonpb.MsgBase
 }
 
 // IndexOption is the predefined function to alter index def.
@@ -68,6 +69,12 @@ type IndexOption func(*indexDef)
 func WithIndexName(name string) IndexOption {
 	return func(def *indexDef) {
 		def.name = name
+	}
+}
+
+func WithIndexMsgBase(msgBase *commonpb.MsgBase) IndexOption {
+	return func(def *indexDef) {
+		def.MsgBase = msgBase
 	}
 }
 
@@ -93,6 +100,7 @@ func (c *GrpcClient) CreateIndex(ctx context.Context, collName string, fieldName
 	idxDef := getIndexDef(opts...)
 
 	req := &milvuspb.CreateIndexRequest{
+		Base:           idxDef.MsgBase,
 		DbName:         "", // reserved
 		CollectionName: collName,
 		FieldName:      fieldName,
@@ -167,6 +175,7 @@ func (c *GrpcClient) DropIndex(ctx context.Context, collName string, fieldName s
 
 	idxDef := getIndexDef(opts...)
 	req := &milvuspb.DropIndexRequest{
+		Base:           idxDef.MsgBase,
 		DbName:         "", //reserved,
 		CollectionName: collName,
 		FieldName:      fieldName,
