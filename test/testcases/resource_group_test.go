@@ -388,7 +388,7 @@ func TestTransferReplicaNotExistedCollection(t *testing.T) {
 
 	// transfer replica
 	errTransfer := mc.TransferReplica(ctx, common.DefaultRgName, rgName, common.GenRandomString(3), 1)
-	common.CheckErr(t, errTransfer, false, "can't find collection")
+	common.CheckErr(t, errTransfer, false, "collection not found")
 }
 
 // test transfer replicas with invalid replica number
