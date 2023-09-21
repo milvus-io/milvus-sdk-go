@@ -105,7 +105,13 @@ func (c *GrpcClient) InsertRows(ctx context.Context, collName string, partitionN
 		PartitionName:  partitionName,
 	}
 	//c.Service.
-	if req.PartitionName == "" {
+	hasPartitionKey := false
+	for _, field := range coll.Schema.Fields {
+		if field.IsPartitionKey {
+			hasPartitionKey = true
+		}
+	}
+	if req.PartitionName == "" && !hasPartitionKey {
 		req.PartitionName = "_default" // use default partition
 	}
 	req.NumRows = uint32(len(rows))

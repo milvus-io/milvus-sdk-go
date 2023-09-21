@@ -79,7 +79,8 @@ func (b RowBase) Collection() string {
 }
 
 // Partition row base default partition name, which is empty string
-// when empty string is passed, the default partition is used, which currently is named `_default`
+// when empty string is passed and no partition key is specified,
+// the default partition is used, which currently is named `_default`
 func (b RowBase) Partition() string {
 	return ""
 }

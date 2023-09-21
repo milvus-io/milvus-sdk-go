@@ -397,10 +397,15 @@ func (c *GrpcClient) Upsert(ctx context.Context, collName string, partitionName 
 			}
 		}
 	}
+
+	hasPartitionKey := false
 	for _, field := range coll.Schema.Fields {
 		_, has := mNameColumn[field.Name]
 		if !has && !field.AutoID {
 			return nil, fmt.Errorf("field %s not passed", field.Name)
+		}
+		if field.IsPartitionKey {
+			hasPartitionKey = true
 		}
 	}
 
@@ -410,7 +415,7 @@ func (c *GrpcClient) Upsert(ctx context.Context, collName string, partitionName 
 		CollectionName: collName,
 		PartitionName:  partitionName,
 	}
-	if req.PartitionName == "" {
+	if req.PartitionName == "" && !hasPartitionKey {
 		req.PartitionName = "_default" // use default partition
 	}
 	req.NumRows = uint32(rowSize)
