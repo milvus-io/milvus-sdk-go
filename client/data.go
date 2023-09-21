@@ -93,41 +93,51 @@ func (c *GrpcClient) Search(ctx context.Context, collName string, partitions []s
 }
 
 func (c *GrpcClient) parseSearchResult(_ *entity.Schema, outputFields []string, fieldDataList []*schemapb.FieldData, _, from, to int) ([]entity.Column, error) {
-	//dynamicField := sch.GetDynamicField()
-	fields := make(map[string]*schemapb.FieldData)
+	// duplicated name will have only one column now
+	outputSet := make(map[string]struct{})
+	for _, output := range outputFields {
+		outputSet[output] = struct{}{}
+	}
+	// fields := make(map[string]*schemapb.FieldData)
+	columns := make([]entity.Column, 0, len(outputFields))
 	var dynamicColumn *entity.ColumnJSONBytes
 	for _, fieldData := range fieldDataList {
-		fields[fieldData.GetFieldName()] = fieldData
+		column, err := entity.FieldDataColumn(fieldData, from, to)
+		if err != nil {
+			return nil, err
+		}
 		if fieldData.GetIsDynamic() {
-			column, err := entity.FieldDataColumn(fieldData, from, to)
-			if err != nil {
-				return nil, err
-			}
 			var ok bool
 			dynamicColumn, ok = column.(*entity.ColumnJSONBytes)
 			if !ok {
 				return nil, errors.New("dynamic field not json")
 			}
-		}
-	}
-	columns := make([]entity.Column, 0, len(outputFields))
-	for _, outputField := range outputFields {
-		fieldData, ok := fields[outputField]
-		var column entity.Column
-		var err error
-		if !ok {
-			if dynamicColumn == nil {
-				return nil, errors.New("output fields not match and result field data does not contain dynamic field")
+
+			// return json column only explicitly specified in output fields
+			if _, ok := outputSet[fieldData.GetFieldName()]; !ok {
+				continue
 			}
-			column = entity.NewColumnDynamic(dynamicColumn, outputField)
-		} else {
-			column, err = entity.FieldDataColumn(fieldData, from, to)
 		}
-		if err != nil {
-			return nil, err
-		}
+
+		// remove processed field
+		delete(outputSet, fieldData.GetFieldName())
+
 		columns = append(columns, column)
 	}
+
+	if len(outputSet) > 0 && dynamicColumn == nil {
+		var extraFields []string
+		for output := range outputSet {
+			extraFields = append(extraFields, output)
+		}
+		return nil, errors.Newf("extra output fields %v found and result does not dynamic field", extraFields)
+	}
+	// add dynamic column for extra fields
+	for outputField := range outputSet {
+		column := entity.NewColumnDynamic(dynamicColumn, outputField)
+		columns = append(columns, column)
+	}
+
 	return columns, nil
 }
 
@@ -243,18 +253,6 @@ func (c *GrpcClient) Query(ctx context.Context, collectionName string, partition
 	}
 
 	fieldsData := resp.GetFieldsData()
-	// query always has pk field as output
-	hasPK := false
-	pkName := sch.PKFieldName()
-	for _, output := range outputFields {
-		if output == pkName {
-			hasPK = true
-			break
-		}
-	}
-	if !hasPK {
-		outputFields = append(outputFields, pkName)
-	}
 
 	columns, err := c.parseSearchResult(sch, outputFields, fieldsData, 0, 0, -1) //entity.FieldDataColumn(fieldData, 0, -1)
 	if err != nil {
