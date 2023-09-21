@@ -410,9 +410,7 @@ func (c *GrpcClient) Upsert(ctx context.Context, collName string, partitionName 
 		CollectionName: collName,
 		PartitionName:  partitionName,
 	}
-	if req.PartitionName == "" {
-		req.PartitionName = "_default" // use default partition
-	}
+
 	req.NumRows = uint32(rowSize)
 	for _, column := range columns {
 		req.FieldsData = append(req.FieldsData, column.FieldData())
