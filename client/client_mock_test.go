@@ -222,6 +222,17 @@ func (s *MockSuiteBase) getFloatVectorFieldData(name string, dim int64, data []f
 	}
 }
 
+func (s *MockSuiteBase) getSuccessStatus() *commonpb.Status {
+	return s.getStatus(commonpb.ErrorCode_Success, "")
+}
+
+func (s *MockSuiteBase) getStatus(code commonpb.ErrorCode, reason string) *commonpb.Status {
+	return &commonpb.Status{
+		ErrorCode: code,
+		Reason:    reason,
+	}
+}
+
 // ref https://stackoverflow.com/questions/42102496/testing-a-grpc-service
 
 var errNotImplemented = errors.New("not implemented")
