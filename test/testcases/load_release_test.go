@@ -85,11 +85,11 @@ func TestLoadCollectionWithoutIndex(t *testing.T) {
 
 	collName, _ := createCollectionWithDataIndex(ctx, t, mc, true, false)
 	errLoad := mc.LoadCollection(ctx, collName, true)
-	common.CheckErr(t, errLoad, false, "index doesn't exist")
+	common.CheckErr(t, errLoad, false, "index not found")
 
 	// load partitions without index
 	errLoadPartition := mc.LoadPartitions(ctx, collName, []string{common.DefaultPartition}, true)
-	common.CheckErr(t, errLoadPartition, false, "index doesn't exist")
+	common.CheckErr(t, errLoadPartition, false, "index not found")
 }
 
 // load collection with multi partitions
