@@ -296,7 +296,7 @@ func TestCreateIndexNotSupportedField(t *testing.T) {
 	// create index
 	idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
 	err := mc.CreateIndex(ctx, collName, common.DefaultFloatFieldName, idx, false)
-	common.CheckErr(t, err, false, "index type not match: expected=Trie, actual=HNSW: invalid parameter")
+	common.CheckErr(t, err, false, "index type not match")
 }
 
 // test create index with invalid params
@@ -447,7 +447,7 @@ func TestDropIndex(t *testing.T) {
 	errDrop := mc.DropIndex(ctx, collName, common.DefaultFloatVecFieldName)
 	common.CheckErr(t, errDrop, true)
 	indexes, errDescribe := mc.DescribeIndex(ctx, collName, common.DefaultFloatVecFieldName)
-	common.CheckErr(t, errDescribe, false, "index doesn't exist, collectionID")
+	common.CheckErr(t, errDescribe, false, "index not found")
 	require.Nil(t, indexes)
 }
 
