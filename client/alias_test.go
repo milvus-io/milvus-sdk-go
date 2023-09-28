@@ -18,135 +18,172 @@ package client
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
-	"github.com/golang/protobuf/proto"
+	"github.com/cockroachdb/errors"
 	"github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
 	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/suite"
 )
 
-func TestGrpcCreateAlias(t *testing.T) {
-	ctx := context.Background()
-	c := testClient(ctx, t)
-	defer c.Close()
+type AliasSuite struct {
+	MockSuiteBase
+}
 
-	t.Run("normal create alias", func(t *testing.T) {
+func (s *AliasSuite) TestCreateAlias() {
+	c := s.client
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-		mockServer.SetInjection(MCreateAlias, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			req, ok := raw.(*milvuspb.CreateAliasRequest)
-			if !ok {
-				t.FailNow()
-			}
-			assert.Equal(t, "testcoll", req.CollectionName)
-			assert.Equal(t, "collAlias", req.Alias)
+	s.Run("normal_create", func() {
+		defer s.resetMock()
 
-			return &commonpb.Status{ErrorCode: commonpb.ErrorCode_Success}, nil
-		})
-		defer mockServer.DelInjection(MCreateAlias)
-		err := c.CreateAlias(ctx, "testcoll", "collAlias")
-		assert.NoError(t, err)
+		collName := fmt.Sprintf("coll_%s", randStr(6))
+		alias := fmt.Sprintf("alias_%s", randStr(6))
+
+		s.mock.EXPECT().CreateAlias(mock.Anything, mock.AnythingOfType("*milvuspb.CreateAliasRequest")).
+			Run(func(ctx context.Context, req *milvuspb.CreateAliasRequest) {
+				s.Equal(collName, req.GetCollectionName())
+				s.Equal(alias, req.GetAlias())
+			}).Return(s.getSuccessStatus(), nil)
+		err := c.CreateAlias(ctx, collName, alias)
+		s.NoError(err)
 	})
 
-	t.Run("alias duplicated", func(t *testing.T) {
-		m := make(map[string]struct{})
-		mockServer.SetInjection(MCreateAlias, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			req, ok := raw.(*milvuspb.CreateAliasRequest)
-			if !ok {
-				t.FailNow()
-			}
-			status := commonpb.ErrorCode_Success
-			_, has := m[req.GetAlias()]
-			if has {
-				status = commonpb.ErrorCode_UnexpectedError
-			}
-			m[req.GetAlias()] = struct{}{}
-			return &commonpb.Status{ErrorCode: status}, nil
-		})
-		defer mockServer.DelInjection(MCreateAlias)
+	s.Run("failure_cases", func() {
+		collName := fmt.Sprintf("coll_%s", randStr(6))
+		alias := fmt.Sprintf("alias_%s", randStr(6))
 
-		collName := "testColl"
-		aliasName := "collAlias"
-		err := c.CreateAlias(ctx, collName, aliasName)
-		assert.NoError(t, err)
-		err = c.CreateAlias(ctx, collName, aliasName)
-		assert.Error(t, err)
+		s.Run("return_error", func() {
+			defer s.resetMock()
+			s.mock.EXPECT().CreateAlias(mock.Anything, mock.AnythingOfType("*milvuspb.CreateAliasRequest")).
+				Return(nil, errors.New("mocked"))
+			err := c.CreateAlias(ctx, collName, alias)
+			s.Error(err)
+		})
+
+		s.Run("failure_status", func() {
+			defer s.resetMock()
+
+			s.mock.EXPECT().CreateAlias(mock.Anything, mock.AnythingOfType("*milvuspb.CreateAliasRequest")).
+				Return(s.getStatus(commonpb.ErrorCode_UnexpectedError, "mocked"), nil)
+			err := c.CreateAlias(ctx, collName, alias)
+			s.Error(err)
+		})
+	})
+
+	s.Run("invalid_client", func() {
+		c := &GrpcClient{}
+		collName := fmt.Sprintf("coll_%s", randStr(6))
+		alias := fmt.Sprintf("alias_%s", randStr(6))
+
+		err := c.CreateAlias(ctx, collName, alias)
+		s.Error(err)
 	})
 }
 
-func TestGrpcDropAlias(t *testing.T) {
-	ctx := context.Background()
-	c := testClient(ctx, t)
-	defer c.Close()
+func (s *AliasSuite) TestDropAlias() {
+	c := s.client
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	t.Run("normal drop alias", func(t *testing.T) {
-		mockServer.SetInjection(MDropAlias, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			req, ok := raw.(*milvuspb.DropAliasRequest)
-			if !ok {
-				t.FailNow()
-			}
-			assert.Equal(t, "collAlias", req.Alias)
+	s.Run("normal_create", func() {
+		defer s.resetMock()
 
-			return &commonpb.Status{ErrorCode: commonpb.ErrorCode_Success}, nil
-		})
-		defer mockServer.DelInjection(MDropAlias)
-		err := c.DropAlias(ctx, "collAlias")
-		assert.NoError(t, err)
+		alias := fmt.Sprintf("alias_%s", randStr(6))
+
+		s.mock.EXPECT().DropAlias(mock.Anything, mock.AnythingOfType("*milvuspb.DropAliasRequest")).
+			Run(func(ctx context.Context, req *milvuspb.DropAliasRequest) {
+				s.Equal(alias, req.GetAlias())
+			}).Return(s.getSuccessStatus(), nil)
+		err := c.DropAlias(ctx, alias)
+		s.NoError(err)
 	})
 
-	t.Run("drop alias error", func(t *testing.T) {
-		mockServer.SetInjection(MDropAlias, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			req, ok := raw.(*milvuspb.DropAliasRequest)
-			if !ok {
-				t.FailNow()
-			}
-			assert.Equal(t, "collAlias", req.Alias)
-
-			return &commonpb.Status{ErrorCode: commonpb.ErrorCode_UnexpectedError}, nil
+	s.Run("failure_cases", func() {
+		alias := fmt.Sprintf("alias_%s", randStr(6))
+		s.Run("return_error", func() {
+			defer s.resetMock()
+			s.mock.EXPECT().DropAlias(mock.Anything, mock.AnythingOfType("*milvuspb.DropAliasRequest")).
+				Return(nil, errors.New("mocked"))
+			err := c.DropAlias(ctx, alias)
+			s.Error(err)
 		})
-		defer mockServer.DelInjection(MDropAlias)
-		err := c.DropAlias(ctx, "collAlias")
-		assert.Error(t, err)
+
+		s.Run("failure_status", func() {
+			defer s.resetMock()
+
+			s.mock.EXPECT().DropAlias(mock.Anything, mock.AnythingOfType("*milvuspb.DropAliasRequest")).
+				Return(s.getStatus(commonpb.ErrorCode_UnexpectedError, "mocked"), nil)
+			err := c.DropAlias(ctx, alias)
+			s.Error(err)
+		})
+	})
+
+	s.Run("invalid_client", func() {
+		c := &GrpcClient{}
+		alias := fmt.Sprintf("alias_%s", randStr(6))
+
+		err := c.DropAlias(ctx, alias)
+		s.Error(err)
 	})
 }
 
-func TestGrpcAlterAlias(t *testing.T) {
-	ctx := context.Background()
-	c := testClient(ctx, t)
-	defer c.Close()
+func (s *AliasSuite) TestAlterAlias() {
+	c := s.client
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	collName := "collName"
-	aliasName := "collAlias"
+	s.Run("normal_create", func() {
+		defer s.resetMock()
 
-	t.Run("normal alter alias", func(t *testing.T) {
-		mockServer.SetInjection(MAlterAlias, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			req, ok := raw.(*milvuspb.AlterAliasRequest)
-			if !ok {
-				t.FailNow()
-			}
-			assert.Equal(t, collName, req.CollectionName)
-			assert.Equal(t, aliasName, req.Alias)
+		collName := fmt.Sprintf("coll_%s", randStr(6))
+		alias := fmt.Sprintf("alias_%s", randStr(6))
 
-			return &commonpb.Status{ErrorCode: commonpb.ErrorCode_Success}, nil
-		})
-		defer mockServer.DelInjection(MAlterAlias)
-		err := c.AlterAlias(ctx, collName, aliasName)
-		assert.NoError(t, err)
+		s.mock.EXPECT().AlterAlias(mock.Anything, mock.AnythingOfType("*milvuspb.AlterAliasRequest")).
+			Run(func(ctx context.Context, req *milvuspb.AlterAliasRequest) {
+				s.Equal(collName, req.GetCollectionName())
+				s.Equal(alias, req.GetAlias())
+			}).Return(s.getSuccessStatus(), nil)
+		err := c.AlterAlias(ctx, collName, alias)
+		s.NoError(err)
 	})
 
-	t.Run("alter alias error", func(t *testing.T) {
-		mockServer.SetInjection(MAlterAlias, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			req, ok := raw.(*milvuspb.AlterAliasRequest)
-			if !ok {
-				t.FailNow()
-			}
-			assert.Equal(t, collName, req.CollectionName)
-			assert.Equal(t, aliasName, req.Alias)
+	s.Run("failure_cases", func() {
+		collName := fmt.Sprintf("coll_%s", randStr(6))
+		alias := fmt.Sprintf("alias_%s", randStr(6))
 
-			return &commonpb.Status{ErrorCode: commonpb.ErrorCode_UnexpectedError}, nil
+		s.Run("return_error", func() {
+			defer s.resetMock()
+			s.mock.EXPECT().AlterAlias(mock.Anything, mock.AnythingOfType("*milvuspb.AlterAliasRequest")).
+				Return(nil, errors.New("mocked"))
+			err := c.AlterAlias(ctx, collName, alias)
+			s.Error(err)
 		})
-		defer mockServer.DelInjection(MAlterAlias)
-		err := c.AlterAlias(ctx, collName, aliasName)
-		assert.Error(t, err)
+
+		s.Run("failure_status", func() {
+			defer s.resetMock()
+
+			s.mock.EXPECT().AlterAlias(mock.Anything, mock.AnythingOfType("*milvuspb.AlterAliasRequest")).
+				Return(s.getStatus(commonpb.ErrorCode_UnexpectedError, "mocked"), nil)
+			err := c.AlterAlias(ctx, collName, alias)
+			s.Error(err)
+		})
 	})
+
+	s.Run("invalid_client", func() {
+		c := &GrpcClient{}
+		collName := fmt.Sprintf("coll_%s", randStr(6))
+		alias := fmt.Sprintf("alias_%s", randStr(6))
+
+		err := c.AlterAlias(ctx, collName, alias)
+		s.Error(err)
+	})
+
+}
+
+func TestAlias(t *testing.T) {
+	suite.Run(t, new(AliasSuite))
 }
