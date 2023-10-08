@@ -419,7 +419,7 @@ func TestOutputAllScalarFields(t *testing.T) {
 }
 
 // test query with an not existed field
-func TestQueryNotExistField(t *testing.T) {
+func TestQueryOutputNotExistField(t *testing.T) {
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect
 	mc := createMilvusClient(ctx, t)
@@ -449,7 +449,7 @@ func TestQueryJsonDynamicField(t *testing.T) {
 	// connect
 	mc := createMilvusClient(ctx, t)
 
-	for _, dynamicField := range []bool{true} {
+	for _, dynamicField := range []bool{true, false} {
 		// create collection
 		cp := CollectionParams{
 			CollectionFieldsType: Int64FloatVecJSON,
@@ -484,7 +484,7 @@ func TestQueryJsonDynamicField(t *testing.T) {
 			outputFields = append(outputFields, common.DefaultDynamicFieldName)
 		}
 
-		// query and output json field
+		// query and output json/dynamic field
 		pkColumn := entity.NewColumnInt64(common.DefaultIntFieldName, []int64{0, 1})
 		queryResult, err := mc.QueryByPks(
 			ctx, collName,
@@ -516,7 +516,7 @@ func TestQueryJsonDynamicField(t *testing.T) {
 		}
 		common.CheckQueryResult(t, queryResult, actualColumns)
 
-		// query with json filter
+		// query with json column
 		queryResult, err = mc.QueryByPks(
 			ctx, collName,
 			[]string{common.DefaultPartition},
@@ -525,7 +525,7 @@ func TestQueryJsonDynamicField(t *testing.T) {
 		)
 		common.CheckErr(t, err, false, "only int64 and varchar column can be primary key for now")
 
-		// query with dynamic field
+		// query with dynamic column
 		queryResult, err = mc.QueryByPks(
 			ctx, collName,
 			[]string{common.DefaultPartition},
@@ -534,6 +534,152 @@ func TestQueryJsonDynamicField(t *testing.T) {
 		)
 		common.CheckErr(t, err, false, "only int64 and varchar column can be primary key for now")
 	}
+}
+
+// Test query json and dynamic collection with string expr
+func TestQueryCountJsonDynamicExpr(t *testing.T) {
+	t.Parallel()
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	// connect
+	mc := createMilvusClient(ctx, t)
+
+	// create collection
+	cp := CollectionParams{
+		CollectionFieldsType: Int64FloatVecJSON,
+		AutoID:               false,
+		EnableDynamicField:   true,
+		ShardsNum:            common.DefaultShards,
+		Dim:                  common.DefaultDim,
+	}
+	collName := createCollection(ctx, t, mc, cp)
+
+	// insert
+	dp := DataParams{
+		CollectionName:       collName,
+		PartitionName:        "",
+		CollectionFieldsType: Int64FloatVecJSON,
+		start:                0,
+		nb:                   common.DefaultNb,
+		dim:                  common.DefaultDim,
+		EnableDynamicField:   true,
+	}
+	_, _ = insertData(ctx, t, mc, dp)
+
+	idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
+	_ = mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false)
+
+	// Load collection
+	errLoad := mc.LoadCollection(ctx, collName, false)
+	common.CheckErr(t, errLoad, true)
+
+	// query with different expr and count
+	type exprCount struct {
+		expr  string
+		count int64
+	}
+	exprCounts := []exprCount{
+		{expr: "", count: common.DefaultNb},
+		// pk int64 field expr: < in && ||
+		{expr: fmt.Sprintf("%s < 1000", common.DefaultIntFieldName), count: 1000},
+		{expr: fmt.Sprintf("%s in [0, 1, 2]", common.DefaultIntFieldName), count: 3},
+		{expr: fmt.Sprintf("%s >= 1000 && %s < 2000", common.DefaultIntFieldName, common.DefaultIntFieldName), count: 1000},
+		{expr: fmt.Sprintf("%s >= 1000 || %s > 2000", common.DefaultIntFieldName, common.DefaultIntFieldName), count: 2000},
+		{expr: fmt.Sprintf("%s < 1000", common.DefaultFloatFieldName), count: 1000},
+
+		// json and dynamic field filter expr: == < in bool/ list/ int
+		{expr: fmt.Sprintf("%s['number'] == 0", common.DefaultJSONFieldName), count: 1500},
+		{expr: fmt.Sprintf("%s['number'] < 100 and %s['number'] != 0", common.DefaultJSONFieldName, common.DefaultJSONFieldName), count: 50},
+		{expr: fmt.Sprintf("%s < 100", common.DefaultDynamicNumberField), count: 100},
+		{expr: "dynamicNumber % 2 == 0", count: 1500},
+		{expr: fmt.Sprintf("%s['bool'] == true", common.DefaultJSONFieldName), count: 1500},
+		{expr: fmt.Sprintf("%s == false", common.DefaultDynamicBoolField), count: 2000},
+		{expr: fmt.Sprintf("%s in ['1', '2'] ", common.DefaultDynamicStringField), count: 2},
+		{expr: fmt.Sprintf("%s['string'] in ['1', '2', '5'] ", common.DefaultJSONFieldName), count: 3},
+		{expr: fmt.Sprintf("%s['list'] == [1, 2] ", common.DefaultJSONFieldName), count: 1},
+		{expr: fmt.Sprintf("%s['list'] == [0, 1] ", common.DefaultJSONFieldName), count: 0},
+		{expr: fmt.Sprintf("%s['list'][0] < 10 ", common.DefaultJSONFieldName), count: 5},
+		{expr: fmt.Sprintf("%s[\"dynamicList\"] != [2, 3]", common.DefaultDynamicFieldName), count: 0},
+
+		// json contains
+		{expr: fmt.Sprintf("json_contains (%s['list'], 2)", common.DefaultJSONFieldName), count: 1},
+		{expr: fmt.Sprintf("json_contains (%s['number'], 0)", common.DefaultJSONFieldName), count: 0},
+		{expr: fmt.Sprintf("json_contains_all (%s['list'], [1, 2])", common.DefaultJSONFieldName), count: 1},
+		{expr: fmt.Sprintf("JSON_CONTAINS_ANY (%s['list'], [1, 3])", common.DefaultJSONFieldName), count: 2},
+		// string like
+		{expr: "dynamicString like '1%' ", count: 1111},
+
+		// key exist
+		{expr: fmt.Sprintf("exists %s['list']", common.DefaultJSONFieldName), count: common.DefaultNb},
+		{expr: fmt.Sprintf("exists a "), count: 0},
+		{expr: fmt.Sprintf("exists %s ", common.DefaultDynamicListField), count: 0},
+		{expr: fmt.Sprintf("exists %s ", common.DefaultDynamicStringField), count: common.DefaultNb},
+		// data type not match and no error
+		{expr: fmt.Sprintf("%s['number'] == '0' ", common.DefaultJSONFieldName), count: 0},
+	}
+
+	for _, _exprCount := range exprCounts {
+		countRes, _ := mc.Query(ctx, collName,
+			[]string{common.DefaultPartition},
+			_exprCount.expr, []string{common.QueryCountFieldName})
+		require.Equal(t, _exprCount.count, countRes.GetColumn(common.QueryCountFieldName).(*entity.ColumnInt64).Data()[0])
+	}
+}
+
+// test query with expr and verify output dynamic field data
+func TestQueryJsonDynamicExpr(t *testing.T) {
+	t.Parallel()
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	// connect
+	mc := createMilvusClient(ctx, t)
+
+	// create collection
+	cp := CollectionParams{
+		CollectionFieldsType: Int64FloatVecJSON,
+		AutoID:               false,
+		EnableDynamicField:   true,
+		ShardsNum:            common.DefaultShards,
+		Dim:                  common.DefaultDim,
+	}
+	collName := createCollection(ctx, t, mc, cp)
+
+	// insert
+	dp := DataParams{
+		CollectionName:       collName,
+		PartitionName:        "",
+		CollectionFieldsType: Int64FloatVecJSON,
+		start:                0,
+		nb:                   common.DefaultNb,
+		dim:                  common.DefaultDim,
+		EnableDynamicField:   true,
+	}
+	_, _ = insertData(ctx, t, mc, dp)
+
+	idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
+	_ = mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false)
+
+	// Load collection
+	errLoad := mc.LoadCollection(ctx, collName, false)
+	common.CheckErr(t, errLoad, true)
+
+	// query with different expr and count
+	expr := fmt.Sprintf("%s['number'] < 10 and %s < 10", common.DefaultJSONFieldName, common.DefaultDynamicNumberField)
+	queryRes, err := mc.Query(ctx, collName,
+		[]string{common.DefaultPartition},
+		expr, []string{common.DefaultJSONFieldName, common.DefaultDynamicNumberField})
+
+	if err != nil {
+		log.Println(err)
+	}
+	// verify output fields and count, dynamicNumber value
+	common.CheckOutputFields(t, queryRes, []string{common.DefaultIntFieldName, common.DefaultJSONFieldName, common.DefaultDynamicNumberField})
+	require.Equal(t, 10, queryRes.GetColumn(common.DefaultJSONFieldName).Len())
+	dynamicNumColumn := queryRes.GetColumn(common.DefaultDynamicNumberField)
+	var numberData []int64
+	for i := 0; i < dynamicNumColumn.Len(); i++ {
+		line, _ := dynamicNumColumn.GetAsInt64(i)
+		numberData = append(numberData, line)
+	}
+	require.Equal(t, numberData, []int64{0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
 }
 
 // test query and output both json and dynamic field
@@ -572,6 +718,11 @@ func TestQueryJsonDynamicFieldRows(t *testing.T) {
 	errLoad := mc.LoadCollection(ctx, collName, false)
 	common.CheckErr(t, errLoad, true)
 
+	countRes, _ := mc.Query(ctx, collName,
+		[]string{common.DefaultPartition},
+		"", []string{common.QueryCountFieldName})
+	require.Equal(t, int64(common.DefaultNb), countRes.GetColumn(common.QueryCountFieldName).(*entity.ColumnInt64).Data()[0])
+
 	// query and output json field
 	pkColumn := entity.NewColumnInt64(common.DefaultIntFieldName, []int64{0, 1})
 	queryResult, err := mc.QueryByPks(
@@ -599,8 +750,180 @@ func TestQueryJsonDynamicFieldRows(t *testing.T) {
 			log.Println(jsonData)
 		}
 	}
-
 	common.CheckQueryResult(t, queryResult, []entity.Column{pkColumn, jsonColumn, dynamicColumn})
+
+	// query with different expr and count
+	expr := fmt.Sprintf("%s['number'] < 10 && %s < 10", common.DefaultJSONFieldName, common.DefaultDynamicNumberField)
+	queryRes, _ := mc.Query(ctx, collName,
+		[]string{common.DefaultPartition},
+		expr, []string{common.DefaultJSONFieldName, common.DefaultDynamicNumberField})
+
+	// verify output fields and count, dynamicNumber value
+	common.CheckOutputFields(t, queryRes, []string{common.DefaultIntFieldName, common.DefaultJSONFieldName, common.DefaultDynamicNumberField})
+	require.Equal(t, 10, queryRes.GetColumn(common.DefaultJSONFieldName).Len())
+	dynamicNumColumn := queryRes.GetColumn(common.DefaultDynamicNumberField)
+	var numberData []int64
+	for i := 0; i < dynamicNumColumn.Len(); i++ {
+		line, _ := dynamicNumColumn.GetAsInt64(i)
+		numberData = append(numberData, line)
+	}
+	require.Equal(t, numberData, []int64{0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
+}
+
+// test query with invalid expr
+func TestQueryInvalidExpr(t *testing.T) {
+	t.Parallel()
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	// connect
+	mc := createMilvusClient(ctx, t)
+
+	// create collection
+	cp := CollectionParams{
+		CollectionFieldsType: Int64FloatVecJSON,
+		AutoID:               false,
+		EnableDynamicField:   true,
+		ShardsNum:            common.DefaultShards,
+		Dim:                  common.DefaultDim,
+	}
+	collName := createCollection(ctx, t, mc, cp)
+
+	// insert
+	dp := DataParams{
+		CollectionName:       collName,
+		PartitionName:        "",
+		CollectionFieldsType: Int64FloatVecJSON,
+		start:                0,
+		nb:                   common.DefaultNb,
+		dim:                  common.DefaultDim,
+		EnableDynamicField:   true,
+	}
+	_, _ = insertData(ctx, t, mc, dp)
+
+	idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
+	_ = mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false)
+
+	// Load collection
+	errLoad := mc.LoadCollection(ctx, collName, false)
+	common.CheckErr(t, errLoad, true)
+
+	for _, _invalidExprs := range common.InvalidExpressions {
+		_, err := mc.Query(ctx, collName,
+			[]string{common.DefaultPartition},
+			_invalidExprs.Expr, []string{common.DefaultJSONFieldName, common.DefaultDynamicNumberField})
+		common.CheckErr(t, err, _invalidExprs.ErrNil, _invalidExprs.ErrMsg)
+	}
+}
+
+// test query output invalid count(*) fields
+func TestQueryOutputInvalidOutputFieldCount(t *testing.T) {
+	type invalidCountStruct struct {
+		countField string
+		errMsg     string
+	}
+	t.Parallel()
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	// connect
+	mc := createMilvusClient(ctx, t)
+
+	// create, insert, index
+	collName, _ := createCollectionWithDataIndex(ctx, t, mc, true, true,
+		client.WithEnableDynamicSchema(true), client.WithConsistencyLevel(entity.ClStrong))
+
+	// Load collection
+	errLoad := mc.LoadCollection(ctx, collName, false)
+	common.CheckErr(t, errLoad, true)
+
+	// invalid expr
+	invalidOutputFieldCount := []invalidCountStruct{
+		{countField: "Count(*)", errMsg: "extra output fields [Count(*)] found and result does not dynamic field"},
+		{countField: "ccount(*)", errMsg: "field ccount(*) not exist"},
+		{countField: "count[*]", errMsg: "field count[*] not exist"},
+		{countField: "count", errMsg: "field count not exist"},
+		{countField: "count(**)", errMsg: "field count(**) not exist"},
+	}
+	for _, invalidCount := range invalidOutputFieldCount {
+		queryExpr := fmt.Sprintf("%s >= 0", common.DefaultIntFieldName)
+
+		//query with empty output fields []string{}-> output "int64"
+		_, err := mc.Query(
+			ctx, collName, []string{common.DefaultPartition},
+			queryExpr, []string{invalidCount.countField})
+		common.CheckErr(t, err, false, invalidCount.errMsg)
+	}
+}
+
+// test query count* after insert -> delete -> upsert -> compact
+func TestQueryCountAfterDml(t *testing.T)  {
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	// connect
+	mc := createMilvusClient(ctx, t)
+
+	// create collection
+	cp := CollectionParams{
+		CollectionFieldsType: Int64FloatVecJSON,
+		AutoID:               false,
+		EnableDynamicField:   true,
+		ShardsNum:            common.DefaultShards,
+		Dim:                  common.DefaultDim,
+	}
+	collName := createCollection(ctx, t, mc, cp, client.WithConsistencyLevel(entity.ClStrong))
+
+	// insert
+	dp := DataParams{
+		CollectionName:       collName,
+		PartitionName:        "",
+		CollectionFieldsType: Int64FloatVecJSON,
+		start:                0,
+		nb:                   common.DefaultNb,
+		dim:                  common.DefaultDim,
+		EnableDynamicField:   true,
+	}
+	_, _ = insertData(ctx, t, mc, dp)
+
+	idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
+	_ = mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false)
+
+	// Load collection
+	errLoad := mc.LoadCollection(ctx, collName, false)
+	common.CheckErr(t, errLoad, true)
+
+	// count*
+	countQuery, _ := mc.Query(ctx, collName, []string{common.DefaultPartition}, "", []string{common.QueryCountFieldName})
+	require.Equal(t, int64(common.DefaultNb), countQuery.GetColumn(common.QueryCountFieldName).(*entity.ColumnInt64).Data()[0])
+
+	//inert 1000 entities -> count*
+	insertNb := 1000
+	dpInsert := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVecJSON,
+		start: common.DefaultNb, nb: insertNb, dim: common.DefaultDim, EnableDynamicField: true}
+	insertData(ctx, t, mc, dpInsert)
+	countAfterInsert, _ := mc.Query(ctx, collName, []string{common.DefaultPartition}, "", []string{common.QueryCountFieldName})
+	require.Equal(t, int64(common.DefaultNb + insertNb), countAfterInsert.GetColumn(common.QueryCountFieldName).(*entity.ColumnInt64).Data()[0])
+
+	// delete 1000 entities -> count*
+	mc.Delete(ctx, collName, common.DefaultPartition, fmt.Sprintf("%s < 1000 ", common.DefaultIntFieldName))
+	countAfterDelete, _ := mc.Query(ctx, collName, []string{common.DefaultPartition}, "", []string{common.QueryCountFieldName})
+	require.Equal(t, int64(common.DefaultNb), countAfterDelete.GetColumn(common.QueryCountFieldName).(*entity.ColumnInt64).Data()[0])
+
+	// upsert deleted 100 entities -> count*
+	upsertNb := 100
+	intColumn, floatColumn, vecColumn := common.GenDefaultColumnData(0, upsertNb, common.DefaultDim)
+	jsonColumn := common.GenDefaultJSONData(common.DefaultJSONFieldName, 0, upsertNb)
+	mc.Upsert(ctx, collName, "", intColumn, floatColumn, vecColumn, jsonColumn)
+	countAfterUpsert, _ := mc.Query(ctx, collName, []string{common.DefaultPartition}, "", []string{common.QueryCountFieldName})
+	require.Equal(t, int64(common.DefaultNb + upsertNb), countAfterUpsert.GetColumn(common.QueryCountFieldName).(*entity.ColumnInt64).Data()[0])
+
+	// upsert existed 100 entities -> count*
+	intColumn, floatColumn, vecColumn = common.GenDefaultColumnData(common.DefaultNb, upsertNb, common.DefaultDim)
+	jsonColumn = common.GenDefaultJSONData(common.DefaultJSONFieldName, common.DefaultNb, upsertNb)
+	mc.Upsert(ctx, collName, "", intColumn, floatColumn, vecColumn, jsonColumn)
+	countAfterUpsert2, _ := mc.Query(ctx, collName, []string{common.DefaultPartition}, "", []string{common.QueryCountFieldName})
+	require.Equal(t, int64(common.DefaultNb + upsertNb), countAfterUpsert2.GetColumn(common.QueryCountFieldName).(*entity.ColumnInt64).Data()[0])
+
+	// compact -> count(*)
+	_, err := mc.Compact(ctx, collName, time.Second*60)
+	common.CheckErr(t, err, true)
+	countAfterCompact, _ := mc.Query(ctx, collName, []string{common.DefaultPartition}, "", []string{common.QueryCountFieldName})
+	require.Equal(t, int64(common.DefaultNb + upsertNb), countAfterCompact.GetColumn(common.QueryCountFieldName).(*entity.ColumnInt64).Data()[0])
 }
 
 // TODO offset and limit

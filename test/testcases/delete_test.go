@@ -265,3 +265,125 @@ func TestDeleteDuplicatedPks(t *testing.T) {
 	common.CheckErr(t, errQuery, true)
 	require.Zero(t, queryRes[0].Len())
 }
+
+func TestDeleteExpressions(t *testing.T) {
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	// connect
+	mc := createMilvusClient(ctx, t)
+
+	// create collection
+	cp := CollectionParams{
+		CollectionFieldsType: Int64FloatVecJSON,
+		AutoID:               false,
+		EnableDynamicField:   true,
+		ShardsNum:            common.DefaultShards,
+		Dim:                  common.DefaultDim,
+	}
+	collName := createCollection(ctx, t, mc, cp, client.WithConsistencyLevel(entity.ClStrong))
+
+	// insert
+	dp := DataParams{
+		CollectionName:       collName,
+		PartitionName:        "",
+		CollectionFieldsType: Int64FloatVecJSON,
+		start:                0,
+		nb:                   common.DefaultNb,
+		dim:                  common.DefaultDim,
+		EnableDynamicField:   true,
+	}
+	_, _ = insertData(ctx, t, mc, dp)
+
+	idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
+	_ = mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false)
+
+	// Load collection
+	errLoad := mc.LoadCollection(ctx, collName, false)
+	common.CheckErr(t, errLoad, true)
+
+	// query with different expr and count
+	exprCounts := []string{
+		// pk int64 field expr: < in && ||
+		fmt.Sprintf("%s < 1000", common.DefaultIntFieldName),
+		fmt.Sprintf("%s in [0, 1, 2]", common.DefaultIntFieldName),
+		fmt.Sprintf("%s >= 1000 && %s < 2000", common.DefaultIntFieldName, common.DefaultIntFieldName),
+		fmt.Sprintf("%s >= 1000 || %s > 2000", common.DefaultIntFieldName, common.DefaultIntFieldName),
+		fmt.Sprintf("%s < 1000", common.DefaultFloatFieldName),
+
+		// json and dynamic field filter expr: == < in bool/ list/ int
+		fmt.Sprintf("%s['number'] == 0", common.DefaultJSONFieldName),
+		fmt.Sprintf("%s['number'] < 100 and %s['number'] != 0", common.DefaultJSONFieldName, common.DefaultJSONFieldName),
+		fmt.Sprintf("%s < 100", common.DefaultDynamicNumberField),
+		"dynamicNumber % 2 == 0",
+		fmt.Sprintf("%s['bool'] == true", common.DefaultJSONFieldName),
+		fmt.Sprintf("%s == false", common.DefaultDynamicBoolField),
+		fmt.Sprintf("%s in ['1', '2'] ", common.DefaultDynamicStringField),
+		fmt.Sprintf("%s['string'] in ['1', '2', '5'] ", common.DefaultJSONFieldName),
+		fmt.Sprintf("%s['list'] == [1, 2] ", common.DefaultJSONFieldName),
+		fmt.Sprintf("%s['list'] == [0, 1] ", common.DefaultJSONFieldName),
+		fmt.Sprintf("%s['list'][0] < 10 ", common.DefaultJSONFieldName),
+		fmt.Sprintf("%s[\"dynamicList\"] != [2, 3]", common.DefaultDynamicFieldName),
+
+		// json contains
+		fmt.Sprintf("json_contains (%s['list'], 2)", common.DefaultJSONFieldName),
+		fmt.Sprintf("json_contains (%s['number'], 0)", common.DefaultJSONFieldName),
+		fmt.Sprintf("json_contains_all (%s['list'], [1, 2])", common.DefaultJSONFieldName),
+		fmt.Sprintf("JSON_CONTAINS_ANY (%s['list'], [1, 3])", common.DefaultJSONFieldName),
+		// string like
+		"dynamicString like '1%' ",
+
+		// key exist
+		fmt.Sprintf("exists %s['list']", common.DefaultJSONFieldName),
+		fmt.Sprintf("exists a "),
+		fmt.Sprintf("exists %s ", common.DefaultDynamicListField),
+		fmt.Sprintf("exists %s ", common.DefaultDynamicStringField),
+		// data type not match and no error
+		fmt.Sprintf("%s['number'] == '0' ", common.DefaultJSONFieldName),
+	}
+
+	for _, _exprCount := range exprCounts {
+		err := mc.Delete(ctx, collName, "", _exprCount)
+		common.CheckErr(t, err, true)
+
+		// query
+		countRes, _ := mc.Query(ctx, collName, []string{common.DefaultPartition}, _exprCount, []string{common.QueryCountFieldName})
+		require.Equal(t, int64(0), countRes.GetColumn(common.QueryCountFieldName).(*entity.ColumnInt64).Data()[0])
+	}
+}
+
+func TestDeleteInvalidExpr(t *testing.T) {
+	t.Skip("invalid error message like failed to create expr plan or collection not loaded")
+	t.Parallel()
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	// connect
+	mc := createMilvusClient(ctx, t)
+
+	// create collection
+	cp := CollectionParams{
+		CollectionFieldsType: Int64FloatVecJSON,
+		AutoID:               false,
+		EnableDynamicField:   true,
+		ShardsNum:            common.DefaultShards,
+		Dim:                  common.DefaultDim,
+	}
+	collName := createCollection(ctx, t, mc, cp)
+
+	// insert
+	dp := DataParams{
+		CollectionName:       collName,
+		PartitionName:        "",
+		CollectionFieldsType: Int64FloatVecJSON,
+		start:                0,
+		nb:                   common.DefaultNb,
+		dim:                  common.DefaultDim,
+		EnableDynamicField:   true,
+	}
+	_, _ = insertData(ctx, t, mc, dp)
+
+	err := mc.Delete(ctx, collName, "", "")
+	common.CheckErr(t, err, false, "invalid expression: expected=valid expr, actual=empty expr: invalid parameter")
+
+	for _, _invalidExprs := range common.InvalidExpressions {
+		err := mc.Delete(ctx, collName, "", _invalidExprs.Expr)
+		common.CheckErr(t, err, _invalidExprs.ErrNil, _invalidExprs.ErrMsg)
+	}
+}

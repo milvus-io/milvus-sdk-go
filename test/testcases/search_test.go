@@ -748,7 +748,7 @@ func TestSearchSearchParamsMismatchIndex(t *testing.T) {
 	common.CheckSearchResult(t, resSearch, common.DefaultNq, common.DefaultTopK)
 }
 
-// test search expr
+// test search with valid expression
 func TestSearchExpr(t *testing.T) {
 	ctx := createContext(t, time.Second*common.DefaultTimeout*2)
 	// connect
@@ -801,38 +801,50 @@ func TestSearchExpr(t *testing.T) {
 	require.Equal(t, searchResult2[0].IDs.(*entity.ColumnInt64).Data()[0], int64(1))
 }
 
-// test search invalid expr
+// test search with invalid expression
 func TestSearchInvalidExpr(t *testing.T) {
-	ctx := createContext(t, time.Second*common.DefaultTimeout*2)
+	t.Parallel()
+
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect
 	mc := createMilvusClient(ctx, t)
 
-	// create collection with data
-	collName, _ := createCollectionWithDataIndex(ctx, t, mc, false, true)
+	// create collection
+	cp := CollectionParams{
+		CollectionFieldsType: Int64FloatVecJSON,
+		AutoID:               false,
+		EnableDynamicField:   true,
+		ShardsNum:            common.DefaultShards,
+		Dim:                  common.DefaultDim,
+	}
+	collName := createCollection(ctx, t, mc, cp)
 
-	// load collection
+	// insert
+	dp := DataParams{
+		CollectionName:       collName,
+		PartitionName:        "",
+		CollectionFieldsType: Int64FloatVecJSON,
+		start:                0,
+		nb:                   100,
+		dim:                  common.DefaultDim,
+		EnableDynamicField:   true,
+	}
+	_, _ = insertData(ctx, t, mc, dp)
+
+	idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
+	_ = mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false)
+
+	// Load collection
 	errLoad := mc.LoadCollection(ctx, collName, false)
 	common.CheckErr(t, errLoad, true)
 
+	// search with invalid expr
 	sp, _ := entity.NewIndexHNSWSearchParam(74)
-
-	// invalid expr and error message
-	type invalidExprStruct struct {
-		expr   string
-		errMsg string
-	}
-	invalidExpr := []invalidExprStruct{
-		//{expr: "id in [0]", errMsg: "fieldName(id) not found"},               // not exist field
-		{expr: "int64 in not [0]", errMsg: "cannot parse expression"},        // wrong term expr keyword
-		{expr: "int64 < floatVec", errMsg: "not supported"},                  // unsupported compare field
-		{expr: "floatVec in [0]", errMsg: "cannot be casted to FloatVector"}, // value and field type mismatch
-	}
-
-	for _, exprStruct := range invalidExpr {
+	for _, exprStruct := range common.InvalidExpressions {
 		_, errSearchEmpty := mc.Search(
 			ctx, collName,
 			[]string{},
-			exprStruct.expr,
+			exprStruct.Expr,
 			[]string{common.DefaultIntFieldName},
 			common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeFloatVector),
 			common.DefaultFloatVecFieldName,
@@ -840,80 +852,7 @@ func TestSearchInvalidExpr(t *testing.T) {
 			common.DefaultTopK,
 			sp,
 		)
-		common.CheckErr(t, errSearchEmpty, false, exprStruct.errMsg)
-	}
-}
-
-func TestSearchJsonFieldInvalidExpr(t *testing.T) {
-	t.Skip("https://github.com/milvus-io/milvus/issues/26408")
-	t.Parallel()
-
-	// invalid expr and error message
-	type invalidExprStruct struct {
-		expr   string
-		errMsg string
-	}
-	ctx := createContext(t, time.Second*common.DefaultTimeout)
-	// connect
-	mc := createMilvusClient(ctx, t)
-
-	for _, dynamicField := range []bool{false} {
-		// create collection
-		cp := CollectionParams{
-			CollectionFieldsType: Int64FloatVecJSON,
-			AutoID:               false,
-			EnableDynamicField:   dynamicField,
-			ShardsNum:            common.DefaultShards,
-			Dim:                  common.DefaultDim,
-		}
-		collName := createCollection(ctx, t, mc, cp)
-
-		// insert
-		dp := DataParams{
-			CollectionName:       collName,
-			PartitionName:        "",
-			CollectionFieldsType: Int64FloatVecJSON,
-			start:                0,
-			nb:                   common.DefaultNb,
-			dim:                  common.DefaultDim,
-			EnableDynamicField:   dynamicField,
-		}
-		_, _ = insertData(ctx, t, mc, dp)
-
-		idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
-		_ = mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false)
-
-		// Load collection
-		errLoad := mc.LoadCollection(ctx, collName, false)
-		common.CheckErr(t, errLoad, true)
-
-		// gen invalid json and dynamic expr
-		invalidExpr := []invalidExprStruct{
-			{expr: fmt.Sprintf("%s == 1", common.DefaultJSONFieldName), errMsg: "can not comparisons jsonField directly"},                            // json field filter
-			{expr: fmt.Sprintf("%s['list'] == [1, 2]", common.DefaultJSONFieldName), errMsg: "failed to create query plan: cannot parse expression"}, // wrong term expr keyword
-		}
-		if dynamicField {
-			invalidExpr = append(invalidExpr,
-				invalidExprStruct{expr: fmt.Sprintf("%s == 1", common.DefaultDynamicFieldName), errMsg: "can not comparisons jsonField directly"},
-				invalidExprStruct{expr: fmt.Sprintf("%s[\"dynamicList\"] == [2, 3]", common.DefaultDynamicFieldName), errMsg: "failed to create query plan: cannot parse expression"})
-		}
-
-		// search with invalid expr
-		sp, _ := entity.NewIndexHNSWSearchParam(74)
-		for _, exprStruct := range invalidExpr {
-			_, errSearchEmpty := mc.Search(
-				ctx, collName,
-				[]string{},
-				exprStruct.expr,
-				[]string{common.DefaultIntFieldName},
-				common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeFloatVector),
-				common.DefaultFloatVecFieldName,
-				entity.L2,
-				common.DefaultTopK,
-				sp,
-			)
-			common.CheckErr(t, errSearchEmpty, false, exprStruct.errMsg)
-		}
+		common.CheckErr(t, errSearchEmpty, exprStruct.ErrNil, exprStruct.ErrMsg)
 	}
 }
 

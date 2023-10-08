@@ -37,6 +37,7 @@ const (
 const (
 	MaxPartitionNum         = 4096
 	DefaultDynamicFieldName = "$meta"
+	QueryCountFieldName     = "count(*)"
 	DefaultPartition        = "_default"
 	DefaultIndexName        = "_default_idx_102"
 	DefaultIndexNameBinary  = "_default_idx_100"
@@ -742,6 +743,30 @@ func GenSearchVectors(nq int, dim int64, dataType entity.FieldType) []entity.Vec
 		}
 	}
 	return vectors
+}
+
+// invalid expr
+type InvalidExprStruct struct {
+	Expr   string
+	ErrNil bool
+	ErrMsg string
+}
+
+var InvalidExpressions = []InvalidExprStruct{
+	{Expr: "id in [0]", ErrNil: true, ErrMsg: "fieldName(id) not found"},                // not exist field but no error
+	{Expr: "int64 in not [0]", ErrNil: false, ErrMsg: "cannot parse expression"},        // wrong term expr keyword
+	{Expr: "int64 < floatVec", ErrNil: false, ErrMsg: "not supported"},                  // unsupported compare field
+	{Expr: "floatVec in [0]", ErrNil: false, ErrMsg: "cannot be casted to FloatVector"}, // value and field type mismatch
+	{Expr: fmt.Sprintf("%s == 1", DefaultJSONFieldName), ErrNil: false, ErrMsg: "can not comparisons jsonField directly"},
+	{Expr: fmt.Sprintf("%s == 1", DefaultDynamicFieldName), ErrNil: false, ErrMsg: "can not comparisons jsonField directly"},
+	{Expr: fmt.Sprintf("%s[\"dynamicList\"] == [2, 3]", DefaultDynamicFieldName), ErrNil: true, ErrMsg: ""},
+	{Expr: fmt.Sprintf("%s['a'] == [2, 3]", DefaultJSONFieldName), ErrNil: true, ErrMsg: ""},      // json field not exist
+	{Expr: fmt.Sprintf("%s['number'] == [2, 3]", DefaultJSONFieldName), ErrNil: true, ErrMsg: ""}, // field exist but type not match
+	{Expr: fmt.Sprintf("json_contains (%s['number'], 2)", DefaultJSONFieldName), ErrNil: true, ErrMsg: ""},
+	{Expr: fmt.Sprintf("json_contains (%s['list'], [2])", DefaultJSONFieldName), ErrNil: true, ErrMsg: ""},
+	{Expr: fmt.Sprintf("json_contains_all (%s['list'], 2)", DefaultJSONFieldName), ErrNil: false, ErrMsg: "contains_all operation element must be an array"},
+	{Expr: fmt.Sprintf("JSON_CONTAINS_ANY (%s['list'], 2)", DefaultJSONFieldName), ErrNil: false, ErrMsg: "contains_any operation element must be an array"},
+	{Expr: fmt.Sprintf("json_contains_aby (%s['list'], 2)", DefaultJSONFieldName), ErrNil: false, ErrMsg: "invalid expression: json_contains_aby"},
 }
 
 // --- search utils ---
