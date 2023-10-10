@@ -293,6 +293,10 @@ func createCollection(ctx context.Context, t *testing.T, mc *base.MilvusClient, 
 	err := mc.CreateCollection(ctx, schema, cp.ShardsNum, opts...)
 	common.CheckErr(t, err, true)
 
+	t.Cleanup(func() {
+		_ = mc.DropCollection(ctx, collName)
+	})
+
 	return collName
 }
 

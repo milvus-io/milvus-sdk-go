@@ -297,10 +297,14 @@ func TestCreateIndexNotSupportedField(t *testing.T) {
 	idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
 	err := mc.CreateIndex(ctx, collName, common.DefaultFloatFieldName, idx, false)
 	common.CheckErr(t, err, false, "index type not match")
+
+	// create scann index
+	indexScann, _ := entity.NewIndexSCANN(entity.L2, 8, true)
+	err = mc.CreateIndex(ctx, collName, common.DefaultFloatFieldName, indexScann, false)
+	common.CheckErr(t, err, false, "index type not match")
 }
 
 // test create index with invalid params
-// https://github.com/milvus-io/milvus-sdk-go/issues/357
 func TestCreateIndexInvalidParams(t *testing.T) {
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect
@@ -346,13 +350,23 @@ func TestCreateIndexInvalidParams(t *testing.T) {
 	_, errHnswEf2 := entity.NewIndexHNSW(entity.L2, 8, 515)
 	common.CheckErr(t, errHnswEf2, false, "efConstruction has to be in range [8, 512]")
 
-	// invalid flat metric type jaccard
-	// TODO unclear error message
-	// See also https://github.com/milvus-io/milvus/issues/24080
-	/*
-		idx, _ := entity.NewIndexFlat(entity.JACCARD)
-		errMetricType := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false)
-		common.CheckErr(t, errMetricType, false, "invalid index params")*/
+	// invalid Scann nlist [1, 65536], with_raw_data [true, false], no default
+	for _, nlist := range []int{0, 65536 + 1} {
+		_, errScann := entity.NewIndexSCANN(entity.L2, nlist, true)
+		log.Println(errScann)
+		common.CheckErr(t, errScann, false, "nlist has to be in range [1, 65536]")
+	}
+	for _, mt := range []entity.MetricType{entity.HAMMING, entity.JACCARD, entity.SUBSTRUCTURE, entity.SUPERSTRUCTURE} {
+		idxScann, errScann2 := entity.NewIndexSCANN(mt, 64, true)
+		common.CheckErr(t, errScann2, true)
+		err := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idxScann, false)
+		common.CheckErr(t, err, false, "metric type not found or not supported, supported: [L2 IP COSINE]")
+	}
+
+	// invalid flat metric type jaccard for flat index
+	idx, _ := entity.NewIndexFlat(entity.JACCARD)
+	errMetricType := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false)
+	common.CheckErr(t, errMetricType, false, "metric type not found or not supported, supported: [L2 IP COSINE]")
 }
 
 // test create index with nil index
