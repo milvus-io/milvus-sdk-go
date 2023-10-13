@@ -195,7 +195,7 @@ func TestUsingDb(t *testing.T) {
 	// using not existed db
 	dbName := common.GenRandomString(4)
 	err := mc.UsingDatabase(ctx, dbName)
-	common.CheckErr(t, err, false, fmt.Sprintf("connect fail, database not found: %s", dbName))
+	common.CheckErr(t, err, false, fmt.Sprintf("connect fail, database=%s: database not found", dbName))
 
 	// using empty db
 	err = mc.UsingDatabase(ctx, "")
