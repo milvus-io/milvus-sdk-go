@@ -384,10 +384,17 @@ func (mc *MilvusClient) DeleteByPks(ctx context.Context, collName string, partit
 
 // Delete deletes entries match expression
 func (mc *MilvusClient) Delete(ctx context.Context, collName string, partitionName string, expr string) error {
-	preRequest("DeleteByPks", ctx, collName, partitionName, expr)
+	preRequest("Delete", ctx, collName, partitionName, expr)
 	err := mc.mClient.Delete(ctx, collName, partitionName, expr)
-	postResponse("DeleteByPks", err)
+	postResponse("Delete", err)
 	return err
+}
+
+func (mc *MilvusClient) Upsert(ctx context.Context, collName string, partitionName string, columns ...entity.Column) (entity.Column, error) {
+	preRequest("Upsert", ctx, collName, partitionName, columns)
+	ids, err := mc.mClient.Upsert(ctx, collName, partitionName, columns...)
+	postResponse("Upsert", err, ids)
+	return ids, err
 }
 
 // Search search from collection
