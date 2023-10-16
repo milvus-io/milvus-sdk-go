@@ -710,7 +710,7 @@ func main() {
 			},
 			{
 				IdxName: "SCANN",
-				IdxType: entity.IvfFlat,
+				IdxType: entity.SCANN,
 				ConstructParams: []idxParam{
 					{
 						Name:           "nlist",

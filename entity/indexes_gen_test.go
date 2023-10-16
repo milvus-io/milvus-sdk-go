@@ -588,7 +588,7 @@ func TestIndexSCANN(t *testing.T){
 		assert.Nil(t, err)
 		assert.NotNil(t, idx0)
 		assert.Equal(t, "SCANN", idx0.Name())
-		assert.EqualValues(t, "IVF_FLAT", idx0.IndexType())
+		assert.EqualValues(t, "SCANN", idx0.IndexType())
 		assert.NotNil(t, idx0.Params())
 		assert.False(t, idx0.SupportBinary())
 		
@@ -600,7 +600,7 @@ func TestIndexSCANN(t *testing.T){
 		assert.Nil(t, err)
 		assert.NotNil(t, idx1)
 		assert.Equal(t, "SCANN", idx1.Name())
-		assert.EqualValues(t, "IVF_FLAT", idx1.IndexType())
+		assert.EqualValues(t, "SCANN", idx1.IndexType())
 		assert.NotNil(t, idx1.Params())
 		assert.False(t, idx1.SupportBinary())
 		

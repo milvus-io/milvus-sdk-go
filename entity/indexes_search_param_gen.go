@@ -382,7 +382,7 @@ func NewIndexGPUIvfPQSearchParam(
 
 var _ SearchParam = &IndexSCANNSearchParam{}
 
-// IndexSCANNSearchParam search param struct for index type IVF_FLAT
+// IndexSCANNSearchParam search param struct for index type SCANN
 type IndexSCANNSearchParam struct { //auto generated fields
 	baseSearchParams
 	
