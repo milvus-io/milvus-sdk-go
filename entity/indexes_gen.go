@@ -727,7 +727,7 @@ func NewIndexGPUIvfPQ(metricType MetricType,
 
 var _ Index = &IndexSCANN{}
 
-// IndexSCANN idx type for IVF_FLAT
+// IndexSCANN idx type for SCANN
 type IndexSCANN struct { //auto generated fields
 	nlist int
 	with_raw_data bool
@@ -741,7 +741,7 @@ func(i *IndexSCANN) Name() string {
 
 // IndexType returns IndexType, implementing Index interface
 func(i *IndexSCANN) IndexType() IndexType {
-	return IndexType("IVF_FLAT")
+	return IndexType("SCANN")
 }
 
 // SupportBinary returns whether index type support binary vector
