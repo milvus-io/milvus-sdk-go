@@ -451,25 +451,13 @@ func TestQueryJsonDynamicField(t *testing.T) {
 
 	for _, dynamicField := range []bool{true, false} {
 		// create collection
-		cp := CollectionParams{
-			CollectionFieldsType: Int64FloatVecJSON,
-			AutoID:               false,
-			EnableDynamicField:   dynamicField,
-			ShardsNum:            common.DefaultShards,
-			Dim:                  common.DefaultDim,
-		}
+		cp := CollectionParams{CollectionFieldsType: Int64FloatVecJSON, AutoID: false, EnableDynamicField: dynamicField,
+			ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
 		collName := createCollection(ctx, t, mc, cp)
 
 		// insert
-		dp := DataParams{
-			CollectionName:       collName,
-			PartitionName:        "",
-			CollectionFieldsType: Int64FloatVecJSON,
-			start:                0,
-			nb:                   common.DefaultNb,
-			dim:                  common.DefaultDim,
-			EnableDynamicField:   dynamicField,
-		}
+		dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVecJSON,
+			start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: dynamicField}
 		_, _ = insertData(ctx, t, mc, dp)
 
 		idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
@@ -689,26 +677,13 @@ func TestQueryJsonDynamicFieldRows(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create collection
-	cp := CollectionParams{
-		CollectionFieldsType: Int64FloatVecJSON,
-		AutoID:               false,
-		EnableDynamicField:   true,
-		ShardsNum:            common.DefaultShards,
-		Dim:                  common.DefaultDim,
-	}
+	cp := CollectionParams{CollectionFieldsType: Int64FloatVecJSON, AutoID: false, EnableDynamicField: true,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
 	collName := createCollection(ctx, t, mc, cp)
 
 	// insert
-	dp := DataParams{
-		CollectionName:       collName,
-		PartitionName:        "",
-		CollectionFieldsType: Int64FloatVecJSON,
-		start:                0,
-		nb:                   common.DefaultNb,
-		dim:                  common.DefaultDim,
-		EnableDynamicField:   true,
-		WithRows:             true,
-	}
+	dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVecJSON,
+		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: true}
 	_, _ = insertData(ctx, t, mc, dp)
 
 	idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
