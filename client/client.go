@@ -123,7 +123,7 @@ type Client interface {
 
 	// Insert column-based data into collection, returns id column values
 	Insert(ctx context.Context, collName string, partitionName string, columns ...entity.Column) (entity.Column, error)
-	// Flush flush collection, specified
+	// Flush collection, specified
 	Flush(ctx context.Context, collName string, async bool) error
 	// FlushV2 flush collection, specified, return newly sealed segmentIds, all flushed segmentIds of the collection, seal time and error
 	// currently it is only used in milvus-backup(https://github.com/zilliztech/milvus-backup)
@@ -134,7 +134,7 @@ type Client interface {
 	Delete(ctx context.Context, collName string, partitionName string, expr string) error
 	// Upsert column-based data of collection, returns id column values
 	Upsert(ctx context.Context, collName string, partitionName string, columns ...entity.Column) (entity.Column, error)
-	// Search search with bool expression
+	// Search with bool expression
 	Search(ctx context.Context, collName string, partitions []string,
 		expr string, outputFields []string, vectors []entity.Vector, vectorField string, metricType entity.MetricType, topK int, sp entity.SearchParam, opts ...SearchQueryOptionFunc) ([]SearchResult, error)
 	// QueryByPks query record by specified primary key(s).
