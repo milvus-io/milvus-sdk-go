@@ -242,26 +242,13 @@ func createVarcharCollectionWithDataIndex(ctx context.Context, t *testing.T, mc 
 	return collName, ids
 }
 
-type CollectionFieldsType string
-
 const (
 	Int64FloatVec     CollectionFieldsType = "PkInt64FloatVec"     // int64 + float + floatVec
 	Int64BinaryVec    CollectionFieldsType = "Int64BinaryVec"      // int64 + float + binaryVec
 	VarcharBinaryVec  CollectionFieldsType = "PkVarcharBinaryVec"  // varchar + binaryVec
 	Int64FloatVecJSON CollectionFieldsType = "PkInt64FloatVecJson" // int64 + float + floatVec + json
 	AllFields         CollectionFieldsType = "AllFields"           // all scalar fields + floatVec
-	CustomerFields    CollectionFieldsType = "CustomerFields"      // customer fields
 )
-
-type CollectionParams struct {
-	CollectionFieldsType CollectionFieldsType // collection fields type
-	AutoID               bool                 // autoId
-	EnableDynamicField   bool                 // enable dynamic field
-	ShardsNum            int32
-	Fields               []*entity.Field
-	Dim                  int64
-	MaxLength            int64
-}
 
 func createCollection(ctx context.Context, t *testing.T, mc *base.MilvusClient, cp CollectionParams, opts ...client.CreateCollectionOption) string {
 	collName := common.GenRandomString(4)
@@ -282,8 +269,6 @@ func createCollection(ctx context.Context, t *testing.T, mc *base.MilvusClient, 
 		fields = append(fields, jsonField)
 	case AllFields:
 		fields = common.GenAllFields()
-	case CustomerFields:
-		fields = cp.Fields
 	}
 
 	// schema
@@ -300,19 +285,7 @@ func createCollection(ctx context.Context, t *testing.T, mc *base.MilvusClient, 
 	return collName
 }
 
-type DataParams struct {
-	CollectionName       string // insert data into which collection
-	PartitionName        string
-	CollectionFieldsType CollectionFieldsType // collection fields type
-	start                int                  // start
-	nb                   int                  // insert how many data
-	dim                  int64
-	EnableDynamicField   bool // whether insert dynamic field data
-	WithRows             bool
-	Data                 []entity.Column
-	Rows                 []interface{}
-}
-
+// insert nb data
 func insertData(ctx context.Context, t *testing.T, mc *base.MilvusClient, dp DataParams) (entity.Column, error) {
 	// todo autoid
 	// prepare data
@@ -360,12 +333,6 @@ func insertData(ctx context.Context, t *testing.T, mc *base.MilvusClient, dp Dat
 			rows = common.GenAllFieldsRows(dp.start, dp.nb, dp.dim, dp.EnableDynamicField)
 		}
 		data = common.GenAllFieldsData(dp.start, dp.nb, dp.dim)
-	case CustomerFields:
-		if dp.WithRows {
-			rows = dp.Rows
-		} else {
-			data = dp.Data
-		}
 	}
 
 	if dp.EnableDynamicField && !dp.WithRows {
@@ -446,12 +413,6 @@ func createCollectionAllFields(ctx context.Context, t *testing.T, mc *base.Milvu
 	return collName, ids
 }
 
-type HelpPartitionColumns struct {
-	PartitionName string
-	IdsColumn     entity.Column
-	VectorColumn  entity.Column
-}
-
 func createInsertTwoPartitions(ctx context.Context, t *testing.T, mc *base.MilvusClient, collName string, nb int) (partitionName string, defaultPartition HelpPartitionColumns, newPartition HelpPartitionColumns) {
 	// create new partition
 	partitionName = "new"
@@ -484,6 +445,79 @@ func createInsertTwoPartitions(ctx context.Context, t *testing.T, mc *base.Milvu
 	}
 
 	return partitionName, defaultPartition, newPartition
+}
+
+// prepare collection, maybe data index and load
+func prepareCollection(ctx context.Context, t *testing.T, mc *base.MilvusClient, collParam CollectionParams, opts ...PrepareCollectionOption) string {
+	// default insert nb entities with 0 start
+	defaultDp := DataParams{DoInsert: true, CollectionName: "", PartitionName: "", CollectionFieldsType: collParam.CollectionFieldsType,
+		start: 0, nb: common.DefaultNb, dim: collParam.Dim, EnableDynamicField: collParam.EnableDynamicField, WithRows: false}
+
+	// default do flush
+	defaultFp := FlushParams{DoFlush: true, PartitionNames: []string{}, async: false}
+
+	// default build index
+	idx, err := entity.NewIndexHNSW(entity.L2, 8, 96)
+	common.CheckErr(t, err, true)
+	defaultIndexParams := IndexParams{BuildIndex: true, Index: idx, FieldName: common.DefaultFloatVecFieldName, async: false}
+
+	// default load collection
+	defaultLp := LoadParams{DoLoad: true, async: false}
+	opt := &ClientParamsOption{
+		DataParams:  defaultDp,
+		FlushParams: defaultFp,
+		IndexParams: defaultIndexParams,
+		LoadParams:  defaultLp,
+	}
+	for _, o := range opts {
+		o(opt)
+	}
+	// create collection
+	collName := createCollection(ctx, t, mc, collParam, opt.CreateOpts)
+
+	// insert
+	if opt.DataParams.DoInsert {
+		if opt.DataParams.EnableDynamicField != collParam.EnableDynamicField {
+			t.Fatalf("The EnableDynamicField of CollectionParams and DataParams should be equal.")
+		}
+		opt.DataParams.CollectionName = collName
+		opt.DataParams.CollectionFieldsType = collParam.CollectionFieldsType
+		insertData(ctx, t, mc, opt.DataParams)
+	}
+
+	// flush
+	if opt.FlushParams.DoFlush {
+		err := mc.Flush(ctx, collName, opt.FlushParams.async)
+		common.CheckErr(t, err, true)
+	}
+
+	// index
+	if opt.IndexParams.BuildIndex {
+		var err error
+		if opt.IndexOpts == nil {
+			err = mc.CreateIndex(ctx, collName, opt.IndexParams.FieldName, opt.IndexParams.Index, opt.IndexParams.async)
+		} else {
+			err = mc.CreateIndex(ctx, collName, opt.IndexParams.FieldName, opt.IndexParams.Index, opt.IndexParams.async, opt.IndexOpts)
+		}
+		common.CheckErr(t, err, true)
+	}
+
+	// load
+	if opt.LoadParams.DoLoad {
+		var err error
+		if len(opt.LoadParams.PartitionNames) > 0 {
+			err = mc.LoadPartitions(ctx, collName, opt.LoadParams.PartitionNames, opt.LoadParams.async)
+			common.CheckErr(t, err, true)
+		} else {
+			if opt.LoadOpts != nil {
+				err = mc.LoadCollection(ctx, collName, opt.LoadParams.async, opt.LoadOpts)
+			} else {
+				err = mc.LoadCollection(ctx, collName, opt.LoadParams.async)
+			}
+			common.CheckErr(t, err, true)
+		}
+	}
+	return collName
 }
 
 func TestMain(m *testing.M) {

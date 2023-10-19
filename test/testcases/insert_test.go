@@ -83,8 +83,7 @@ func TestInsertAutoIdPkData(t *testing.T) {
 	// insert
 	pkColumn, floatColumn, vecColumn := common.GenDefaultColumnData(0, common.DefaultNb, common.DefaultDim)
 	_, errInsert := mc.Insert(ctx, collName, "", pkColumn, floatColumn, vecColumn)
-	//TODO change to check error code
-	common.CheckErr(t, errInsert, false, "invalid parameter") //, "can not assign primary field data when auto id enabled")
+	common.CheckErr(t, errInsert, false, "the length of passed fields is equal to needed: expected=2, actual=3: invalid parameter")
 
 	// flush and check row count
 	errFlush := mc.Flush(ctx, collName, false)

@@ -88,6 +88,16 @@ func GenLongString(n int) string {
 	return builder.String()
 }
 
+// ColumnIndexFunc generate column index
+func ColumnIndexFunc(data []entity.Column, fieldName string) int {
+	for index, column := range data {
+		if column.Name() == fieldName {
+			return index
+		}
+	}
+	return -1
+}
+
 // --- common utils  ---
 
 // --- gen fields ---

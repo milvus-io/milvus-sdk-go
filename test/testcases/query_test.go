@@ -828,7 +828,7 @@ func TestQueryOutputInvalidOutputFieldCount(t *testing.T) {
 }
 
 // test query count* after insert -> delete -> upsert -> compact
-func TestQueryCountAfterDml(t *testing.T)  {
+func TestQueryCountAfterDml(t *testing.T) {
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect
 	mc := createMilvusClient(ctx, t)
@@ -872,7 +872,7 @@ func TestQueryCountAfterDml(t *testing.T)  {
 		start: common.DefaultNb, nb: insertNb, dim: common.DefaultDim, EnableDynamicField: true}
 	insertData(ctx, t, mc, dpInsert)
 	countAfterInsert, _ := mc.Query(ctx, collName, []string{common.DefaultPartition}, "", []string{common.QueryCountFieldName})
-	require.Equal(t, int64(common.DefaultNb + insertNb), countAfterInsert.GetColumn(common.QueryCountFieldName).(*entity.ColumnInt64).Data()[0])
+	require.Equal(t, int64(common.DefaultNb+insertNb), countAfterInsert.GetColumn(common.QueryCountFieldName).(*entity.ColumnInt64).Data()[0])
 
 	// delete 1000 entities -> count*
 	mc.Delete(ctx, collName, common.DefaultPartition, fmt.Sprintf("%s < 1000 ", common.DefaultIntFieldName))
@@ -885,20 +885,20 @@ func TestQueryCountAfterDml(t *testing.T)  {
 	jsonColumn := common.GenDefaultJSONData(common.DefaultJSONFieldName, 0, upsertNb)
 	mc.Upsert(ctx, collName, "", intColumn, floatColumn, vecColumn, jsonColumn)
 	countAfterUpsert, _ := mc.Query(ctx, collName, []string{common.DefaultPartition}, "", []string{common.QueryCountFieldName})
-	require.Equal(t, int64(common.DefaultNb + upsertNb), countAfterUpsert.GetColumn(common.QueryCountFieldName).(*entity.ColumnInt64).Data()[0])
+	require.Equal(t, int64(common.DefaultNb+upsertNb), countAfterUpsert.GetColumn(common.QueryCountFieldName).(*entity.ColumnInt64).Data()[0])
 
 	// upsert existed 100 entities -> count*
 	intColumn, floatColumn, vecColumn = common.GenDefaultColumnData(common.DefaultNb, upsertNb, common.DefaultDim)
 	jsonColumn = common.GenDefaultJSONData(common.DefaultJSONFieldName, common.DefaultNb, upsertNb)
 	mc.Upsert(ctx, collName, "", intColumn, floatColumn, vecColumn, jsonColumn)
 	countAfterUpsert2, _ := mc.Query(ctx, collName, []string{common.DefaultPartition}, "", []string{common.QueryCountFieldName})
-	require.Equal(t, int64(common.DefaultNb + upsertNb), countAfterUpsert2.GetColumn(common.QueryCountFieldName).(*entity.ColumnInt64).Data()[0])
+	require.Equal(t, int64(common.DefaultNb+upsertNb), countAfterUpsert2.GetColumn(common.QueryCountFieldName).(*entity.ColumnInt64).Data()[0])
 
 	// compact -> count(*)
 	_, err := mc.Compact(ctx, collName, time.Second*60)
 	common.CheckErr(t, err, true)
 	countAfterCompact, _ := mc.Query(ctx, collName, []string{common.DefaultPartition}, "", []string{common.QueryCountFieldName})
-	require.Equal(t, int64(common.DefaultNb + upsertNb), countAfterCompact.GetColumn(common.QueryCountFieldName).(*entity.ColumnInt64).Data()[0])
+	require.Equal(t, int64(common.DefaultNb+upsertNb), countAfterCompact.GetColumn(common.QueryCountFieldName).(*entity.ColumnInt64).Data()[0])
 }
 
 // TODO offset and limit
