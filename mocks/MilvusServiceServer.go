@@ -3877,6 +3877,61 @@ func (_c *MilvusServiceServer_RenameCollection_Call) RunAndReturn(run func(conte
 	return _c
 }
 
+// ReplicateMessage provides a mock function with given fields: _a0, _a1
+func (_m *MilvusServiceServer) ReplicateMessage(_a0 context.Context, _a1 *milvuspb.ReplicateMessageRequest) (*milvuspb.ReplicateMessageResponse, error) {
+	ret := _m.Called(_a0, _a1)
+
+	var r0 *milvuspb.ReplicateMessageResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *milvuspb.ReplicateMessageRequest) (*milvuspb.ReplicateMessageResponse, error)); ok {
+		return rf(_a0, _a1)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *milvuspb.ReplicateMessageRequest) *milvuspb.ReplicateMessageResponse); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*milvuspb.ReplicateMessageResponse)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *milvuspb.ReplicateMessageRequest) error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MilvusServiceServer_ReplicateMessage_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ReplicateMessage'
+type MilvusServiceServer_ReplicateMessage_Call struct {
+	*mock.Call
+}
+
+// ReplicateMessage is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - _a1 *milvuspb.ReplicateMessageRequest
+func (_e *MilvusServiceServer_Expecter) ReplicateMessage(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_ReplicateMessage_Call {
+	return &MilvusServiceServer_ReplicateMessage_Call{Call: _e.mock.On("ReplicateMessage", _a0, _a1)}
+}
+
+func (_c *MilvusServiceServer_ReplicateMessage_Call) Run(run func(_a0 context.Context, _a1 *milvuspb.ReplicateMessageRequest)) *MilvusServiceServer_ReplicateMessage_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*milvuspb.ReplicateMessageRequest))
+	})
+	return _c
+}
+
+func (_c *MilvusServiceServer_ReplicateMessage_Call) Return(_a0 *milvuspb.ReplicateMessageResponse, _a1 error) *MilvusServiceServer_ReplicateMessage_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MilvusServiceServer_ReplicateMessage_Call) RunAndReturn(run func(context.Context, *milvuspb.ReplicateMessageRequest) (*milvuspb.ReplicateMessageResponse, error)) *MilvusServiceServer_ReplicateMessage_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Search provides a mock function with given fields: _a0, _a1
 func (_m *MilvusServiceServer) Search(_a0 context.Context, _a1 *milvuspb.SearchRequest) (*milvuspb.SearchResults, error) {
 	ret := _m.Called(_a0, _a1)
