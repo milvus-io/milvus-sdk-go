@@ -135,8 +135,17 @@ type Client interface {
 	// Upsert column-based data of collection, returns id column values
 	Upsert(ctx context.Context, collName string, partitionName string, columns ...entity.Column) (entity.Column, error)
 	// Search with bool expression
-	Search(ctx context.Context, collName string, partitions []string,
-		expr string, outputFields []string, vectors []entity.Vector, vectorField string, metricType entity.MetricType, topK int, sp entity.SearchParam, opts ...SearchQueryOptionFunc) ([]SearchResult, error)
+	Search(
+		ctx context.Context, collName string, partitions []string, expr string, outputFields []string,
+		vectors []entity.Vector, vectorField string, metricType entity.MetricType, topK int,
+		sp entity.SearchParam, opts ...SearchQueryOptionFunc,
+	) ([]SearchResult, error)
+	// SearchByPks searches using the vectors corresponding to the provided primary keys
+	SearchByPks(
+		ctx context.Context, collName string, partitions []string, expr string, outputFields []string,
+		primaryKeys entity.Column, vectorField string, metricType entity.MetricType, topK int,
+		sp entity.SearchParam, opts ...SearchQueryOptionFunc,
+	) ([]SearchResult, error)
 	// QueryByPks query record by specified primary key(s).
 	QueryByPks(ctx context.Context, collectionName string, partitionNames []string, ids entity.Column, outputFields []string, opts ...SearchQueryOptionFunc) (ResultSet, error)
 	// Query performs query records with boolean expression.
