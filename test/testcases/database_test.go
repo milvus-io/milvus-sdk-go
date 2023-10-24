@@ -160,7 +160,7 @@ func TestDropDb(t *testing.T) {
 
 	// verify current db
 	_, err = mc.ListCollections(ctx)
-	common.CheckErr(t, err, false, fmt.Sprintf("database:%s not found", dbName))
+	common.CheckErr(t, err, false, fmt.Sprintf("database=%s: database not found", dbName))
 
 	// using default db and verify collections
 	mc.UsingDatabase(ctx, common.DefaultDb)
