@@ -92,7 +92,8 @@ func (c *GrpcClient) Search(ctx context.Context, collName string, partitions []s
 	return sr, nil
 }
 
-func (c *GrpcClient) parseSearchResult(_ *entity.Schema, outputFields []string, fieldDataList []*schemapb.FieldData, _, from, to int) ([]entity.Column, error) {
+func (c *GrpcClient) parseSearchResult(sch *entity.Schema, outputFields []string, fieldDataList []*schemapb.FieldData, _, from, to int) ([]entity.Column, error) {
+	outputFields = expandWildcard(sch, outputFields)
 	// duplicated name will have only one column now
 	outputSet := make(map[string]struct{})
 	for _, output := range outputFields {
@@ -139,6 +140,37 @@ func (c *GrpcClient) parseSearchResult(_ *entity.Schema, outputFields []string, 
 	}
 
 	return columns, nil
+}
+
+func expandWildcard(schema *entity.Schema, outputFields []string) []string {
+	wildcard := false
+	for _, outputField := range outputFields {
+		if outputField == "*" {
+			wildcard = true
+		}
+	}
+	if !wildcard {
+		return outputFields
+	}
+
+	set := make(map[string]struct{})
+	result := make([]string, 0, len(schema.Fields))
+	for _, field := range schema.Fields {
+		result = append(result, field.Name)
+		set[field.Name] = struct{}{}
+	}
+
+	// add dynamic fields output
+	for _, output := range outputFields {
+		if output == "*" {
+			continue
+		}
+		_, ok := set[output]
+		if !ok {
+			result = append(result, output)
+		}
+	}
+	return result
 }
 
 func PKs2Expr(backName string, ids entity.Column) string {

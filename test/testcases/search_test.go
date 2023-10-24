@@ -1099,8 +1099,7 @@ func TestSearchScannAllMetricsWithRawData(t *testing.T) {
 				sp,
 			)
 			common.CheckErr(t, errSearch, true)
-			// TODO output_fields include * ???
-			common.CheckOutputFields(t, resSearch[0].Fields, []string{"*", common.DefaultIntFieldName, common.DefaultFloatFieldName,
+			common.CheckOutputFields(t, resSearch[0].Fields, []string{common.DefaultIntFieldName, common.DefaultFloatFieldName,
 				common.DefaultJSONFieldName, common.DefaultFloatVecFieldName})
 			common.CheckSearchResult(t, resSearch, 1, common.DefaultTopK)
 		}
@@ -1148,8 +1147,7 @@ func TestRangeSearchScannL2(t *testing.T) {
 	// verify error nil, output all fields, range score
 	common.CheckErr(t, errSearch, true)
 	common.CheckSearchResult(t, resSearch, 1, common.DefaultTopK)
-	// TODO output_fields include * ??? https://github.com/milvus-io/milvus-sdk-go/issues/596
-	common.CheckOutputFields(t, resSearch[0].Fields, []string{"*", common.DefaultIntFieldName, common.DefaultFloatFieldName,
+	common.CheckOutputFields(t, resSearch[0].Fields, []string{common.DefaultIntFieldName, common.DefaultFloatFieldName,
 		common.DefaultJSONFieldName, common.DefaultFloatVecFieldName})
 	for _, s := range resSearch[0].Scores {
 		require.GreaterOrEqual(t, s, float32(15.0))
@@ -1208,8 +1206,7 @@ func TestRangeSearchScannIPCosine(t *testing.T) {
 		// verify error nil, output all fields, range score
 		common.CheckErr(t, errSearch, true)
 		common.CheckSearchResult(t, resSearch, 1, common.DefaultTopK)
-		// TODO output_fields include * ??? https://github.com/milvus-io/milvus-sdk-go/issues/596
-		common.CheckOutputFields(t, resSearch[0].Fields, []string{"*", common.DefaultIntFieldName, common.DefaultFloatFieldName,
+		common.CheckOutputFields(t, resSearch[0].Fields, []string{common.DefaultIntFieldName, common.DefaultFloatFieldName,
 			common.DefaultJSONFieldName, common.DefaultFloatVecFieldName})
 		for _, s := range resSearch[0].Scores {
 			require.GreaterOrEqual(t, s, float32(0))
@@ -1270,8 +1267,7 @@ func TestRangeSearchScannBinary(t *testing.T) {
 		// verify error nil, output all fields, range score
 		common.CheckErr(t, errSearch, true)
 		common.CheckSearchResult(t, resSearch, 1, common.DefaultTopK)
-		// TODO output_fields include * ??? https://github.com/milvus-io/milvus-sdk-go/issues/596
-		common.CheckOutputFields(t, resSearch[0].Fields, []string{"*", common.DefaultIntFieldName, common.DefaultFloatFieldName, common.DefaultBinaryVecFieldName})
+		common.CheckOutputFields(t, resSearch[0].Fields, []string{common.DefaultIntFieldName, common.DefaultFloatFieldName, common.DefaultBinaryVecFieldName})
 		for _, s := range resSearch[0].Scores {
 			require.GreaterOrEqual(t, s, float32(0))
 			require.Less(t, s, float32(100))
