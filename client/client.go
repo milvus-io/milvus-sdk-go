@@ -209,6 +209,8 @@ type Client interface {
 
 	// GetVersion get milvus version
 	GetVersion(ctx context.Context) (string, error)
+	// CheckHealth returns milvus state
+	CheckHealth(ctx context.Context) (*entity.MilvusState, error)
 }
 
 // NewClient create a client connected to remote milvus cluster.
