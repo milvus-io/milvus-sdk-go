@@ -1178,3 +1178,42 @@ func TestVector2PlaceHolder(t *testing.T) {
 		}
 	})
 }
+
+type WildcardSuite struct {
+	suite.Suite
+
+	schema *entity.Schema
+}
+
+func (s *WildcardSuite) SetupTest() {
+	s.schema = entity.NewSchema().
+		WithField(entity.NewField().WithName("pk").WithDataType(entity.FieldTypeInt64).WithIsPrimaryKey(true)).
+		WithField(entity.NewField().WithName("attr").WithDataType(entity.FieldTypeInt64)).
+		WithField(entity.NewField().WithName("$meta").WithDataType(entity.FieldTypeJSON).WithIsDynamic(true)).
+		WithField(entity.NewField().WithName("vector").WithDataType(entity.FieldTypeFloatVector).WithDim(128))
+}
+
+func (s *WildcardSuite) TestExpandWildcard() {
+	type testCase struct {
+		tag    string
+		input  []string
+		expect []string
+	}
+
+	cases := []testCase{
+		{tag: "normal", input: []string{"pk", "attr"}, expect: []string{"pk", "attr"}},
+		{tag: "with_wildcard", input: []string{"*"}, expect: []string{"pk", "attr", "$meta", "vector"}},
+		{tag: "wildcard_dynamic", input: []string{"*", "a"}, expect: []string{"pk", "attr", "$meta", "vector", "a"}},
+	}
+
+	for _, tc := range cases {
+		s.Run(tc.tag, func() {
+			output := expandWildcard(s.schema, tc.input)
+			s.ElementsMatch(tc.expect, output)
+		})
+	}
+}
+
+func TestExpandWildcard(t *testing.T) {
+	suite.Run(t, new(WildcardSuite))
+}
