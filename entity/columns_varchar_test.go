@@ -21,10 +21,10 @@ func TestColumnVarChar(t *testing.T) {
 	t.Run("test meta", func(t *testing.T) {
 		ft := FieldTypeVarChar
 		assert.Equal(t, "VarChar", ft.Name())
-		assert.Equal(t, "string", ft.String())
+		assert.Equal(t, "[]byte", ft.String())
 		pbName, pbType := ft.PbFieldType()
-		assert.Equal(t, "VarChar", pbName)
-		assert.Equal(t, "string", pbType)
+		assert.Equal(t, "Bytes", pbName)
+		assert.Equal(t, "[]byte", pbType)
 	})
 
 	t.Run("test column attribute", func(t *testing.T) {

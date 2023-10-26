@@ -25,6 +25,7 @@ func TestFieldSchema(t *testing.T) {
 		NewField().WithName("int_field").WithDataType(FieldTypeInt64).WithIsAutoID(true).WithIsPrimaryKey(true).WithDescription("int_field desc"),
 		NewField().WithName("string_field").WithDataType(FieldTypeString).WithIsAutoID(false).WithIsPrimaryKey(true).WithIsDynamic(false).WithTypeParams("max_len", "32").WithDescription("string_field desc"),
 		NewField().WithName("partition_key").WithDataType(FieldTypeInt32).WithIsPartitionKey(true),
+		NewField().WithName("array_field").WithDataType(FieldTypeArray).WithElementType(FieldTypeBool).WithMaxCapacity(128),
 		/*
 			NewField().WithName("default_value_bool").WithDataType(FieldTypeBool).WithDefaultValueBool(true),
 			NewField().WithName("default_value_int").WithDataType(FieldTypeInt32).WithDefaultValueInt(1),
@@ -45,6 +46,7 @@ func TestFieldSchema(t *testing.T) {
 		assert.Equal(t, field.IsDynamic, fieldSchema.GetIsDynamic())
 		assert.Equal(t, field.Description, fieldSchema.GetDescription())
 		assert.Equal(t, field.TypeParams, KvPairsMap(fieldSchema.GetTypeParams()))
+		assert.EqualValues(t, field.ElementType, fieldSchema.GetElementType())
 		// marshal & unmarshal, still equals
 		nf := &Field{}
 		nf = nf.ReadProto(fieldSchema)
@@ -57,6 +59,7 @@ func TestFieldSchema(t *testing.T) {
 		assert.Equal(t, field.IsDynamic, nf.IsDynamic)
 		assert.Equal(t, field.IsPartitionKey, nf.IsPartitionKey)
 		assert.EqualValues(t, field.TypeParams, nf.TypeParams)
+		assert.EqualValues(t, field.ElementType, nf.ElementType)
 	}
 
 	assert.NotPanics(t, func() {

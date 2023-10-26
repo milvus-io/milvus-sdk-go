@@ -25,6 +25,9 @@ const (
 	// TypeParamMaxLength is the const for varchar type maximal length
 	TypeParamMaxLength = "max_length"
 
+	// TypeParamMaxCapacity is the const for array type max capacity
+	TypeParamMaxCapacity = `max_capacity`
+
 	// ClStrong strong consistency level
 	ClStrong ConsistencyLevel = ConsistencyLevel(common.ConsistencyLevel_Strong)
 	// ClBounded bounded consistency level with default tolerance of 5 seconds
@@ -137,6 +140,7 @@ type Field struct {
 	IndexParams    map[string]string
 	IsDynamic      bool
 	IsPartitionKey bool
+	ElementType    FieldType
 }
 
 // ProtoMessage generates corresponding FieldSchema
@@ -152,6 +156,7 @@ func (f *Field) ProtoMessage() *schema.FieldSchema {
 		IndexParams:    MapKvPairs(f.IndexParams),
 		IsDynamic:      f.IsDynamic,
 		IsPartitionKey: f.IsPartitionKey,
+		ElementType:    schema.DataType(f.ElementType),
 	}
 }
 
@@ -277,6 +282,19 @@ func (f *Field) WithMaxLength(maxLen int64) *Field {
 	return f
 }
 
+func (f *Field) WithElementType(eleType FieldType) *Field {
+	f.ElementType = eleType
+	return f
+}
+
+func (f *Field) WithMaxCapacity(maxCap int64) *Field {
+	if f.TypeParams == nil {
+		f.TypeParams = make(map[string]string)
+	}
+	f.TypeParams[TypeParamMaxCapacity] = strconv.FormatInt(maxCap, 10)
+	return f
+}
+
 // ReadProto parses FieldSchema
 func (f *Field) ReadProto(p *schema.FieldSchema) *Field {
 	f.ID = p.GetFieldID()
@@ -289,6 +307,7 @@ func (f *Field) ReadProto(p *schema.FieldSchema) *Field {
 	f.IndexParams = KvPairsMap(p.GetIndexParams())
 	f.IsDynamic = p.GetIsDynamic()
 	f.IsPartitionKey = p.GetIsPartitionKey()
+	f.ElementType = FieldType(p.GetElementType())
 
 	return f
 }
@@ -339,6 +358,8 @@ func (t FieldType) Name() string {
 		return "String"
 	case FieldTypeVarChar:
 		return "VarChar"
+	case FieldTypeArray:
+		return "Array"
 	case FieldTypeJSON:
 		return "JSON"
 	case FieldTypeBinaryVector:
@@ -370,7 +391,9 @@ func (t FieldType) String() string {
 	case FieldTypeString:
 		return "string"
 	case FieldTypeVarChar:
-		return "string"
+		return "[]byte"
+	case FieldTypeArray:
+		return "Array"
 	case FieldTypeJSON:
 		return "JSON"
 	case FieldTypeBinaryVector:
@@ -402,7 +425,7 @@ func (t FieldType) PbFieldType() (string, string) {
 	case FieldTypeString:
 		return "String", "string"
 	case FieldTypeVarChar:
-		return "VarChar", "string"
+		return "Bytes", "[]byte"
 	case FieldTypeJSON:
 		return "JSON", "JSON"
 	case FieldTypeBinaryVector:
@@ -436,7 +459,8 @@ const (
 	FieldTypeString FieldType = 20
 	// FieldTypeVarChar field type varchar
 	FieldTypeVarChar FieldType = 21 // variable-length strings with a specified maximum length
-	// FieldTypeArray FieldType = 22
+	// FieldTypeArray field type Array
+	FieldTypeArray FieldType = 22
 	// FieldTypeJSON field type JSON
 	FieldTypeJSON FieldType = 23
 	// FieldTypeBinaryVector field type binary vector

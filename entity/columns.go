@@ -239,6 +239,13 @@ func FieldDataColumn(fd *schema.FieldData, begin, end int) (Column, error) {
 		}
 		return NewColumnVarChar(fd.GetFieldName(), data.StringData.GetData()[begin:end]), nil
 
+	case schema.DataType_Array:
+		data := fd.GetScalars().GetArrayData()
+		if data == nil {
+			return nil, errFieldDataTypeNotMatch
+		}
+		return parseArrayData(fd.GetFieldName(), data)
+
 	case schema.DataType_JSON:
 		data, ok := fd.GetScalars().GetData().(*schema.ScalarField_JsonData)
 		isDynamic := fd.GetIsDynamic()
@@ -294,6 +301,82 @@ func FieldDataColumn(fd *schema.FieldData, begin, end int) (Column, error) {
 
 	default:
 		return nil, fmt.Errorf("unsupported data type %s", fd.GetType())
+	}
+}
+
+func parseArrayData(fieldName string, array *schema.ArrayArray) (Column, error) {
+	fieldDataList := array.Data
+	elementType := array.ElementType
+
+	switch elementType {
+	case schema.DataType_Bool:
+		var data [][]bool
+		for _, fd := range fieldDataList {
+			data = append(data, fd.GetBoolData().GetData())
+		}
+		return NewColumnBoolArray(fieldName, data), nil
+
+	case schema.DataType_Int8:
+		var data [][]int8
+		for _, fd := range fieldDataList {
+			raw := fd.GetIntData().Data
+			row := make([]int8, 0, len(raw))
+			for _, item := range raw {
+				row = append(row, int8(item))
+			}
+			data = append(data, row)
+		}
+		return NewColumnInt8Array(fieldName, data), nil
+
+	case schema.DataType_Int16:
+		var data [][]int16
+		for _, fd := range fieldDataList {
+			raw := fd.GetIntData().Data
+			row := make([]int16, 0, len(raw))
+			for _, item := range raw {
+				row = append(row, int16(item))
+			}
+			data = append(data, row)
+		}
+		return NewColumnInt16Array(fieldName, data), nil
+
+	case schema.DataType_Int32:
+		var data [][]int32
+		for _, fd := range fieldDataList {
+			data = append(data, fd.GetIntData().GetData())
+		}
+		return NewColumnInt32Array(fieldName, data), nil
+
+	case schema.DataType_Int64:
+		var data [][]int64
+		for _, fd := range fieldDataList {
+			data = append(data, fd.GetLongData().GetData())
+		}
+		return NewColumnInt64Array(fieldName, data), nil
+
+	case schema.DataType_Float:
+		var data [][]float32
+		for _, fd := range fieldDataList {
+			data = append(data, fd.GetFloatData().GetData())
+		}
+		return NewColumnFloatArray(fieldName, data), nil
+
+	case schema.DataType_Double:
+		var data [][]float64
+		for _, fd := range fieldDataList {
+			data = append(data, fd.GetDoubleData().GetData())
+		}
+		return NewColumnDoubleArray(fieldName, data), nil
+
+	case schema.DataType_VarChar:
+		var data [][][]byte
+		for _, fd := range fieldDataList {
+			data = append(data, fd.GetBytesData().GetData())
+		}
+		return NewColumnVarCharArray(fieldName, data), nil
+
+	default:
+		return nil, fmt.Errorf("unsupported element type %s", elementType)
 	}
 }
 
