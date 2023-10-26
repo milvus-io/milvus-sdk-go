@@ -20,6 +20,7 @@ type CollectionParams struct {
 	ShardsNum            int32
 	Dim                  int64
 	MaxLength            int64
+	MaxCapacity          int64
 }
 
 type DataParams struct {

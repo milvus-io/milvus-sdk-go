@@ -147,11 +147,13 @@ func EqualColumn(t *testing.T, columnA entity.Column, columnB entity.Column) {
 		require.ElementsMatch(t, columnA.(*entity.ColumnFloatVector).Data(), columnB.(*entity.ColumnFloatVector).Data())
 	case entity.FieldTypeBinaryVector:
 		require.ElementsMatch(t, columnA.(*entity.ColumnBinaryVector).Data(), columnB.(*entity.ColumnBinaryVector).Data())
+	case entity.FieldTypeArray:
+		log.Println("TODO support column element type")
 	default:
-		log.Printf("The column type not in: [%v, %v, %v,  %v, %v,  %v, %v,  %v, %v,  %v, %v]",
+		log.Printf("The column type not in: [%v, %v, %v,  %v, %v,  %v, %v,  %v, %v,  %v, %v, %v]",
 			entity.FieldTypeBool, entity.FieldTypeInt8, entity.FieldTypeInt16, entity.FieldTypeInt32,
 			entity.FieldTypeInt64, entity.FieldTypeFloat, entity.FieldTypeDouble, entity.FieldTypeString,
-			entity.FieldTypeVarChar, entity.FieldTypeFloatVector, entity.FieldTypeBinaryVector)
+			entity.FieldTypeVarChar, entity.FieldTypeArray, entity.FieldTypeFloatVector, entity.FieldTypeBinaryVector)
 
 	}
 }
@@ -173,10 +175,10 @@ func CheckQueryResult(t *testing.T, actualColumns []entity.Column, expColumns []
 func CheckOutputFields(t *testing.T, actualColumns []entity.Column, expFields []string) {
 	actualFields := make([]string, 0)
 	for _, actualColumn := range actualColumns {
-		log.Printf("column name: %s, column type: %s, column fieldData: %v",
-			actualColumn.Name(), actualColumn.Type(), actualColumn.FieldData())
 		actualFields = append(actualFields, actualColumn.Name())
 	}
+	log.Printf("actual fields: %v", actualFields)
+	log.Printf("expected fields: %v", expFields)
 	require.ElementsMatchf(t, expFields, actualFields, fmt.Sprintf("Expected search output fields: %v, actual: %v", expFields, actualFields))
 }
 

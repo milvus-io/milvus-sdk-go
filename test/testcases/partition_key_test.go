@@ -25,7 +25,7 @@ func TestPartitionKeyDefaultInt64(t *testing.T) {
 	// fields
 	partitionKeyFieldName := "partitionKeyField"
 	partitionKeyField := common.GenField(partitionKeyFieldName, entity.FieldTypeInt64,
-		common.WithIsPartitionKey(true), common.WithMaxLength(common.DefaultMaxLength))
+		common.WithIsPartitionKey(true), common.WithMaxLength(common.MaxLength))
 
 	// schema
 	schema := common.GenSchema(common.GenRandomString(6), false, common.GenDefaultFields(false))
@@ -105,7 +105,7 @@ func TestPartitionKeyDefaultVarchar(t *testing.T) {
 	// fields
 	partitionKeyFieldName := "partitionKeyField"
 	partitionKeyField := common.GenField(partitionKeyFieldName, entity.FieldTypeVarChar,
-		common.WithIsPartitionKey(true), common.WithMaxLength(common.DefaultMaxLength))
+		common.WithIsPartitionKey(true), common.WithMaxLength(common.MaxLength))
 
 	// schema
 	schema := common.GenSchema(common.GenRandomString(6), false, common.GenDefaultFields(false))

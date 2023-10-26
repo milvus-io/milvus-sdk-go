@@ -1,6 +1,7 @@
 package common
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -18,12 +19,21 @@ const (
 	DefaultFloatFieldName     = "float"
 	DefaultVarcharFieldName   = "varchar"
 	DefaultJSONFieldName      = "json"
+	DefaultArrayFieldName     = "array"
 	DefaultFloatVecFieldName  = "floatVec"
 	DefaultBinaryVecFieldName = "binaryVec"
 	DefaultDynamicNumberField = "dynamicNumber"
 	DefaultDynamicStringField = "dynamicString"
 	DefaultDynamicBoolField   = "dynamicBool"
 	DefaultDynamicListField   = "dynamicList"
+	DefaultBoolArrayField     = "boolArray"
+	DefaultInt8ArrayField     = "int8Array"
+	DefaultInt16ArrayField    = "int16Array"
+	DefaultInt32ArrayField    = "int32Array"
+	DefaultInt64ArrayField    = "int64Array"
+	DefaultFloatArrayField    = "floatArray"
+	DefaultDoubleArrayField   = "doubleArray"
+	DefaultVarcharArrayField  = "varcharArray"
 	RowCount                  = "row_count"
 	DefaultTimeout            = 120
 	DefaultDim                = int64(128)
@@ -31,6 +41,8 @@ const (
 	DefaultNb                 = 3000
 	DefaultNq                 = 5
 	DefaultTopK               = 10
+	TestCapacity              = 100 // default array field capacity
+	TestMaxLen                = 100 // default varchar field max length
 )
 
 // const default value from milvus
@@ -45,10 +57,11 @@ const (
 	DefaultDb               = "default"
 	DefaultConsistencyLevel = entity.ClBounded
 	MaxDim                  = 32768
-	DefaultMaxLength        = int64(65535)
+	MaxLength               = int64(65535)
 	MaxCollectionNameLen    = 255
 	DefaultRgCapacity       = 1000000
-	RetentionDuration       = 40 // common.retentionDuration
+	RetentionDuration       = 40   // common.retentionDuration
+	MaxCapacity             = 4096 // max array capacity
 )
 
 var IndexStateValue = map[string]int32{
@@ -58,6 +71,28 @@ var IndexStateValue = map[string]int32{
 	"Finished":       3,
 	"Failed":         4,
 	"Retry":          5,
+}
+
+var ArrayFieldType = []entity.FieldType{
+	entity.FieldTypeBool,
+	entity.FieldTypeInt8,
+	entity.FieldTypeInt16,
+	entity.FieldTypeInt32,
+	entity.FieldTypeInt64,
+	entity.FieldTypeFloat,
+	entity.FieldTypeDouble,
+	//entity.FieldTypeVarChar, //t.Skip("Waiting for varchar bytes array fixed")
+}
+
+var AllArrayFieldsName = []string{
+	DefaultBoolArrayField,
+	DefaultInt8ArrayField,
+	DefaultInt16ArrayField,
+	DefaultInt32ArrayField,
+	DefaultInt64ArrayField,
+	DefaultFloatArrayField,
+	DefaultDoubleArrayField,
+	DefaultVarcharArrayField,
 }
 
 var r *rand.Rand
@@ -98,6 +133,20 @@ func ColumnIndexFunc(data []entity.Column, fieldName string) int {
 	return -1
 }
 
+func GenFloatVector(dim int64) []float32 {
+	vector := make([]float32, 0, dim)
+	for j := 0; j < int(dim); j++ {
+		vector = append(vector, rand.Float32())
+	}
+	return vector
+}
+
+func GenBinaryVector(dim int64) []byte {
+	vector := make([]byte, dim/8)
+	rand.Read(vector)
+	return vector
+}
+
 // --- common utils  ---
 
 // --- gen fields ---
@@ -127,7 +176,7 @@ func GenDefaultBinaryFields(autoID bool, dim int64) []*entity.Field {
 
 // GenDefaultVarcharFields gen default fields with varchar, floatVector field
 func GenDefaultVarcharFields(autoID bool) []*entity.Field {
-	varcharField := GenField(DefaultVarcharFieldName, entity.FieldTypeVarChar, WithIsPrimaryKey(true), WithAutoID(autoID), WithMaxLength(DefaultMaxLength))
+	varcharField := GenField(DefaultVarcharFieldName, entity.FieldTypeVarChar, WithIsPrimaryKey(true), WithAutoID(autoID), WithMaxLength(MaxLength))
 	binaryVecField := GenField(DefaultBinaryVecFieldName, entity.FieldTypeBinaryVector, WithDim(DefaultDim))
 	fields := []*entity.Field{
 		varcharField, binaryVecField,
@@ -135,21 +184,40 @@ func GenDefaultVarcharFields(autoID bool) []*entity.Field {
 	return fields
 }
 
+func GenAllArrayFields() []*entity.Field {
+	return GenAllArrayFieldsWithCapacity(TestCapacity)
+}
+
+// GenAllArrayFieldsWithCapacity GenAllArrayFields gen all array fields
+func GenAllArrayFieldsWithCapacity(capacity int64) []*entity.Field {
+	fields := []*entity.Field{
+		GenField(DefaultBoolArrayField, entity.FieldTypeArray, WithElementType(entity.FieldTypeBool), WithMaxCapacity(capacity)),
+		GenField(DefaultInt8ArrayField, entity.FieldTypeArray, WithElementType(entity.FieldTypeInt8), WithMaxCapacity(capacity)),
+		GenField(DefaultInt16ArrayField, entity.FieldTypeArray, WithElementType(entity.FieldTypeInt16), WithMaxCapacity(capacity)),
+		GenField(DefaultInt32ArrayField, entity.FieldTypeArray, WithElementType(entity.FieldTypeInt32), WithMaxCapacity(capacity)),
+		GenField(DefaultInt64ArrayField, entity.FieldTypeArray, WithElementType(entity.FieldTypeInt64), WithMaxCapacity(capacity)),
+		GenField(DefaultFloatArrayField, entity.FieldTypeArray, WithElementType(entity.FieldTypeFloat), WithMaxCapacity(capacity)),
+		GenField(DefaultDoubleArrayField, entity.FieldTypeArray, WithElementType(entity.FieldTypeDouble), WithMaxCapacity(capacity)),
+		GenField(DefaultVarcharArrayField, entity.FieldTypeArray, WithElementType(entity.FieldTypeVarChar), WithMaxLength(TestMaxLen), WithMaxCapacity(capacity)),
+	}
+	return fields
+}
+
 // GenAllFields gen fields with all scala field types
 func GenAllFields() []*entity.Field {
 	allFields := []*entity.Field{
-		GenField("int64", entity.FieldTypeInt64, WithIsPrimaryKey(true)),              // int64
-		GenField("bool", entity.FieldTypeBool),                                        // bool
-		GenField("int8", entity.FieldTypeInt8),                                        // int8
-		GenField("int16", entity.FieldTypeInt16),                                      // int16
-		GenField("int32", entity.FieldTypeInt32),                                      // int32
-		GenField("float", entity.FieldTypeFloat),                                      // float
-		GenField("double", entity.FieldTypeDouble),                                    // double
-		GenField("varchar", entity.FieldTypeVarChar, WithMaxLength(DefaultMaxLength)), // varchar
-		GenField("json", entity.FieldTypeJSON),                                        // json
-		GenField("floatVec", entity.FieldTypeFloatVector, WithDim(DefaultDim)),        // float vector
+		GenField("int64", entity.FieldTypeInt64, WithIsPrimaryKey(true)),       // int64
+		GenField("bool", entity.FieldTypeBool),                                 // bool
+		GenField("int8", entity.FieldTypeInt8),                                 // int8
+		GenField("int16", entity.FieldTypeInt16),                               // int16
+		GenField("int32", entity.FieldTypeInt32),                               // int32
+		GenField("float", entity.FieldTypeFloat),                               // float
+		GenField("double", entity.FieldTypeDouble),                             // double
+		GenField("varchar", entity.FieldTypeVarChar, WithMaxLength(MaxLength)), // varchar
+		GenField("json", entity.FieldTypeJSON),                                 // json
+		GenField("floatVec", entity.FieldTypeFloatVector, WithDim(DefaultDim)), // float vector
 	}
-
+	allFields = append(allFields, GenAllArrayFields()...)
 	return allFields
 }
 
@@ -162,18 +230,6 @@ func GenDefaultColumnData(start int, nb int, dim int64) (entity.Column, entity.C
 	return GenColumnData(start, nb, entity.FieldTypeInt64, DefaultIntFieldName),
 		GenColumnData(start, nb, entity.FieldTypeFloat, DefaultFloatFieldName),
 		GenColumnData(start, nb, entity.FieldTypeFloatVector, DefaultFloatVecFieldName, WithVectorDim(dim))
-}
-
-type GenColumnDataOption func(opt *genDataOpt)
-
-type genDataOpt struct {
-	dim int64
-}
-
-func WithVectorDim(dim int64) GenColumnDataOption {
-	return func(opt *genDataOpt) {
-		opt.dim = dim
-	}
 }
 
 // GenColumnData GenColumnDataOption
@@ -239,24 +295,118 @@ func GenColumnData(start int, nb int, fieldType entity.FieldType, fieldName stri
 		}
 		return entity.NewColumnVarChar(fieldName, varcharValues)
 
+	case entity.FieldTypeArray:
+		return GenArrayColumnData(start, nb, fieldName, opts...)
+
 	case entity.FieldTypeFloatVector:
 		vecFloatValues := make([][]float32, 0, nb)
 		for i := start; i < start+nb; i++ {
-			vec := make([]float32, 0, opt.dim)
-			for j := 0; j < int(opt.dim); j++ {
-				vec = append(vec, rand.Float32())
-			}
+			vec := GenFloatVector(opt.dim)
 			vecFloatValues = append(vecFloatValues, vec)
 		}
 		return entity.NewColumnFloatVector(fieldName, int(opt.dim), vecFloatValues)
 	case entity.FieldTypeBinaryVector:
 		binaryVectors := make([][]byte, 0, nb)
 		for i := 0; i < nb; i++ {
-			vec := make([]byte, opt.dim/8)
-			rand.Read(vec)
+			vec := GenBinaryVector(opt.dim)
 			binaryVectors = append(binaryVectors, vec)
 		}
 		return entity.NewColumnBinaryVector(fieldName, int(opt.dim), binaryVectors)
+	default:
+		return nil
+	}
+}
+
+func GenArrayColumnData(start int, nb int, fieldName string, opts ...GenColumnDataOption) entity.Column {
+	opt := &genDataOpt{}
+	for _, o := range opts {
+		o(opt)
+	}
+	eleType := opt.ElementType
+	capacity := int(opt.capacity)
+	switch eleType {
+	case entity.FieldTypeBool:
+		boolValues := make([][]bool, 0, nb)
+		for i := start; i < start+nb; i++ {
+			boolArray := make([]bool, 0, capacity)
+			for j := 0; j < capacity; j++ {
+				boolArray = append(boolArray, i%2 == 0)
+			}
+			boolValues = append(boolValues, boolArray)
+		}
+		return entity.NewColumnBoolArray(fieldName, boolValues)
+	case entity.FieldTypeInt8:
+		int8Values := make([][]int8, 0, nb)
+		for i := start; i < start+nb; i++ {
+			int8Array := make([]int8, 0, capacity)
+			for j := 0; j < capacity; j++ {
+				int8Array = append(int8Array, int8(i+j))
+			}
+			int8Values = append(int8Values, int8Array)
+		}
+		return entity.NewColumnInt8Array(fieldName, int8Values)
+	case entity.FieldTypeInt16:
+		int16Values := make([][]int16, 0, nb)
+		for i := start; i < start+nb; i++ {
+			int16Array := make([]int16, 0, capacity)
+			for j := 0; j < capacity; j++ {
+				int16Array = append(int16Array, int16(i+j))
+			}
+			int16Values = append(int16Values, int16Array)
+		}
+		return entity.NewColumnInt16Array(fieldName, int16Values)
+	case entity.FieldTypeInt32:
+		int32Values := make([][]int32, 0, nb)
+		for i := start; i < start+nb; i++ {
+			int32Array := make([]int32, 0, capacity)
+			for j := 0; j < capacity; j++ {
+				int32Array = append(int32Array, int32(i+j))
+			}
+			int32Values = append(int32Values, int32Array)
+		}
+		return entity.NewColumnInt32Array(fieldName, int32Values)
+	case entity.FieldTypeInt64:
+		int64Values := make([][]int64, 0, nb)
+		for i := start; i < start+nb; i++ {
+			int64Array := make([]int64, 0, capacity)
+			for j := 0; j < capacity; j++ {
+				int64Array = append(int64Array, int64(i+j))
+			}
+			int64Values = append(int64Values, int64Array)
+		}
+		return entity.NewColumnInt64Array(fieldName, int64Values)
+	case entity.FieldTypeFloat:
+		floatValues := make([][]float32, 0, nb)
+		for i := start; i < start+nb; i++ {
+			floatArray := make([]float32, 0, capacity)
+			for j := 0; j < capacity; j++ {
+				floatArray = append(floatArray, float32(i+j))
+			}
+			floatValues = append(floatValues, floatArray)
+		}
+		return entity.NewColumnFloatArray(fieldName, floatValues)
+	case entity.FieldTypeDouble:
+		doubleValues := make([][]float64, 0, nb)
+		for i := start; i < start+nb; i++ {
+			doubleArray := make([]float64, 0, capacity)
+			for j := 0; j < capacity; j++ {
+				doubleArray = append(doubleArray, float64(i+j))
+			}
+			doubleValues = append(doubleValues, doubleArray)
+		}
+		return entity.NewColumnDoubleArray(fieldName, doubleValues)
+	case entity.FieldTypeVarChar:
+		varcharValues := make([][][]byte, 0, nb)
+		for i := start; i < start+nb; i++ {
+			varcharArray := make([][]byte, 0, capacity)
+			for j := 0; j < capacity; j++ {
+				var buf bytes.Buffer
+				buf.WriteString(strconv.Itoa(i + j))
+				varcharArray = append(varcharArray, buf.Bytes())
+			}
+			varcharValues = append(varcharValues, varcharArray)
+		}
+		return entity.NewColumnVarCharArray(fieldName, varcharValues)
 	default:
 		return nil
 	}
@@ -309,7 +459,30 @@ func GenDefaultVarcharData(start int, nb int, dim int64) (entity.Column, entity.
 	return varColumn, binaryColumn
 }
 
-func GenAllFieldsData(start int, nb int, dim int64) []entity.Column {
+func GenAllArrayData(start int, nb int, opts ...GenColumnDataOption) []entity.Column {
+	// how to pass different capacity for different column
+	opt := &genDataOpt{}
+	for _, o := range opts {
+		o(opt)
+	}
+	data := []entity.Column{
+		GenArrayColumnData(start, nb, DefaultBoolArrayField, WithArrayElementType(entity.FieldTypeBool), WithArrayCapacity(opt.capacity)),
+		GenArrayColumnData(start, nb, DefaultInt8ArrayField, WithArrayElementType(entity.FieldTypeInt8), WithArrayCapacity(opt.capacity)),
+		GenArrayColumnData(start, nb, DefaultInt16ArrayField, WithArrayElementType(entity.FieldTypeInt16), WithArrayCapacity(opt.capacity)),
+		GenArrayColumnData(start, nb, DefaultInt32ArrayField, WithArrayElementType(entity.FieldTypeInt32), WithArrayCapacity(opt.capacity)),
+		GenArrayColumnData(start, nb, DefaultInt64ArrayField, WithArrayElementType(entity.FieldTypeInt64), WithArrayCapacity(opt.capacity)),
+		GenArrayColumnData(start, nb, DefaultFloatArrayField, WithArrayElementType(entity.FieldTypeFloat), WithArrayCapacity(opt.capacity)),
+		GenArrayColumnData(start, nb, DefaultDoubleArrayField, WithArrayElementType(entity.FieldTypeDouble), WithArrayCapacity(opt.capacity)),
+		GenArrayColumnData(start, nb, DefaultVarcharArrayField, WithArrayElementType(entity.FieldTypeVarChar), WithArrayCapacity(opt.capacity)),
+	}
+	return data
+}
+
+func GenAllFieldsData(start int, nb int, dim int64, opts ...GenColumnDataOption) []entity.Column {
+	opt := &genDataOpt{}
+	for _, o := range opts {
+		o(opt)
+	}
 	// prepare data
 	data := []entity.Column{
 		GenColumnData(start, nb, entity.FieldTypeInt64, "int64"),
@@ -323,6 +496,7 @@ func GenAllFieldsData(start int, nb int, dim int64) []entity.Column {
 		GenDefaultJSONData("json", start, nb),
 		GenColumnData(start, nb, entity.FieldTypeFloatVector, "floatVec", WithVectorDim(dim)),
 	}
+	data = append(data, GenAllArrayData(start, nb, opts...)...)
 	return data
 }
 
@@ -337,15 +511,19 @@ type Dynamic struct {
 	List   []int64 `json:"dynamicList" milvus:"name:dynamicList"`
 }
 
+type Array struct {
+	BoolArray    []bool    `json:"boolArray" milvus:"name:boolArray"`
+	Int8Array    []int8    `json:"int8Array" milvus:"name:int8Array"`
+	Int16Array   []int16   `json:"int16Array" milvus:"name:int16Array"`
+	Int32Array   []int32   `json:"int32Array" milvus:"name:int32Array"`
+	Int64Array   []int64   `json:"int64Array" milvus:"name:int64Array"`
+	FloatArray   []float32 `json:"floatArray" milvus:"name:floatArray"`
+	DoubleArray  []float64 `json:"doubleArray" milvus:"name:doubleArray"`
+	VarcharArray [][]byte  `json:"varcharArray" milvus:"name:varcharArray"`
+}
+
 func GenDefaultRows(start int, nb int, dim int64, enableDynamicField bool) []interface{} {
 	rows := make([]interface{}, 0, nb)
-
-	type DynamicRow struct {
-		Int64    int64     `json:"int64" milvus:"name:int64"`
-		Float    float32   `json:"float" milvus:"name:float"`
-		FloatVec []float32 `json:"floatVec" milvus:"name:floatVec"`
-		Dynamic  Dynamic   `json:"dynamic" milvus:"name:dynamic"`
-	}
 
 	// BaseRow generate insert rows
 	type BaseRow struct {
@@ -354,10 +532,18 @@ func GenDefaultRows(start int, nb int, dim int64, enableDynamicField bool) []int
 		FloatVec []float32 `json:"floatVec" milvus:"name:floatVec"`
 	}
 
+	type DynamicRow struct {
+		Int64    int64     `json:"int64" milvus:"name:int64"`
+		Float    float32   `json:"float" milvus:"name:float"`
+		FloatVec []float32 `json:"floatVec" milvus:"name:floatVec"`
+		Dynamic  Dynamic   `json:"dynamic" milvus:"name:dynamic"`
+	}
+
 	for i := start; i < start+nb; i++ {
-		floatVec := make([]float32, 0, dim)
-		for j := 0; j < int(dim); j++ {
-			floatVec = append(floatVec, rand.Float32())
+		baseRow := BaseRow{
+			Int64:    int64(i),
+			Float:    float32(i),
+			FloatVec: GenFloatVector(dim),
 		}
 		if enableDynamicField {
 			var dynamic Dynamic
@@ -377,19 +563,15 @@ func GenDefaultRows(start int, nb int, dim int64, enableDynamicField bool) []int
 			}
 
 			dynamicRow := DynamicRow{
-				Int64:    int64(i),
-				Float:    float32(i),
-				FloatVec: floatVec,
+				Int64:    baseRow.Int64,
+				Float:    baseRow.Float,
+				FloatVec: baseRow.FloatVec,
 				Dynamic:  dynamic,
 			}
 
 			rows = append(rows, dynamicRow)
 		} else {
-			rows = append(rows, &BaseRow{
-				Int64:    int64(i),
-				Float:    float32(i),
-				FloatVec: floatVec,
-			})
+			rows = append(rows, &baseRow)
 		}
 	}
 	return rows
@@ -398,26 +580,26 @@ func GenDefaultRows(start int, nb int, dim int64, enableDynamicField bool) []int
 func GenDefaultBinaryRows(start int, nb int, dim int64, enableDynamicField bool) []interface{} {
 	rows := make([]interface{}, 0, nb)
 
-	type DynamicRow struct {
-		Int64     int64    `json:"int64" milvus:"name:int64"`
-		Float     float32  `json:"float" milvus:"name:float"`
-		BinaryVec [][]byte `json:"binaryVec" milvus:"name:binaryVec"`
-		Dynamic   Dynamic  `json:"dynamic" milvus:"name:dynamic"`
-	}
-
 	// BaseRow generate insert rows
 	type BaseRow struct {
-		Int64     int64    `json:"int64" milvus:"name:int64"`
-		Float     float32  `json:"float" milvus:"name:float"`
-		BinaryVec [][]byte `json:"binaryVec" milvus:"name:binaryVec"`
+		Int64     int64   `json:"int64" milvus:"name:int64"`
+		Float     float32 `json:"float" milvus:"name:float"`
+		BinaryVec []byte  `json:"binaryVec" milvus:"name:binaryVec"`
+	}
+
+	type DynamicRow struct {
+		Int64     int64   `json:"int64" milvus:"name:int64"`
+		Float     float32 `json:"float" milvus:"name:float"`
+		BinaryVec []byte  `json:"binaryVec" milvus:"name:binaryVec"`
+		Dynamic   Dynamic `json:"dynamic" milvus:"name:dynamic"`
 	}
 
 	for i := start; i < start+nb; i++ {
-		binaryVec := make([][]byte, 0, nb)
-		vec := make([]byte, 0, dim/8)
-		rand.Read(vec)
-		binaryVec = append(binaryVec, vec)
-
+		baseRow := BaseRow{
+			Int64:     int64(i),
+			Float:     float32(i),
+			BinaryVec: GenBinaryVector(dim),
+		}
 		if enableDynamicField {
 			dynamic := Dynamic{
 				Number: int32(i),
@@ -427,19 +609,15 @@ func GenDefaultBinaryRows(start int, nb int, dim int64, enableDynamicField bool)
 			}
 
 			dynamicRow := DynamicRow{
-				Int64:     int64(i),
-				Float:     float32(i),
-				BinaryVec: binaryVec,
+				Int64:     baseRow.Int64,
+				Float:     baseRow.Float,
+				BinaryVec: baseRow.BinaryVec,
 				Dynamic:   dynamic,
 			}
 
 			rows = append(rows, dynamicRow)
 		} else {
-			rows = append(rows, &BaseRow{
-				Int64:     int64(i),
-				Float:     float32(i),
-				BinaryVec: binaryVec,
-			})
+			rows = append(rows, &baseRow)
 		}
 	}
 	return rows
@@ -448,23 +626,23 @@ func GenDefaultBinaryRows(start int, nb int, dim int64, enableDynamicField bool)
 func GenDefaultVarcharRows(start int, nb int, dim int64, enableDynamicField bool) []interface{} {
 	rows := make([]interface{}, 0, nb)
 
-	type DynamicRow struct {
-		Varchar   string   `json:"varchar" milvus:"name:varchar"`
-		BinaryVec [][]byte `json:"binaryVec" milvus:"name:binaryVec"`
-		Dynamic   Dynamic  `json:"dynamic" milvus:"name:dynamic"`
-	}
-
 	// BaseRow generate insert rows
 	type BaseRow struct {
-		Varchar   string   `json:"varchar" milvus:"name:varchar"`
-		BinaryVec [][]byte `json:"binaryVec" milvus:"name:binaryVec"`
+		Varchar   string `json:"varchar" milvus:"name:varchar"`
+		BinaryVec []byte `json:"binaryVec" milvus:"name:binaryVec"`
+	}
+
+	type DynamicRow struct {
+		Varchar   string  `json:"varchar" milvus:"name:varchar"`
+		BinaryVec []byte  `json:"binaryVec" milvus:"name:binaryVec"`
+		Dynamic   Dynamic `json:"dynamic" milvus:"name:dynamic"`
 	}
 
 	for i := start; i < start+nb; i++ {
-		binaryVec := make([][]byte, 0, nb)
-		vec := make([]byte, 0, dim/8)
-		rand.Read(vec)
-		binaryVec = append(binaryVec, vec)
+		baseRow := BaseRow{
+			Varchar:   strconv.Itoa(i),
+			BinaryVec: GenBinaryVector(dim),
+		}
 
 		if enableDynamicField {
 			dynamic := Dynamic{
@@ -475,17 +653,14 @@ func GenDefaultVarcharRows(start int, nb int, dim int64, enableDynamicField bool
 			}
 
 			dynamicRow := DynamicRow{
-				Varchar:   strconv.Itoa(i),
-				BinaryVec: binaryVec,
+				Varchar:   baseRow.Varchar,
+				BinaryVec: baseRow.BinaryVec,
 				Dynamic:   dynamic,
 			}
 
 			rows = append(rows, dynamicRow)
 		} else {
-			rows = append(rows, &BaseRow{
-				Varchar:   strconv.Itoa(i),
-				BinaryVec: binaryVec,
-			})
+			rows = append(rows, &baseRow)
 		}
 	}
 	return rows
@@ -500,6 +675,14 @@ func GenDefaultJSONRows(start int, nb int, dim int64, enableDynamicField bool) [
 		List   []int64 `json:"list" milvus:"name:list"`
 	}
 
+	// BaseRow generate insert rows
+	type BaseRow struct {
+		Int64    int64      `json:"int64" milvus:"name:int64"`
+		Float    float32    `json:"float" milvus:"name:float"`
+		FloatVec []float32  `json:"floatVec" milvus:"name:floatVec"`
+		JSON     JSONStruct `json:"json" milvus:"name:json"`
+	}
+
 	type BaseDynamicRow struct {
 		Int64    int64      `json:"int64" milvus:"name:int64"`
 		Float    float32    `json:"float" milvus:"name:float"`
@@ -511,20 +694,7 @@ func GenDefaultJSONRows(start int, nb int, dim int64, enableDynamicField bool) [
 		//List     []int64    `json:"dynamicList" milvus:"name:dynamicList"`
 	}
 
-	// BaseRow generate insert rows
-	type BaseRow struct {
-		Int64    int64      `json:"int64" milvus:"name:int64"`
-		Float    float32    `json:"float" milvus:"name:float"`
-		FloatVec []float32  `json:"floatVec" milvus:"name:floatVec"`
-		JSON     JSONStruct `json:"json" milvus:"name:json"`
-	}
-
 	for i := start; i < start+nb; i++ {
-		floatVec := make([]float32, 0, dim)
-		for j := 0; j < int(dim); j++ {
-			floatVec = append(floatVec, rand.Float32())
-		}
-
 		// jsonStruct row and dynamic row
 		var jsonStruct JSONStruct
 		if i%2 == 0 {
@@ -540,66 +710,224 @@ func GenDefaultJSONRows(start int, nb int, dim int64, enableDynamicField bool) [
 				List:   []int64{int64(i), int64(i + 1)},
 			}
 		}
+		// base row
+		baseRow := BaseRow{
+			Int64:    int64(i),
+			Float:    float32(i),
+			FloatVec: GenFloatVector(dim),
+			JSON:     jsonStruct,
+		}
 		if enableDynamicField {
 			baseDynamicRow := BaseDynamicRow{
-				Int64:    int64(i),
-				Float:    float32(i),
-				FloatVec: floatVec,
-				JSON:     jsonStruct,
+				Int64:    baseRow.Int64,
+				Float:    baseRow.Float,
+				FloatVec: baseRow.FloatVec,
+				JSON:     baseRow.JSON,
 				Number:   int32(i),
 				String:   strconv.Itoa(i),
 				Bool:     i%2 == 0,
 				//List:     []int64{int64(i), int64(i + 1)},
 			}
 
-			rows = append(rows, baseDynamicRow)
+			rows = append(rows, &baseDynamicRow)
 		} else {
-			rows = append(rows, &BaseRow{
-				Int64:    int64(i),
-				Float:    float32(i),
-				FloatVec: floatVec,
-				JSON:     jsonStruct,
-			})
+			rows = append(rows, &baseRow)
 		}
 	}
 	return rows
 }
 
-func GenAllFieldsRows(start int, nb int, dim int64, enableDynamicField bool) []interface{} {
-	rows := make([]interface{}, 0, nb)
-
-	type DynamicRow struct {
-		Int64    int64     `json:"int64" milvus:"name:int64"`
-		Bool     bool      `json:"bool" milvus:"name:bool"`
-		Int8     int8      `json:"int8" milvus:"name:int8"`
-		Int16    int16     `json:"int16" milvus:"name:int16"`
-		Int32    int32     `json:"int32" milvus:"name:int32"`
-		Float    float32   `json:"float" milvus:"name:float"`
-		Double   float64   `json:"double" milvus:"name:double"`
-		Varchar  string    `json:"varchar" milvus:"name:varchar"`
-		JSON     Dynamic   `json:"json" milvus:"name:json"`
-		FloatVec []float32 `json:"floatVec" milvus:"name:floatVec"`
-		Dynamic  Dynamic   `json:"dynamic" milvus:"name:dynamic"`
+func GenAllArrayRow(index int, opts ...GenColumnDataOption) Array {
+	opt := &genDataOpt{}
+	for _, o := range opts {
+		o(opt)
 	}
+	var capacity int
+	if opt.capacity != 0 {
+		capacity = int(opt.capacity)
+	} else {
+		capacity = TestCapacity
+	}
+
+	boolRow := make([]bool, 0, capacity)
+	int8Row := make([]int8, 0, capacity)
+	int16Row := make([]int16, 0, capacity)
+	int32Row := make([]int32, 0, capacity)
+	int64Row := make([]int64, 0, capacity)
+	floatRow := make([]float32, 0, capacity)
+	doubleRow := make([]float64, 0, capacity)
+	varcharRow := make([][]byte, 0, capacity)
+	for j := 0; j < capacity; j++ {
+		boolRow = append(boolRow, index%2 == 0)
+		int8Row = append(int8Row, int8(index+j))
+		int16Row = append(int16Row, int16(index+j))
+		int32Row = append(int32Row, int32(index+j))
+		int64Row = append(int64Row, int64(index+j))
+		floatRow = append(floatRow, float32(index+j))
+		doubleRow = append(doubleRow, float64(index+j))
+		var buf bytes.Buffer
+		buf.WriteString(strconv.Itoa(index + j))
+		varcharRow = append(varcharRow, buf.Bytes())
+	}
+	arrayRow := Array{
+		BoolArray:    boolRow,
+		Int8Array:    int8Row,
+		Int16Array:   int16Row,
+		Int32Array:   int32Row,
+		Int64Array:   int64Row,
+		FloatArray:   floatRow,
+		DoubleArray:  doubleRow,
+		VarcharArray: varcharRow,
+	}
+	return arrayRow
+}
+
+func GenDefaultArrayRows(start int, nb int, dim int64, enableDynamicField bool, opts ...GenColumnDataOption) []interface{} {
+	rows := make([]interface{}, 0, nb)
 
 	// BaseRow generate insert rows
 	type BaseRow struct {
-		Int64    int64     `json:"int64" milvus:"name:int64"`
-		Bool     bool      `json:"bool" milvus:"name:bool"`
-		Int8     int8      `json:"int8" milvus:"name:int8"`
-		Int16    int16     `json:"int16" milvus:"name:int16"`
-		Int32    int32     `json:"int32" milvus:"name:int32"`
-		Float    float32   `json:"float" milvus:"name:float"`
-		Double   float64   `json:"double" milvus:"name:double"`
-		Varchar  string    `json:"varchar" milvus:"name:varchar"`
-		JSON     Dynamic   `json:"json" milvus:"name:json"`
-		FloatVec []float32 `json:"floatVec" milvus:"name:floatVec"`
+		Int64        int64     `json:"int64" milvus:"name:int64"`
+		Float        float32   `json:"float" milvus:"name:float"`
+		FloatVec     []float32 `json:"floatVec" milvus:"name:floatVec"`
+		BoolArray    []bool    `json:"boolArray" milvus:"name:boolArray"`
+		Int8Array    []int8    `json:"int8Array" milvus:"name:int8Array"`
+		Int16Array   []int16   `json:"int16Array" milvus:"name:int16Array"`
+		Int32Array   []int32   `json:"int32Array" milvus:"name:int32Array"`
+		Int64Array   []int64   `json:"int64Array" milvus:"name:int64Array"`
+		FloatArray   []float32 `json:"floatArray" milvus:"name:floatArray"`
+		DoubleArray  []float64 `json:"doubleArray" milvus:"name:doubleArray"`
+		VarcharArray [][]byte  `json:"varcharArray" milvus:"name:varcharArray"`
+	}
+
+	type DynamicRow struct {
+		Int64        int64     `json:"int64" milvus:"name:int64"`
+		Float        float32   `json:"float" milvus:"name:float"`
+		FloatVec     []float32 `json:"floatVec" milvus:"name:floatVec"`
+		BoolArray    []bool    `json:"boolArray" milvus:"name:boolArray"`
+		Int8Array    []int8    `json:"int8Array" milvus:"name:int8Array"`
+		Int16Array   []int16   `json:"int16Array" milvus:"name:int16Array"`
+		Int32Array   []int32   `json:"int32Array" milvus:"name:int32Array"`
+		Int64Array   []int64   `json:"int64Array" milvus:"name:int64Array"`
+		FloatArray   []float32 `json:"floatArray" milvus:"name:floatArray"`
+		DoubleArray  []float64 `json:"doubleArray" milvus:"name:doubleArray"`
+		VarcharArray [][]byte  `json:"varcharArray" milvus:"name:varcharArray"`
+		Dynamic      Dynamic   `json:"dynamic" milvus:"name:dynamic"`
 	}
 
 	for i := start; i < start+nb; i++ {
-		floatVec := make([]float32, 0, dim)
-		for j := 0; j < int(dim); j++ {
-			floatVec = append(floatVec, rand.Float32())
+		// json and dynamic field
+		dynamicJSON := Dynamic{
+			Number: int32(i),
+			String: strconv.Itoa(i),
+			Bool:   i%2 == 0,
+			List:   []int64{int64(i), int64(i + 1)},
+		}
+		arrayRow := GenAllArrayRow(i, opts...)
+		baseRow := BaseRow{
+			Int64:        int64(i),
+			Float:        float32(i),
+			FloatVec:     GenFloatVector(dim),
+			BoolArray:    arrayRow.BoolArray,
+			Int8Array:    arrayRow.Int8Array,
+			Int16Array:   arrayRow.Int16Array,
+			Int32Array:   arrayRow.Int32Array,
+			Int64Array:   arrayRow.Int64Array,
+			FloatArray:   arrayRow.FloatArray,
+			DoubleArray:  arrayRow.DoubleArray,
+			VarcharArray: arrayRow.VarcharArray,
+		}
+		if enableDynamicField {
+			dynamicRow := DynamicRow{
+				Int64:        baseRow.Int64,
+				Float:        baseRow.Float,
+				FloatVec:     baseRow.FloatVec,
+				BoolArray:    arrayRow.BoolArray,
+				Int8Array:    arrayRow.Int8Array,
+				Int16Array:   arrayRow.Int16Array,
+				Int32Array:   arrayRow.Int32Array,
+				Int64Array:   arrayRow.Int64Array,
+				FloatArray:   arrayRow.FloatArray,
+				DoubleArray:  arrayRow.DoubleArray,
+				VarcharArray: arrayRow.VarcharArray,
+				Dynamic:      dynamicJSON,
+			}
+
+			rows = append(rows, dynamicRow)
+		} else {
+			rows = append(rows, &baseRow)
+		}
+	}
+	return rows
+}
+
+func GenAllFieldsRows(start int, nb int, dim int64, enableDynamicField bool, opts ...GenColumnDataOption) []interface{} {
+	rows := make([]interface{}, 0, nb)
+
+	// BaseRow generate insert rows
+	type BaseRow struct {
+		Int64        int64     `json:"int64" milvus:"name:int64"`
+		Bool         bool      `json:"bool" milvus:"name:bool"`
+		Int8         int8      `json:"int8" milvus:"name:int8"`
+		Int16        int16     `json:"int16" milvus:"name:int16"`
+		Int32        int32     `json:"int32" milvus:"name:int32"`
+		Float        float32   `json:"float" milvus:"name:float"`
+		Double       float64   `json:"double" milvus:"name:double"`
+		Varchar      string    `json:"varchar" milvus:"name:varchar"`
+		JSON         Dynamic   `json:"json" milvus:"name:json"`
+		FloatVec     []float32 `json:"floatVec" milvus:"name:floatVec"`
+		BoolArray    []bool    `json:"boolArray" milvus:"name:boolArray"`
+		Int8Array    []int8    `json:"int8Array" milvus:"name:int8Array"`
+		Int16Array   []int16   `json:"int16Array" milvus:"name:int16Array"`
+		Int32Array   []int32   `json:"int32Array" milvus:"name:int32Array"`
+		Int64Array   []int64   `json:"int64Array" milvus:"name:int64Array"`
+		FloatArray   []float32 `json:"floatArray" milvus:"name:floatArray"`
+		DoubleArray  []float64 `json:"doubleArray" milvus:"name:doubleArray"`
+		VarcharArray [][]byte  `json:"varcharArray" milvus:"name:varcharArray"`
+	}
+
+	type DynamicRow struct {
+		Int64        int64     `json:"int64" milvus:"name:int64"`
+		Bool         bool      `json:"bool" milvus:"name:bool"`
+		Int8         int8      `json:"int8" milvus:"name:int8"`
+		Int16        int16     `json:"int16" milvus:"name:int16"`
+		Int32        int32     `json:"int32" milvus:"name:int32"`
+		Float        float32   `json:"float" milvus:"name:float"`
+		Double       float64   `json:"double" milvus:"name:double"`
+		Varchar      string    `json:"varchar" milvus:"name:varchar"`
+		JSON         Dynamic   `json:"json" milvus:"name:json"`
+		FloatVec     []float32 `json:"floatVec" milvus:"name:floatVec"`
+		BoolArray    []bool    `json:"boolArray" milvus:"name:boolArray"`
+		Int8Array    []int8    `json:"int8Array" milvus:"name:int8Array"`
+		Int16Array   []int16   `json:"int16Array" milvus:"name:int16Array"`
+		Int32Array   []int32   `json:"int32Array" milvus:"name:int32Array"`
+		Int64Array   []int64   `json:"int64Array" milvus:"name:int64Array"`
+		FloatArray   []float32 `json:"floatArray" milvus:"name:floatArray"`
+		DoubleArray  []float64 `json:"doubleArray" milvus:"name:doubleArray"`
+		VarcharArray [][]byte  `json:"varcharArray" milvus:"name:varcharArray"`
+		Dynamic      Dynamic   `json:"dynamic" milvus:"name:dynamic"`
+	}
+
+	for i := start; i < start+nb; i++ {
+		arrayRow := GenAllArrayRow(i, opts...)
+		baseRow := BaseRow{
+			Int64:        int64(i),
+			Bool:         i%2 == 0,
+			Int8:         int8(i),
+			Int16:        int16(i),
+			Int32:        int32(i),
+			Float:        float32(i),
+			Double:       float64(i),
+			Varchar:      strconv.Itoa(i),
+			FloatVec:     GenFloatVector(dim),
+			BoolArray:    arrayRow.BoolArray,
+			Int8Array:    arrayRow.Int8Array,
+			Int16Array:   arrayRow.Int16Array,
+			Int32Array:   arrayRow.Int32Array,
+			Int64Array:   arrayRow.Int64Array,
+			FloatArray:   arrayRow.FloatArray,
+			DoubleArray:  arrayRow.DoubleArray,
+			VarcharArray: arrayRow.VarcharArray,
 		}
 
 		// json and dynamic field
@@ -611,33 +939,28 @@ func GenAllFieldsRows(start int, nb int, dim int64, enableDynamicField bool) []i
 		}
 		if enableDynamicField {
 			dynamicRow := DynamicRow{
-				Int64:    int64(i),
-				Bool:     i%2 == 0,
-				Int8:     int8(i),
-				Int16:    int16(i),
-				Int32:    int32(i),
-				Float:    float32(i),
-				Double:   float64(i),
-				Varchar:  strconv.Itoa(i),
-				FloatVec: floatVec,
-				JSON:     dynamicJSON,
-				Dynamic:  dynamicJSON,
+				Int64:        baseRow.Int64,
+				Bool:         baseRow.Bool,
+				Int8:         baseRow.Int8,
+				Int16:        baseRow.Int16,
+				Int32:        baseRow.Int32,
+				Float:        baseRow.Float,
+				Double:       baseRow.Double,
+				Varchar:      baseRow.Varchar,
+				FloatVec:     baseRow.FloatVec,
+				BoolArray:    arrayRow.BoolArray,
+				Int8Array:    arrayRow.Int8Array,
+				Int16Array:   arrayRow.Int16Array,
+				Int32Array:   arrayRow.Int32Array,
+				Int64Array:   arrayRow.Int64Array,
+				FloatArray:   arrayRow.FloatArray,
+				DoubleArray:  arrayRow.DoubleArray,
+				VarcharArray: arrayRow.VarcharArray,
+				Dynamic:      dynamicJSON,
 			}
-
 			rows = append(rows, dynamicRow)
 		} else {
-			rows = append(rows, &BaseRow{
-				Int64:    int64(i),
-				Bool:     i%2 == 0,
-				Int8:     int8(i),
-				Int16:    int16(i),
-				Int32:    int32(i),
-				Float:    float32(i),
-				Double:   float64(i),
-				Varchar:  strconv.Itoa(i),
-				FloatVec: floatVec,
-				JSON:     dynamicJSON,
-			})
+			rows = append(rows, &baseRow)
 		}
 	}
 	return rows
@@ -741,23 +1064,19 @@ func GenSearchVectors(nq int, dim int64, dataType entity.FieldType) []entity.Vec
 	switch dataType {
 	case entity.FieldTypeFloatVector:
 		for i := 0; i < nq; i++ {
-			vector := make([]float32, 0, dim)
-			for j := 0; j < int(dim); j++ {
-				vector = append(vector, rand.Float32())
-			}
+			vector := GenFloatVector(dim)
 			vectors = append(vectors, entity.FloatVector(vector))
 		}
 	case entity.FieldTypeBinaryVector:
 		for i := 0; i < nq; i++ {
-			vector := make([]byte, dim/8)
-			rand.Read(vector)
+			vector := GenBinaryVector(dim)
 			vectors = append(vectors, entity.BinaryVector(vector))
 		}
 	}
 	return vectors
 }
 
-// invalid expr
+// InvalidExprStruct invalid expr
 type InvalidExprStruct struct {
 	Expr   string
 	ErrNil bool
@@ -779,6 +1098,8 @@ var InvalidExpressions = []InvalidExprStruct{
 	{Expr: fmt.Sprintf("json_contains_all (%s['list'], 2)", DefaultJSONFieldName), ErrNil: false, ErrMsg: "contains_all operation element must be an array"},
 	{Expr: fmt.Sprintf("JSON_CONTAINS_ANY (%s['list'], 2)", DefaultJSONFieldName), ErrNil: false, ErrMsg: "contains_any operation element must be an array"},
 	{Expr: fmt.Sprintf("json_contains_aby (%s['list'], 2)", DefaultJSONFieldName), ErrNil: false, ErrMsg: "invalid expression: json_contains_aby"},
+	{Expr: fmt.Sprintf("json_contains_aby (%s['list'], 2)", DefaultJSONFieldName), ErrNil: false, ErrMsg: "invalid expression: json_contains_aby"},
+	{Expr: fmt.Sprintf("%s[-1] > %d", DefaultInt8ArrayField, TestCapacity), ErrNil: false, ErrMsg: "cannot parse expression"}, //  array[-1] >
 }
 
 // --- search utils ---

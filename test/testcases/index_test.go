@@ -91,6 +91,41 @@ func TestCreateIndexJsonField(t *testing.T) {
 	//common.CheckErr(t, err, false, "create index on json field is not supported")
 }
 
+func TestCreateIndexArrayField(t *testing.T) {
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	// connect
+	mc := createMilvusClient(ctx, t)
+
+	// create collection
+	cp := CollectionParams{CollectionFieldsType: Int64FloatVecArray, AutoID: false, EnableDynamicField: true,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxCapacity: common.TestCapacity}
+	collName := createCollection(ctx, t, mc, cp)
+
+	// prepare and insert data
+	dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVecArray,
+		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
+	_, _ = insertData(ctx, t, mc, dp, common.WithArrayCapacity(common.TestCapacity))
+
+	// flush and check row count
+	errFlush := mc.Flush(ctx, collName, false)
+	common.CheckErr(t, errFlush, true)
+
+	// create scalar and vector index on array field
+	scalarIdx := entity.NewScalarIndex()
+	vectorIdx, _ := entity.NewIndexSCANN(entity.L2, 10, false)
+	collection, _ := mc.DescribeCollection(ctx, collName)
+	for _, field := range collection.Schema.Fields {
+		if field.DataType == entity.FieldTypeArray {
+			// create scalar index
+			err := mc.CreateIndex(ctx, collName, field.Name, scalarIdx, false, client.WithIndexName("scalar_index"))
+			common.CheckErr(t, err, false, "create index on Array field: invalid parameter")
+			// create vector index
+			err1 := mc.CreateIndex(ctx, collName, field.Name, vectorIdx, false, client.WithIndexName("vector_index"))
+			common.CheckErr(t, err1, false, "create index on Array field: invalid parameter")
+		}
+	}
+}
+
 // test create index with supported float vector index, Ip metric type
 func TestCreateIndexIp(t *testing.T) {
 	t.Parallel()

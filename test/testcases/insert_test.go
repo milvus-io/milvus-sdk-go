@@ -160,7 +160,7 @@ func TestInsertAllFieldsData(t *testing.T) {
 	// prepare fields, name, schema
 	allFields := common.GenAllFields()
 	collName := common.GenRandomString(6)
-	schema := common.GenSchema(collName, false, allFields)
+	schema := common.GenSchema(collName, false, allFields, common.WithEnableDynamicField(true))
 
 	// create collection
 	errCreateCollection := mc.CreateCollection(ctx, schema, common.DefaultShards)
@@ -168,6 +168,7 @@ func TestInsertAllFieldsData(t *testing.T) {
 
 	// prepare and insert data
 	data := common.GenAllFieldsData(0, common.DefaultNb, common.DefaultDim)
+	data = append(data, common.GenDynamicFieldData(0, common.DefaultNb)...)
 	// insert data
 	ids, errInsert := mc.Insert(
 		ctx,
@@ -406,4 +407,114 @@ func TestInsertDynamicFieldData(t *testing.T) {
 	ids, errInsert = mc.Insert(ctx, schema.CollectionName, "", intColumn, floatColumn, vecColumn, varcharColumn)
 	common.CheckErr(t, errInsert, false, "column size not match")
 
+}
+
+// test insert array column with empty data
+func TestInsertEmptyArray(t *testing.T) {
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	// connect
+	mc := createMilvusClient(ctx, t)
+
+	// create collection
+	cp := CollectionParams{CollectionFieldsType: Int64FloatVecArray, AutoID: false, EnableDynamicField: true,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxCapacity: common.TestCapacity}
+	collName := createCollection(ctx, t, mc, cp)
+
+	// prepare and insert data
+	var capacity int64 = 0
+	dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVecArray,
+		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
+	_, _ = insertData(ctx, t, mc, dp, common.WithArrayCapacity(capacity))
+
+	// flush and check row count
+	errFlush := mc.Flush(ctx, collName, false)
+	common.CheckErr(t, errFlush, true)
+	stats, _ := mc.GetCollectionStatistics(ctx, collName)
+	require.Equal(t, strconv.Itoa(common.DefaultNb), stats[common.RowCount])
+}
+
+// test insert array type rows data
+func TestInsertArrayRows(t *testing.T) {
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	// connect
+	mc := createMilvusClient(ctx, t)
+
+	// create collection
+	cp := CollectionParams{CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: false,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxCapacity: common.TestCapacity}
+	collName := createCollection(ctx, t, mc, cp)
+
+	// prepare and insert array rows data
+	dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: AllFields,
+		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: false, WithRows: true}
+	_, _ = insertData(ctx, t, mc, dp, common.WithArrayCapacity(common.TestCapacity))
+
+	// flush and check row count
+	errFlush := mc.Flush(ctx, collName, false)
+	common.CheckErr(t, errFlush, true)
+	stats, _ := mc.GetCollectionStatistics(ctx, collName)
+	require.Equal(t, strconv.Itoa(common.DefaultNb), stats[common.RowCount])
+}
+
+// test insert array data type not match array field element type
+func TestInsertArrayDataTypeNotMatch(t *testing.T) {
+	t.Parallel()
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	// connect
+	mc := createMilvusClient(ctx, t)
+	for _, arrayType := range common.ArrayFieldType {
+
+		// fields: int64 + float + vector + array with TestCapacity
+		defaultFields := common.GenDefaultFields(false)
+		arrayField := common.GenField(common.DefaultArrayFieldName, entity.FieldTypeArray,
+			common.WithElementType(arrayType), common.WithMaxCapacity(100), common.WithMaxLength(100))
+		fields := append(defaultFields, arrayField)
+
+		// create collection
+		collName := common.GenRandomString(6)
+		schema := common.GenSchema(collName, false, fields, common.WithEnableDynamicField(true))
+		err := mc.CreateCollection(ctx, schema, common.DefaultShards)
+		common.CheckErr(t, err, true)
+
+		// insert data type does not match schema array element type
+		var columnType entity.FieldType
+		if arrayType == entity.FieldTypeInt64 {
+			columnType = entity.FieldTypeBool
+		} else {
+			columnType = entity.FieldTypeInt64
+		}
+		intColumn, floatColumn, vectorColumn := common.GenDefaultColumnData(0, common.DefaultNb, common.DefaultDim)
+		arrayColumn := common.GenArrayColumnData(0, common.DefaultNb, common.DefaultArrayFieldName,
+			common.WithArrayElementType(columnType))
+		_, err = mc.Insert(ctx, collName, "", intColumn, floatColumn, vectorColumn, arrayColumn)
+		common.CheckErr(t, err, false, "insert data does not match")
+	}
+}
+
+// test insert array column data that capacity exceeds max capacity
+func TestInsertArrayDataCapacityExceed(t *testing.T) {
+	t.Parallel()
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	// connect
+	mc := createMilvusClient(ctx, t)
+	for _, arrayType := range common.ArrayFieldType {
+		// fields: int64 + float + vector + array with TestCapacity
+		defaultFields := common.GenDefaultFields(false)
+		arrayField := common.GenField(common.DefaultArrayFieldName, entity.FieldTypeArray,
+			common.WithElementType(arrayType), common.WithMaxCapacity(common.TestCapacity), common.WithMaxLength(100))
+		fields := append(defaultFields, arrayField)
+
+		// create collection
+		collName := common.GenRandomString(6)
+		schema := common.GenSchema(collName, false, fields, common.WithEnableDynamicField(true))
+		err := mc.CreateCollection(ctx, schema, common.DefaultShards)
+		common.CheckErr(t, err, true)
+
+		// insert data capacity larger than TestCapacity
+		intColumn, floatColumn, vectorColumn := common.GenDefaultColumnData(0, common.DefaultNb, common.DefaultDim)
+		arrayColumn := common.GenArrayColumnData(0, common.DefaultNb, common.DefaultArrayFieldName,
+			common.WithArrayElementType(arrayType), common.WithArrayCapacity(common.TestCapacity+1))
+		_, err = mc.Insert(ctx, collName, "", intColumn, floatColumn, vectorColumn, arrayColumn)
+		common.CheckErr(t, err, false, "array length exceeds max capacity")
+	}
 }

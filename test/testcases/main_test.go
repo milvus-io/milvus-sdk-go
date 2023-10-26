@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"log"
-	"math/rand"
 	"os"
 	"strconv"
 	"testing"
@@ -243,11 +242,12 @@ func createVarcharCollectionWithDataIndex(ctx context.Context, t *testing.T, mc 
 }
 
 const (
-	Int64FloatVec     CollectionFieldsType = "PkInt64FloatVec"     // int64 + float + floatVec
-	Int64BinaryVec    CollectionFieldsType = "Int64BinaryVec"      // int64 + float + binaryVec
-	VarcharBinaryVec  CollectionFieldsType = "PkVarcharBinaryVec"  // varchar + binaryVec
-	Int64FloatVecJSON CollectionFieldsType = "PkInt64FloatVecJson" // int64 + float + floatVec + json
-	AllFields         CollectionFieldsType = "AllFields"           // all scalar fields + floatVec
+	Int64FloatVec      CollectionFieldsType = "PkInt64FloatVec"     // int64 + float + floatVec
+	Int64BinaryVec     CollectionFieldsType = "Int64BinaryVec"      // int64 + float + binaryVec
+	VarcharBinaryVec   CollectionFieldsType = "PkVarcharBinaryVec"  // varchar + binaryVec
+	Int64FloatVecJSON  CollectionFieldsType = "PkInt64FloatVecJson" // int64 + float + floatVec + json
+	Int64FloatVecArray CollectionFieldsType = "Int64FloatVecArray"  // int64 + float + floatVec + all array
+	AllFields          CollectionFieldsType = "AllFields"           // all scalar fields + floatVec
 )
 
 func createCollection(ctx context.Context, t *testing.T, mc *base.MilvusClient, cp CollectionParams, opts ...client.CreateCollectionOption) string {
@@ -267,6 +267,9 @@ func createCollection(ctx context.Context, t *testing.T, mc *base.MilvusClient, 
 		fields = common.GenDefaultFields(cp.AutoID)
 		jsonField := common.GenField(common.DefaultJSONFieldName, entity.FieldTypeJSON)
 		fields = append(fields, jsonField)
+	case Int64FloatVecArray:
+		fields = common.GenDefaultFields(cp.AutoID)
+		fields = append(fields, common.GenAllArrayFieldsWithCapacity(cp.MaxCapacity)...)
 	case AllFields:
 		fields = common.GenAllFields()
 	}
@@ -285,8 +288,7 @@ func createCollection(ctx context.Context, t *testing.T, mc *base.MilvusClient, 
 	return collName
 }
 
-// insert nb data
-func insertData(ctx context.Context, t *testing.T, mc *base.MilvusClient, dp DataParams) (entity.Column, error) {
+func insertData(ctx context.Context, t *testing.T, mc *base.MilvusClient, dp DataParams, opts ...common.GenColumnDataOption) (entity.Column, error) {
 	// todo autoid
 	// prepare data
 	var data []entity.Column
@@ -328,11 +330,20 @@ func insertData(ctx context.Context, t *testing.T, mc *base.MilvusClient, dp Dat
 			jsonColumn := common.GenDefaultJSONData(common.DefaultJSONFieldName, dp.start, dp.nb)
 			data = append(data, intColumn, floatColumn, vecColumn, jsonColumn)
 		}
+	case Int64FloatVecArray:
+		if dp.WithRows {
+			rows = common.GenDefaultArrayRows(dp.start, dp.nb, dp.dim, dp.EnableDynamicField)
+		} else {
+			data = common.GenAllArrayData(dp.start, dp.nb, opts...)
+			intColumn, floatColumn, vecColumn := common.GenDefaultColumnData(dp.start, dp.nb, dp.dim)
+			data = append(data, intColumn, floatColumn, vecColumn)
+		}
+
 	case AllFields:
 		if dp.WithRows {
-			rows = common.GenAllFieldsRows(dp.start, dp.nb, dp.dim, dp.EnableDynamicField)
+			rows = common.GenAllFieldsRows(dp.start, dp.nb, dp.dim, dp.EnableDynamicField, opts...)
 		}
-		data = common.GenAllFieldsData(dp.start, dp.nb, dp.dim)
+		data = common.GenAllFieldsData(dp.start, dp.nb, dp.dim, opts...)
 	}
 
 	if dp.EnableDynamicField && !dp.WithRows {
@@ -349,7 +360,6 @@ func insertData(ctx context.Context, t *testing.T, mc *base.MilvusClient, dp Dat
 	}
 	common.CheckErr(t, err, true)
 	require.Equalf(t, dp.nb, ids.Len(), "Expected insert id num: %d, actual: ", dp.nb, ids.Len())
-
 	return ids, err
 }
 
@@ -366,48 +376,8 @@ func createCollectionAllFields(ctx context.Context, t *testing.T, mc *base.Milvu
 	errCreateCollection := mc.CreateCollection(ctx, schema, common.DefaultShards)
 	common.CheckErr(t, errCreateCollection, true)
 
-	// prepare data
-	int64Values := make([]int64, 0, nb)
-	boolValues := make([]bool, 0, nb)
-	int8Values := make([]int8, 0, nb)
-	int16Values := make([]int16, 0, nb)
-	int32Values := make([]int32, 0, nb)
-	floatValues := make([]float32, 0, nb)
-	doubleValues := make([]float64, 0, nb)
-	varcharValues := make([]string, 0, nb)
-	floatVectors := make([][]float32, 0, nb)
-	for i := start; i < nb+start; i++ {
-		int64Values = append(int64Values, int64(i))
-		boolValues = append(boolValues, i/2 == 0)
-		int8Values = append(int8Values, int8(i))
-		int16Values = append(int16Values, int16(i))
-		int32Values = append(int32Values, int32(i))
-		floatValues = append(floatValues, float32(i))
-		doubleValues = append(doubleValues, float64(i))
-		varcharValues = append(varcharValues, strconv.Itoa(i))
-		vec := make([]float32, 0, common.DefaultDim)
-		for j := 0; j < int(common.DefaultDim); j++ {
-			vec = append(vec, rand.Float32())
-		}
-		floatVectors = append(floatVectors, vec)
-	}
-
-	// insert data
-	ids, errInsert := mc.Insert(
-		ctx,
-		collName,
-		"",
-		entity.NewColumnInt64("int64", int64Values),
-		entity.NewColumnBool("bool", boolValues),
-		entity.NewColumnInt8("int8", int8Values),
-		entity.NewColumnInt16("int16", int16Values),
-		entity.NewColumnInt32("int32", int32Values),
-		entity.NewColumnFloat("float", floatValues),
-		entity.NewColumnDouble("double", doubleValues),
-		entity.NewColumnVarChar("varchar", varcharValues),
-		entity.NewColumnFloatVector("floatVec", int(common.DefaultDim), floatVectors),
-		common.GenDefaultJSONData("json", 0, nb),
-	)
+	data := common.GenAllFieldsData(start, nb, common.DefaultDim, common.WithArrayCapacity(common.TestCapacity))
+	ids, errInsert := mc.Insert(ctx, collName, "", data...)
 	common.CheckErr(t, errInsert, true)
 	require.Equal(t, nb, ids.Len())
 	return collName, ids
