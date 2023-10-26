@@ -924,6 +924,10 @@ func (m *MockServer) AllocTimestamp(_ context.Context, _ *milvuspb.AllocTimestam
 	panic("not implemented")
 }
 
+func (m *MockServer) ReplicateMessage(_ context.Context, _ *milvuspb.ReplicateMessageRequest) (*milvuspb.ReplicateMessageResponse, error) {
+	panic("not implemented")
+}
+
 func (m *MockServer) Connect(_ context.Context, _ *milvuspb.ConnectRequest) (*milvuspb.ConnectResponse, error) {
 	return &milvuspb.ConnectResponse{
 		Status:     &commonpb.Status{ErrorCode: commonpb.ErrorCode_Success},
