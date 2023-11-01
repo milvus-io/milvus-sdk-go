@@ -44,7 +44,7 @@ func TestNewCollection(t *testing.T) {
 		"index_type":  string(entity.AUTOINDEX),
 	}
 	// TODO why the index name is _default_idx_101 default is _default_idx_102 ?
-	expIndex := entity.NewGenericIndex("_default_idx_101", entity.AUTOINDEX, expParams)
+	expIndex := entity.NewGenericIndex("_default_idx_101", entity.AUTOINDEX, DefaultVectorFieldName, expParams)
 	common.CheckIndexResult(t, indexes, expIndex)
 
 	// check collection is loaded
@@ -121,7 +121,7 @@ func TestNewCollectionCustomize(t *testing.T) {
 		"metric_type": string(entity.L2),
 		"index_type":  string(entity.AUTOINDEX),
 	}
-	expIndex := entity.NewGenericIndex("_default_idx_101", entity.AUTOINDEX, expParams)
+	expIndex := entity.NewGenericIndex("_default_idx_101", entity.AUTOINDEX, DefaultVectorFieldName, expParams)
 	common.CheckIndexResult(t, indexes, expIndex)
 
 	// check collection is loaded

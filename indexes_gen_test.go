@@ -9,37 +9,43 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestIndexFlat(t *testing.T) {
+
+func TestIndexFlat(t *testing.T){
+	
 
 	mt := L2
+	
 
-	t.Run("valid usage case", func(t *testing.T) {
-
-		idx0, err := NewIndexFlat(mt)
+	t.Run("valid usage case", func(t *testing.T){
+		
+		
+		idx0, err := NewIndexFlat(mt, 
+		)
 		assert.Nil(t, err)
 		assert.NotNil(t, idx0)
 		assert.Equal(t, "Flat", idx0.Name())
 		assert.EqualValues(t, "FLAT", idx0.IndexType())
 		assert.NotNil(t, idx0.Params())
 		assert.False(t, idx0.SupportBinary())
-
+		
 	})
 
-	t.Run("invalid usage case", func(t *testing.T) {
-
+	t.Run("invalid usage case", func(t *testing.T){
+		
 	})
 }
 
-func TestIndexBinFlat(t *testing.T) {
-
+func TestIndexBinFlat(t *testing.T){
+	
 	var nlist int
 
 	mt := HAMMING
+	
 
-	t.Run("valid usage case", func(t *testing.T) {
-
+	t.Run("valid usage case", func(t *testing.T){
+		
 		nlist = 10
-		idx0, err := NewIndexBinFlat(mt,
+		idx0, err := NewIndexBinFlat(mt, 
 			nlist,
 		)
 		assert.Nil(t, err)
@@ -48,38 +54,39 @@ func TestIndexBinFlat(t *testing.T) {
 		assert.EqualValues(t, "BIN_FLAT", idx0.IndexType())
 		assert.NotNil(t, idx0.Params())
 		assert.True(t, idx0.SupportBinary())
-
+		
 	})
 
-	t.Run("invalid usage case", func(t *testing.T) {
-
+	t.Run("invalid usage case", func(t *testing.T){
+		
 		nlist = 0
-		idx0, err := NewIndexBinFlat(mt,
+		idx0, err := NewIndexBinFlat(mt, 
 			nlist,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx0)
-
+		
 		nlist = 65537
-		idx1, err := NewIndexBinFlat(mt,
+		idx1, err := NewIndexBinFlat(mt, 
 			nlist,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx1)
-
+		
 	})
 }
 
-func TestIndexIvfFlat(t *testing.T) {
-
+func TestIndexIvfFlat(t *testing.T){
+	
 	var nlist int
 
 	mt := L2
+	
 
-	t.Run("valid usage case", func(t *testing.T) {
-
+	t.Run("valid usage case", func(t *testing.T){
+		
 		nlist = 10
-		idx0, err := NewIndexIvfFlat(mt,
+		idx0, err := NewIndexIvfFlat(mt, 
 			nlist,
 		)
 		assert.Nil(t, err)
@@ -88,38 +95,39 @@ func TestIndexIvfFlat(t *testing.T) {
 		assert.EqualValues(t, "IVF_FLAT", idx0.IndexType())
 		assert.NotNil(t, idx0.Params())
 		assert.False(t, idx0.SupportBinary())
-
+		
 	})
 
-	t.Run("invalid usage case", func(t *testing.T) {
-
+	t.Run("invalid usage case", func(t *testing.T){
+		
 		nlist = 0
-		idx0, err := NewIndexIvfFlat(mt,
+		idx0, err := NewIndexIvfFlat(mt, 
 			nlist,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx0)
-
+		
 		nlist = 65537
-		idx1, err := NewIndexIvfFlat(mt,
+		idx1, err := NewIndexIvfFlat(mt, 
 			nlist,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx1)
-
+		
 	})
 }
 
-func TestIndexBinIvfFlat(t *testing.T) {
-
+func TestIndexBinIvfFlat(t *testing.T){
+	
 	var nlist int
 
 	mt := HAMMING
+	
 
-	t.Run("valid usage case", func(t *testing.T) {
-
+	t.Run("valid usage case", func(t *testing.T){
+		
 		nlist = 10
-		idx0, err := NewIndexBinIvfFlat(mt,
+		idx0, err := NewIndexBinIvfFlat(mt, 
 			nlist,
 		)
 		assert.Nil(t, err)
@@ -128,38 +136,39 @@ func TestIndexBinIvfFlat(t *testing.T) {
 		assert.EqualValues(t, "BIN_IVF_FLAT", idx0.IndexType())
 		assert.NotNil(t, idx0.Params())
 		assert.True(t, idx0.SupportBinary())
-
+		
 	})
 
-	t.Run("invalid usage case", func(t *testing.T) {
-
+	t.Run("invalid usage case", func(t *testing.T){
+		
 		nlist = 0
-		idx0, err := NewIndexBinIvfFlat(mt,
+		idx0, err := NewIndexBinIvfFlat(mt, 
 			nlist,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx0)
-
+		
 		nlist = 65537
-		idx1, err := NewIndexBinIvfFlat(mt,
+		idx1, err := NewIndexBinIvfFlat(mt, 
 			nlist,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx1)
-
+		
 	})
 }
 
-func TestIndexIvfSQ8(t *testing.T) {
-
+func TestIndexIvfSQ8(t *testing.T){
+	
 	var nlist int
 
 	mt := L2
+	
 
-	t.Run("valid usage case", func(t *testing.T) {
-
+	t.Run("valid usage case", func(t *testing.T){
+		
 		nlist = 10
-		idx0, err := NewIndexIvfSQ8(mt,
+		idx0, err := NewIndexIvfSQ8(mt, 
 			nlist,
 		)
 		assert.Nil(t, err)
@@ -168,40 +177,41 @@ func TestIndexIvfSQ8(t *testing.T) {
 		assert.EqualValues(t, "IVF_SQ8", idx0.IndexType())
 		assert.NotNil(t, idx0.Params())
 		assert.False(t, idx0.SupportBinary())
-
+		
 	})
 
-	t.Run("invalid usage case", func(t *testing.T) {
-
+	t.Run("invalid usage case", func(t *testing.T){
+		
 		nlist = 0
-		idx0, err := NewIndexIvfSQ8(mt,
+		idx0, err := NewIndexIvfSQ8(mt, 
 			nlist,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx0)
-
+		
 		nlist = 65537
-		idx1, err := NewIndexIvfSQ8(mt,
+		idx1, err := NewIndexIvfSQ8(mt, 
 			nlist,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx1)
-
+		
 	})
 }
 
-func TestIndexIvfPQ(t *testing.T) {
-
+func TestIndexIvfPQ(t *testing.T){
+	
 	var nlist int
 	var m int
 	var nbits int
 
 	mt := L2
+	
 
-	t.Run("valid usage case", func(t *testing.T) {
-
+	t.Run("valid usage case", func(t *testing.T){
+		
 		nlist, m, nbits = 10, 8, 8
-		idx0, err := NewIndexIvfPQ(mt,
+		idx0, err := NewIndexIvfPQ(mt, 
 			nlist,
 			m,
 			nbits,
@@ -212,61 +222,62 @@ func TestIndexIvfPQ(t *testing.T) {
 		assert.EqualValues(t, "IVF_PQ", idx0.IndexType())
 		assert.NotNil(t, idx0.Params())
 		assert.False(t, idx0.SupportBinary())
-
+		
 	})
 
-	t.Run("invalid usage case", func(t *testing.T) {
-
+	t.Run("invalid usage case", func(t *testing.T){
+		
 		nlist, m, nbits = 0, 8, 8
-		idx0, err := NewIndexIvfPQ(mt,
+		idx0, err := NewIndexIvfPQ(mt, 
 			nlist,
 			m,
 			nbits,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx0)
-
+		
 		nlist, m, nbits = 65537, 8, 8
-		idx1, err := NewIndexIvfPQ(mt,
+		idx1, err := NewIndexIvfPQ(mt, 
 			nlist,
 			m,
 			nbits,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx1)
-
+		
 		nlist, m, nbits = 10, 8, 0
-		idx2, err := NewIndexIvfPQ(mt,
+		idx2, err := NewIndexIvfPQ(mt, 
 			nlist,
 			m,
 			nbits,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx2)
-
+		
 		nlist, m, nbits = 10, 8, 17
-		idx3, err := NewIndexIvfPQ(mt,
+		idx3, err := NewIndexIvfPQ(mt, 
 			nlist,
 			m,
 			nbits,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx3)
-
+		
 	})
 }
 
-func TestIndexHNSW(t *testing.T) {
-
+func TestIndexHNSW(t *testing.T){
+	
 	var M int
 	var efConstruction int
 
 	mt := L2
+	
 
-	t.Run("valid usage case", func(t *testing.T) {
-
+	t.Run("valid usage case", func(t *testing.T){
+		
 		M, efConstruction = 16, 40
-		idx0, err := NewIndexHNSW(mt,
+		idx0, err := NewIndexHNSW(mt, 
 			M,
 			efConstruction,
 		)
@@ -276,58 +287,59 @@ func TestIndexHNSW(t *testing.T) {
 		assert.EqualValues(t, "HNSW", idx0.IndexType())
 		assert.NotNil(t, idx0.Params())
 		assert.False(t, idx0.SupportBinary())
-
+		
 	})
 
-	t.Run("invalid usage case", func(t *testing.T) {
-
+	t.Run("invalid usage case", func(t *testing.T){
+		
 		M, efConstruction = 3, 40
-		idx0, err := NewIndexHNSW(mt,
+		idx0, err := NewIndexHNSW(mt, 
 			M,
 			efConstruction,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx0)
-
+		
 		M, efConstruction = 65, 40
-		idx1, err := NewIndexHNSW(mt,
+		idx1, err := NewIndexHNSW(mt, 
 			M,
 			efConstruction,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx1)
-
+		
 		M, efConstruction = 16, 7
-		idx2, err := NewIndexHNSW(mt,
+		idx2, err := NewIndexHNSW(mt, 
 			M,
 			efConstruction,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx2)
-
+		
 		M, efConstruction = 16, 513
-		idx3, err := NewIndexHNSW(mt,
+		idx3, err := NewIndexHNSW(mt, 
 			M,
 			efConstruction,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx3)
-
+		
 	})
 }
 
-func TestIndexIvfHNSW(t *testing.T) {
-
+func TestIndexIvfHNSW(t *testing.T){
+	
 	var nlist int
 	var M int
 	var efConstruction int
 
 	mt := L2
+	
 
-	t.Run("valid usage case", func(t *testing.T) {
-
+	t.Run("valid usage case", func(t *testing.T){
+		
 		nlist, M, efConstruction = 10, 16, 40
-		idx0, err := NewIndexIvfHNSW(mt,
+		idx0, err := NewIndexIvfHNSW(mt, 
 			nlist,
 			M,
 			efConstruction,
@@ -338,120 +350,129 @@ func TestIndexIvfHNSW(t *testing.T) {
 		assert.EqualValues(t, "IVF_HNSW", idx0.IndexType())
 		assert.NotNil(t, idx0.Params())
 		assert.False(t, idx0.SupportBinary())
-
+		
 	})
 
-	t.Run("invalid usage case", func(t *testing.T) {
-
+	t.Run("invalid usage case", func(t *testing.T){
+		
 		nlist, M, efConstruction = 0, 16, 40
-		idx0, err := NewIndexIvfHNSW(mt,
+		idx0, err := NewIndexIvfHNSW(mt, 
 			nlist,
 			M,
 			efConstruction,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx0)
-
+		
 		nlist, M, efConstruction = 65537, 16, 40
-		idx1, err := NewIndexIvfHNSW(mt,
+		idx1, err := NewIndexIvfHNSW(mt, 
 			nlist,
 			M,
 			efConstruction,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx1)
-
+		
 		nlist, M, efConstruction = 10, 3, 40
-		idx2, err := NewIndexIvfHNSW(mt,
+		idx2, err := NewIndexIvfHNSW(mt, 
 			nlist,
 			M,
 			efConstruction,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx2)
-
+		
 		nlist, M, efConstruction = 10, 65, 40
-		idx3, err := NewIndexIvfHNSW(mt,
+		idx3, err := NewIndexIvfHNSW(mt, 
 			nlist,
 			M,
 			efConstruction,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx3)
-
+		
 		nlist, M, efConstruction = 10, 16, 7
-		idx4, err := NewIndexIvfHNSW(mt,
+		idx4, err := NewIndexIvfHNSW(mt, 
 			nlist,
 			M,
 			efConstruction,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx4)
-
+		
 		nlist, M, efConstruction = 10, 16, 513
-		idx5, err := NewIndexIvfHNSW(mt,
+		idx5, err := NewIndexIvfHNSW(mt, 
 			nlist,
 			M,
 			efConstruction,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx5)
-
+		
 	})
 }
 
-func TestIndexDISKANN(t *testing.T) {
+func TestIndexDISKANN(t *testing.T){
+	
 
 	mt := L2
+	
 
-	t.Run("valid usage case", func(t *testing.T) {
-
-		idx0, err := NewIndexDISKANN(mt)
+	t.Run("valid usage case", func(t *testing.T){
+		
+		
+		idx0, err := NewIndexDISKANN(mt, 
+		)
 		assert.Nil(t, err)
 		assert.NotNil(t, idx0)
 		assert.Equal(t, "DISKANN", idx0.Name())
 		assert.EqualValues(t, "DISKANN", idx0.IndexType())
 		assert.NotNil(t, idx0.Params())
 		assert.False(t, idx0.SupportBinary())
-
+		
 	})
 
-	t.Run("invalid usage case", func(t *testing.T) {
-
+	t.Run("invalid usage case", func(t *testing.T){
+		
 	})
 }
 
-func TestIndexAUTOINDEX(t *testing.T) {
+func TestIndexAUTOINDEX(t *testing.T){
+	
 
 	mt := L2
+	
 
-	t.Run("valid usage case", func(t *testing.T) {
-
-		idx0, err := NewIndexAUTOINDEX(mt)
+	t.Run("valid usage case", func(t *testing.T){
+		
+		
+		idx0, err := NewIndexAUTOINDEX(mt, 
+		)
 		assert.Nil(t, err)
 		assert.NotNil(t, idx0)
 		assert.Equal(t, "AUTOINDEX", idx0.Name())
 		assert.EqualValues(t, "AUTOINDEX", idx0.IndexType())
 		assert.NotNil(t, idx0.Params())
 		assert.False(t, idx0.SupportBinary())
-
+		
 	})
 
-	t.Run("invalid usage case", func(t *testing.T) {
-
+	t.Run("invalid usage case", func(t *testing.T){
+		
 	})
 }
 
-func TestIndexGPUIvfFlat(t *testing.T) {
-
+func TestIndexGPUIvfFlat(t *testing.T){
+	
 	var nlist int
 
 	mt := L2
+	
 
-	t.Run("valid usage case", func(t *testing.T) {
-
+	t.Run("valid usage case", func(t *testing.T){
+		
 		nlist = 10
-		idx0, err := NewIndexGPUIvfFlat(mt,
+		idx0, err := NewIndexGPUIvfFlat(mt, 
 			nlist,
 		)
 		assert.Nil(t, err)
@@ -460,40 +481,41 @@ func TestIndexGPUIvfFlat(t *testing.T) {
 		assert.EqualValues(t, "GPU_IVF_FLAT", idx0.IndexType())
 		assert.NotNil(t, idx0.Params())
 		assert.False(t, idx0.SupportBinary())
-
+		
 	})
 
-	t.Run("invalid usage case", func(t *testing.T) {
-
+	t.Run("invalid usage case", func(t *testing.T){
+		
 		nlist = 0
-		idx0, err := NewIndexGPUIvfFlat(mt,
+		idx0, err := NewIndexGPUIvfFlat(mt, 
 			nlist,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx0)
-
+		
 		nlist = 65537
-		idx1, err := NewIndexGPUIvfFlat(mt,
+		idx1, err := NewIndexGPUIvfFlat(mt, 
 			nlist,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx1)
-
+		
 	})
 }
 
-func TestIndexGPUIvfPQ(t *testing.T) {
-
+func TestIndexGPUIvfPQ(t *testing.T){
+	
 	var nlist int
 	var m int
 	var nbits int
 
 	mt := L2
+	
 
-	t.Run("valid usage case", func(t *testing.T) {
-
+	t.Run("valid usage case", func(t *testing.T){
+		
 		nlist, m, nbits = 10, 8, 8
-		idx0, err := NewIndexGPUIvfPQ(mt,
+		idx0, err := NewIndexGPUIvfPQ(mt, 
 			nlist,
 			m,
 			nbits,
@@ -504,102 +526,104 @@ func TestIndexGPUIvfPQ(t *testing.T) {
 		assert.EqualValues(t, "GPU_IVF_PQ", idx0.IndexType())
 		assert.NotNil(t, idx0.Params())
 		assert.False(t, idx0.SupportBinary())
-
+		
 	})
 
-	t.Run("invalid usage case", func(t *testing.T) {
-
+	t.Run("invalid usage case", func(t *testing.T){
+		
 		nlist, m, nbits = 0, 8, 8
-		idx0, err := NewIndexGPUIvfPQ(mt,
+		idx0, err := NewIndexGPUIvfPQ(mt, 
 			nlist,
 			m,
 			nbits,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx0)
-
+		
 		nlist, m, nbits = 65537, 8, 8
-		idx1, err := NewIndexGPUIvfPQ(mt,
+		idx1, err := NewIndexGPUIvfPQ(mt, 
 			nlist,
 			m,
 			nbits,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx1)
-
+		
 		nlist, m, nbits = 10, 8, 0
-		idx2, err := NewIndexGPUIvfPQ(mt,
+		idx2, err := NewIndexGPUIvfPQ(mt, 
 			nlist,
 			m,
 			nbits,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx2)
-
+		
 		nlist, m, nbits = 10, 8, 65
-		idx3, err := NewIndexGPUIvfPQ(mt,
+		idx3, err := NewIndexGPUIvfPQ(mt, 
 			nlist,
 			m,
 			nbits,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx3)
-
+		
 	})
 }
 
-func TestIndexSCANN(t *testing.T) {
-
+func TestIndexSCANN(t *testing.T){
+	
 	var nlist int
 	var with_raw_data bool
 
 	mt := L2
+	
 
-	t.Run("valid usage case", func(t *testing.T) {
-
+	t.Run("valid usage case", func(t *testing.T){
+		
 		nlist = 100
-		idx0, err := NewIndexSCANN(mt,
+		idx0, err := NewIndexSCANN(mt, 
 			nlist,
 			with_raw_data,
 		)
 		assert.Nil(t, err)
 		assert.NotNil(t, idx0)
 		assert.Equal(t, "SCANN", idx0.Name())
-		assert.EqualValues(t, "SCANN", idx0.IndexType())
+		assert.EqualValues(t, "IVF_FLAT", idx0.IndexType())
 		assert.NotNil(t, idx0.Params())
 		assert.False(t, idx0.SupportBinary())
-
+		
 		with_raw_data = true
-		idx1, err := NewIndexSCANN(mt,
+		idx1, err := NewIndexSCANN(mt, 
 			nlist,
 			with_raw_data,
 		)
 		assert.Nil(t, err)
 		assert.NotNil(t, idx1)
 		assert.Equal(t, "SCANN", idx1.Name())
-		assert.EqualValues(t, "SCANN", idx1.IndexType())
+		assert.EqualValues(t, "IVF_FLAT", idx1.IndexType())
 		assert.NotNil(t, idx1.Params())
 		assert.False(t, idx1.SupportBinary())
-
+		
 	})
 
-	t.Run("invalid usage case", func(t *testing.T) {
-
+	t.Run("invalid usage case", func(t *testing.T){
+		
 		nlist = 0
-		idx0, err := NewIndexSCANN(mt,
+		idx0, err := NewIndexSCANN(mt, 
 			nlist,
 			with_raw_data,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx0)
-
+		
 		nlist = 65537
-		idx1, err := NewIndexSCANN(mt,
+		idx1, err := NewIndexSCANN(mt, 
 			nlist,
 			with_raw_data,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx1)
-
+		
 	})
 }
+

@@ -9,25 +9,29 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+
 func TestIndexFlatSearchParam(t *testing.T) {
+	
 
-	t.Run("valid usage case", func(t *testing.T) {
-
-		idx0, err := NewIndexFlatSearchParam()
+	t.Run("valid usage case", func(t *testing.T){
+		
+		
+		idx0, err := NewIndexFlatSearchParam(
+		)
 		assert.Nil(t, err)
 		assert.NotNil(t, idx0)
 		assert.NotNil(t, idx0.Params())
-
+		
 	})
-
+	
 }
 
 func TestIndexBinFlatSearchParam(t *testing.T) {
-
+	
 	var nprobe int
 
-	t.Run("valid usage case", func(t *testing.T) {
-
+	t.Run("valid usage case", func(t *testing.T){
+		
 		nprobe = 10
 		idx0, err := NewIndexBinFlatSearchParam(
 			nprobe,
@@ -35,35 +39,35 @@ func TestIndexBinFlatSearchParam(t *testing.T) {
 		assert.Nil(t, err)
 		assert.NotNil(t, idx0)
 		assert.NotNil(t, idx0.Params())
-
+		
 	})
-
-	t.Run("invalid usage case", func(t *testing.T) {
-
+	
+	t.Run("invalid usage case", func(t *testing.T){
+		
 		nprobe = 0
 		idx0, err := NewIndexBinFlatSearchParam(
 			nprobe,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx0)
-
+		
 		nprobe = 65537
 		idx1, err := NewIndexBinFlatSearchParam(
 			nprobe,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx1)
-
+		
 	})
-
+	
 }
 
 func TestIndexIvfFlatSearchParam(t *testing.T) {
-
+	
 	var nprobe int
 
-	t.Run("valid usage case", func(t *testing.T) {
-
+	t.Run("valid usage case", func(t *testing.T){
+		
 		nprobe = 10
 		idx0, err := NewIndexIvfFlatSearchParam(
 			nprobe,
@@ -71,35 +75,35 @@ func TestIndexIvfFlatSearchParam(t *testing.T) {
 		assert.Nil(t, err)
 		assert.NotNil(t, idx0)
 		assert.NotNil(t, idx0.Params())
-
+		
 	})
-
-	t.Run("invalid usage case", func(t *testing.T) {
-
+	
+	t.Run("invalid usage case", func(t *testing.T){
+		
 		nprobe = 0
 		idx0, err := NewIndexIvfFlatSearchParam(
 			nprobe,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx0)
-
+		
 		nprobe = 65537
 		idx1, err := NewIndexIvfFlatSearchParam(
 			nprobe,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx1)
-
+		
 	})
-
+	
 }
 
 func TestIndexBinIvfFlatSearchParam(t *testing.T) {
-
+	
 	var nprobe int
 
-	t.Run("valid usage case", func(t *testing.T) {
-
+	t.Run("valid usage case", func(t *testing.T){
+		
 		nprobe = 10
 		idx0, err := NewIndexBinIvfFlatSearchParam(
 			nprobe,
@@ -107,35 +111,35 @@ func TestIndexBinIvfFlatSearchParam(t *testing.T) {
 		assert.Nil(t, err)
 		assert.NotNil(t, idx0)
 		assert.NotNil(t, idx0.Params())
-
+		
 	})
-
-	t.Run("invalid usage case", func(t *testing.T) {
-
+	
+	t.Run("invalid usage case", func(t *testing.T){
+		
 		nprobe = 0
 		idx0, err := NewIndexBinIvfFlatSearchParam(
 			nprobe,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx0)
-
+		
 		nprobe = 65537
 		idx1, err := NewIndexBinIvfFlatSearchParam(
 			nprobe,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx1)
-
+		
 	})
-
+	
 }
 
 func TestIndexIvfSQ8SearchParam(t *testing.T) {
-
+	
 	var nprobe int
 
-	t.Run("valid usage case", func(t *testing.T) {
-
+	t.Run("valid usage case", func(t *testing.T){
+		
 		nprobe = 10
 		idx0, err := NewIndexIvfSQ8SearchParam(
 			nprobe,
@@ -143,35 +147,35 @@ func TestIndexIvfSQ8SearchParam(t *testing.T) {
 		assert.Nil(t, err)
 		assert.NotNil(t, idx0)
 		assert.NotNil(t, idx0.Params())
-
+		
 	})
-
-	t.Run("invalid usage case", func(t *testing.T) {
-
+	
+	t.Run("invalid usage case", func(t *testing.T){
+		
 		nprobe = 0
 		idx0, err := NewIndexIvfSQ8SearchParam(
 			nprobe,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx0)
-
+		
 		nprobe = 65537
 		idx1, err := NewIndexIvfSQ8SearchParam(
 			nprobe,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx1)
-
+		
 	})
-
+	
 }
 
 func TestIndexIvfPQSearchParam(t *testing.T) {
-
+	
 	var nprobe int
 
-	t.Run("valid usage case", func(t *testing.T) {
-
+	t.Run("valid usage case", func(t *testing.T){
+		
 		nprobe = 10
 		idx0, err := NewIndexIvfPQSearchParam(
 			nprobe,
@@ -179,35 +183,35 @@ func TestIndexIvfPQSearchParam(t *testing.T) {
 		assert.Nil(t, err)
 		assert.NotNil(t, idx0)
 		assert.NotNil(t, idx0.Params())
-
+		
 	})
-
-	t.Run("invalid usage case", func(t *testing.T) {
-
+	
+	t.Run("invalid usage case", func(t *testing.T){
+		
 		nprobe = 0
 		idx0, err := NewIndexIvfPQSearchParam(
 			nprobe,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx0)
-
+		
 		nprobe = 65537
 		idx1, err := NewIndexIvfPQSearchParam(
 			nprobe,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx1)
-
+		
 	})
-
+	
 }
 
 func TestIndexHNSWSearchParam(t *testing.T) {
-
+	
 	var ef int
 
-	t.Run("valid usage case", func(t *testing.T) {
-
+	t.Run("valid usage case", func(t *testing.T){
+		
 		ef = 16
 		idx0, err := NewIndexHNSWSearchParam(
 			ef,
@@ -215,36 +219,36 @@ func TestIndexHNSWSearchParam(t *testing.T) {
 		assert.Nil(t, err)
 		assert.NotNil(t, idx0)
 		assert.NotNil(t, idx0.Params())
-
+		
 	})
-
-	t.Run("invalid usage case", func(t *testing.T) {
-
+	
+	t.Run("invalid usage case", func(t *testing.T){
+		
 		ef = 0
 		idx0, err := NewIndexHNSWSearchParam(
 			ef,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx0)
-
+		
 		ef = 32769
 		idx1, err := NewIndexHNSWSearchParam(
 			ef,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx1)
-
+		
 	})
-
+	
 }
 
 func TestIndexIvfHNSWSearchParam(t *testing.T) {
-
+	
 	var nprobe int
 	var ef int
 
-	t.Run("valid usage case", func(t *testing.T) {
-
+	t.Run("valid usage case", func(t *testing.T){
+		
 		nprobe, ef = 10, 16
 		idx0, err := NewIndexIvfHNSWSearchParam(
 			nprobe,
@@ -253,11 +257,11 @@ func TestIndexIvfHNSWSearchParam(t *testing.T) {
 		assert.Nil(t, err)
 		assert.NotNil(t, idx0)
 		assert.NotNil(t, idx0.Params())
-
+		
 	})
-
-	t.Run("invalid usage case", func(t *testing.T) {
-
+	
+	t.Run("invalid usage case", func(t *testing.T){
+		
 		nprobe, ef = 0, 16
 		idx0, err := NewIndexIvfHNSWSearchParam(
 			nprobe,
@@ -265,7 +269,7 @@ func TestIndexIvfHNSWSearchParam(t *testing.T) {
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx0)
-
+		
 		nprobe, ef = 65537, 16
 		idx1, err := NewIndexIvfHNSWSearchParam(
 			nprobe,
@@ -273,7 +277,7 @@ func TestIndexIvfHNSWSearchParam(t *testing.T) {
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx1)
-
+		
 		nprobe, ef = 10, 0
 		idx2, err := NewIndexIvfHNSWSearchParam(
 			nprobe,
@@ -281,7 +285,7 @@ func TestIndexIvfHNSWSearchParam(t *testing.T) {
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx2)
-
+		
 		nprobe, ef = 10, 32769
 		idx3, err := NewIndexIvfHNSWSearchParam(
 			nprobe,
@@ -289,17 +293,17 @@ func TestIndexIvfHNSWSearchParam(t *testing.T) {
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx3)
-
+		
 	})
-
+	
 }
 
 func TestIndexDISKANNSearchParam(t *testing.T) {
-
+	
 	var search_list int
 
-	t.Run("valid usage case", func(t *testing.T) {
-
+	t.Run("valid usage case", func(t *testing.T){
+		
 		search_list = 30
 		idx0, err := NewIndexDISKANNSearchParam(
 			search_list,
@@ -307,35 +311,35 @@ func TestIndexDISKANNSearchParam(t *testing.T) {
 		assert.Nil(t, err)
 		assert.NotNil(t, idx0)
 		assert.NotNil(t, idx0.Params())
-
+		
 	})
-
-	t.Run("invalid usage case", func(t *testing.T) {
-
+	
+	t.Run("invalid usage case", func(t *testing.T){
+		
 		search_list = 0
 		idx0, err := NewIndexDISKANNSearchParam(
 			search_list,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx0)
-
+		
 		search_list = 65537
 		idx1, err := NewIndexDISKANNSearchParam(
 			search_list,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx1)
-
+		
 	})
-
+	
 }
 
 func TestIndexAUTOINDEXSearchParam(t *testing.T) {
-
+	
 	var level int
 
-	t.Run("valid usage case", func(t *testing.T) {
-
+	t.Run("valid usage case", func(t *testing.T){
+		
 		level = 1
 		idx0, err := NewIndexAUTOINDEXSearchParam(
 			level,
@@ -343,42 +347,42 @@ func TestIndexAUTOINDEXSearchParam(t *testing.T) {
 		assert.Nil(t, err)
 		assert.NotNil(t, idx0)
 		assert.NotNil(t, idx0.Params())
-
+		
 	})
-
-	t.Run("invalid usage case", func(t *testing.T) {
-
+	
+	t.Run("invalid usage case", func(t *testing.T){
+		
 		level = 0
 		idx0, err := NewIndexAUTOINDEXSearchParam(
 			level,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx0)
-
+		
 		level = 10
 		idx1, err := NewIndexAUTOINDEXSearchParam(
 			level,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx1)
-
+		
 		level = -1
 		idx2, err := NewIndexAUTOINDEXSearchParam(
 			level,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx2)
-
+		
 	})
-
+	
 }
 
 func TestIndexGPUIvfFlatSearchParam(t *testing.T) {
-
+	
 	var nprobe int
 
-	t.Run("valid usage case", func(t *testing.T) {
-
+	t.Run("valid usage case", func(t *testing.T){
+		
 		nprobe = 10
 		idx0, err := NewIndexGPUIvfFlatSearchParam(
 			nprobe,
@@ -386,35 +390,35 @@ func TestIndexGPUIvfFlatSearchParam(t *testing.T) {
 		assert.Nil(t, err)
 		assert.NotNil(t, idx0)
 		assert.NotNil(t, idx0.Params())
-
+		
 	})
-
-	t.Run("invalid usage case", func(t *testing.T) {
-
+	
+	t.Run("invalid usage case", func(t *testing.T){
+		
 		nprobe = 0
 		idx0, err := NewIndexGPUIvfFlatSearchParam(
 			nprobe,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx0)
-
+		
 		nprobe = 65537
 		idx1, err := NewIndexGPUIvfFlatSearchParam(
 			nprobe,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx1)
-
+		
 	})
-
+	
 }
 
 func TestIndexGPUIvfPQSearchParam(t *testing.T) {
-
+	
 	var nprobe int
 
-	t.Run("valid usage case", func(t *testing.T) {
-
+	t.Run("valid usage case", func(t *testing.T){
+		
 		nprobe = 10
 		idx0, err := NewIndexGPUIvfPQSearchParam(
 			nprobe,
@@ -422,36 +426,36 @@ func TestIndexGPUIvfPQSearchParam(t *testing.T) {
 		assert.Nil(t, err)
 		assert.NotNil(t, idx0)
 		assert.NotNil(t, idx0.Params())
-
+		
 	})
-
-	t.Run("invalid usage case", func(t *testing.T) {
-
+	
+	t.Run("invalid usage case", func(t *testing.T){
+		
 		nprobe = 0
 		idx0, err := NewIndexGPUIvfPQSearchParam(
 			nprobe,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx0)
-
+		
 		nprobe = 65537
 		idx1, err := NewIndexGPUIvfPQSearchParam(
 			nprobe,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx1)
-
+		
 	})
-
+	
 }
 
 func TestIndexSCANNSearchParam(t *testing.T) {
-
+	
 	var nprobe int
 	var reorder_k int
 
-	t.Run("valid usage case", func(t *testing.T) {
-
+	t.Run("valid usage case", func(t *testing.T){
+		
 		nprobe, reorder_k = 10, 200
 		idx0, err := NewIndexSCANNSearchParam(
 			nprobe,
@@ -460,11 +464,11 @@ func TestIndexSCANNSearchParam(t *testing.T) {
 		assert.Nil(t, err)
 		assert.NotNil(t, idx0)
 		assert.NotNil(t, idx0.Params())
-
+		
 	})
-
-	t.Run("invalid usage case", func(t *testing.T) {
-
+	
+	t.Run("invalid usage case", func(t *testing.T){
+		
 		nprobe, reorder_k = 0, 200
 		idx0, err := NewIndexSCANNSearchParam(
 			nprobe,
@@ -472,7 +476,7 @@ func TestIndexSCANNSearchParam(t *testing.T) {
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx0)
-
+		
 		nprobe, reorder_k = 65537, 200
 		idx1, err := NewIndexSCANNSearchParam(
 			nprobe,
@@ -480,7 +484,7 @@ func TestIndexSCANNSearchParam(t *testing.T) {
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx1)
-
+		
 		nprobe, reorder_k = 10, -1
 		idx2, err := NewIndexSCANNSearchParam(
 			nprobe,
@@ -488,7 +492,8 @@ func TestIndexSCANNSearchParam(t *testing.T) {
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx2)
-
+		
 	})
-
+	
 }
+

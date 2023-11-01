@@ -23,7 +23,7 @@ import (
 func TestGenericIndex(t *testing.T) {
 	rand.Seed(time.Now().UnixNano())
 	name := fmt.Sprintf("generic_index_%d", rand.Int())
-	gi := NewGenericIndex(name, IvfFlat, map[string]string{
+	gi := NewGenericIndex(name, IvfFlat, "field", map[string]string{
 		tMetricType: string(IP),
 	})
 	assert.Equal(t, name, gi.Name())
