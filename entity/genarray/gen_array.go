@@ -131,7 +131,7 @@ func main() {
 		entity.FieldTypeInt64,
 		entity.FieldTypeFloat,
 		entity.FieldTypeDouble,
-		entity.FieldTypeVarChar,
+		// entity.FieldTypeVarChar, change to hand written
 	}
 
 	pf := func(ft entity.FieldType) interface{} {

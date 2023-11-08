@@ -13,12 +13,13 @@ package entity
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"go/ast"
 	"reflect"
 	"strconv"
 	"strings"
+
+	"github.com/cockroachdb/errors"
 )
 
 const (
@@ -324,6 +325,12 @@ func AnyToColumns(rows []interface{}, schemas ...*Schema) ([]Column, error) {
 			data := make([][]byte, 0, rowsLen)
 			col := NewColumnJSONBytes(field.Name, data)
 			nameColumns[field.Name] = col
+		case FieldTypeArray:
+			col := NewArrayColumn(field)
+			if col == nil {
+				return nil, errors.Errorf("unsupported element type %s for Array", field.ElementType.String())
+			}
+			nameColumns[field.Name] = col
 		case FieldTypeFloatVector:
 			data := make([][]float32, 0, rowsLen)
 			dimStr, has := field.TypeParams[TypeParamDim]
@@ -413,6 +420,37 @@ func AnyToColumns(rows []interface{}, schemas ...*Schema) ([]Column, error) {
 		columns = append(columns, dynamicCol)
 	}
 	return columns, nil
+}
+
+func NewArrayColumn(f *Field) Column {
+	switch f.ElementType {
+	case FieldTypeBool:
+		return NewColumnBoolArray(f.Name, nil)
+
+	case FieldTypeInt8:
+		return NewColumnInt8Array(f.Name, nil)
+
+	case FieldTypeInt16:
+		return NewColumnInt16Array(f.Name, nil)
+
+	case FieldTypeInt32:
+		return NewColumnInt32Array(f.Name, nil)
+
+	case FieldTypeInt64:
+		return NewColumnInt64Array(f.Name, nil)
+
+	case FieldTypeFloat:
+		return NewColumnFloatArray(f.Name, nil)
+
+	case FieldTypeDouble:
+		return NewColumnDoubleArray(f.Name, nil)
+
+	case FieldTypeVarChar:
+		return NewColumnVarCharArray(f.Name, nil)
+
+	default:
+		return nil
+	}
 }
 
 // RowsToColumns rows to columns

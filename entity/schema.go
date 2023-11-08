@@ -391,7 +391,7 @@ func (t FieldType) String() string {
 	case FieldTypeString:
 		return "string"
 	case FieldTypeVarChar:
-		return "[]byte"
+		return "string"
 	case FieldTypeArray:
 		return "Array"
 	case FieldTypeJSON:
@@ -425,7 +425,7 @@ func (t FieldType) PbFieldType() (string, string) {
 	case FieldTypeString:
 		return "String", "string"
 	case FieldTypeVarChar:
-		return "Bytes", "[]byte"
+		return "VarChar", "string"
 	case FieldTypeJSON:
 		return "JSON", "JSON"
 	case FieldTypeBinaryVector:
