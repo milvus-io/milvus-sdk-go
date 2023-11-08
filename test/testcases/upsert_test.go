@@ -242,11 +242,11 @@ func TestUpsertInvalidColumnData(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create -> insert [0, 3000) -> flush -> index -> load
-	cp := CollectionParams{CollectionFieldsType: Int64FloatVecJSON, AutoID: false, EnableDynamicField: true,
+	cp := CollectionParams{CollectionFieldsType: Int64FloatVecJSON, AutoID: false, EnableDynamicField: false,
 		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
 
 	dp := DataParams{DoInsert: true, CollectionFieldsType: Int64FloatVecJSON, start: 0, nb: 200,
-		dim: common.DefaultDim, EnableDynamicField: true}
+		dim: common.DefaultDim, EnableDynamicField: false}
 	collName := prepareCollection(ctx, t, mc, cp, WithDataParams(dp),
 		WithIndexParams(IndexParams{BuildIndex: false}),
 		WithLoadParams(LoadParams{DoLoad: false}), WithCreateOption(client.WithConsistencyLevel(entity.ClStrong)))
