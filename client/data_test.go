@@ -1195,21 +1195,23 @@ func (s *WildcardSuite) SetupTest() {
 
 func (s *WildcardSuite) TestExpandWildcard() {
 	type testCase struct {
-		tag    string
-		input  []string
-		expect []string
+		tag            string
+		input          []string
+		expect         []string
+		expectWildCard bool
 	}
 
 	cases := []testCase{
 		{tag: "normal", input: []string{"pk", "attr"}, expect: []string{"pk", "attr"}},
-		{tag: "with_wildcard", input: []string{"*"}, expect: []string{"pk", "attr", "$meta", "vector"}},
-		{tag: "wildcard_dynamic", input: []string{"*", "a"}, expect: []string{"pk", "attr", "$meta", "vector", "a"}},
+		{tag: "with_wildcard", input: []string{"*"}, expect: []string{"pk", "attr", "$meta", "vector"}, expectWildCard: true},
+		{tag: "wildcard_dynamic", input: []string{"*", "a"}, expect: []string{"pk", "attr", "$meta", "vector", "a"}, expectWildCard: true},
 	}
 
 	for _, tc := range cases {
 		s.Run(tc.tag, func() {
-			output := expandWildcard(s.schema, tc.input)
+			output, wildCard := expandWildcard(s.schema, tc.input)
 			s.ElementsMatch(tc.expect, output)
+			s.Equal(tc.expectWildCard, wildCard)
 		})
 	}
 }
