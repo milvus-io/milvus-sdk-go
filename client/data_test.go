@@ -870,14 +870,14 @@ func TestGrpcCalcDistanceWithIDs(t *testing.T) {
 			// this injection returns float distance
 			dl := 0
 			if idsLeft != nil {
-				dl = len(idsLeft.IdArray.GetIntId().Data)
+				dl = len(idsLeft.IdArray.GetIntId().GetData())
 			}
 			if valuesLeft != nil {
 				dl = len(valuesLeft.GetFloatVector().GetData()) / int(valuesLeft.Dim)
 			}
 			dr := 0
 			if idsRight != nil {
-				dr = len(idsRight.IdArray.GetIntId().Data)
+				dr = len(idsRight.IdArray.GetIntId().GetData())
 			}
 			if valuesRight != nil {
 				dr = len(valuesRight.GetFloatVector().GetData()) / int(valuesRight.Dim)
@@ -935,14 +935,14 @@ func TestGrpcCalcDistanceWithIDs(t *testing.T) {
 			// this injection returns float distance
 			dl := 0
 			if idsLeft != nil {
-				dl = len(idsLeft.IdArray.GetIntId().Data)
+				dl = len(idsLeft.IdArray.GetIntId().GetData())
 			}
 			if valuesLeft != nil {
 				dl = len(valuesLeft.GetFloatVector().GetData()) / int(valuesLeft.Dim)
 			}
 			dr := 0
 			if idsRight != nil {
-				dr = len(idsRight.IdArray.GetIntId().Data)
+				dr = len(idsRight.IdArray.GetIntId().GetData())
 			}
 			if valuesRight != nil {
 				dr = len(valuesRight.GetFloatVector().GetData()) / int(valuesRight.Dim)
@@ -1004,7 +1004,7 @@ func TestGrpcCalcDistanceWithIDs(t *testing.T) {
 			assert.NotNil(t, idsRight.IdArray.GetStrId())
 
 			// this injection returns float distance
-			dl := len(idsLeft.IdArray.GetStrId().Data)
+			dl := len(idsLeft.IdArray.GetStrId().GetData())
 
 			resp.Array = &milvuspb.CalcDistanceResults_FloatDist{
 				FloatDist: &schemapb.FloatArray{

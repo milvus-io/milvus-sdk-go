@@ -319,7 +319,7 @@ func parseArrayData(fieldName string, array *schema.ArrayArray) (Column, error) 
 	case schema.DataType_Int8:
 		var data [][]int8
 		for _, fd := range fieldDataList {
-			raw := fd.GetIntData().Data
+			raw := fd.GetIntData().GetData()
 			row := make([]int8, 0, len(raw))
 			for _, item := range raw {
 				row = append(row, int8(item))
@@ -331,7 +331,7 @@ func parseArrayData(fieldName string, array *schema.ArrayArray) (Column, error) 
 	case schema.DataType_Int16:
 		var data [][]int16
 		for _, fd := range fieldDataList {
-			raw := fd.GetIntData().Data
+			raw := fd.GetIntData().GetData()
 			row := make([]int16, 0, len(raw))
 			for _, item := range raw {
 				row = append(row, int16(item))
