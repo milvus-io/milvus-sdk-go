@@ -244,7 +244,14 @@ func FieldDataColumn(fd *schema.FieldData, begin, end int) (Column, error) {
 		if data == nil {
 			return nil, errFieldDataTypeNotMatch
 		}
-		return parseArrayData(fd.GetFieldName(), data)
+		var arrayData []*schema.ScalarField
+		if end < 0 {
+			arrayData = data.GetData()[begin:]
+		} else {
+			arrayData = data.GetData()[begin:end]
+		}
+
+		return parseArrayData(fd.GetFieldName(), data.GetElementType(), arrayData)
 
 	case schema.DataType_JSON:
 		data, ok := fd.GetScalars().GetData().(*schema.ScalarField_JsonData)
@@ -304,9 +311,7 @@ func FieldDataColumn(fd *schema.FieldData, begin, end int) (Column, error) {
 	}
 }
 
-func parseArrayData(fieldName string, array *schema.ArrayArray) (Column, error) {
-	fieldDataList := array.Data
-	elementType := array.ElementType
+func parseArrayData(fieldName string, elementType schema.DataType, fieldDataList []*schema.ScalarField) (Column, error) {
 
 	switch elementType {
 	case schema.DataType_Bool:
@@ -368,11 +373,17 @@ func parseArrayData(fieldName string, array *schema.ArrayArray) (Column, error) 
 		}
 		return NewColumnDoubleArray(fieldName, data), nil
 
-	case schema.DataType_VarChar:
+	case schema.DataType_VarChar, schema.DataType_String:
 		var data [][][]byte
 		for _, fd := range fieldDataList {
-			data = append(data, fd.GetBytesData().GetData())
+			strs := fd.GetStringData().GetData()
+			bytesData := make([][]byte, 0, len(strs))
+			for _, str := range strs {
+				bytesData = append(bytesData, []byte(str))
+			}
+			data = append(data, bytesData)
 		}
+
 		return NewColumnVarCharArray(fieldName, data), nil
 
 	default:
