@@ -120,7 +120,6 @@ func TestUpsertAutoID(t *testing.T) {
 }
 
 func TestUpsertVarcharPk(t *testing.T) {
-	t.Skip("https://github.com/milvus-io/milvus-sdk-go/issues/612")
 	/*
 		test upsert varchar pks
 		upsert after query
