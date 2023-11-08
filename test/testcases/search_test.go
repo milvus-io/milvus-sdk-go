@@ -1061,13 +1061,13 @@ func TestSearchScannAllMetricsWithRawData(t *testing.T) {
 			mc := createMilvusClient(ctx, t)
 
 			// create collection
-			cp := CollectionParams{CollectionFieldsType: Int64FloatVecJSON, AutoID: false, EnableDynamicField: true,
+			cp := CollectionParams{CollectionFieldsType: Int64FloatVecJSON, AutoID: false, EnableDynamicField: false,
 				ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
 			collName := createCollection(ctx, t, mc, cp)
 
 			// insert
 			dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVecJSON,
-				start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
+				start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: false, WithRows: false}
 			_, _ = insertData(ctx, t, mc, dp)
 			mc.Flush(ctx, collName, false)
 
@@ -1113,13 +1113,13 @@ func TestRangeSearchScannL2(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create collection
-	cp := CollectionParams{CollectionFieldsType: Int64FloatVecJSON, AutoID: false, EnableDynamicField: true,
+	cp := CollectionParams{CollectionFieldsType: Int64FloatVecJSON, AutoID: false, EnableDynamicField: false,
 		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
 	collName := createCollection(ctx, t, mc, cp)
 
 	// insert
 	dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVecJSON,
-		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
+		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: false, WithRows: false}
 	_, _ = insertData(ctx, t, mc, dp)
 
 	// create scann index
@@ -1171,13 +1171,13 @@ func TestRangeSearchScannIPCosine(t *testing.T) {
 		mc := createMilvusClient(ctx, t)
 
 		// create collection
-		cp := CollectionParams{CollectionFieldsType: Int64FloatVecJSON, AutoID: false, EnableDynamicField: true,
+		cp := CollectionParams{CollectionFieldsType: Int64FloatVecJSON, AutoID: false, EnableDynamicField: false,
 			ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
 		collName := createCollection(ctx, t, mc, cp)
 
 		// insert
 		dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVecJSON,
-			start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
+			start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: false, WithRows: false}
 		_, _ = insertData(ctx, t, mc, dp)
 		mc.Flush(ctx, collName, false)
 
@@ -1232,13 +1232,13 @@ func TestRangeSearchScannBinary(t *testing.T) {
 		mc := createMilvusClient(ctx, t)
 
 		// create collection
-		cp := CollectionParams{CollectionFieldsType: Int64BinaryVec, AutoID: false, EnableDynamicField: true,
+		cp := CollectionParams{CollectionFieldsType: Int64BinaryVec, AutoID: false, EnableDynamicField: false,
 			ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
 		collName := createCollection(ctx, t, mc, cp)
 
 		// insert
 		dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64BinaryVec,
-			start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
+			start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: false, WithRows: false}
 		_, _ = insertData(ctx, t, mc, dp)
 		mc.Flush(ctx, collName, false)
 
