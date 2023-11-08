@@ -183,11 +183,11 @@ func PKs2Expr(backName string, ids entity.Column) string {
 	case entity.FieldTypeInt64:
 		expr = fmt.Sprintf("%s in %s", pkName, strings.Join(strings.Fields(fmt.Sprint(ids.FieldData().GetScalars().GetLongData().GetData())), ","))
 	case entity.FieldTypeVarChar:
-		data := ids.FieldData().GetScalars().GetData().(*schemapb.ScalarField_StringData).StringData.Data
+		data := ids.FieldData().GetScalars().GetData().(*schemapb.ScalarField_StringData).StringData.GetData()
 		for i := range data {
 			data[i] = fmt.Sprintf("\"%s\"", data[i])
 		}
-		expr = fmt.Sprintf("%s in %s", pkName, strings.Join(strings.Fields(fmt.Sprint(data)), ","))
+		expr = fmt.Sprintf("%s in [%s]", pkName, strings.Join(data, ","))
 	}
 	return expr
 }
