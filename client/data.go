@@ -80,13 +80,17 @@ func (c *GrpcClient) Search(ctx context.Context, collName string, partitions []s
 			ResultCount: rc,
 			Scores:      results.GetScores()[offset : offset+rc],
 		}
-		entry.IDs, entry.Err = entity.IDColumns(results.GetIds(), offset, offset+rc)
-		if entry.Err != nil {
-			offset += rc
-			continue
+		// parse result set if current nq is not empty
+		if rc > 0 {
+			entry.IDs, entry.Err = entity.IDColumns(results.GetIds(), offset, offset+rc)
+			if entry.Err != nil {
+				offset += rc
+				continue
+			}
+			entry.Fields, entry.Err = c.parseSearchResult(schema, outputFields, fieldDataList, i, offset, offset+rc)
+			sr = append(sr, entry)
 		}
-		entry.Fields, entry.Err = c.parseSearchResult(schema, outputFields, fieldDataList, i, offset, offset+rc)
-		sr = append(sr, entry)
+
 		offset += rc
 	}
 	return sr, nil
