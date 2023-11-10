@@ -18,6 +18,8 @@ import (
 
 	"google.golang.org/grpc"
 
+	"github.com/milvus-io/milvus-proto/go-api/v2/msgpb"
+
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )
 
@@ -38,9 +40,9 @@ type Client interface {
 	// ListDatabases list all database in milvus cluster.
 	ListDatabases(ctx context.Context) ([]entity.Database, error)
 	// CreateDatabase create database with the given name.
-	CreateDatabase(ctx context.Context, dbName string) error
+	CreateDatabase(ctx context.Context, dbName string, opts ...CreateDatabaseOption) error
 	// DropDatabase drop database with the given db name.
-	DropDatabase(ctx context.Context, dbName string) error
+	DropDatabase(ctx context.Context, dbName string, opts ...DropDatabaseOption) error
 
 	// -- collection --
 
@@ -53,13 +55,13 @@ type Client interface {
 	// DescribeCollection describe collection meta
 	DescribeCollection(ctx context.Context, collName string) (*entity.Collection, error)
 	// DropCollection drop the specified collection
-	DropCollection(ctx context.Context, collName string) error
+	DropCollection(ctx context.Context, collName string, opts ...DropCollectionOption) error
 	// GetCollectionStatistics get collection statistics
 	GetCollectionStatistics(ctx context.Context, collName string) (map[string]string, error)
 	// LoadCollection load collection into memory
 	LoadCollection(ctx context.Context, collName string, async bool, opts ...LoadCollectionOption) error
 	// ReleaseCollection release loaded collection
-	ReleaseCollection(ctx context.Context, collName string) error
+	ReleaseCollection(ctx context.Context, collName string, opts ...ReleaseCollectionOption) error
 	// HasCollection check whether collection exists
 	HasCollection(ctx context.Context, collName string) (bool, error)
 	// RenameCollection performs renaming for provided collection.
@@ -91,17 +93,17 @@ type Client interface {
 	// -- partition --
 
 	// CreatePartition create partition for collection
-	CreatePartition(ctx context.Context, collName string, partitionName string) error
+	CreatePartition(ctx context.Context, collName string, partitionName string, opts ...CreatePartitionOption) error
 	// DropPartition drop partition from collection
-	DropPartition(ctx context.Context, collName string, partitionName string) error
+	DropPartition(ctx context.Context, collName string, partitionName string, opts ...DropPartitionOption) error
 	// ShowPartitions list all partitions from collection
 	ShowPartitions(ctx context.Context, collName string) ([]*entity.Partition, error)
 	// HasPartition check whether partition exists in collection
 	HasPartition(ctx context.Context, collName string, partitionName string) (bool, error)
 	// LoadPartitions load partitions into memory
-	LoadPartitions(ctx context.Context, collName string, partitionNames []string, async bool) error
+	LoadPartitions(ctx context.Context, collName string, partitionNames []string, async bool, opts ...LoadPartitionsOption) error
 	// ReleasePartitions release partitions
-	ReleasePartitions(ctx context.Context, collName string, partitionNames []string) error
+	ReleasePartitions(ctx context.Context, collName string, partitionNames []string, opts ...ReleasePartitionsOption) error
 
 	// -- segment --
 	GetPersistentSegmentInfo(ctx context.Context, collName string) ([]*entity.Segment, error)
@@ -124,10 +126,10 @@ type Client interface {
 	// Insert column-based data into collection, returns id column values
 	Insert(ctx context.Context, collName string, partitionName string, columns ...entity.Column) (entity.Column, error)
 	// Flush collection, specified
-	Flush(ctx context.Context, collName string, async bool) error
+	Flush(ctx context.Context, collName string, async bool, opts ...FlushOption) error
 	// FlushV2 flush collection, specified, return newly sealed segmentIds, all flushed segmentIds of the collection, seal time and error
 	// currently it is only used in milvus-backup(https://github.com/zilliztech/milvus-backup)
-	FlushV2(ctx context.Context, collName string, async bool) ([]int64, []int64, int64, error)
+	FlushV2(ctx context.Context, collName string, async bool, opts ...FlushOption) ([]int64, []int64, int64, error)
 	// DeleteByPks deletes entries related to provided primary keys
 	DeleteByPks(ctx context.Context, collName string, partitionName string, ids entity.Column) error
 	// Delete deletes entries match expression
@@ -211,6 +213,12 @@ type Client interface {
 	GetVersion(ctx context.Context) (string, error)
 	// CheckHealth returns milvus state
 	CheckHealth(ctx context.Context) (*entity.MilvusState, error)
+
+	ReplicateMessage(ctx context.Context,
+		channelName string, beginTs, endTs uint64,
+		msgsBytes [][]byte, startPositions, endPositions []*msgpb.MsgPosition,
+		opts ...ReplicateMessageOption,
+	) (*entity.MessageInfo, error)
 }
 
 // NewClient create a client connected to remote milvus cluster.

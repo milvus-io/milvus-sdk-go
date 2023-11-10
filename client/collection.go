@@ -18,6 +18,7 @@ import (
 	"github.com/cockroachdb/errors"
 
 	"github.com/golang/protobuf/proto"
+
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 
 	"github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
@@ -151,6 +152,7 @@ func (c *GrpcClient) requestCreateCollection(ctx context.Context, sch *entity.Sc
 	}
 
 	req := &milvuspb.CreateCollectionRequest{
+		Base:             opt.MsgBase,
 		DbName:           "", // reserved fields, not used for now
 		CollectionName:   sch.CollectionName,
 		Schema:           bs,
@@ -279,7 +281,7 @@ func (c *GrpcClient) DescribeCollection(ctx context.Context, collName string) (*
 }
 
 // DropCollection drop collection by name
-func (c *GrpcClient) DropCollection(ctx context.Context, collName string) error {
+func (c *GrpcClient) DropCollection(ctx context.Context, collName string, opts ...DropCollectionOption) error {
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
@@ -289,6 +291,9 @@ func (c *GrpcClient) DropCollection(ctx context.Context, collName string) error 
 
 	req := &milvuspb.DropCollectionRequest{
 		CollectionName: collName,
+	}
+	for _, opt := range opts {
+		opt(req)
 	}
 	resp, err := c.Service.DropCollection(ctx, req)
 	if err != nil {
@@ -447,7 +452,7 @@ func (c *GrpcClient) LoadCollection(ctx context.Context, collName string, async 
 }
 
 // ReleaseCollection release loaded collection
-func (c *GrpcClient) ReleaseCollection(ctx context.Context, collName string) error {
+func (c *GrpcClient) ReleaseCollection(ctx context.Context, collName string, opts ...ReleaseCollectionOption) error {
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
@@ -458,6 +463,9 @@ func (c *GrpcClient) ReleaseCollection(ctx context.Context, collName string) err
 	req := &milvuspb.ReleaseCollectionRequest{
 		DbName:         "", // reserved
 		CollectionName: collName,
+	}
+	for _, opt := range opts {
+		opt(req)
 	}
 	resp, err := c.Service.ReleaseCollection(ctx, req)
 	if err != nil {

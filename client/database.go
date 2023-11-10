@@ -40,7 +40,7 @@ func (c *GrpcClient) UsingDatabase(ctx context.Context, dbName string) error {
 
 // CreateDatabase creates a new database for remote Milvus cluster.
 // TODO:New options can be added as expanding parameters.
-func (c *GrpcClient) CreateDatabase(ctx context.Context, dbName string) error {
+func (c *GrpcClient) CreateDatabase(ctx context.Context, dbName string, opts ...CreateDatabaseOption) error {
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
@@ -49,6 +49,9 @@ func (c *GrpcClient) CreateDatabase(ctx context.Context, dbName string) error {
 	}
 	req := &milvuspb.CreateDatabaseRequest{
 		DbName: dbName,
+	}
+	for _, opt := range opts {
+		opt(req)
 	}
 	resp, err := c.Service.CreateDatabase(ctx, req)
 	if err != nil {
@@ -84,7 +87,7 @@ func (c *GrpcClient) ListDatabases(ctx context.Context) ([]entity.Database, erro
 }
 
 // DropDatabase drop all database in milvus cluster.
-func (c *GrpcClient) DropDatabase(ctx context.Context, dbName string) error {
+func (c *GrpcClient) DropDatabase(ctx context.Context, dbName string, opts ...DropDatabaseOption) error {
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
@@ -94,6 +97,9 @@ func (c *GrpcClient) DropDatabase(ctx context.Context, dbName string) error {
 
 	req := &milvuspb.DropDatabaseRequest{
 		DbName: dbName,
+	}
+	for _, opt := range opts {
+		opt(req)
 	}
 	resp, err := c.Service.DropDatabase(ctx, req)
 	if err != nil {

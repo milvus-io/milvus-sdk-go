@@ -24,7 +24,7 @@ import (
 )
 
 // CreatePartition create partition for collection
-func (c *GrpcClient) CreatePartition(ctx context.Context, collName string, partitionName string) error {
+func (c *GrpcClient) CreatePartition(ctx context.Context, collName string, partitionName string, opts ...CreatePartitionOption) error {
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
@@ -43,6 +43,9 @@ func (c *GrpcClient) CreatePartition(ctx context.Context, collName string, parti
 		DbName:         "", //reserved
 		CollectionName: collName,
 		PartitionName:  partitionName,
+	}
+	for _, opt := range opts {
+		opt(req)
 	}
 	resp, err := c.Service.CreatePartition(ctx, req)
 	if err != nil {
@@ -63,7 +66,7 @@ func (c *GrpcClient) checkPartitionExists(ctx context.Context, collName string, 
 }
 
 // DropPartition drop partition from collection
-func (c *GrpcClient) DropPartition(ctx context.Context, collName string, partitionName string) error {
+func (c *GrpcClient) DropPartition(ctx context.Context, collName string, partitionName string, opts ...DropPartitionOption) error {
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
@@ -77,6 +80,9 @@ func (c *GrpcClient) DropPartition(ctx context.Context, collName string, partiti
 		DbName:         "",
 		CollectionName: collName,
 		PartitionName:  partitionName,
+	}
+	for _, opt := range opts {
+		opt(req)
 	}
 	resp, err := c.Service.DropPartition(ctx, req)
 	if err != nil {
@@ -137,7 +143,7 @@ func (c *GrpcClient) ShowPartitions(ctx context.Context, collName string) ([]*en
 }
 
 // LoadPartitions load collection paritions into memory
-func (c *GrpcClient) LoadPartitions(ctx context.Context, collName string, partitionNames []string, async bool) error {
+func (c *GrpcClient) LoadPartitions(ctx context.Context, collName string, partitionNames []string, async bool, opts ...LoadPartitionsOption) error {
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
@@ -154,6 +160,9 @@ func (c *GrpcClient) LoadPartitions(ctx context.Context, collName string, partit
 		DbName:         "", // reserved
 		CollectionName: collName,
 		PartitionNames: partitionNames,
+	}
+	for _, opt := range opts {
+		opt(req)
 	}
 	resp, err := c.Service.LoadPartitions(ctx, req)
 	if err != nil {
@@ -187,7 +196,7 @@ func (c *GrpcClient) LoadPartitions(ctx context.Context, collName string, partit
 }
 
 // ReleasePartitions release partitions
-func (c *GrpcClient) ReleasePartitions(ctx context.Context, collName string, partitionNames []string) error {
+func (c *GrpcClient) ReleasePartitions(ctx context.Context, collName string, partitionNames []string, opts ...ReleasePartitionsOption) error {
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
@@ -203,6 +212,9 @@ func (c *GrpcClient) ReleasePartitions(ctx context.Context, collName string, par
 		DbName:         "", // reserved
 		CollectionName: collName,
 		PartitionNames: partitionNames,
+	}
+	for _, opt := range opts {
+		opt(req)
 	}
 	resp, err := c.Service.ReleasePartitions(ctx, req)
 	if err != nil {

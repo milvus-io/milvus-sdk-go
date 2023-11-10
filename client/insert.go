@@ -190,14 +190,14 @@ func (c *GrpcClient) mergeDynamicColumns(dynamicName string, rowSize int, column
 
 // Flush force collection to flush memory records into storage
 // in sync mode, flush will wait all segments to be flushed
-func (c *GrpcClient) Flush(ctx context.Context, collName string, async bool) error {
-	_, _, _, err := c.FlushV2(ctx, collName, async)
+func (c *GrpcClient) Flush(ctx context.Context, collName string, async bool, opts ...FlushOption) error {
+	_, _, _, err := c.FlushV2(ctx, collName, async, opts...)
 	return err
 }
 
 // Flush force collection to flush memory records into storage
 // in sync mode, flush will wait all segments to be flushed
-func (c *GrpcClient) FlushV2(ctx context.Context, collName string, async bool) ([]int64, []int64, int64, error) {
+func (c *GrpcClient) FlushV2(ctx context.Context, collName string, async bool, opts ...FlushOption) ([]int64, []int64, int64, error) {
 	if c.Service == nil {
 		return nil, nil, 0, ErrClientNotReady
 	}
@@ -207,6 +207,9 @@ func (c *GrpcClient) FlushV2(ctx context.Context, collName string, async bool) (
 	req := &milvuspb.FlushRequest{
 		DbName:          "", // reserved,
 		CollectionNames: []string{collName},
+	}
+	for _, opt := range opts {
+		opt(req)
 	}
 	resp, err := c.Service.Flush(ctx, req)
 	if err != nil {

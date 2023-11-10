@@ -38,7 +38,7 @@ func TestGrpcClientCreateIndex(t *testing.T) {
 	})
 
 	t.Run("test async create index", func(t *testing.T) {
-		assert.Nil(t, c.CreateIndex(ctx, testCollectionName, fieldName, idx, true))
+		assert.Nil(t, c.CreateIndex(ctx, testCollectionName, fieldName, idx, true, WithIndexMsgBase(&commonpb.MsgBase{})))
 	})
 
 	t.Run("test sync create index", func(t *testing.T) {
@@ -85,7 +85,7 @@ func TestGrpcClientDropIndex(t *testing.T) {
 	c := testClient(ctx, t)
 	mockServer.SetInjection(MHasCollection, hasCollectionDefault)
 	mockServer.SetInjection(MDescribeCollection, describeCollectionInjection(t, 0, testCollectionName, defaultSchema()))
-	assert.Nil(t, c.DropIndex(ctx, testCollectionName, "vector"))
+	assert.Nil(t, c.DropIndex(ctx, testCollectionName, "vector", WithIndexMsgBase(&commonpb.MsgBase{})))
 }
 
 func TestGrpcClientDescribeIndex(t *testing.T) {

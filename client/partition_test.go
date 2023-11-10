@@ -68,7 +68,7 @@ func TestGrpcClientCreatePartition(t *testing.T) {
 		return resp, err
 	})
 
-	assert.Nil(t, c.CreatePartition(ctx, testCollectionName, partitionName))
+	assert.Nil(t, c.CreatePartition(ctx, testCollectionName, partitionName, WithCreatePartitionMsgBase(&commonpb.MsgBase{})))
 }
 
 func TestGrpcClientDropPartition(t *testing.T) {
@@ -77,7 +77,7 @@ func TestGrpcClientDropPartition(t *testing.T) {
 	c := testClient(ctx, t)
 	mockServer.SetInjection(MHasCollection, hasCollectionDefault)
 	mockServer.SetInjection(MHasPartition, hasPartitionInjection(t, testCollectionName, true, partitionName)) // injection has assertion of collName & parition name
-	assert.Nil(t, c.DropPartition(ctx, testCollectionName, partitionName))
+	assert.Nil(t, c.DropPartition(ctx, testCollectionName, partitionName, WithDropPartitionMsgBase(&commonpb.MsgBase{})))
 }
 
 func TestGrpcClientHasPartition(t *testing.T) {
@@ -188,7 +188,7 @@ func TestGrpcClientReleasePartitions(t *testing.T) {
 	})
 	defer mockServer.SetInjection(MHasPartition, hasPartitionInjection(t, testCollectionName, false, "testPart"))
 
-	assert.Nil(t, c.ReleasePartitions(ctx, testCollectionName, parts))
+	assert.Nil(t, c.ReleasePartitions(ctx, testCollectionName, parts, WithReleasePartitionMsgBase(&commonpb.MsgBase{})))
 }
 
 func TestGrpcShowPartitions(t *testing.T) {
@@ -277,7 +277,7 @@ func (s *PartitionSuite) TestLoadPartitions() {
 			s.ElementsMatch(partNames, req.GetPartitionNames())
 		}).Return(&commonpb.Status{ErrorCode: commonpb.ErrorCode_Success}, nil)
 
-		err := c.LoadPartitions(ctx, testCollectionName, partNames, true)
+		err := c.LoadPartitions(ctx, testCollectionName, partNames, true, WithLoadPartitionsMsgBase(&commonpb.MsgBase{}))
 		s.NoError(err)
 	})
 

@@ -7,6 +7,7 @@ import (
 	"github.com/go-faker/faker/v4"
 	"github.com/go-faker/faker/v4/pkg/options"
 	"github.com/golang/protobuf/proto"
+	"github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
 	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
 	"github.com/stretchr/testify/assert"
 )
@@ -45,7 +46,7 @@ func TestGrpcClientCreateDatabase(t *testing.T) {
 	mockServer.SetInjection(MCreateDatabase, func(ctx context.Context, m proto.Message) (proto.Message, error) {
 		return SuccessStatus()
 	})
-	err := c.CreateDatabase(ctx, "a")
+	err := c.CreateDatabase(ctx, "a", WithCreateDatabaseMsgBase(&commonpb.MsgBase{}))
 	assert.Nil(t, err)
 }
 
@@ -55,6 +56,6 @@ func TestGrpcClientDropDatabase(t *testing.T) {
 	mockServer.SetInjection(MDropDatabase, func(ctx context.Context, m proto.Message) (proto.Message, error) {
 		return SuccessStatus()
 	})
-	err := c.DropDatabase(ctx, "a")
+	err := c.DropDatabase(ctx, "a", WithDropDatabaseMsgBase(&commonpb.MsgBase{}))
 	assert.Nil(t, err)
 }

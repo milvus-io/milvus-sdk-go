@@ -16,6 +16,8 @@ import (
 
 	"github.com/cockroachdb/errors"
 
+	"github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
+
 	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )
@@ -34,6 +36,7 @@ type createCollOpt struct {
 	AutoID              bool
 	EnableDynamicSchema bool
 	Properties          map[string]string
+	MsgBase             *commonpb.MsgBase
 }
 
 func WithPKFieldName(name string) CreateCollectionOption {
@@ -262,3 +265,23 @@ func GetWithOutputFields(outputFields ...string) GetOption {
 		o.outputFields = outputFields
 	}
 }
+
+type DropCollectionOption func(*milvuspb.DropCollectionRequest)
+
+type ReleaseCollectionOption func(*milvuspb.ReleaseCollectionRequest)
+
+type FlushOption func(*milvuspb.FlushRequest)
+
+type CreateDatabaseOption func(*milvuspb.CreateDatabaseRequest)
+
+type DropDatabaseOption func(*milvuspb.DropDatabaseRequest)
+
+type ReplicateMessageOption func(*milvuspb.ReplicateMessageRequest)
+
+type CreatePartitionOption func(*milvuspb.CreatePartitionRequest)
+
+type DropPartitionOption func(*milvuspb.DropPartitionRequest)
+
+type LoadPartitionsOption func(*milvuspb.LoadPartitionsRequest)
+
+type ReleasePartitionsOption func(*milvuspb.ReleasePartitionsRequest)
