@@ -146,6 +146,9 @@ func (c *GrpcClient) CreateCollection(ctx context.Context, collSchema *entity.Sc
 }
 
 func (c *GrpcClient) requestCreateCollection(ctx context.Context, sch *entity.Schema, opt *createCollOpt, shardNum int32) error {
+	if opt.EnableDynamicSchema {
+		sch.EnableDynamicField = true
+	}
 	bs, err := proto.Marshal(sch.ProtoMessage())
 	if err != nil {
 		return err
