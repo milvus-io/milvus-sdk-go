@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/milvus-io/milvus-sdk-go/v2/client"
+
 	"github.com/stretchr/testify/require"
 
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
@@ -446,6 +448,30 @@ func TestCreateCollectionDynamicSchema(t *testing.T) {
 	// check describe collection
 	collection, _ := mc.DescribeCollection(ctx, collName)
 	common.CheckCollection(t, collection, collName, common.DefaultShards, schema, common.DefaultConsistencyLevel)
+	require.Truef(t, collection.Schema.EnableDynamicField, "Expected collection.Schema.EnableDynamicField is True")
+
+	// check collName in ListCollections
+	collections, errListCollection := mc.ListCollections(ctx)
+	common.CheckErr(t, errListCollection, true)
+	common.CheckContainsCollection(t, collections, collName)
+}
+
+// test create collection enable dynamic field by collection opt
+func TestCreateCollectionDynamic(t *testing.T) {
+	t.Skip("Waiting for congqi to update schema.EnableDynamicField according to the CreateCollectionOption.EnableDynamicSchema")
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	mc := createMilvusClient(ctx, t)
+
+	collName := common.GenRandomString(6)
+	schema := common.GenSchema(collName, false, common.GenDefaultFields(false))
+
+	err := mc.CreateCollection(ctx, schema, common.DefaultShards, client.WithEnableDynamicSchema(true))
+	common.CheckErr(t, err, true)
+
+	// check describe collection
+	collection, _ := mc.DescribeCollection(ctx, collName)
+	common.CheckCollection(t, collection, collName, common.DefaultShards, schema, common.DefaultConsistencyLevel)
+	require.Truef(t, collection.Schema.EnableDynamicField, "Expected collection.Schema.EnableDynamicField is True")
 
 	// check collName in ListCollections
 	collections, errListCollection := mc.ListCollections(ctx)
@@ -465,6 +491,88 @@ func TestCreateCollectionFieldMeta(t *testing.T) {
 
 	err := mc.CreateCollection(ctx, schema, common.DefaultShards)
 	common.CheckErr(t, err, false, fmt.Sprintf("Invalid field name: %s. The first character of a field name must be an underscore or letter", common.DefaultDynamicFieldName))
+}
+
+func TestCreateArrayFieldInvalidCapacity(t *testing.T) {
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	mc := createMilvusClient(ctx, t)
+
+	fields := common.GenDefaultFields(true)
+	// array field no Capacity
+	arrayField := common.GenField(common.DefaultArrayFieldName, entity.FieldTypeArray, common.WithElementType(entity.FieldTypeFloat))
+	schema := common.GenSchema(common.GenRandomString(6), false, append(fields, arrayField), common.WithEnableDynamicField(true))
+	err := mc.CreateCollection(ctx, schema, common.DefaultShards)
+	common.CheckErr(t, err, false, "type param(max_capacity) should be specified for array field")
+
+	// invalid Capacity
+	for _, invalidCapacity := range []int64{-1, 0, common.MaxCapacity + 1} {
+		arrayField := common.GenField(common.DefaultArrayFieldName, entity.FieldTypeArray, common.WithElementType(entity.FieldTypeFloat), common.WithMaxCapacity(invalidCapacity))
+		schema := common.GenSchema(common.GenRandomString(6), false, append(fields, arrayField), common.WithEnableDynamicField(true))
+		err := mc.CreateCollection(ctx, schema, common.DefaultShards)
+		common.CheckErr(t, err, false, "the maximum capacity specified for a Array should be in (0, 4096]")
+	}
+}
+
+// test create collection varchar array with invalid max length
+func TestCreateVarcharArrayInvalidLength(t *testing.T) {
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	mc := createMilvusClient(ctx, t)
+
+	fields := common.GenDefaultFields(true)
+	varcharArrayField := common.GenField(common.DefaultArrayFieldName, entity.FieldTypeArray, common.WithElementType(entity.FieldTypeVarChar), common.WithMaxCapacity(100))
+	schema := common.GenSchema(common.GenRandomString(6), false, append(fields, varcharArrayField), common.WithEnableDynamicField(true))
+	err := mc.CreateCollection(ctx, schema, common.DefaultShards)
+	common.CheckErr(t, err, false, "type param(max_length) should be specified for varChar field")
+
+	// invalid max length
+	for _, invalidLength := range []int64{-1, 0, common.MaxLength + 1} {
+		arrayField := common.GenField(common.DefaultArrayFieldName, entity.FieldTypeArray, common.WithElementType(entity.FieldTypeVarChar),
+			common.WithMaxCapacity(100), common.WithMaxLength(invalidLength))
+		schema := common.GenSchema(common.GenRandomString(6), false, append(fields, arrayField), common.WithEnableDynamicField(true))
+		err := mc.CreateCollection(ctx, schema, common.DefaultShards)
+		common.CheckErr(t, err, false, "the maximum length specified for a VarChar should be in (0, 65535]: invalid parameter")
+	}
+}
+
+// test create collection array field not supported type
+func TestCreateArrayNotSupportedFieldType(t *testing.T) {
+	t.Parallel()
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	mc := createMilvusClient(ctx, t)
+
+	// not supported ElementType: Array, Json, FloatVector, BinaryVector
+	fields := common.GenDefaultFields(true)
+	for _, fieldType := range []entity.FieldType{entity.FieldTypeArray, entity.FieldTypeJSON, entity.FieldTypeBinaryVector, entity.FieldTypeFloatVector} {
+		arrayField := common.GenField(common.DefaultArrayFieldName, entity.FieldTypeArray, common.WithElementType(fieldType), common.WithMaxCapacity(100))
+
+		schema := common.GenSchema(common.GenRandomString(6), false, append(fields, arrayField), common.WithEnableDynamicField(true))
+
+		err := mc.CreateCollection(ctx, schema, common.DefaultShards)
+		common.CheckErr(t, err, false, fmt.Sprintf("element type %s is not supported", fieldType.Name()))
+	}
+
+	// NoneType ElementType
+	noneArrayFields := []*entity.Field{
+		common.GenField(common.DefaultArrayFieldName, entity.FieldTypeArray, common.WithElementType(entity.FieldTypeNone), common.WithMaxCapacity(100)),
+		common.GenField(common.DefaultArrayFieldName, entity.FieldTypeArray, common.WithMaxCapacity(100)),
+	}
+	for _, noneArrayField := range noneArrayFields {
+		schema := common.GenSchema(common.GenRandomString(6), false, append(fields, noneArrayField), common.WithEnableDynamicField(true))
+		err := mc.CreateCollection(ctx, schema, common.DefaultShards)
+		common.CheckErr(t, err, false, "element data type None is not valid")
+	}
+}
+
+func TestCreateCollectionAllFields(t *testing.T) {
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	mc := createMilvusClient(ctx, t)
+	allFields := common.GenAllFields()
+	collName := common.GenRandomString(6)
+	schema := common.GenSchema(collName, false, allFields)
+
+	// create collection
+	errCreateCollection := mc.CreateCollection(ctx, schema, common.DefaultShards)
+	common.CheckErr(t, errCreateCollection, true)
 }
 
 // -- Get Collection Statistics --

@@ -45,6 +45,18 @@ func WithMaxLength(maxLen int64) CreateFieldOption {
 	}
 }
 
+func WithElementType(eleType entity.FieldType) CreateFieldOption {
+	return func(field *entity.Field) {
+		field.WithElementType(eleType)
+	}
+}
+
+func WithMaxCapacity(maxCap int64) CreateFieldOption {
+	return func(field *entity.Field) {
+		field.WithMaxCapacity(maxCap)
+	}
+}
+
 func WithTypeParams(key string, value string) CreateFieldOption {
 	return func(field *entity.Field) {
 		field.WithTypeParams(key, value)
@@ -84,7 +96,7 @@ func WithEnableDynamicField(enableDF bool) CreateSchemaOption {
 	}
 }
 
-// gen schema
+// GenSchema gen schema
 func GenSchema(name string, autoID bool, fields []*entity.Field, opts ...CreateSchemaOption) *entity.Schema {
 	schema := &entity.Schema{
 		CollectionName: name,
@@ -98,3 +110,31 @@ func GenSchema(name string, autoID bool, fields []*entity.Field, opts ...CreateS
 }
 
 // -- create schema --
+
+// GenColumnDataOption -- create column data --
+type GenColumnDataOption func(opt *genDataOpt)
+type genDataOpt struct {
+	dim         int64
+	ElementType entity.FieldType
+	capacity    int64
+}
+
+func WithVectorDim(dim int64) GenColumnDataOption {
+	return func(opt *genDataOpt) {
+		opt.dim = dim
+	}
+}
+
+func WithArrayElementType(eleType entity.FieldType) GenColumnDataOption {
+	return func(opt *genDataOpt) {
+		opt.ElementType = eleType
+	}
+}
+
+func WithArrayCapacity(capacity int64) GenColumnDataOption {
+	return func(opt *genDataOpt) {
+		opt.capacity = capacity
+	}
+}
+
+// -- create column data --

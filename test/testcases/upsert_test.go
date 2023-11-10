@@ -4,7 +4,6 @@ package testcases
 
 import (
 	"fmt"
-	"log"
 	"strconv"
 	"testing"
 	"time"
@@ -159,23 +158,20 @@ func TestUpsertVarcharPk(t *testing.T) {
 	_, binaryColumn1 := common.GenDefaultVarcharData(0, upsertNb, common.DefaultDim)
 	ids, err := mc.Upsert(ctx, collName, "", varcharColumn1, binaryColumn1)
 	common.CheckErr(t, err, true)
-	log.Println(ids.FieldData())
 	require.ElementsMatch(t, ids.(*entity.ColumnVarChar).Data(), varcharValues)
 
 	// query old varchar pk (no space): ["1", ... "9"]
 	resSet, err = mc.QueryByPks(ctx, collName, []string{}, pkColumn, []string{common.DefaultVarcharFieldName, common.DefaultBinaryVecFieldName})
-	log.Println(resSet.GetColumn(common.DefaultVarcharFieldName).(*entity.ColumnVarChar).Data())
 	common.CheckErr(t, err, true)
 	require.ElementsMatch(t, varcharColumn.(*entity.ColumnVarChar).Data()[:upsertNb], resSet.GetColumn(common.DefaultVarcharFieldName).(*entity.ColumnVarChar).Data())
 	require.ElementsMatch(t, binaryColumn.(*entity.ColumnBinaryVector).Data()[:upsertNb], resSet.GetColumn(common.DefaultBinaryVecFieldName).(*entity.ColumnBinaryVector).Data())
 
 	// query and verify the updated entities
-	pkColumn1 := entity.NewColumnVarChar(common.DefaultVarcharFieldName, varcharColumn1.Data()[:upsertNb])
+	pkColumn1 := entity.NewColumnVarChar(common.DefaultVarcharFieldName, varcharColumn1.Data())
 	resSet, err = mc.QueryByPks(ctx, collName, []string{}, pkColumn1, []string{common.DefaultVarcharFieldName, common.DefaultBinaryVecFieldName})
-	log.Println(resSet.GetColumn(common.DefaultVarcharFieldName).(*entity.ColumnVarChar).Data())
 	common.CheckErr(t, err, true)
-	require.ElementsMatch(t, varcharColumn1.Data()[:upsertNb], resSet.GetColumn(common.DefaultVarcharFieldName).(*entity.ColumnVarChar).Data())
-	require.ElementsMatch(t, binaryColumn1.(*entity.ColumnBinaryVector).Data()[:upsertNb], resSet.GetColumn(common.DefaultBinaryVecFieldName).(*entity.ColumnBinaryVector).Data())
+	require.ElementsMatch(t, varcharColumn1.Data(), resSet.GetColumn(common.DefaultVarcharFieldName).(*entity.ColumnVarChar).Data())
+	require.ElementsMatch(t, binaryColumn1.(*entity.ColumnBinaryVector).Data(), resSet.GetColumn(common.DefaultBinaryVecFieldName).(*entity.ColumnBinaryVector).Data())
 }
 
 // test upsert with partition
@@ -309,7 +305,6 @@ func TestUpsertSamePksManyTimes(t *testing.T) {
 }
 
 func TestUpsertDynamicField(t *testing.T) {
-	t.Skip("https://github.com/milvus-io/milvus-sdk-go/issues/613")
 	// enable dynamic field and insert dynamic column
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect
@@ -338,14 +333,14 @@ func TestUpsertDynamicField(t *testing.T) {
 	resSet, err = mc.Query(ctx, collName, []string{}, fmt.Sprintf("%s < %d", common.DefaultDynamicNumberField, upsertNb), []string{common.DefaultDynamicNumberField})
 	require.Zero(t, resSet[0].Len())
 
-	// 2. upsert not exist pk with dynamic column ->  field dynamicNumber does not exist in collection ??? TODO issue
+	// 2. upsert not exist pk with dynamic column ->  field dynamicNumber does not exist in collection
 	intColumn2, floatColumn2, vecColumn2 := common.GenDefaultColumnData(common.DefaultNb, upsertNb, common.DefaultDim)
 	dynamicData2 := common.GenDynamicFieldData(common.DefaultNb, upsertNb)
 	_, err = mc.Upsert(ctx, collName, "", append(dynamicData2, intColumn2, floatColumn2, vecColumn2)...)
 	common.CheckErr(t, err, true)
 
 	// query and gets empty dynamic field
-	resSet, err = mc.Query(ctx, collName, []string{}, fmt.Sprintf("%s > %d", common.DefaultDynamicNumberField, common.DefaultNb), []string{common.QueryCountFieldName})
+	resSet, err = mc.Query(ctx, collName, []string{}, fmt.Sprintf("%s >= %d", common.DefaultDynamicNumberField, common.DefaultNb), []string{common.QueryCountFieldName})
 	require.Equal(t, int64(upsertNb), resSet.GetColumn(common.QueryCountFieldName).(*entity.ColumnInt64).Data()[0])
 }
 
@@ -358,7 +353,7 @@ func TestUpsertPartitionKeyCollection(t *testing.T) {
 	// create partition_key field
 	partitionKeyFieldName := "partitionKeyField"
 	partitionKeyField := common.GenField(partitionKeyFieldName, entity.FieldTypeInt64,
-		common.WithIsPartitionKey(true), common.WithMaxLength(common.DefaultMaxLength))
+		common.WithIsPartitionKey(true), common.WithMaxLength(common.TestMaxLen))
 
 	// schema
 	schema := common.GenSchema(common.GenRandomString(6), false, common.GenDefaultFields(false))

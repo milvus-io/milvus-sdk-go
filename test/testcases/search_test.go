@@ -405,13 +405,12 @@ func TestSearchOutputFields(t *testing.T) {
 
 // test search output all * fields when enable dynamic and insert dynamic column data
 func TestSearchOutputAllFields(t *testing.T) {
-	t.Skip("https://github.com/milvus-io/milvus-sdk-go/issues/596")
 	t.Parallel()
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect
 	mc := createMilvusClient(ctx, t)
 
-	for _, enableDynamic := range []bool{true, false} {
+	for _, enableDynamic := range []bool{false, true} {
 		// create collection
 		cp := CollectionParams{CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: enableDynamic,
 			ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
@@ -433,41 +432,41 @@ func TestSearchOutputAllFields(t *testing.T) {
 
 		// search vector output all scalar fields
 		queryVec := common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeFloatVector)
-		allScalarFields := []string{"int64", "bool", "int8", "int16", "int32", "float", "double", "varchar", "json"}
-		var allScalarFieldsDynamic []string
+		allFields := []string{"int64", "bool", "int8", "int16", "int32", "float", "double", "varchar", "json", "floatVec"}
+		allFields = append(allFields, common.AllArrayFieldsName...)
+
 		if enableDynamic {
-			allScalarFieldsDynamic = append(allScalarFields, common.DefaultDynamicFieldName)
-		} else {
-			allScalarFieldsDynamic = allScalarFields
+			allFields = append(allFields, common.DefaultDynamicFieldName)
 		}
 		sp, _ := entity.NewIndexHNSWSearchParam(74)
 		searchRes, _ := mc.Search(ctx, collName, []string{},
 			"",
-			allScalarFieldsDynamic,
+			[]string{"*"},
 			queryVec,
 			common.DefaultFloatVecFieldName,
 			entity.L2,
 			common.DefaultTopK,
 			sp,
 		)
-		common.CheckOutputFields(t, searchRes[0].Fields, allScalarFieldsDynamic)
+		common.CheckOutputFields(t, searchRes[0].Fields, allFields)
 
 		// search with output * fields
 		if enableDynamic {
-			//search output [*, a] fields
+			//search output [*, a] fields -> output all fields, no a field
 			_, errNotExist := mc.Search(ctx, collName, []string{}, "", []string{"*", "a"}, queryVec,
 				common.DefaultFloatVecFieldName, entity.L2, common.DefaultTopK, sp)
-			common.CheckErr(t, errNotExist, false, "not exist")
+			common.CheckErr(t, errNotExist, true)
+			common.CheckOutputFields(t, searchRes[0].Fields, allFields)
 
-			//search output [*, dynamicNumber] fields
+			//search output [*, dynamicNumber] fields -> -> output all fields, $meta replace by dynamicNumber
 			searchRes, _ = mc.Search(ctx, collName, []string{}, "", []string{"*", common.DefaultDynamicNumberField},
 				queryVec, common.DefaultFloatVecFieldName, entity.L2, common.DefaultTopK, sp)
-			common.CheckOutputFields(t, searchRes[0].Fields, append(allScalarFields, common.DefaultFloatVecFieldName, common.DefaultDynamicNumberField))
+			common.CheckOutputFields(t, searchRes[0].Fields, append(allFields, common.DefaultDynamicNumberField))
 
-			// search output * fields
-			searchRes, _ = mc.Search(ctx, collName, []string{}, "", []string{"*"}, queryVec, common.DefaultFloatVecFieldName,
-				entity.L2, common.DefaultTopK, sp)
-			common.CheckOutputFields(t, searchRes[0].Fields, append(allScalarFields, common.DefaultFloatVecFieldName))
+			///search output [*, dynamicNumber] fields -> -> output all fields, $meta replace by dynamicNumber
+			searchRes, _ = mc.Search(ctx, collName, []string{}, "", []string{common.DefaultDynamicNumberField},
+				queryVec, common.DefaultFloatVecFieldName, entity.L2, common.DefaultTopK, sp)
+			common.CheckOutputFields(t, searchRes[0].Fields, []string{common.DefaultDynamicNumberField})
 		}
 	}
 }
@@ -913,7 +912,7 @@ func TestSearchDynamicFieldExpr(t *testing.T) {
 	// connect
 	mc := createMilvusClient(ctx, t)
 
-	for _, withRows := range []bool{false, true} {
+	for _, withRows := range []bool{true, false} {
 		// create collection
 		cp := CollectionParams{CollectionFieldsType: Int64FloatVecJSON, AutoID: false, EnableDynamicField: true,
 			ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
@@ -1001,6 +1000,75 @@ func TestSearchDynamicFieldExpr(t *testing.T) {
 	}
 }
 
+func TestSearchArrayFieldExpr(t *testing.T) {
+	t.Parallel()
+
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	// connect
+	mc := createMilvusClient(ctx, t)
+	var capacity int64 = common.TestCapacity
+
+	for _, withRows := range []bool{true, false} {
+		// create collection
+		cp := CollectionParams{CollectionFieldsType: Int64FloatVecArray, AutoID: false, EnableDynamicField: true,
+			ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxCapacity: capacity}
+		collName := createCollection(ctx, t, mc, cp, client.WithConsistencyLevel(entity.ClStrong))
+
+		// prepare and insert data
+		dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVecArray,
+			start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: withRows}
+		_, _ = insertData(ctx, t, mc, dp, common.WithArrayCapacity(capacity))
+		mc.Flush(ctx, collName, false)
+
+		idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
+		_ = mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false)
+
+		// Load collection
+		errLoad := mc.LoadCollection(ctx, collName, false)
+		common.CheckErr(t, errLoad, true)
+
+		exprs := []string{
+			fmt.Sprintf("%s[0] == false", common.DefaultBoolArrayField),                            // array[0] ==
+			fmt.Sprintf("%s[0] > 0", common.DefaultInt64ArrayField),                                // array[0] >
+			fmt.Sprintf("json_contains (%s, %d)", common.DefaultInt16ArrayField, capacity),         // json_contains
+			fmt.Sprintf("array_contains (%s, %d)", common.DefaultInt16ArrayField, capacity),        // array_contains
+			fmt.Sprintf("json_contains_all (%s, [90, 91])", common.DefaultInt64ArrayField),         // json_contains_all
+			fmt.Sprintf("array_contains_all (%s, [90, 91])", common.DefaultInt64ArrayField),        // array_contains_all
+			fmt.Sprintf("array_contains_any (%s, [0, 100, 10000])", common.DefaultFloatArrayField), // array_contains_any
+			fmt.Sprintf("json_contains_any (%s, [0, 100, 10])", common.DefaultFloatArrayField),     // json_contains_any
+			fmt.Sprintf("array_length(%s) == %d", common.DefaultDoubleArrayField, capacity),        // array_length
+		}
+
+		// search with jsonField expr key datatype and json data type mismatch
+		sp, _ := entity.NewIndexHNSWSearchParam(74)
+		for _, expr := range exprs {
+			log.Printf("search expr: %s", expr)
+			searchRes, errSearchEmpty := mc.Search(
+				ctx, collName, []string{},
+				expr, common.AllArrayFieldsName,
+				common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeFloatVector),
+				common.DefaultFloatVecFieldName, entity.L2,
+				common.DefaultTopK, sp,
+			)
+			common.CheckErr(t, errSearchEmpty, true)
+			common.CheckOutputFields(t, searchRes[0].Fields, common.AllArrayFieldsName)
+			common.CheckSearchResult(t, searchRes, common.DefaultNq, common.DefaultTopK)
+		}
+
+		// search hits empty
+		searchRes, errSearchEmpty := mc.Search(
+			ctx, collName, []string{},
+			fmt.Sprintf("array_contains (%s, 1000000)", common.DefaultInt32ArrayField),
+			common.AllArrayFieldsName,
+			common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeFloatVector),
+			common.DefaultFloatVecFieldName, entity.L2, common.DefaultTopK,
+			sp,
+		)
+		common.CheckErr(t, errSearchEmpty, true)
+		require.Empty(t, searchRes)
+	}
+}
+
 // search with index scann search param ef < topK -> error
 func TestSearchInvalidScannReorderK(t *testing.T) {
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
@@ -1061,13 +1129,13 @@ func TestSearchScannAllMetricsWithRawData(t *testing.T) {
 			mc := createMilvusClient(ctx, t)
 
 			// create collection
-			cp := CollectionParams{CollectionFieldsType: Int64FloatVecJSON, AutoID: false, EnableDynamicField: false,
+			cp := CollectionParams{CollectionFieldsType: Int64FloatVecJSON, AutoID: false, EnableDynamicField: true,
 				ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
 			collName := createCollection(ctx, t, mc, cp)
 
 			// insert
 			dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVecJSON,
-				start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: false, WithRows: false}
+				start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
 			_, _ = insertData(ctx, t, mc, dp)
 			mc.Flush(ctx, collName, false)
 
@@ -1100,7 +1168,7 @@ func TestSearchScannAllMetricsWithRawData(t *testing.T) {
 			)
 			common.CheckErr(t, errSearch, true)
 			common.CheckOutputFields(t, resSearch[0].Fields, []string{common.DefaultIntFieldName, common.DefaultFloatFieldName,
-				common.DefaultJSONFieldName, common.DefaultFloatVecFieldName})
+				common.DefaultJSONFieldName, common.DefaultFloatVecFieldName, common.DefaultDynamicFieldName})
 			common.CheckSearchResult(t, resSearch, 1, common.DefaultTopK)
 		}
 	}
@@ -1113,13 +1181,13 @@ func TestRangeSearchScannL2(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create collection
-	cp := CollectionParams{CollectionFieldsType: Int64FloatVecJSON, AutoID: false, EnableDynamicField: false,
+	cp := CollectionParams{CollectionFieldsType: Int64FloatVecJSON, AutoID: false, EnableDynamicField: true,
 		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
 	collName := createCollection(ctx, t, mc, cp)
 
 	// insert
 	dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVecJSON,
-		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: false, WithRows: false}
+		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
 	_, _ = insertData(ctx, t, mc, dp)
 
 	// create scann index
@@ -1148,7 +1216,7 @@ func TestRangeSearchScannL2(t *testing.T) {
 	common.CheckErr(t, errSearch, true)
 	common.CheckSearchResult(t, resSearch, 1, common.DefaultTopK)
 	common.CheckOutputFields(t, resSearch[0].Fields, []string{common.DefaultIntFieldName, common.DefaultFloatFieldName,
-		common.DefaultJSONFieldName, common.DefaultFloatVecFieldName})
+		common.DefaultJSONFieldName, common.DefaultFloatVecFieldName, common.DefaultDynamicFieldName})
 	for _, s := range resSearch[0].Scores {
 		require.GreaterOrEqual(t, s, float32(15.0))
 		require.Less(t, s, float32(20.0))
@@ -1171,13 +1239,13 @@ func TestRangeSearchScannIPCosine(t *testing.T) {
 		mc := createMilvusClient(ctx, t)
 
 		// create collection
-		cp := CollectionParams{CollectionFieldsType: Int64FloatVecJSON, AutoID: false, EnableDynamicField: false,
+		cp := CollectionParams{CollectionFieldsType: Int64FloatVecJSON, AutoID: false, EnableDynamicField: true,
 			ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
 		collName := createCollection(ctx, t, mc, cp)
 
 		// insert
 		dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVecJSON,
-			start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: false, WithRows: false}
+			start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
 		_, _ = insertData(ctx, t, mc, dp)
 		mc.Flush(ctx, collName, false)
 
@@ -1207,7 +1275,7 @@ func TestRangeSearchScannIPCosine(t *testing.T) {
 		common.CheckErr(t, errSearch, true)
 		common.CheckSearchResult(t, resSearch, 1, common.DefaultTopK)
 		common.CheckOutputFields(t, resSearch[0].Fields, []string{common.DefaultIntFieldName, common.DefaultFloatFieldName,
-			common.DefaultJSONFieldName, common.DefaultFloatVecFieldName})
+			common.DefaultJSONFieldName, common.DefaultFloatVecFieldName, common.DefaultDynamicFieldName})
 		for _, s := range resSearch[0].Scores {
 			require.GreaterOrEqual(t, s, float32(0))
 			require.Less(t, s, float32(100))
@@ -1232,13 +1300,13 @@ func TestRangeSearchScannBinary(t *testing.T) {
 		mc := createMilvusClient(ctx, t)
 
 		// create collection
-		cp := CollectionParams{CollectionFieldsType: Int64BinaryVec, AutoID: false, EnableDynamicField: false,
+		cp := CollectionParams{CollectionFieldsType: Int64BinaryVec, AutoID: false, EnableDynamicField: true,
 			ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
 		collName := createCollection(ctx, t, mc, cp)
 
 		// insert
 		dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64BinaryVec,
-			start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: false, WithRows: false}
+			start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
 		_, _ = insertData(ctx, t, mc, dp)
 		mc.Flush(ctx, collName, false)
 
@@ -1267,7 +1335,8 @@ func TestRangeSearchScannBinary(t *testing.T) {
 		// verify error nil, output all fields, range score
 		common.CheckErr(t, errSearch, true)
 		common.CheckSearchResult(t, resSearch, 1, common.DefaultTopK)
-		common.CheckOutputFields(t, resSearch[0].Fields, []string{common.DefaultIntFieldName, common.DefaultFloatFieldName, common.DefaultBinaryVecFieldName})
+		common.CheckOutputFields(t, resSearch[0].Fields, []string{common.DefaultIntFieldName, common.DefaultFloatFieldName,
+			common.DefaultBinaryVecFieldName, common.DefaultDynamicFieldName})
 		for _, s := range resSearch[0].Scores {
 			require.GreaterOrEqual(t, s, float32(0))
 			require.Less(t, s, float32(100))

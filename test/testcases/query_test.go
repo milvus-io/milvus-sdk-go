@@ -223,7 +223,6 @@ func TestQueryEmptyIds(t *testing.T) {
 }
 
 // test query with non-primary field filter, and output scalar fields
-// TODO "Issue: https://github.com/milvus-io/milvus-sdk-go/issues/366")
 func TestQueryNonPrimaryFields(t *testing.T) {
 	t.Parallel()
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
@@ -383,39 +382,43 @@ func TestQueryOutputBinaryAndVarchar(t *testing.T) {
 	common.CheckOutputFields(t, queryResult, []string{common.DefaultBinaryVecFieldName, common.DefaultVarcharFieldName})
 }
 
-// test query output all scalar fields
-func TestOutputAllScalarFields(t *testing.T) {
+// test query output all fields
+func TestOutputAllFields(t *testing.T) {
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect
 	mc := createMilvusClient(ctx, t)
 
-	// create and insert
-	collName, _ := createCollectionAllFields(ctx, t, mc, common.DefaultNb, 0)
-	mc.Flush(ctx, collName, false)
+	for _, withRows := range []bool{true, false} {
+		// create collection
+		var capacity int64 = common.TestCapacity
+		cp := CollectionParams{CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: true,
+			ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxCapacity: capacity}
+		collName := createCollection(ctx, t, mc, cp)
 
-	// create index
-	idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
-	mc.CreateIndex(ctx, collName, "floatVec", idx, false)
+		// prepare and insert data
+		dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: AllFields,
+			start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: withRows}
+		_, _ = insertData(ctx, t, mc, dp, common.WithArrayCapacity(capacity))
 
-	// Load collection
-	errLoad := mc.LoadCollection(ctx, collName, false)
-	common.CheckErr(t, errLoad, true)
+		// flush and check row count
+		errFlush := mc.Flush(ctx, collName, false)
+		common.CheckErr(t, errFlush, true)
 
-	// query with non-primary field
-	queryIds := []entity.Column{
-		entity.NewColumnBool("bool", []bool{true}),
-		entity.NewColumnInt8("int8", []int8{0}),
-		entity.NewColumnInt16("int16", []int16{0}),
-		entity.NewColumnInt32("int32", []int32{0}),
-		entity.NewColumnFloat("float", []float32{0}),
-		entity.NewColumnDouble("double", []float64{0}),
+		idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
+		_ = mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false)
+
+		// Load collection
+		errLoad := mc.LoadCollection(ctx, collName, false)
+		common.CheckErr(t, errLoad, true)
+
+		// query output all fields -> output all fields, includes vector and $meta field
+		allFieldsName := append(common.AllArrayFieldsName, "int64", "bool", "int8", "int16", "int32", "float",
+			"double", "varchar", "json", "floatVec", common.DefaultDynamicFieldName)
+		queryResultAll, errQuery := mc.Query(ctx, collName, []string{},
+			fmt.Sprintf("%s == 0", common.DefaultIntFieldName), []string{"*"})
+		common.CheckErr(t, errQuery, true)
+		common.CheckOutputFields(t, queryResultAll, allFieldsName)
 	}
-
-	queryResultAllScalar, errQuery := mc.QueryByPks(ctx, collName, []string{common.DefaultPartition},
-		entity.NewColumnInt64(common.DefaultIntFieldName, []int64{0}), []string{"bool", "int8", "int16", "int32", "float", "double"})
-	common.CheckErr(t, errQuery, true)
-	common.CheckQueryResult(t, queryResultAllScalar, queryIds)
-	common.CheckOutputFields(t, queryResultAllScalar, []string{"int64", "bool", "int8", "int16", "int32", "float", "double"})
 }
 
 // test query with an not existed field
@@ -611,6 +614,134 @@ func TestQueryCountJsonDynamicExpr(t *testing.T) {
 			_exprCount.expr, []string{common.QueryCountFieldName})
 		require.Equal(t, _exprCount.count, countRes.GetColumn(common.QueryCountFieldName).(*entity.ColumnInt64).Data()[0])
 	}
+}
+
+// test query with all kinds of array expr
+func TestQueryArrayFieldExpr(t *testing.T) {
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	// connect
+	mc := createMilvusClient(ctx, t)
+
+	for _, withRows := range []bool{true, false} {
+		// create collection
+		var capacity int64 = common.TestCapacity
+		cp := CollectionParams{CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: true,
+			ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxCapacity: capacity}
+		collName := createCollection(ctx, t, mc, cp, client.WithConsistencyLevel(entity.ClStrong))
+
+		// prepare and insert data
+		dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: AllFields,
+			start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: withRows}
+		_, _ = insertData(ctx, t, mc, dp, common.WithArrayCapacity(capacity))
+
+		// flush and check row count
+		errFlush := mc.Flush(ctx, collName, false)
+		common.CheckErr(t, errFlush, true)
+
+		idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
+		_ = mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false)
+
+		// Load collection
+		errLoad := mc.LoadCollection(ctx, collName, false)
+		common.CheckErr(t, errLoad, true)
+
+		type exprCount struct {
+			expr  string
+			count int64
+		}
+		exprCounts := []exprCount{
+			{expr: fmt.Sprintf("%s[0] == false", common.DefaultBoolArrayField), count: common.DefaultNb / 2},                 //  array[0] ==
+			{expr: fmt.Sprintf("%s[0] > 0", common.DefaultInt64ArrayField), count: common.DefaultNb - 1},                     //  array[0] >
+			{expr: fmt.Sprintf("%s[0] > 0", common.DefaultInt8ArrayField), count: 1524},                                      //  array[0] > int8 range: [-128, 127]
+			{expr: fmt.Sprintf("json_contains (%s, %d)", common.DefaultInt16ArrayField, capacity), count: capacity},          // json_contains(array, 1)
+			{expr: fmt.Sprintf("array_contains (%s, %d)", common.DefaultInt16ArrayField, capacity), count: capacity},         // array_contains(array, 1)
+			{expr: fmt.Sprintf("array_contains (%s, 1)", common.DefaultInt32ArrayField), count: 2},                           // array_contains(array, 1)
+			{expr: fmt.Sprintf("json_contains (%s, 1)", common.DefaultInt32ArrayField), count: 2},                            // json_contains(array, 1)
+			{expr: fmt.Sprintf("array_contains (%s, 1000000)", common.DefaultInt32ArrayField), count: 0},                     // array_contains(array, 1)
+			{expr: fmt.Sprintf("json_contains_all (%s, [90, 91])", common.DefaultInt64ArrayField), count: 91},                // json_contains_all(array, [x])
+			{expr: fmt.Sprintf("array_contains_all (%s, [1, 2])", common.DefaultInt64ArrayField), count: 2},                  // array_contains_all(array, [x])
+			{expr: fmt.Sprintf("array_contains_any (%s, [0, 100, 10000])", common.DefaultFloatArrayField), count: 101},       // array_contains_any(array, [x])
+			{expr: fmt.Sprintf("json_contains_any (%s, [0, 100, 10])", common.DefaultFloatArrayField), count: 101},           // json_contains_any (array, [x])
+			{expr: fmt.Sprintf("%s == [0, 1]", common.DefaultDoubleArrayField), count: 0},                                    //  array ==
+			{expr: fmt.Sprintf("array_length(%s) == 10", common.DefaultVarcharArrayField), count: 0},                         //  array_length
+			{expr: fmt.Sprintf("array_length(%s) == %d", common.DefaultDoubleArrayField, capacity), count: common.DefaultNb}, //  array_length
+		}
+
+		for _, _exprCount := range exprCounts {
+			log.Println(_exprCount.expr)
+			countRes, err := mc.Query(ctx, collName,
+				[]string{}, _exprCount.expr, []string{common.QueryCountFieldName})
+			common.CheckErr(t, err, true)
+			require.Equal(t, _exprCount.count, countRes.GetColumn(common.QueryCountFieldName).(*entity.ColumnInt64).Data()[0])
+		}
+	}
+}
+
+// test query different array rows has different element length
+func TestQueryArrayDifferentLenBetweenRows(t *testing.T) {
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	// connect
+	mc := createMilvusClient(ctx, t)
+
+	// fields
+	defaultFields := common.GenDefaultFields(false)
+	int64ArrayField := common.GenField(common.DefaultInt32ArrayField, entity.FieldTypeArray,
+		common.WithElementType(entity.FieldTypeInt32), common.WithMaxCapacity(common.TestCapacity))
+
+	// create collection with max
+	collName := common.GenRandomString(4)
+	schema := common.GenSchema(collName, false, append(defaultFields, int64ArrayField), common.WithEnableDynamicField(true))
+	err := mc.CreateCollection(ctx, schema, common.DefaultShards, client.WithConsistencyLevel(entity.ClStrong))
+	common.CheckErr(t, err, true)
+
+	// insert data [0, 1500) with array length = capacity, values: [i+0, i+ 100)
+	intColumn, floatColumn, vecColumn := common.GenDefaultColumnData(0, common.DefaultNb/2, common.DefaultDim)
+	data := []entity.Column{
+		intColumn,
+		floatColumn,
+		vecColumn,
+		common.GenArrayColumnData(0, common.DefaultNb/2, common.DefaultInt32ArrayField,
+			common.WithArrayElementType(entity.FieldTypeInt32), common.WithArrayCapacity(common.TestCapacity)),
+	}
+	ids, err := mc.Insert(ctx, collName, "", data...)
+	common.CheckErr(t, err, true)
+
+	// insert data [1500, 3000) with array length = capacity/2, values: values: [i+0, i+ 50)
+	require.Equal(t, common.DefaultNb/2, ids.Len())
+	intColumn1, floatColumn1, vecColumn1 := common.GenDefaultColumnData(common.DefaultNb/2, common.DefaultNb/2, common.DefaultDim)
+	data1 := []entity.Column{
+		intColumn1,
+		floatColumn1,
+		vecColumn1,
+		common.GenArrayColumnData(common.DefaultNb/2, common.DefaultNb/2, common.DefaultInt32ArrayField,
+			common.WithArrayElementType(entity.FieldTypeInt32), common.WithArrayCapacity(common.TestCapacity/2)),
+	}
+	ids, err = mc.Insert(ctx, collName, "", data1...)
+	common.CheckErr(t, err, true)
+	require.Equal(t, common.DefaultNb/2, ids.Len())
+
+	// flush and check row count
+	errFlush := mc.Flush(ctx, collName, false)
+	common.CheckErr(t, errFlush, true)
+
+	idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
+	_ = mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false)
+
+	// Load collection
+	errLoad := mc.LoadCollection(ctx, collName, false)
+	common.CheckErr(t, errLoad, true)
+
+	// query array idx exceeds max capacity, array[100]
+	countRes, err := mc.Query(ctx, collName, []string{}, fmt.Sprintf("%s[%d] > 0", common.DefaultInt32ArrayField, common.TestCapacity),
+		[]string{common.QueryCountFieldName})
+	common.CheckErr(t, err, true)
+	require.Equal(t, int64(0), countRes.GetColumn(common.QueryCountFieldName).(*entity.ColumnInt64).Data()[0])
+
+	// query: some rows has element less than expr index array[51]
+	countRes, err = mc.Query(ctx, collName, []string{}, fmt.Sprintf("%s[%d] > 0", common.DefaultInt32ArrayField, common.TestCapacity/2+1),
+		[]string{common.QueryCountFieldName})
+	common.CheckErr(t, err, true)
+	require.Equal(t, int64(common.DefaultNb/2), countRes.GetColumn(common.QueryCountFieldName).(*entity.ColumnInt64).Data()[0])
 }
 
 // test query with expr and verify output dynamic field data
