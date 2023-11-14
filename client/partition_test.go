@@ -188,7 +188,7 @@ func TestGrpcClientReleasePartitions(t *testing.T) {
 	})
 	defer mockServer.SetInjection(MHasPartition, hasPartitionInjection(t, testCollectionName, false, "testPart"))
 
-	assert.Nil(t, c.ReleasePartitions(ctx, testCollectionName, parts, WithReleasePartitionMsgBase(&commonpb.MsgBase{})))
+	assert.Nil(t, c.ReleasePartitions(ctx, testCollectionName, parts, WithReleasePartitionsMsgBase(&commonpb.MsgBase{})))
 }
 
 func TestGrpcShowPartitions(t *testing.T) {
