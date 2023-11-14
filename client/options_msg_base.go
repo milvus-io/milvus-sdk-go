@@ -71,7 +71,12 @@ func WithLoadPartitionsMsgBase(msgBase *commonpb.MsgBase) LoadPartitionsOption {
 	}
 }
 
+// Deprecated: use WithReleaseCollectionMsgBase instead
 func WithReleasePartitionMsgBase(msgBase *commonpb.MsgBase) ReleasePartitionsOption {
+	return WithReleasePartitionsMsgBase(msgBase)
+}
+
+func WithReleasePartitionsMsgBase(msgBase *commonpb.MsgBase) ReleasePartitionsOption {
 	return func(req *milvuspb.ReleasePartitionsRequest) {
 		req.Base = msgBase
 	}
