@@ -263,42 +263,44 @@ func TestQueryNonPrimaryFields(t *testing.T) {
 
 // test query empty or one scalar output fields
 func TestQueryEmptyOutputFields(t *testing.T) {
+	t.Skip("https://github.com/milvus-io/milvus/issues/28465")
 	t.Parallel()
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect
 	mc := createMilvusClient(ctx, t)
-	enableDynamic := false
-	// create, insert, index
-	collName, ids := createCollectionWithDataIndex(ctx, t, mc, true, true, client.WithEnableDynamicSchema(enableDynamic))
+	for _, enableDynamic := range []bool{true, false} {
+		// create, insert, index
+		collName, ids := createCollectionWithDataIndex(ctx, t, mc, true, true, client.WithEnableDynamicSchema(enableDynamic))
 
-	// Load collection
-	errLoad := mc.LoadCollection(ctx, collName, false)
-	common.CheckErr(t, errLoad, true)
+		// Load collection
+		errLoad := mc.LoadCollection(ctx, collName, false)
+		common.CheckErr(t, errLoad, true)
 
-	//query with empty output fields []string{}-> output "int64"
-	queryEmptyOutputs, _ := mc.QueryByPks(
-		ctx, collName, []string{common.DefaultPartition},
-		entity.NewColumnInt64(common.DefaultIntFieldName, ids.(*entity.ColumnInt64).Data()[:10]),
-		[]string{},
-	)
-	common.CheckOutputFields(t, queryEmptyOutputs, []string{common.DefaultIntFieldName})
+		//query with empty output fields []string{}-> output "int64"
+		queryEmptyOutputs, _ := mc.QueryByPks(
+			ctx, collName, []string{common.DefaultPartition},
+			entity.NewColumnInt64(common.DefaultIntFieldName, ids.(*entity.ColumnInt64).Data()[:10]),
+			[]string{},
+		)
+		common.CheckOutputFields(t, queryEmptyOutputs, []string{common.DefaultIntFieldName})
 
-	//query with empty output fields []string{""}-> output "int64" and dynamic field
-	_, err := mc.QueryByPks(
-		ctx, collName, []string{common.DefaultPartition},
-		entity.NewColumnInt64(common.DefaultIntFieldName, ids.(*entity.ColumnInt64).Data()[:10]),
-		[]string{""},
-	)
+		//query with empty output fields []string{""}-> output "int64" and dynamic field
+		queryEmptyOutputs, err := mc.QueryByPks(
+			ctx, collName, []string{common.DefaultPartition},
+			entity.NewColumnInt64(common.DefaultIntFieldName, ids.(*entity.ColumnInt64).Data()[:10]),
+			[]string{""},
+		)
 
-	common.CheckErr(t, err, false, "not exist")
+		common.CheckErr(t, err, false, "not exist")
 
-	// query with "float" output fields -> output "int64, float"
-	queryFloatOutputs, _ := mc.QueryByPks(
-		ctx, collName, []string{common.DefaultPartition},
-		entity.NewColumnInt64(common.DefaultIntFieldName, ids.(*entity.ColumnInt64).Data()[:10]),
-		[]string{common.DefaultFloatFieldName},
-	)
-	common.CheckOutputFields(t, queryFloatOutputs, []string{common.DefaultIntFieldName, common.DefaultFloatFieldName})
+		// query with "float" output fields -> output "int64, float"
+		queryFloatOutputs, _ := mc.QueryByPks(
+			ctx, collName, []string{common.DefaultPartition},
+			entity.NewColumnInt64(common.DefaultIntFieldName, ids.(*entity.ColumnInt64).Data()[:10]),
+			[]string{common.DefaultFloatFieldName},
+		)
+		common.CheckOutputFields(t, queryFloatOutputs, []string{common.DefaultIntFieldName, common.DefaultFloatFieldName})
+	}
 }
 
 // test query output int64 and float and floatVector fields

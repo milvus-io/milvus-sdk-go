@@ -262,93 +262,97 @@ func TestSearchPartitions(t *testing.T) {
 
 // test search empty output fields []string{} -> [], []string{""}
 func TestSearchEmptyOutputFields(t *testing.T) {
+	t.Skip("https://github.com/milvus-io/milvus/issues/28465")
 	t.Parallel()
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect
 	mc := createMilvusClient(ctx, t)
 
-	enableDynamic := false
-	// create collection with data
-	collName, _ := createCollectionWithDataIndex(ctx, t, mc, false, true, client.WithEnableDynamicSchema(enableDynamic))
+	for _, enableDynamic := range []bool{true, false} {
+		// create collection with data
+		collName, _ := createCollectionWithDataIndex(ctx, t, mc, false, true, client.WithEnableDynamicSchema(enableDynamic))
 
-	// load collection
-	errLoad := mc.LoadCollection(ctx, collName, false)
-	common.CheckErr(t, errLoad, true)
+		// load collection
+		errLoad := mc.LoadCollection(ctx, collName, false)
+		common.CheckErr(t, errLoad, true)
 
-	// search vector output fields []string{} -> []
-	sp, _ := entity.NewIndexHNSWSearchParam(74)
-	searchResPkOutput, errSearch := mc.Search(
-		ctx, collName,
-		[]string{},
-		"",
-		[]string{},
-		common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeFloatVector),
-		common.DefaultFloatVecFieldName,
-		entity.L2,
-		common.DefaultTopK,
-		sp,
-	)
-	common.CheckErr(t, errSearch, true)
-	common.CheckOutputFields(t, searchResPkOutput[0].Fields, []string{})
-	common.CheckSearchResult(t, searchResPkOutput, common.DefaultNq, common.DefaultTopK)
-
-	// search vector output fields []string{""}
-	_, errSearchExist := mc.Search(
-		ctx, collName,
-		[]string{},
-		"",
-		[]string{""},
-		common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeFloatVector),
-		common.DefaultFloatVecFieldName,
-		entity.L2,
-		common.DefaultTopK,
-		sp,
-	)
-
-	//if enableDynamic {
-	//	common.CheckErr(t, errSearchExist, true)
-	//	common.CheckOutputFields(t, sp1[0].Fields, []string{""})
-	//} else {
-	common.CheckErr(t, errSearchExist, false, "not exist")
-	//}
-	common.CheckSearchResult(t, searchResPkOutput, common.DefaultNq, common.DefaultTopK)
-}
-
-// test search output fields not exist -> error
-func TestSearchNotExistOutputFields(t *testing.T) {
-	t.Parallel()
-	ctx := createContext(t, time.Second*common.DefaultTimeout)
-	// connect
-	mc := createMilvusClient(ctx, t)
-
-	// dynamic schema with unknown field will not have error
-	enableDynamic := false
-	// create collection with data
-	collName, _ := createCollectionWithDataIndex(ctx, t, mc, false, true, client.WithEnableDynamicSchema(enableDynamic))
-
-	// load collection
-	errLoad := mc.LoadCollection(ctx, collName, false)
-	common.CheckErr(t, errLoad, true)
-
-	type notExistOutputFields []string
-
-	// search vector output fields not exist, part exist
-	outputFields := []notExistOutputFields{[]string{"aaa"}, []string{"fields", common.DefaultFloatFieldName},
-		[]string{"fields", "*"}}
-	for _, fields := range outputFields {
+		// search vector output fields []string{} -> []
 		sp, _ := entity.NewIndexHNSWSearchParam(74)
-		_, errSearch := mc.Search(
+		searchResPkOutput, errSearch := mc.Search(
 			ctx, collName,
 			[]string{},
 			"",
-			fields,
+			[]string{},
 			common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeFloatVector),
 			common.DefaultFloatVecFieldName,
 			entity.L2,
 			common.DefaultTopK,
 			sp,
 		)
-		common.CheckErr(t, errSearch, false, "not exist")
+		common.CheckErr(t, errSearch, true)
+		common.CheckOutputFields(t, searchResPkOutput[0].Fields, []string{})
+		common.CheckSearchResult(t, searchResPkOutput, common.DefaultNq, common.DefaultTopK)
+
+		// search vector output fields []string{""}
+		_, errSearchExist := mc.Search(
+			ctx, collName,
+			[]string{},
+			"",
+			[]string{""},
+			common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeFloatVector),
+			common.DefaultFloatVecFieldName,
+			entity.L2,
+			common.DefaultTopK,
+			sp,
+		)
+
+		//if enableDynamic {
+		//	common.CheckErr(t, errSearchExist, true)
+		//	common.CheckOutputFields(t, sp1[0].Fields, []string{""})
+		//} else {
+		common.CheckErr(t, errSearchExist, false, "not exist")
+		//}
+		common.CheckSearchResult(t, searchResPkOutput, common.DefaultNq, common.DefaultTopK)
+	}
+}
+
+// test search output fields not exist -> output existed fields
+func TestSearchNotExistOutputFields(t *testing.T) {
+	t.Skip("https://github.com/milvus-io/milvus/issues/28465")
+	t.Parallel()
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	// connect
+	mc := createMilvusClient(ctx, t)
+
+	for _, enableDynamic := range []bool{false} {
+		// create collection with data
+		collName, _ := createCollectionWithDataIndex(ctx, t, mc, false, true, client.WithEnableDynamicSchema(enableDynamic))
+
+		// load collection
+		errLoad := mc.LoadCollection(ctx, collName, false)
+		common.CheckErr(t, errLoad, true)
+
+		type notExistOutputFields []string
+
+		// search vector output fields not exist, part exist
+		outputFields := []notExistOutputFields{[]string{"aaa"}, []string{"fields", common.DefaultFloatFieldName},
+			[]string{"fields", "*"}}
+		sp, _ := entity.NewIndexHNSWSearchParam(74)
+		for _, fields := range outputFields {
+			log.Println(fields)
+			_, errSearch := mc.Search(
+				ctx, collName,
+				[]string{},
+				"",
+				fields,
+				common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeFloatVector),
+				common.DefaultFloatVecFieldName,
+				entity.L2,
+				common.DefaultTopK,
+				sp,
+			)
+			common.CheckErr(t, errSearch, true)
+		}
 	}
 }
 
