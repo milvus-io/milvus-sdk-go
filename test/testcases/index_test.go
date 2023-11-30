@@ -375,7 +375,6 @@ func TestCreateIndexNil(t *testing.T) {
 
 // test create index async true
 func TestCreateIndexAsync(t *testing.T) {
-	t.Skip("Issue: https://github.com/milvus-io/milvus-sdk-go/issues/361")
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect
 	mc := createMilvusClient(ctx, t)
@@ -402,7 +401,6 @@ func TestCreateIndexAsync(t *testing.T) {
 
 // test get index state
 func TestIndexState(t *testing.T) {
-	t.Skip("Issue: https://github.com/milvus-io/milvus-sdk-go/issues/361")
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect
 	mc := createMilvusClient(ctx, t)
