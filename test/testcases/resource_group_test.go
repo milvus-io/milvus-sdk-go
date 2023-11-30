@@ -260,8 +260,8 @@ func TestTransferInvalidNodes(t *testing.T) {
 		errMsg   string
 	}
 	invalidNodes := []invalidNodesStruct{
-		{nodesNum: 0, errMsg: "expected=NumNode > 0, actual=invalid NumNode"},
-		{nodesNum: -1, errMsg: "expected=NumNode > 0, actual=invalid NumNode"},
+		{nodesNum: 0, errMsg: "invalid parameter[expected=NumNode > 0][actual=invalid NumNode 0]"},
+		{nodesNum: -1, errMsg: "invalid parameter[expected=NumNode > 0][actual=invalid NumNode -1]"},
 		{nodesNum: 99, errMsg: "nodes not enough"},
 	}
 	// transfer node
@@ -412,8 +412,8 @@ func TestTransferReplicaInvalidReplicaNumber(t *testing.T) {
 		errMsg        string
 	}
 	invalidReplicas := []invalidReplicasStruct{
-		{replicaNumber: 0, errMsg: "expected=NumReplica > 0, actual=invalid NumReplica"},
-		{replicaNumber: -1, errMsg: "expected=NumReplica > 0, actual=invalid NumReplica"},
+		{replicaNumber: 0, errMsg: "invalid parameter[expected=NumReplica > 0][actual=invalid NumReplica 0]"},
+		{replicaNumber: -1, errMsg: "invalid parameter[expected=NumReplica > 0][actual=invalid NumReplica -1]"},
 		{replicaNumber: 1, errMsg: "only found [0] replicas in source resource group"},
 	}
 

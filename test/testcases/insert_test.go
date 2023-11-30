@@ -83,7 +83,7 @@ func TestInsertAutoIdPkData(t *testing.T) {
 	// insert
 	pkColumn, floatColumn, vecColumn := common.GenDefaultColumnData(0, common.DefaultNb, common.DefaultDim)
 	_, errInsert := mc.Insert(ctx, collName, "", pkColumn, floatColumn, vecColumn)
-	common.CheckErr(t, errInsert, false, "the length of passed fields is equal to needed: expected=2, actual=3: invalid parameter")
+	common.CheckErr(t, errInsert, false, "the number of fields is less than needed")
 
 	// flush and check row count
 	errFlush := mc.Flush(ctx, collName, false)
