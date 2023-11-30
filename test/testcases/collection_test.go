@@ -182,7 +182,7 @@ func TestCreateCollectionInvalidFields(t *testing.T) {
 			common.GenField(common.DefaultIntFieldName, entity.FieldTypeInt64, common.WithIsPrimaryKey(true)),
 			common.GenField("", entity.FieldTypeNone),
 			common.GenField(common.DefaultFloatVecFieldName, entity.FieldTypeFloatVector, common.WithDim(common.DefaultDim)),
-		}, errMsg: "data type None is not valid"},
+		}, errMsg: "None data type not supported"},
 
 		// create collection with String field type
 		{fields: []*entity.Field{
