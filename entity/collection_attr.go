@@ -22,6 +22,7 @@ const (
 	cakTTL = `collection.ttl.seconds`
 	// cakAutoCompaction const for collection attribute key autom compaction enabled.
 	cakAutoCompaction = `collection.autocompaction.enabled`
+	akMmap            = "mmap.enabled"
 )
 
 // CollectionAttribute is the interface for altering collection attributes.
@@ -88,4 +89,24 @@ func CollectionAutoCompactionEnabled(enabled bool) autoCompactionCollAttr {
 	ca.key = cakAutoCompaction
 	ca.value = strconv.FormatBool(enabled)
 	return ca
+}
+
+type mmapAttr struct {
+	collAttrBase
+}
+
+func Mmap(enabled bool) mmapAttr {
+	attr := mmapAttr{}
+	attr.key = akMmap
+	attr.value = strconv.FormatBool(enabled)
+	return attr
+}
+
+func (ca mmapAttr) Valid() error {
+	_, err := strconv.ParseBool(ca.value)
+	if err != nil {
+		return errors.Wrap(err, "mmap setting is not valid boolean")
+	}
+
+	return nil
 }
