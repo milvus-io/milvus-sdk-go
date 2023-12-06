@@ -14,11 +14,16 @@ package client
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
 	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
+)
+
+const (
+	mmapKey = "mmap.enabled"
 )
 
 func (c *GrpcClient) checkCollField(ctx context.Context, collName string, fieldName string, filters ...func(string, string, *entity.Field) error) error {
@@ -58,6 +63,7 @@ type indexDef struct {
 	name           string
 	fieldName      string
 	collectionName string
+	params         []*commonpb.KeyValuePair
 	MsgBase        *commonpb.MsgBase
 }
 
@@ -75,6 +81,15 @@ func WithIndexName(name string) IndexOption {
 func WithIndexMsgBase(msgBase *commonpb.MsgBase) IndexOption {
 	return func(def *indexDef) {
 		def.MsgBase = msgBase
+	}
+}
+
+func WithMmap(enabled bool) IndexOption {
+	return func(id *indexDef) {
+		id.params = append(id.params, &commonpb.KeyValuePair{
+			Key:   mmapKey,
+			Value: strconv.FormatBool(enabled),
+		})
 	}
 }
 
@@ -136,6 +151,29 @@ func (c *GrpcClient) CreateIndex(ctx context.Context, collName string, fieldName
 		}
 	}
 	return nil
+}
+
+// AlterIndex modifies the index params
+func (c *GrpcClient) AlterIndex(ctx context.Context, collName string, indexName string, opts ...IndexOption) error {
+	if c.Service == nil {
+		return ErrClientNotReady
+	}
+
+	idxDef := getIndexDef(opts...)
+
+	req := &milvuspb.AlterIndexRequest{
+		Base:           idxDef.MsgBase,
+		DbName:         "", // reserved
+		CollectionName: collName,
+		IndexName:      indexName,
+		ExtraParams:    idxDef.params,
+	}
+
+	resp, err := c.Service.AlterIndex(ctx, req)
+	if err != nil {
+		return err
+	}
+	return handleRespStatus(resp)
 }
 
 // DescribeIndex describe index
