@@ -26,16 +26,18 @@ import (
 
 // CreateRole creates a role entity in Milvus.
 func (c *GrpcClient) CreateRole(ctx context.Context, name string) error {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return ErrClientNotReady
 	}
+	defer service.Close()
 
 	req := &milvuspb.CreateRoleRequest{
 		Entity: &milvuspb.RoleEntity{
 			Name: name,
 		},
 	}
-	resp, err := c.Service.CreateRole(ctx, req)
+	resp, err := service.CreateRole(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -45,15 +47,17 @@ func (c *GrpcClient) CreateRole(ctx context.Context, name string) error {
 
 // DropRole drops a role entity in Milvus.
 func (c *GrpcClient) DropRole(ctx context.Context, name string) error {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return ErrClientNotReady
 	}
+	defer service.Close()
 
 	req := &milvuspb.DropRoleRequest{
 		RoleName: name,
 	}
 
-	resp, err := c.Service.DropRole(ctx, req)
+	resp, err := service.DropRole(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -63,9 +67,11 @@ func (c *GrpcClient) DropRole(ctx context.Context, name string) error {
 
 // AddUserRole adds one role for user.
 func (c *GrpcClient) AddUserRole(ctx context.Context, username string, role string) error {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return ErrClientNotReady
 	}
+	defer service.Close()
 
 	req := &milvuspb.OperateUserRoleRequest{
 		Username: username,
@@ -73,7 +79,7 @@ func (c *GrpcClient) AddUserRole(ctx context.Context, username string, role stri
 		Type:     milvuspb.OperateUserRoleType_AddUserToRole,
 	}
 
-	resp, err := c.Service.OperateUserRole(ctx, req)
+	resp, err := service.OperateUserRole(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -83,9 +89,11 @@ func (c *GrpcClient) AddUserRole(ctx context.Context, username string, role stri
 
 // RemoveUserRole removes one role from user.
 func (c *GrpcClient) RemoveUserRole(ctx context.Context, username string, role string) error {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return ErrClientNotReady
 	}
+	defer service.Close()
 
 	req := &milvuspb.OperateUserRoleRequest{
 		Username: username,
@@ -93,7 +101,7 @@ func (c *GrpcClient) RemoveUserRole(ctx context.Context, username string, role s
 		Type:     milvuspb.OperateUserRoleType_RemoveUserFromRole,
 	}
 
-	resp, err := c.Service.OperateUserRole(ctx, req)
+	resp, err := service.OperateUserRole(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -103,13 +111,15 @@ func (c *GrpcClient) RemoveUserRole(ctx context.Context, username string, role s
 
 // ListRoles lists the role objects in system.
 func (c *GrpcClient) ListRoles(ctx context.Context) ([]entity.Role, error) {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return nil, ErrClientNotReady
 	}
+	defer service.Close()
 
 	req := &milvuspb.SelectRoleRequest{}
 
-	resp, err := c.Service.SelectRole(ctx, req)
+	resp, err := service.SelectRole(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -127,13 +137,15 @@ func (c *GrpcClient) ListRoles(ctx context.Context) ([]entity.Role, error) {
 
 // ListUsers lists the user objects in system.
 func (c *GrpcClient) ListUsers(ctx context.Context) ([]entity.User, error) {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return nil, ErrClientNotReady
 	}
+	defer service.Close()
 
 	req := &milvuspb.SelectUserRequest{}
 
-	resp, err := c.Service.SelectUser(ctx, req)
+	resp, err := service.SelectUser(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -151,9 +163,11 @@ func (c *GrpcClient) ListUsers(ctx context.Context) ([]entity.User, error) {
 
 // Grant adds object privileged for role.
 func (c *GrpcClient) Grant(ctx context.Context, role string, objectType entity.PriviledgeObjectType, object string) error {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return ErrClientNotReady
 	}
+	defer service.Close()
 
 	req := &milvuspb.OperatePrivilegeRequest{
 		Entity: &milvuspb.GrantEntity{
@@ -168,7 +182,7 @@ func (c *GrpcClient) Grant(ctx context.Context, role string, objectType entity.P
 		Type: milvuspb.OperatePrivilegeType_Grant,
 	}
 
-	resp, err := c.Service.OperatePrivilege(ctx, req)
+	resp, err := service.OperatePrivilege(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -178,9 +192,11 @@ func (c *GrpcClient) Grant(ctx context.Context, role string, objectType entity.P
 
 // Revoke removes privilege from role.
 func (c *GrpcClient) Revoke(ctx context.Context, role string, objectType entity.PriviledgeObjectType, object string) error {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return ErrClientNotReady
 	}
+	defer service.Close()
 
 	req := &milvuspb.OperatePrivilegeRequest{
 		Entity: &milvuspb.GrantEntity{
@@ -195,7 +211,7 @@ func (c *GrpcClient) Revoke(ctx context.Context, role string, objectType entity.
 		Type: milvuspb.OperatePrivilegeType_Revoke,
 	}
 
-	resp, err := c.Service.OperatePrivilege(ctx, req)
+	resp, err := service.OperatePrivilege(ctx, req)
 	if err != nil {
 		return err
 	}

@@ -12,8 +12,10 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/examples/helloworld/helloworld"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
@@ -150,6 +152,8 @@ func TestGrpcClientNil(t *testing.T) {
 			if m.Name == "Close" || m.Name == "Connect" || // skip connect & close
 				m.Name == "UsingDatabase" || // skip use database
 				m.Name == "Search" || // type alias MetricType treated as string
+				m.Name == "QueryByPks" ||
+				m.Name == "Service" ||
 				m.Name == "CalcDistance" ||
 				m.Name == "ManualCompaction" || // time.Duration hard to detect in reflect
 				m.Name == "Insert" || m.Name == "Upsert" { // complex methods with ...
@@ -221,7 +225,7 @@ func TestGrpcClientConnect(t *testing.T) {
 			Config{
 				Address: "bufnet",
 				DialOptions: []grpc.DialOption{
-					grpc.WithBlock(), grpc.WithInsecure(), grpc.WithContextDialer(bufDialer),
+					grpc.WithBlock(), grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithContextDialer(bufDialer),
 				},
 			})
 		assert.Nil(t, err)
@@ -303,7 +307,10 @@ func TestGrpcClientRetryPolicy(t *testing.T) {
 	assert.Nil(t, err)
 	defer client.Close()
 
-	greeterClient := helloworld.NewGreeterClient(client.(*GrpcClient).Conn)
+	conn, err := client.(*GrpcClient).connPool.Get(context.TODO())
+	require.NoError(t, err)
+
+	greeterClient := helloworld.NewGreeterClient(conn)
 	ctx := context.Background()
 	name := fmt.Sprintf("hello world %d", time.Now().Second())
 	res, err := greeterClient.SayHello(ctx, &helloworld.HelloRequest{Name: name})

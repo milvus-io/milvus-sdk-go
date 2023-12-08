@@ -13,9 +13,11 @@ func (c *GrpcClient) ReplicateMessage(ctx context.Context,
 	msgsBytes [][]byte, startPositions, endPositions []*msgpb.MsgPosition,
 	opts ...ReplicateMessageOption) (*entity.MessageInfo, error) {
 
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return nil, ErrClientNotReady
 	}
+	defer service.Close()
 	req := &milvuspb.ReplicateMessageRequest{
 		ChannelName:    channelName,
 		BeginTs:        beginTs,
@@ -27,7 +29,7 @@ func (c *GrpcClient) ReplicateMessage(ctx context.Context,
 	for _, opt := range opts {
 		opt(req)
 	}
-	resp, err := c.Service.ReplicateMessage(ctx, req)
+	resp, err := service.ReplicateMessage(ctx, req)
 	if err != nil {
 		return nil, err
 	}

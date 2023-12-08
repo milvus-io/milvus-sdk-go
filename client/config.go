@@ -67,6 +67,10 @@ type Config struct {
 
 	DisableConn bool
 
+	ConnPoolInit        int
+	ConnPoolMax         int
+	ConnPoolIdleTimeout time.Duration
+
 	flags uint64 // internal flags
 }
 
@@ -116,6 +120,17 @@ func (c *Config) parse() error {
 		remoteURL.Host += ":443"
 	}
 	c.parsedAddress = remoteURL
+
+	// conn pool
+	if c.ConnPoolInit == 0 {
+		c.ConnPoolInit = 1
+	}
+	if c.ConnPoolMax == 0 {
+		c.ConnPoolInit = 5
+	}
+	if c.ConnPoolIdleTimeout == 0 {
+		c.ConnPoolIdleTimeout = time.Second * 10
+	}
 	return nil
 }
 

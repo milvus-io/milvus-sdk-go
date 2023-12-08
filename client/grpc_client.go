@@ -10,6 +10,7 @@ import (
 	"github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
 	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
 	"github.com/milvus-io/milvus-sdk-go/v2/common"
+	grpcpool "github.com/processout/grpc-go-pool"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -20,36 +21,35 @@ var _ Client = &GrpcClient{}
 
 // GrpcClient  uses default grpc Service definition to connect with Milvus2.0
 type GrpcClient struct {
-	Conn    *grpc.ClientConn             // grpc connection instance
-	Service milvuspb.MilvusServiceClient // Service client stub
+	// Conn    *grpc.ClientConn             // grpc connection instance
+	// Service milvuspb.MilvusServiceClient // Service client stub
 
 	config *Config // No thread safety
+
+	connPool *grpcpool.Pool
 }
 
 // connect connect to Service
-func (c *GrpcClient) connect(ctx context.Context, addr string, opts ...grpc.DialOption) error {
+func (c *GrpcClient) connect(ctx context.Context, addr string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
 	if addr == "" {
-		return fmt.Errorf("address is empty")
+		return nil, fmt.Errorf("address is empty")
 	}
 	conn, err := grpc.DialContext(ctx, addr, opts...)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	c.Conn = conn
-	c.Service = milvuspb.NewMilvusServiceClient(c.Conn)
-
 	if !c.config.DisableConn {
-		err = c.connectInternal(ctx)
+		err = c.connectInternal(ctx, conn)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
-	return nil
+	return conn, nil
 }
 
-func (c *GrpcClient) connectInternal(ctx context.Context) error {
+func (c *GrpcClient) connectInternal(ctx context.Context, conn *grpc.ClientConn) error {
 	hostName, err := os.Hostname()
 	if err != nil {
 		return err
@@ -65,7 +65,7 @@ func (c *GrpcClient) connectInternal(ctx context.Context) error {
 		},
 	}
 
-	resp, err := c.Service.Connect(ctx, req)
+	resp, err := c.getService(conn).Connect(ctx, req)
 	if err != nil {
 		status, ok := status.FromError(err)
 		if ok {
@@ -91,12 +91,39 @@ func (c *GrpcClient) connectInternal(ctx context.Context) error {
 	return nil
 }
 
+func (c *GrpcClient) getService(conn *grpc.ClientConn) milvuspb.MilvusServiceClient {
+	return milvuspb.NewMilvusServiceClient(conn)
+}
+
+func (c *GrpcClient) Service(ctx context.Context) *PoolingMilvusClient {
+	if c.connPool == nil {
+		return nil
+	}
+	conn, err := c.connPool.Get(ctx)
+	if err != nil {
+		return nil
+	}
+	return &PoolingMilvusClient{
+		MilvusServiceClient: c.getService(conn.ClientConn),
+		conn:                conn,
+	}
+}
+
+type PoolingMilvusClient struct {
+	milvuspb.MilvusServiceClient
+	conn *grpcpool.ClientConn
+}
+
+func (c *PoolingMilvusClient) Close() {
+	if c.conn != nil {
+		c.conn.Close()
+	}
+}
+
 // Close close the connection
 func (c *GrpcClient) Close() error {
-	if c.Conn != nil {
-		err := c.Conn.Close()
-		c.Conn = nil
-		return err
+	if c.connPool != nil {
+		c.connPool.Close()
 	}
 	return nil
 }

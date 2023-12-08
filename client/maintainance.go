@@ -26,14 +26,16 @@ import (
 
 // ManualCompaction triggers a compaction on provided collection
 func (c *GrpcClient) ManualCompaction(ctx context.Context, collName string, _ time.Duration) (int64, error) {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return 0, ErrClientNotReady
 	}
+	defer service.Close()
 
-	if err := c.checkCollectionExists(ctx, collName); err != nil {
+	if err := c.checkCollectionExists(ctx, service, collName); err != nil {
 		return 0, err
 	}
-	coll, err := c.DescribeCollection(ctx, collName)
+	coll, err := c.requestDescribeCollection(ctx, service, collName)
 	if err != nil {
 		return 0, err
 	}
@@ -42,7 +44,7 @@ func (c *GrpcClient) ManualCompaction(ctx context.Context, collName string, _ ti
 		CollectionID: coll.ID,
 	}
 
-	resp, err := c.Service.ManualCompaction(ctx, req)
+	resp, err := service.ManualCompaction(ctx, req)
 	if err != nil {
 		return 0, err
 	}
@@ -57,12 +59,14 @@ func (c *GrpcClient) ManualCompaction(ctx context.Context, collName string, _ ti
 
 // GetCompactionState get compaction state of provided compaction id
 func (c *GrpcClient) GetCompactionState(ctx context.Context, id int64) (entity.CompactionState, error) {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return entity.CompcationStateUndefined, ErrClientNotReady
 	}
+	defer service.Close()
 
 	req := &milvuspb.GetCompactionStateRequest{CompactionID: id}
-	resp, err := c.Service.GetCompactionState(ctx, req)
+	resp, err := service.GetCompactionState(ctx, req)
 	if err != nil {
 		return entity.CompcationStateUndefined, err
 	}
@@ -78,14 +82,16 @@ func (c *GrpcClient) GetCompactionState(ctx context.Context, id int64) (entity.C
 
 // GetCompactionStateWithPlans get compaction state with plans of provided compaction id
 func (c *GrpcClient) GetCompactionStateWithPlans(ctx context.Context, id int64) (entity.CompactionState, []entity.CompactionPlan, error) {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return entity.CompcationStateUndefined, nil, ErrClientNotReady
 	}
+	defer service.Close()
 
 	req := &milvuspb.GetCompactionPlansRequest{
 		CompactionID: id,
 	}
-	resp, err := c.Service.GetCompactionStateWithPlans(ctx, req)
+	resp, err := service.GetCompactionStateWithPlans(ctx, req)
 	if err != nil {
 		return entity.CompcationStateUndefined, nil, err
 	}

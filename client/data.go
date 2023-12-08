@@ -37,13 +37,15 @@ const (
 // Search with bool expression
 func (c *GrpcClient) Search(ctx context.Context, collName string, partitions []string,
 	expr string, outputFields []string, vectors []entity.Vector, vectorField string, metricType entity.MetricType, topK int, sp entity.SearchParam, opts ...SearchQueryOptionFunc) ([]SearchResult, error) {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return []SearchResult{}, ErrClientNotReady
 	}
+	defer service.Close()
 	var schema *entity.Schema
 	collInfo, ok := MetaCache.getCollectionInfo(collName)
 	if !ok {
-		coll, err := c.DescribeCollection(ctx, collName)
+		coll, err := c.requestDescribeCollection(ctx, service, collName)
 		if err != nil {
 			return nil, err
 		}
@@ -63,7 +65,7 @@ func (c *GrpcClient) Search(ctx context.Context, collName string, partitions []s
 	}
 
 	sr := make([]SearchResult, 0, len(vectors))
-	resp, err := c.Service.Search(ctx, req)
+	resp, err := service.Search(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -199,17 +201,17 @@ func PKs2Expr(backName string, ids entity.Column) string {
 
 // Get grabs the inserted entities using the primary key from the Collection.
 func (c *GrpcClient) Get(ctx context.Context, collectionName string, ids entity.Column, opts ...GetOption) (ResultSet, error) {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return nil, ErrClientNotReady
 	}
-
 	o := &getOption{}
 	for _, opt := range opts {
 		opt(o)
 	}
 
 	if len(o.outputFields) == 0 {
-		coll, err := c.DescribeCollection(ctx, collectionName)
+		coll, err := c.requestDescribeCollection(ctx, service, collectionName)
 		if err != nil {
 			return nil, err
 		}
@@ -217,15 +219,13 @@ func (c *GrpcClient) Get(ctx context.Context, collectionName string, ids entity.
 			o.outputFields = append(o.outputFields, f.Name)
 		}
 	}
+	service.Close()
 
 	return c.QueryByPks(ctx, collectionName, o.partitionNames, ids, o.outputFields)
 }
 
 // QueryByPks query record by specified primary key(s)
 func (c *GrpcClient) QueryByPks(ctx context.Context, collectionName string, partitionNames []string, ids entity.Column, outputFields []string, opts ...SearchQueryOptionFunc) (ResultSet, error) {
-	if c.Service == nil {
-		return nil, ErrClientNotReady
-	}
 	// check primary keys
 	if ids.Len() == 0 {
 		return nil, errors.New("ids len must not be zero")
@@ -241,14 +241,16 @@ func (c *GrpcClient) QueryByPks(ctx context.Context, collectionName string, part
 
 // Query performs query by expression.
 func (c *GrpcClient) Query(ctx context.Context, collectionName string, partitionNames []string, expr string, outputFields []string, opts ...SearchQueryOptionFunc) (ResultSet, error) {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return nil, ErrClientNotReady
 	}
+	defer service.Close()
 
 	var sch *entity.Schema
 	collInfo, ok := MetaCache.getCollectionInfo(collectionName)
 	if !ok {
-		coll, err := c.DescribeCollection(ctx, collectionName)
+		coll, err := c.requestDescribeCollection(ctx, service, collectionName)
 		if err != nil {
 			return nil, err
 		}
@@ -280,7 +282,7 @@ func (c *GrpcClient) Query(ctx context.Context, collectionName string, partition
 		req.QueryParams = append(req.QueryParams, &commonpb.KeyValuePair{Key: ignoreGrowingKey, Value: strconv.FormatBool(option.IgnoreGrowing)})
 	}
 
-	resp, err := c.Service.Query(ctx, req)
+	resp, err := service.Query(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -353,14 +355,16 @@ func prepareSearchRequest(collName string, partitions []string,
 
 // GetPersistentSegmentInfo get persistent segment info
 func (c *GrpcClient) GetPersistentSegmentInfo(ctx context.Context, collName string) ([]*entity.Segment, error) {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return []*entity.Segment{}, ErrClientNotReady
 	}
+	defer service.Close()
 	req := &milvuspb.GetPersistentSegmentInfoRequest{
 		DbName:         "", // reserved
 		CollectionName: collName,
 	}
-	resp, err := c.Service.GetPersistentSegmentInfo(ctx, req)
+	resp, err := service.GetPersistentSegmentInfo(ctx, req)
 	if err != nil {
 		return []*entity.Segment{}, err
 	}
@@ -383,14 +387,16 @@ func (c *GrpcClient) GetPersistentSegmentInfo(ctx context.Context, collName stri
 
 // GetQuerySegmentInfo get query query cluster segment loaded info
 func (c *GrpcClient) GetQuerySegmentInfo(ctx context.Context, collName string) ([]*entity.Segment, error) {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return []*entity.Segment{}, ErrClientNotReady
 	}
+	defer service.Close()
 	req := &milvuspb.GetQuerySegmentInfoRequest{
 		DbName:         "", // reserved
 		CollectionName: collName,
 	}
-	resp, err := c.Service.GetQuerySegmentInfo(ctx, req)
+	resp, err := service.GetQuerySegmentInfo(ctx, req)
 	if err != nil {
 		return []*entity.Segment{}, err
 	}
@@ -414,26 +420,28 @@ func (c *GrpcClient) GetQuerySegmentInfo(ctx context.Context, collName string) (
 
 func (c *GrpcClient) CalcDistance(ctx context.Context, collName string, partitions []string,
 	metricType entity.MetricType, opLeft, opRight entity.Column) (entity.Column, error) {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return nil, ErrClientNotReady
 	}
+	defer service.Close()
 	if opLeft == nil || opRight == nil {
 		return nil, errors.New("operators cannot be nil")
 	}
 
 	// check meta
-	if err := c.checkCollectionExists(ctx, collName); err != nil {
+	if err := c.checkCollectionExists(ctx, service, collName); err != nil {
 		return nil, err
 	}
 	for _, partition := range partitions {
-		if err := c.checkPartitionExists(ctx, collName, partition); err != nil {
+		if err := c.checkPartitionExists(ctx, service, collName, partition); err != nil {
 			return nil, err
 		}
 	}
-	if err := c.checkCollField(ctx, collName, opLeft.Name(), isVectorField); err != nil {
+	if err := c.checkCollField(ctx, service, collName, opLeft.Name(), isVectorField); err != nil {
 		return nil, err
 	}
-	if err := c.checkCollField(ctx, collName, opRight.Name(), isVectorField); err != nil {
+	if err := c.checkCollField(ctx, service, collName, opRight.Name(), isVectorField); err != nil {
 		return nil, err
 	}
 
@@ -448,7 +456,7 @@ func (c *GrpcClient) CalcDistance(ctx context.Context, collName string, partitio
 		return nil, errors.New("invalid operator passed")
 	}
 
-	resp, err := c.Service.CalcDistance(ctx, req)
+	resp, err := service.CalcDistance(ctx, req)
 	if err != nil {
 		return nil, err
 	}

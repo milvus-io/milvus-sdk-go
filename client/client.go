@@ -18,6 +18,8 @@ import (
 
 	"google.golang.org/grpc"
 
+	grpcpool "github.com/processout/grpc-go-pool"
+
 	"github.com/milvus-io/milvus-proto/go-api/v2/msgpb"
 
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
@@ -223,7 +225,7 @@ type Client interface {
 
 // NewClient create a client connected to remote milvus cluster.
 // More connect option can be modified by Config.
-func NewClient(ctx context.Context, config Config) (Client, error) {
+func NewClient(_ context.Context, config Config) (Client, error) {
 	if err := config.parse(); err != nil {
 		return nil, err
 	}
@@ -238,11 +240,16 @@ func NewClient(ctx context.Context, config Config) (Client, error) {
 	// Parse grpc options
 	options := c.config.getDialOption()
 
-	// Connect the grpc server.
-	if err := c.connect(ctx, addr, options...); err != nil {
+	factory := func() (*grpc.ClientConn, error) {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+		defer cancel()
+		return c.connect(ctx, addr, options...)
+	}
+	pool, err := grpcpool.New(factory, c.config.ConnPoolInit, c.config.ConnPoolMax, c.config.ConnPoolIdleTimeout)
+	if err != nil {
 		return nil, err
 	}
-
+	c.connPool = pool
 	return c, nil
 }
 

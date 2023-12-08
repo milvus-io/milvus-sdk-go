@@ -18,9 +18,12 @@ package client
 
 import (
 	"context"
+	"time"
 
 	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
+	grpcpool "github.com/processout/grpc-go-pool"
+	"google.golang.org/grpc"
 )
 
 // UsingDatabase for database operation after this function call.
@@ -28,22 +31,35 @@ import (
 // 1. goroutine A access DB1.
 // 2. goroutine B call UsingDatabase(ctx, "DB2").
 // 3. goroutine A access DB2 after 2.
-func (c *GrpcClient) UsingDatabase(ctx context.Context, dbName string) error {
+func (c *GrpcClient) UsingDatabase(_ context.Context, dbName string) error {
 	c.config.useDatabase(dbName)
-	err := c.connectInternal(ctx)
+	// Parse remote address.
+	addr := c.config.getParsedAddress()
+
+	// Parse grpc options
+	options := c.config.getDialOption()
+
+	factory := func() (*grpc.ClientConn, error) {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+		defer cancel()
+		return c.connect(ctx, addr, options...)
+	}
+	pool, err := grpcpool.New(factory, c.config.ConnPoolInit, c.config.ConnPoolMax, c.config.ConnPoolIdleTimeout)
 	if err != nil {
 		return err
 	}
-
+	c.connPool = pool
 	return nil
 }
 
 // CreateDatabase creates a new database for remote Milvus cluster.
 // TODO:New options can be added as expanding parameters.
 func (c *GrpcClient) CreateDatabase(ctx context.Context, dbName string, opts ...CreateDatabaseOption) error {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return ErrClientNotReady
 	}
+	defer service.Close()
 	if c.config.hasFlags(disableDatabase) {
 		return ErrFeatureNotSupported
 	}
@@ -53,7 +69,7 @@ func (c *GrpcClient) CreateDatabase(ctx context.Context, dbName string, opts ...
 	for _, opt := range opts {
 		opt(req)
 	}
-	resp, err := c.Service.CreateDatabase(ctx, req)
+	resp, err := service.CreateDatabase(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -62,15 +78,17 @@ func (c *GrpcClient) CreateDatabase(ctx context.Context, dbName string, opts ...
 
 // ListDatabases list all database in milvus cluster.
 func (c *GrpcClient) ListDatabases(ctx context.Context) ([]entity.Database, error) {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return nil, ErrClientNotReady
 	}
+	defer service.Close()
 	if c.config.hasFlags(disableDatabase) {
 		return nil, ErrFeatureNotSupported
 	}
 
 	req := &milvuspb.ListDatabasesRequest{}
-	resp, err := c.Service.ListDatabases(ctx, req)
+	resp, err := service.ListDatabases(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -88,9 +106,11 @@ func (c *GrpcClient) ListDatabases(ctx context.Context) ([]entity.Database, erro
 
 // DropDatabase drop all database in milvus cluster.
 func (c *GrpcClient) DropDatabase(ctx context.Context, dbName string, opts ...DropDatabaseOption) error {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return ErrClientNotReady
 	}
+	defer service.Close()
 	if c.config.hasFlags(disableDatabase) {
 		return ErrFeatureNotSupported
 	}
@@ -101,7 +121,7 @@ func (c *GrpcClient) DropDatabase(ctx context.Context, dbName string, opts ...Dr
 	for _, opt := range opts {
 		opt(req)
 	}
-	resp, err := c.Service.DropDatabase(ctx, req)
+	resp, err := service.DropDatabase(ctx, req)
 	if err != nil {
 		return err
 	}

@@ -20,13 +20,15 @@ import (
 
 // ListResourceGroups returns list of resource group names in current Milvus instance.
 func (c *GrpcClient) ListResourceGroups(ctx context.Context) ([]string, error) {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return nil, ErrClientNotReady
 	}
+	defer service.Close()
 
 	req := &milvuspb.ListResourceGroupsRequest{}
 
-	resp, err := c.Service.ListResourceGroups(ctx, req)
+	resp, err := service.ListResourceGroups(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -39,15 +41,17 @@ func (c *GrpcClient) ListResourceGroups(ctx context.Context) ([]string, error) {
 
 // CreateResourceGroup creates a resource group with provided name.
 func (c *GrpcClient) CreateResourceGroup(ctx context.Context, rgName string) error {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return ErrClientNotReady
 	}
+	defer service.Close()
 
 	req := &milvuspb.CreateResourceGroupRequest{
 		ResourceGroup: rgName,
 	}
 
-	resp, err := c.Service.CreateResourceGroup(ctx, req)
+	resp, err := service.CreateResourceGroup(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -56,15 +60,17 @@ func (c *GrpcClient) CreateResourceGroup(ctx context.Context, rgName string) err
 
 // DescribeResourceGroup returns resource groups information.
 func (c *GrpcClient) DescribeResourceGroup(ctx context.Context, rgName string) (*entity.ResourceGroup, error) {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return nil, ErrClientNotReady
 	}
+	defer service.Close()
 
 	req := &milvuspb.DescribeResourceGroupRequest{
 		ResourceGroup: rgName,
 	}
 
-	resp, err := c.Service.DescribeResourceGroup(ctx, req)
+	resp, err := service.DescribeResourceGroup(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -87,15 +93,17 @@ func (c *GrpcClient) DescribeResourceGroup(ctx context.Context, rgName string) (
 
 // DropResourceGroup drops the resource group with provided name.
 func (c *GrpcClient) DropResourceGroup(ctx context.Context, rgName string) error {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return ErrClientNotReady
 	}
+	defer service.Close()
 
 	req := &milvuspb.DropResourceGroupRequest{
 		ResourceGroup: rgName,
 	}
 
-	resp, err := c.Service.DropResourceGroup(ctx, req)
+	resp, err := service.DropResourceGroup(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -104,17 +112,20 @@ func (c *GrpcClient) DropResourceGroup(ctx context.Context, rgName string) error
 
 // TransferNode transfers querynodes between resource groups.
 func (c *GrpcClient) TransferNode(ctx context.Context, sourceRg, targetRg string, nodesNum int32) error {
-	if c.Service == nil {
+	service := c.Service(ctx)
+
+	if service == nil {
 		return ErrClientNotReady
 	}
 
+	defer service.Close()
 	req := &milvuspb.TransferNodeRequest{
 		SourceResourceGroup: sourceRg,
 		TargetResourceGroup: targetRg,
 		NumNode:             nodesNum,
 	}
 
-	resp, err := c.Service.TransferNode(ctx, req)
+	resp, err := service.TransferNode(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -123,9 +134,11 @@ func (c *GrpcClient) TransferNode(ctx context.Context, sourceRg, targetRg string
 
 // TransferReplica transfer collection replicas between source,target resource group.
 func (c *GrpcClient) TransferReplica(ctx context.Context, sourceRg, targetRg string, collectionName string, replicaNum int64) error {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return ErrClientNotReady
 	}
+	defer service.Close()
 
 	req := &milvuspb.TransferReplicaRequest{
 		SourceResourceGroup: sourceRg,
@@ -134,7 +147,7 @@ func (c *GrpcClient) TransferReplica(ctx context.Context, sourceRg, targetRg str
 		NumReplica:          replicaNum,
 	}
 
-	resp, err := c.Service.TransferReplica(ctx, req)
+	resp, err := service.TransferReplica(ctx, req)
 	if err != nil {
 		return err
 	}
