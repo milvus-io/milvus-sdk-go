@@ -554,11 +554,11 @@ func TestSearchInvalidVectors(t *testing.T) {
 		{vectors: common.GenSearchVectors(common.DefaultNq, 64, entity.FieldTypeFloatVector), errMsg: "vector dimension mismatch"},
 
 		// vector type not match
-		{vectors: common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeBinaryVector), errMsg: "failed to search"},
+		{vectors: common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeBinaryVector), errMsg: "vector dimension mismatch"},
 
 		// empty vectors
 		{vectors: []entity.Vector{}, errMsg: "nq [0] is invalid"},
-		{vectors: []entity.Vector{entity.FloatVector{}}, errMsg: "failed to search"},
+		{vectors: []entity.Vector{entity.FloatVector{}}, errMsg: "vector dimension mismatch"},
 	}
 
 	sp, _ := entity.NewIndexHNSWSearchParam(74)
