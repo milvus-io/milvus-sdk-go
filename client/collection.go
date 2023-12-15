@@ -113,7 +113,7 @@ func (c *GrpcClient) NewCollection(ctx context.Context, collName string, dimensi
 		return err
 	}
 
-	idx := entity.NewGenericIndex("", "", map[string]string{
+	idx := entity.NewGenericIndex("", "", "", map[string]string{
 		"metric_type": string(opt.MetricsType),
 	})
 

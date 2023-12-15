@@ -157,8 +157,9 @@ func (c *GrpcClient) DescribeIndex(ctx context.Context, collName string, fieldNa
 		params := entity.KvPairsMap(info.Params)
 		it := params["index_type"] // TODO change to const
 		idx := entity.NewGenericIndex(
-			info.IndexName,
+			info.GetIndexName(),
 			entity.IndexType(it),
+			info.GetFieldName(),
 			params,
 		)
 		indexes = append(indexes, idx)
