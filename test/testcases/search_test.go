@@ -1,4 +1,4 @@
-//go:build L0
+///go:build L0
 
 package testcases
 
@@ -1099,7 +1099,7 @@ func TestSearchInvalidScannReorderK(t *testing.T) {
 	// describe index
 	indexes, _ := mc.DescribeIndex(ctx, collName, common.DefaultFloatVecFieldName)
 	log.Println(indexes)
-	expIndex := entity.NewGenericIndex(common.DefaultIndexName, entity.SCANN, indexScann.Params())
+	expIndex := entity.NewGenericIndex(common.DefaultFloatVecFieldName, entity.SCANN, indexScann.Params())
 	common.CheckIndexResult(t, indexes, expIndex)
 
 	// load collection
@@ -1149,7 +1149,7 @@ func TestSearchScannAllMetricsWithRawData(t *testing.T) {
 
 			// describe index
 			indexes, _ := mc.DescribeIndex(ctx, collName, common.DefaultFloatVecFieldName)
-			expIndex := entity.NewGenericIndex(common.DefaultIndexName, entity.SCANN, indexScann.Params())
+			expIndex := entity.NewGenericIndex(common.DefaultFloatVecFieldName, entity.SCANN, indexScann.Params())
 			common.CheckIndexResult(t, indexes, expIndex)
 
 			// load collection
@@ -1200,7 +1200,7 @@ func TestRangeSearchScannL2(t *testing.T) {
 
 	// describe index
 	indexes, _ := mc.DescribeIndex(ctx, collName, common.DefaultFloatVecFieldName)
-	expIndex := entity.NewGenericIndex(common.DefaultIndexName, entity.SCANN, indexScann.Params())
+	expIndex := entity.NewGenericIndex(common.DefaultFloatVecFieldName, entity.SCANN, indexScann.Params())
 	common.CheckIndexResult(t, indexes, expIndex)
 
 	// load collection
@@ -1259,7 +1259,7 @@ func TestRangeSearchScannIPCosine(t *testing.T) {
 
 		// describe index
 		indexes, _ := mc.DescribeIndex(ctx, collName, common.DefaultFloatVecFieldName)
-		expIndex := entity.NewGenericIndex(common.DefaultIndexName, entity.SCANN, indexScann.Params())
+		expIndex := entity.NewGenericIndex(common.DefaultFloatVecFieldName, entity.SCANN, indexScann.Params())
 		common.CheckIndexResult(t, indexes, expIndex)
 
 		// load collection
@@ -1320,7 +1320,7 @@ func TestRangeSearchScannBinary(t *testing.T) {
 
 		// describe index
 		indexes, _ := mc.DescribeIndex(ctx, collName, common.DefaultBinaryVecFieldName)
-		expIndex := entity.NewGenericIndex(common.DefaultIndexName, entity.BinIvfFlat, indexBin.Params())
+		expIndex := entity.NewGenericIndex(common.DefaultBinaryVecFieldName, entity.BinIvfFlat, indexBin.Params())
 		common.CheckIndexResult(t, indexes, expIndex)
 
 		// load collection

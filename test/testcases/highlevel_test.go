@@ -17,6 +17,7 @@ import (
 const (
 	DefaultPkFieldName     = "id"
 	DefaultVectorFieldName = "vector"
+	nb                     = 10000
 )
 
 // test highlevel api new collection
@@ -43,8 +44,7 @@ func TestNewCollection(t *testing.T) {
 		"metric_type": string(entity.IP),
 		"index_type":  string(entity.AUTOINDEX),
 	}
-	// TODO why the index name is _default_idx_101 default is _default_idx_102 ?
-	expIndex := entity.NewGenericIndex("_default_idx_101", entity.AUTOINDEX, expParams)
+	expIndex := entity.NewGenericIndex(DefaultVectorFieldName, entity.AUTOINDEX, expParams)
 	common.CheckIndexResult(t, indexes, expIndex)
 
 	// check collection is loaded
@@ -52,8 +52,8 @@ func TestNewCollection(t *testing.T) {
 	require.Equal(t, entity.LoadStateLoaded, loadState)
 
 	// insert
-	pkColumn := common.GenColumnData(0, common.DefaultNb, entity.FieldTypeInt64, DefaultPkFieldName)
-	vecColumn := common.GenColumnData(0, common.DefaultNb, entity.FieldTypeFloatVector, DefaultVectorFieldName, common.WithVectorDim(common.DefaultDim))
+	pkColumn := common.GenColumnData(0, nb, entity.FieldTypeInt64, DefaultPkFieldName)
+	vecColumn := common.GenColumnData(0, nb, entity.FieldTypeFloatVector, DefaultVectorFieldName, common.WithVectorDim(common.DefaultDim))
 	_, err = mc.Insert(
 		ctx, collName, "",
 		pkColumn, vecColumn,
@@ -121,7 +121,7 @@ func TestNewCollectionCustomize(t *testing.T) {
 		"metric_type": string(entity.L2),
 		"index_type":  string(entity.AUTOINDEX),
 	}
-	expIndex := entity.NewGenericIndex("_default_idx_101", entity.AUTOINDEX, expParams)
+	expIndex := entity.NewGenericIndex(vectorFieldName, entity.AUTOINDEX, expParams)
 	common.CheckIndexResult(t, indexes, expIndex)
 
 	// check collection is loaded
@@ -129,8 +129,8 @@ func TestNewCollectionCustomize(t *testing.T) {
 	require.Equal(t, entity.LoadStateLoaded, loadState)
 
 	// insert
-	pkColumn := common.GenColumnData(0, common.DefaultNb, entity.FieldTypeVarChar, pkFieldName)
-	vecColumn := common.GenColumnData(0, common.DefaultNb, entity.FieldTypeFloatVector, vectorFieldName, common.WithVectorDim(common.DefaultDim))
+	pkColumn := common.GenColumnData(0, nb, entity.FieldTypeVarChar, pkFieldName)
+	vecColumn := common.GenColumnData(0, nb, entity.FieldTypeFloatVector, vectorFieldName, common.WithVectorDim(common.DefaultDim))
 	_, err = mc.Insert(
 		ctx, collName, "",
 		pkColumn,
