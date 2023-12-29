@@ -3,7 +3,7 @@ pull_request_rules:
     conditions:
       - or:
         - base=master
-        - base=v2.2.x
+        - base~=^v2(\.\d+).x$
       - "status-success=Unittest AMD64 Ubuntu 18.04"
       - "status-success=lint"
       - "status-success=Run Ci Test (standalone)"
@@ -15,8 +15,9 @@ pull_request_rules:
           
   - name: Test passed for code changed for branch
     conditions:
-      - -base=master
-      - -base=v2.2.x
+      - or:
+        - base=master
+        - base~=^v2(\.\d+).x$
       - "status-success=Unittest AMD64 Ubuntu 18.04"
       - "status-success=lint"
     actions:
@@ -28,7 +29,7 @@ pull_request_rules:
     conditions:
       - or:
         - base=master
-        - base=v2.2.x
+        - base~=^v2(\.\d+).x$
       - -files~=^(?!test\/).+
       - "status-success=lint"
       - "status-success=Run Ci Test (standalone)"
@@ -63,7 +64,7 @@ pull_request_rules:
     conditions:
       - or:
         - base=master
-        - base=v2.2.x
+        - base~=^v2(\.\d+).x$
       - -files~=^(?!\.github\/).+
     actions:
       label:
@@ -75,7 +76,7 @@ pull_request_rules:
     conditions:
       - or:
         - base=master
-        - base=v2.2.x
+        - base~=^v2(\.\d+).x$
       - -files~=^(?!examples\/).+
       - "status-success=lint"
     actions:
@@ -87,7 +88,7 @@ pull_request_rules:
     conditions:
       - or:
         - base=master
-        - base=v2.2.x
+        - base~=^v2(\.\d+).x$
       - or:
         - "check-failure=Unittest AMD64 Ubuntu 18.04"
         - "check-failure=lint"
@@ -98,8 +99,9 @@ pull_request_rules:
           
   - name: Remove ci-passed when some test failed for branch
     conditions:
-      - -base=master
-      - -base=v2.2.x
+      - or:
+        - base=master
+        - base~=^v2(\.\d+).x$
       - or:
         - "check-failure=Unittest AMD64 Ubuntu 18.04"
         - "check-failure=lint"
