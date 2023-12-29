@@ -1125,7 +1125,7 @@ func TestSearchInvalidScannReorderK(t *testing.T) {
 // test search with scann index params: with_raw_data and metrics_type [L2, IP, COSINE]
 func TestSearchScannAllMetricsWithRawData(t *testing.T) {
 	t.Parallel()
-	for _, with_raw_data := range []bool{true, false} {
+	for _, withRawData := range []bool{true, false} {
 		for _, metricType := range []entity.MetricType{entity.L2, entity.IP, entity.COSINE} {
 			ctx := createContext(t, time.Second*common.DefaultTimeout)
 			// connect
@@ -1143,7 +1143,7 @@ func TestSearchScannAllMetricsWithRawData(t *testing.T) {
 			mc.Flush(ctx, collName, false)
 
 			// create scann index
-			indexScann, _ := entity.NewIndexSCANN(metricType, 16, with_raw_data)
+			indexScann, _ := entity.NewIndexSCANN(metricType, 16, withRawData)
 			err := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, indexScann, false)
 			common.CheckErr(t, err, true)
 
