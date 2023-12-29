@@ -271,6 +271,7 @@ const (
 	MDescribeIndex         ServiceMethod = 403
 	MGetIndexState         ServiceMethod = 404
 	MGetIndexBuildProgress ServiceMethod = 405
+	MAlterIndex            ServiceMethod = 406
 
 	MCreateCredential ServiceMethod = 500
 	MUpdateCredential ServiceMethod = 501
@@ -285,6 +286,7 @@ const (
 	MDelete        ServiceMethod = 605
 	MQuery         ServiceMethod = 606
 	MUpsert        ServiceMethod = 607
+	MSearchV2      ServiceMethod = 608
 
 	MManualCompaction            ServiceMethod = 700
 	MGetCompactionState          ServiceMethod = 701
@@ -1004,4 +1006,23 @@ func (m *MockServer) Upsert(ctx context.Context, req *milvuspb.UpsertRequest) (*
 	}
 	s, err := SuccessStatus()
 	return &milvuspb.MutationResult{Status: s}, err
+}
+
+func (m *MockServer) AlterIndex(ctx context.Context, req *milvuspb.AlterIndexRequest) (*commonpb.Status, error) {
+	f := m.GetInjection(MUpsert)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*commonpb.Status), err
+	}
+	return SuccessStatus()
+}
+
+func (m *MockServer) SearchV2(ctx context.Context, req *milvuspb.SearchRequestV2) (*milvuspb.SearchResults, error) {
+	f := m.GetInjection(MUpsert)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*milvuspb.SearchResults), err
+	}
+	status, err := SuccessStatus()
+	return &milvuspb.SearchResults{Status: status}, err
 }
