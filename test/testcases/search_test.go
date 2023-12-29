@@ -1,4 +1,4 @@
-//go:build L0
+///go:build L0
 
 package testcases
 
@@ -1099,7 +1099,7 @@ func TestSearchInvalidScannReorderK(t *testing.T) {
 	// describe index
 	indexes, _ := mc.DescribeIndex(ctx, collName, common.DefaultFloatVecFieldName)
 	log.Println(indexes)
-	expIndex := entity.NewGenericIndex(common.DefaultIndexName, entity.SCANN, indexScann.Params())
+	expIndex := entity.NewGenericIndex(common.DefaultFloatVecFieldName, entity.SCANN, indexScann.Params())
 	common.CheckIndexResult(t, indexes, expIndex)
 
 	// load collection
@@ -1125,7 +1125,7 @@ func TestSearchInvalidScannReorderK(t *testing.T) {
 // test search with scann index params: with_raw_data and metrics_type [L2, IP, COSINE]
 func TestSearchScannAllMetricsWithRawData(t *testing.T) {
 	t.Parallel()
-	for _, with_raw_data := range []bool{true, false} {
+	for _, withRawData := range []bool{true, false} {
 		for _, metricType := range []entity.MetricType{entity.L2, entity.IP, entity.COSINE} {
 			ctx := createContext(t, time.Second*common.DefaultTimeout)
 			// connect
@@ -1143,13 +1143,13 @@ func TestSearchScannAllMetricsWithRawData(t *testing.T) {
 			mc.Flush(ctx, collName, false)
 
 			// create scann index
-			indexScann, _ := entity.NewIndexSCANN(metricType, 16, with_raw_data)
+			indexScann, _ := entity.NewIndexSCANN(metricType, 16, withRawData)
 			err := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, indexScann, false)
 			common.CheckErr(t, err, true)
 
 			// describe index
 			indexes, _ := mc.DescribeIndex(ctx, collName, common.DefaultFloatVecFieldName)
-			expIndex := entity.NewGenericIndex(common.DefaultIndexName, entity.SCANN, indexScann.Params())
+			expIndex := entity.NewGenericIndex(common.DefaultFloatVecFieldName, entity.SCANN, indexScann.Params())
 			common.CheckIndexResult(t, indexes, expIndex)
 
 			// load collection
@@ -1200,7 +1200,7 @@ func TestRangeSearchScannL2(t *testing.T) {
 
 	// describe index
 	indexes, _ := mc.DescribeIndex(ctx, collName, common.DefaultFloatVecFieldName)
-	expIndex := entity.NewGenericIndex(common.DefaultIndexName, entity.SCANN, indexScann.Params())
+	expIndex := entity.NewGenericIndex(common.DefaultFloatVecFieldName, entity.SCANN, indexScann.Params())
 	common.CheckIndexResult(t, indexes, expIndex)
 
 	// load collection
@@ -1259,7 +1259,7 @@ func TestRangeSearchScannIPCosine(t *testing.T) {
 
 		// describe index
 		indexes, _ := mc.DescribeIndex(ctx, collName, common.DefaultFloatVecFieldName)
-		expIndex := entity.NewGenericIndex(common.DefaultIndexName, entity.SCANN, indexScann.Params())
+		expIndex := entity.NewGenericIndex(common.DefaultFloatVecFieldName, entity.SCANN, indexScann.Params())
 		common.CheckIndexResult(t, indexes, expIndex)
 
 		// load collection
@@ -1320,7 +1320,7 @@ func TestRangeSearchScannBinary(t *testing.T) {
 
 		// describe index
 		indexes, _ := mc.DescribeIndex(ctx, collName, common.DefaultBinaryVecFieldName)
-		expIndex := entity.NewGenericIndex(common.DefaultIndexName, entity.BinIvfFlat, indexBin.Params())
+		expIndex := entity.NewGenericIndex(common.DefaultBinaryVecFieldName, entity.BinIvfFlat, indexBin.Params())
 		common.CheckIndexResult(t, indexes, expIndex)
 
 		// load collection

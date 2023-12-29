@@ -146,7 +146,8 @@ func TestCreateCollectionWithNil(t *testing.T) {
 	common.CheckErr(t, errCreateCollection2, false, "vector field not set")
 }
 
-// test create collection with invalid fields: without pk, without vec field, multi pk field, multi vector field
+// test create collection with invalid fields: without pk, without vec field, multi pk field
+// TODO multi vector field
 func TestCreateCollectionInvalidFields(t *testing.T) {
 	t.Parallel()
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
@@ -173,11 +174,11 @@ func TestCreateCollectionInvalidFields(t *testing.T) {
 		}, errMsg: "only one primary key only"},
 
 		// create collection with multi vector fields
-		{fields: []*entity.Field{
-			common.GenField(common.DefaultIntFieldName, entity.FieldTypeInt64, common.WithIsPrimaryKey(true)),
-			common.GenField(common.DefaultFloatVecFieldName, entity.FieldTypeFloatVector, common.WithDim(common.DefaultDim)),
-			common.GenField(common.DefaultBinaryVecFieldName, entity.FieldTypeBinaryVector, common.WithDim(common.DefaultDim)),
-		}, errMsg: "multiple vector fields is not supported"},
+		//{fields: []*entity.Field{
+		//	common.GenField(common.DefaultIntFieldName, entity.FieldTypeInt64, common.WithIsPrimaryKey(true)),
+		//	common.GenField(common.DefaultFloatVecFieldName, entity.FieldTypeFloatVector, common.WithDim(common.DefaultDim)),
+		//	common.GenField(common.DefaultBinaryVecFieldName, entity.FieldTypeBinaryVector, common.WithDim(common.DefaultDim)),
+		//}, errMsg: "multiple vector fields is not supported"},
 
 		// create collection with None field type
 		{fields: []*entity.Field{

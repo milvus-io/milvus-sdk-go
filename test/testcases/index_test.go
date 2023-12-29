@@ -27,14 +27,36 @@ func TestCreateIndex(t *testing.T) {
 		mc := createMilvusClient(ctx, t)
 		// create default collection with flush data
 		collName, _ := createCollectionWithDataIndex(ctx, t, mc, false, false)
-		err := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false, client.WithIndexName("my_index"))
+		err := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false, client.WithIndexName(common.DefaultIndexName))
 		common.CheckErr(t, err, true)
 
 		// describe index
 		indexes, _ := mc.DescribeIndex(ctx, collName, common.DefaultFloatVecFieldName)
-		expIndex := entity.NewGenericIndex("my_index", idx.IndexType(), idx.Params())
+		expIndex := entity.NewGenericIndex(common.DefaultIndexName, idx.IndexType(), idx.Params())
 		common.CheckIndexResult(t, indexes, expIndex)
 	}
+}
+
+// test create index on same field twice
+func TestCreateIndexDup(t *testing.T) {
+	// create index
+	idxHnsw, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
+	idxIvfSq8, _ := entity.NewIndexIvfSQ8(entity.L2, 128)
+	ctx := createContext(t, time.Second*common.DefaultTimeout*3)
+	// connect
+	mc := createMilvusClient(ctx, t)
+	// create default collection with flush data
+	collName, _ := createCollectionWithDataIndex(ctx, t, mc, false, false)
+	err := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idxHnsw, false)
+	common.CheckErr(t, err, true)
+
+	// describe index
+	indexes, _ := mc.DescribeIndex(ctx, collName, common.DefaultFloatVecFieldName)
+	expIndex := entity.NewGenericIndex(common.DefaultFloatVecFieldName, idxHnsw.IndexType(), idxHnsw.Params())
+	common.CheckIndexResult(t, indexes, expIndex)
+
+	err = mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idxIvfSq8, false)
+	common.CheckErr(t, err, false, "CreateIndex failed: at most one distinct index is allowed per field")
 }
 
 // test create index for varchar field
@@ -52,6 +74,29 @@ func TestCreateIndexString(t *testing.T) {
 	indexes, _ := mc.DescribeIndex(ctx, collName, common.DefaultVarcharFieldName)
 	expIndex := entity.NewGenericIndex("scalar_index", "", idx.Params())
 	common.CheckIndexResult(t, indexes, expIndex)
+}
+
+// test create scalar index with vector field name
+func TestCreateIndexWithOtherFieldName(t *testing.T) {
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	//connect
+	mc := createMilvusClient(ctx, t)
+
+	collName, _ := createVarcharCollectionWithDataIndex(ctx, t, mc, false)
+	idx := entity.NewScalarIndex()
+	// create index with vector field name as index name (vector field name is the vector default index name)
+	err := mc.CreateIndex(ctx, collName, common.DefaultVarcharFieldName, idx, false,
+		client.WithIndexName(common.DefaultBinaryVecFieldName))
+	common.CheckErr(t, err, true)
+
+	// describe index
+	indexes, _ := mc.DescribeIndex(ctx, collName, common.DefaultVarcharFieldName)
+	expIndex := entity.NewGenericIndex(common.DefaultBinaryVecFieldName, "", idx.Params())
+	common.CheckIndexResult(t, indexes, expIndex)
+
+	// create index in binary field with default name
+	err = mc.CreateIndex(ctx, collName, common.DefaultBinaryVecFieldName, idx, false)
+	common.CheckErr(t, err, false, "CreateIndex failed: at most one distinct index is allowed per field")
 }
 
 func TestCreateIndexJsonField(t *testing.T) {
@@ -244,7 +289,7 @@ func TestCreateIndexWithoutName(t *testing.T) {
 
 	// describe index return index with default name
 	indexes, _ := mc.DescribeIndex(ctx, collName, common.DefaultFloatVecFieldName)
-	expIndex := entity.NewGenericIndex(common.DefaultIndexName, idx.IndexType(), idx.Params())
+	expIndex := entity.NewGenericIndex(common.DefaultFloatVecFieldName, idx.IndexType(), idx.Params())
 	common.CheckIndexResult(t, indexes, expIndex)
 }
 
@@ -268,7 +313,7 @@ func TestCreateIndexWithoutIndexTypeParams(t *testing.T) {
 		"metric_type": string(entity.IP),
 		"index_type":  string(entity.AUTOINDEX),
 	}
-	expIndex := entity.NewGenericIndex(common.DefaultIndexName, entity.AUTOINDEX, expParams)
+	expIndex := entity.NewGenericIndex(common.DefaultFloatVecFieldName, entity.AUTOINDEX, expParams)
 	common.CheckIndexResult(t, indexes, expIndex)
 }
 
@@ -289,7 +334,7 @@ func TestCreateIndexGeneric(t *testing.T) {
 
 	// describe index
 	indexes, _ := mc.DescribeIndex(ctx, collName, common.DefaultFloatVecFieldName)
-	expIndex := entity.NewGenericIndex(common.DefaultIndexName, idx.IndexType(), idx.Params())
+	expIndex := entity.NewGenericIndex(common.DefaultFloatVecFieldName, idx.IndexType(), idx.Params())
 	common.CheckIndexResult(t, indexes, expIndex)
 }
 
