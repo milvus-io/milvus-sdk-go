@@ -234,7 +234,7 @@ func Combine(errs ...error) error {
 			filtered = append(filtered, e)
 		}
 	}
-	if len(errs) == 0 {
+	if len(filtered) == 0 {
 		return nil
 	}
 	return multiErrors{
