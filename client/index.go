@@ -21,11 +21,11 @@ import (
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )
 
-func (c *GrpcClient) checkCollField(ctx context.Context, collName string, fieldName string, filters ...func(string, string, *entity.Field) error) error {
-	if err := c.checkCollectionExists(ctx, collName); err != nil {
+func (c *GrpcClient) checkCollField(ctx context.Context, service milvuspb.MilvusServiceClient, collName string, fieldName string, filters ...func(string, string, *entity.Field) error) error {
+	if err := c.checkCollectionExists(ctx, service, collName); err != nil {
 		return err
 	}
-	coll, err := c.DescribeCollection(ctx, collName)
+	coll, err := c.requestDescribeCollection(ctx, service, collName)
 	if err != nil {
 		return err
 	}
@@ -90,10 +90,12 @@ func getIndexDef(opts ...IndexOption) indexDef {
 // Deprecated please use CreateIndexV2 instead.
 func (c *GrpcClient) CreateIndex(ctx context.Context, collName string, fieldName string,
 	idx entity.Index, async bool, opts ...IndexOption) error {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return ErrClientNotReady
 	}
-	if err := c.checkCollField(ctx, collName, fieldName); err != nil {
+	defer service.Close()
+	if err := c.checkCollField(ctx, service, collName, fieldName); err != nil {
 		return err
 	}
 
@@ -108,7 +110,7 @@ func (c *GrpcClient) CreateIndex(ctx context.Context, collName string, fieldName
 		ExtraParams:    entity.MapKvPairs(idx.Params()),
 	}
 
-	resp, err := c.Service.CreateIndex(ctx, req)
+	resp, err := service.CreateIndex(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -117,7 +119,7 @@ func (c *GrpcClient) CreateIndex(ctx context.Context, collName string, fieldName
 	}
 	if !async { // sync mode, wait index building result
 		for {
-			idxDesc, err := c.describeIndex(ctx, collName, fieldName, opts...)
+			idxDesc, err := c.describeIndex(ctx, service, collName, fieldName, opts...)
 			if err != nil {
 				return err
 			}
@@ -140,14 +142,16 @@ func (c *GrpcClient) CreateIndex(ctx context.Context, collName string, fieldName
 
 // DescribeIndex describe index
 func (c *GrpcClient) DescribeIndex(ctx context.Context, collName string, fieldName string, opts ...IndexOption) ([]entity.Index, error) {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return []entity.Index{}, ErrClientNotReady
 	}
-	if err := c.checkCollField(ctx, collName, fieldName); err != nil {
+	defer service.Close()
+	if err := c.checkCollField(ctx, service, collName, fieldName); err != nil {
 		return []entity.Index{}, err
 	}
 
-	idxDesc, err := c.describeIndex(ctx, collName, fieldName, opts...)
+	idxDesc, err := c.describeIndex(ctx, service, collName, fieldName, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -169,9 +173,11 @@ func (c *GrpcClient) DescribeIndex(ctx context.Context, collName string, fieldNa
 // DropIndex drop index from collection
 // Deprecate please use DropIndexV2 instead.
 func (c *GrpcClient) DropIndex(ctx context.Context, collName string, fieldName string, opts ...IndexOption) error {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return ErrClientNotReady
 	}
+	defer service.Close()
 
 	idxDef := getIndexDef(opts...)
 	req := &milvuspb.DropIndexRequest{
@@ -185,7 +191,7 @@ func (c *GrpcClient) DropIndex(ctx context.Context, collName string, fieldName s
 		req.IndexName = idxDef.name
 	}
 
-	resp, err := c.Service.DropIndex(ctx, req)
+	resp, err := service.DropIndex(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -194,10 +200,12 @@ func (c *GrpcClient) DropIndex(ctx context.Context, collName string, fieldName s
 
 // GetIndexState get index state
 func (c *GrpcClient) GetIndexState(ctx context.Context, collName string, fieldName string, opts ...IndexOption) (entity.IndexState, error) {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return entity.IndexState(commonpb.IndexState_Failed), ErrClientNotReady
 	}
-	if err := c.checkCollField(ctx, collName, fieldName); err != nil {
+	defer service.Close()
+	if err := c.checkCollField(ctx, service, collName, fieldName); err != nil {
 		return entity.IndexState(commonpb.IndexState_IndexStateNone), err
 	}
 
@@ -208,7 +216,7 @@ func (c *GrpcClient) GetIndexState(ctx context.Context, collName string, fieldNa
 		FieldName:      fieldName,
 		IndexName:      idxDef.name,
 	}
-	resp, err := c.Service.GetIndexState(ctx, req)
+	resp, err := service.GetIndexState(ctx, req)
 	if err != nil {
 		return entity.IndexState(commonpb.IndexState_IndexStateNone), err
 	}
@@ -221,10 +229,12 @@ func (c *GrpcClient) GetIndexState(ctx context.Context, collName string, fieldNa
 
 // GetIndexBuildProgress get index building progress
 func (c *GrpcClient) GetIndexBuildProgress(ctx context.Context, collName string, fieldName string, opts ...IndexOption) (total, indexed int64, err error) {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return 0, 0, ErrClientNotReady
 	}
-	if err := c.checkCollField(ctx, collName, fieldName); err != nil {
+	defer service.Close()
+	if err := c.checkCollField(ctx, service, collName, fieldName); err != nil {
 		return 0, 0, err
 	}
 
@@ -235,7 +245,7 @@ func (c *GrpcClient) GetIndexBuildProgress(ctx context.Context, collName string,
 		FieldName:      fieldName,
 		IndexName:      idxDef.name,
 	}
-	resp, err := c.Service.GetIndexBuildProgress(ctx, req)
+	resp, err := service.GetIndexBuildProgress(ctx, req)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -245,7 +255,7 @@ func (c *GrpcClient) GetIndexBuildProgress(ctx context.Context, collName string,
 	return resp.GetTotalRows(), resp.GetIndexedRows(), nil
 }
 
-func (c *GrpcClient) describeIndex(ctx context.Context, collName string, fieldName string, opts ...IndexOption) ([]*milvuspb.IndexDescription, error) {
+func (c *GrpcClient) describeIndex(ctx context.Context, service milvuspb.MilvusServiceClient, collName string, fieldName string, opts ...IndexOption) ([]*milvuspb.IndexDescription, error) {
 	idxDef := getIndexDef(opts...)
 	req := &milvuspb.DescribeIndexRequest{
 		CollectionName: collName,
@@ -253,7 +263,7 @@ func (c *GrpcClient) describeIndex(ctx context.Context, collName string, fieldNa
 		IndexName:      idxDef.name,
 	}
 
-	resp, err := c.Service.DescribeIndex(ctx, req)
+	resp, err := service.DescribeIndex(ctx, req)
 	if err != nil {
 		return nil, err
 	}

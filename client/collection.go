@@ -46,14 +46,16 @@ func handleRespStatus(status *commonpb.Status) error {
 // ListCollections list collections from connection
 // Note that schema info are not provided in collection list
 func (c *GrpcClient) ListCollections(ctx context.Context) ([]*entity.Collection, error) {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return []*entity.Collection{}, ErrClientNotReady
 	}
+	defer service.Close()
 	req := &milvuspb.ShowCollectionsRequest{
 		DbName:    "",
 		TimeStamp: 0, // means now
 	}
-	resp, err := c.Service.ShowCollections(ctx, req)
+	resp, err := service.ShowCollections(ctx, req)
 	if err != nil {
 		return []*entity.Collection{}, err
 	}
@@ -77,7 +79,8 @@ func (c *GrpcClient) ListCollections(ctx context.Context) ([]*entity.Collection,
 
 // NewCollection creates a common simple collection with pre-defined attributes.
 func (c *GrpcClient) NewCollection(ctx context.Context, collName string, dimension int64, opts ...CreateCollectionOption) error {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return ErrClientNotReady
 	}
 
@@ -109,9 +112,10 @@ func (c *GrpcClient) NewCollection(ctx context.Context, collName string, dimensi
 		return err
 	}
 
-	if err := c.requestCreateCollection(ctx, sch, opt, entity.DefaultShardNumber); err != nil {
+	if err := c.requestCreateCollection(ctx, service, sch, opt, entity.DefaultShardNumber); err != nil {
 		return err
 	}
+	service.Close()
 
 	idx := entity.NewGenericIndex("", "", map[string]string{
 		"metric_type": string(opt.MetricsType),
@@ -126,9 +130,11 @@ func (c *GrpcClient) NewCollection(ctx context.Context, collName string, dimensi
 
 // CreateCollection create collection with specified schema
 func (c *GrpcClient) CreateCollection(ctx context.Context, collSchema *entity.Schema, shardNum int32, opts ...CreateCollectionOption) error {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return ErrClientNotReady
 	}
+	defer service.Close()
 	if err := c.validateSchema(collSchema); err != nil {
 		return err
 	}
@@ -142,10 +148,10 @@ func (c *GrpcClient) CreateCollection(ctx context.Context, collSchema *entity.Sc
 		o(opt)
 	}
 
-	return c.requestCreateCollection(ctx, collSchema, opt, shardNum)
+	return c.requestCreateCollection(ctx, service, collSchema, opt, shardNum)
 }
 
-func (c *GrpcClient) requestCreateCollection(ctx context.Context, sch *entity.Schema, opt *createCollOpt, shardNum int32) error {
+func (c *GrpcClient) requestCreateCollection(ctx context.Context, service milvuspb.MilvusServiceClient, sch *entity.Schema, opt *createCollOpt, shardNum int32) error {
 	if opt.EnableDynamicSchema {
 		sch.EnableDynamicField = true
 	}
@@ -165,7 +171,7 @@ func (c *GrpcClient) requestCreateCollection(ctx context.Context, sch *entity.Sc
 		Properties:       entity.MapKvPairs(opt.Properties),
 	}
 
-	resp, err := c.Service.CreateCollection(ctx, req)
+	resp, err := service.CreateCollection(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -236,8 +242,8 @@ func (c *GrpcClient) validateSchema(sch *entity.Schema) error {
 	return nil
 }
 
-func (c *GrpcClient) checkCollectionExists(ctx context.Context, collName string) error {
-	has, err := c.HasCollection(ctx, collName)
+func (c *GrpcClient) checkCollectionExists(ctx context.Context, service milvuspb.MilvusServiceClient, collName string) error {
+	has, err := c.requestHasCollection(ctx, service, collName)
 	if err != nil {
 		return err
 	}
@@ -249,13 +255,20 @@ func (c *GrpcClient) checkCollectionExists(ctx context.Context, collName string)
 
 // DescribeCollection describe the collection by name
 func (c *GrpcClient) DescribeCollection(ctx context.Context, collName string) (*entity.Collection, error) {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return nil, ErrClientNotReady
 	}
+	defer service.Close()
+
+	return c.requestDescribeCollection(ctx, service, collName)
+}
+
+func (c *GrpcClient) requestDescribeCollection(ctx context.Context, service milvuspb.MilvusServiceClient, collName string) (*entity.Collection, error) {
 	req := &milvuspb.DescribeCollectionRequest{
 		CollectionName: collName,
 	}
-	resp, err := c.Service.DescribeCollection(ctx, req)
+	resp, err := service.DescribeCollection(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -285,10 +298,12 @@ func (c *GrpcClient) DescribeCollection(ctx context.Context, collName string) (*
 
 // DropCollection drop collection by name
 func (c *GrpcClient) DropCollection(ctx context.Context, collName string, opts ...DropCollectionOption) error {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return ErrClientNotReady
 	}
-	if err := c.checkCollectionExists(ctx, collName); err != nil {
+	defer service.Close()
+	if err := c.checkCollectionExists(ctx, service, collName); err != nil {
 		return err
 	}
 
@@ -298,7 +313,7 @@ func (c *GrpcClient) DropCollection(ctx context.Context, collName string, opts .
 	for _, opt := range opts {
 		opt(req)
 	}
-	resp, err := c.Service.DropCollection(ctx, req)
+	resp, err := service.DropCollection(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -311,17 +326,23 @@ func (c *GrpcClient) DropCollection(ctx context.Context, collName string, opts .
 
 // HasCollection check whether collection name exists
 func (c *GrpcClient) HasCollection(ctx context.Context, collName string) (bool, error) {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return false, ErrClientNotReady
 	}
+	defer service.Close()
 
+	return c.requestHasCollection(ctx, service, collName)
+}
+
+func (c *GrpcClient) requestHasCollection(ctx context.Context, service milvuspb.MilvusServiceClient, collName string) (bool, error) {
 	req := &milvuspb.HasCollectionRequest{
 		DbName:         "", // reserved
 		CollectionName: collName,
 		TimeStamp:      0, // 0 for now
 	}
 
-	resp, err := c.Service.HasCollection(ctx, req)
+	resp, err := service.HasCollection(ctx, req)
 	if err != nil {
 		return false, err
 	}
@@ -333,18 +354,20 @@ func (c *GrpcClient) HasCollection(ctx context.Context, collName string) (bool, 
 
 // GetCollectionStatistcis show collection statistics
 func (c *GrpcClient) GetCollectionStatistics(ctx context.Context, collName string) (map[string]string, error) {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return nil, ErrClientNotReady
 	}
+	defer service.Close()
 
-	if err := c.checkCollectionExists(ctx, collName); err != nil {
+	if err := c.checkCollectionExists(ctx, service, collName); err != nil {
 		return nil, err
 	}
 
 	req := &milvuspb.GetCollectionStatisticsRequest{
 		CollectionName: collName,
 	}
-	resp, err := c.Service.GetCollectionStatistics(ctx, req)
+	resp, err := service.GetCollectionStatistics(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -356,19 +379,25 @@ func (c *GrpcClient) GetCollectionStatistics(ctx context.Context, collName strin
 
 // ShowCollection show collection status, used to check whether it is loaded or not
 func (c *GrpcClient) ShowCollection(ctx context.Context, collName string) (*entity.Collection, error) {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return nil, ErrClientNotReady
 	}
-	if err := c.checkCollectionExists(ctx, collName); err != nil {
+	defer service.Close()
+	if err := c.checkCollectionExists(ctx, service, collName); err != nil {
 		return nil, err
 	}
 
+	return c.requestShowCollection(ctx, service, collName)
+}
+
+func (c *GrpcClient) requestShowCollection(ctx context.Context, service milvuspb.MilvusServiceClient, collName string) (*entity.Collection, error) {
 	req := &milvuspb.ShowCollectionsRequest{
 		Type:            milvuspb.ShowType_InMemory,
 		CollectionNames: []string{collName},
 	}
 
-	resp, err := c.Service.ShowCollections(ctx, req)
+	resp, err := service.ShowCollections(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -387,11 +416,13 @@ func (c *GrpcClient) ShowCollection(ctx context.Context, collName string) (*enti
 
 // RenameCollection performs renaming for provided collection.
 func (c *GrpcClient) RenameCollection(ctx context.Context, collName, newName string) error {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return ErrClientNotReady
 	}
+	defer service.Close()
 
-	if err := c.checkCollectionExists(ctx, collName); err != nil {
+	if err := c.checkCollectionExists(ctx, service, collName); err != nil {
 		return err
 	}
 
@@ -399,7 +430,7 @@ func (c *GrpcClient) RenameCollection(ctx context.Context, collName, newName str
 		OldName: collName,
 		NewName: newName,
 	}
-	resp, err := c.Service.RenameCollection(ctx, req)
+	resp, err := service.RenameCollection(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -408,11 +439,13 @@ func (c *GrpcClient) RenameCollection(ctx context.Context, collName, newName str
 
 // LoadCollection load collection into memory
 func (c *GrpcClient) LoadCollection(ctx context.Context, collName string, async bool, opts ...LoadCollectionOption) error {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return ErrClientNotReady
 	}
+	defer service.Close()
 
-	if err := c.checkCollectionExists(ctx, collName); err != nil {
+	if err := c.checkCollectionExists(ctx, service, collName); err != nil {
 		return err
 	}
 
@@ -425,7 +458,7 @@ func (c *GrpcClient) LoadCollection(ctx context.Context, collName string, async 
 		opt(req)
 	}
 
-	resp, err := c.Service.LoadCollection(ctx, req)
+	resp, err := service.LoadCollection(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -441,7 +474,7 @@ func (c *GrpcClient) LoadCollection(ctx context.Context, collName string, async 
 			case <-ctx.Done():
 				return ctx.Err()
 			case <-ticker.C:
-				progress, err := c.getLoadingProgress(ctx, collName)
+				progress, err := c.getLoadingProgress(ctx, service, collName)
 				if err != nil {
 					return err
 				}
@@ -456,10 +489,12 @@ func (c *GrpcClient) LoadCollection(ctx context.Context, collName string, async 
 
 // ReleaseCollection release loaded collection
 func (c *GrpcClient) ReleaseCollection(ctx context.Context, collName string, opts ...ReleaseCollectionOption) error {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return ErrClientNotReady
 	}
-	if err := c.checkCollectionExists(ctx, collName); err != nil {
+	defer service.Close()
+	if err := c.checkCollectionExists(ctx, service, collName); err != nil {
 		return err
 	}
 
@@ -470,7 +505,7 @@ func (c *GrpcClient) ReleaseCollection(ctx context.Context, collName string, opt
 	for _, opt := range opts {
 		opt(req)
 	}
-	resp, err := c.Service.ReleaseCollection(ctx, req)
+	resp, err := service.ReleaseCollection(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -479,10 +514,15 @@ func (c *GrpcClient) ReleaseCollection(ctx context.Context, collName string, opt
 
 // GetReplicas gets the replica groups as well as their querynodes and shards information
 func (c *GrpcClient) GetReplicas(ctx context.Context, collName string) ([]*entity.ReplicaGroup, error) {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return nil, ErrClientNotReady
 	}
-	coll, err := c.ShowCollection(ctx, collName)
+	defer service.Close()
+	if err := c.checkCollectionExists(ctx, service, collName); err != nil {
+		return nil, err
+	}
+	coll, err := c.requestShowCollection(ctx, service, collName)
 	if err != nil {
 		return nil, err
 	}
@@ -492,7 +532,7 @@ func (c *GrpcClient) GetReplicas(ctx context.Context, collName string) ([]*entit
 		WithShardNodes: true, // return nodes by default
 	}
 
-	resp, err := c.Service.GetReplicas(ctx, req)
+	resp, err := service.GetReplicas(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -522,10 +562,12 @@ func (c *GrpcClient) GetReplicas(ctx context.Context, collName string) ([]*entit
 
 // GetLoadingProgress get the collection or partitions loading progress
 func (c *GrpcClient) GetLoadingProgress(ctx context.Context, collName string, partitionNames []string) (int64, error) {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return 0, ErrClientNotReady
 	}
-	if err := c.checkCollectionExists(ctx, collName); err != nil {
+	defer service.Close()
+	if err := c.checkCollectionExists(ctx, service, collName); err != nil {
 		return 0, err
 	}
 
@@ -533,7 +575,7 @@ func (c *GrpcClient) GetLoadingProgress(ctx context.Context, collName string, pa
 		CollectionName: collName,
 		PartitionNames: partitionNames,
 	}
-	resp, err := c.Service.GetLoadingProgress(ctx, req)
+	resp, err := service.GetLoadingProgress(ctx, req)
 	if err != nil {
 		return 0, err
 	}
@@ -543,10 +585,12 @@ func (c *GrpcClient) GetLoadingProgress(ctx context.Context, collName string, pa
 
 // GetLoadState get the collection or partitions load state
 func (c *GrpcClient) GetLoadState(ctx context.Context, collName string, partitionNames []string) (entity.LoadState, error) {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return 0, ErrClientNotReady
 	}
-	if err := c.checkCollectionExists(ctx, collName); err != nil {
+	defer service.Close()
+	if err := c.checkCollectionExists(ctx, service, collName); err != nil {
 		return 0, err
 	}
 
@@ -554,7 +598,7 @@ func (c *GrpcClient) GetLoadState(ctx context.Context, collName string, partitio
 		CollectionName: collName,
 		PartitionNames: partitionNames,
 	}
-	resp, err := c.Service.GetLoadState(ctx, req)
+	resp, err := service.GetLoadState(ctx, req)
 	if err != nil {
 		return 0, err
 	}
@@ -564,10 +608,12 @@ func (c *GrpcClient) GetLoadState(ctx context.Context, collName string, partitio
 
 // AlterCollection changes the collection attribute.
 func (c *GrpcClient) AlterCollection(ctx context.Context, collName string, attrs ...entity.CollectionAttribute) error {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return ErrClientNotReady
 	}
-	if err := c.checkCollectionExists(ctx, collName); err != nil {
+	defer service.Close()
+	if err := c.checkCollectionExists(ctx, service, collName); err != nil {
 		return err
 	}
 
@@ -595,14 +641,14 @@ func (c *GrpcClient) AlterCollection(ctx context.Context, collName string, attrs
 		Properties:     props,
 	}
 
-	resp, err := c.Service.AlterCollection(ctx, req)
+	resp, err := service.AlterCollection(ctx, req)
 	if err != nil {
 		return err
 	}
 	return handleRespStatus(resp)
 }
 
-func (c *GrpcClient) getLoadingProgress(ctx context.Context, collectionName string, partitionNames ...string) (int64, error) {
+func (c *GrpcClient) getLoadingProgress(ctx context.Context, service milvuspb.MilvusServiceClient, collectionName string, partitionNames ...string) (int64, error) {
 	req := &milvuspb.GetLoadingProgressRequest{
 		Base:           &commonpb.MsgBase{},
 		DbName:         "",
@@ -610,7 +656,7 @@ func (c *GrpcClient) getLoadingProgress(ctx context.Context, collectionName stri
 		PartitionNames: partitionNames,
 	}
 
-	resp, err := c.Service.GetLoadingProgress(ctx, req)
+	resp, err := service.GetLoadingProgress(ctx, req)
 	if err != nil {
 		return -1, err
 	}

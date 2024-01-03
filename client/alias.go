@@ -24,9 +24,11 @@ import (
 
 // CreateAlias creates an alias for collection
 func (c *GrpcClient) CreateAlias(ctx context.Context, collName string, alias string) error {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return ErrClientNotReady
 	}
+	defer service.Close()
 
 	req := &milvuspb.CreateAliasRequest{
 		DbName:         "", // reserved
@@ -34,7 +36,7 @@ func (c *GrpcClient) CreateAlias(ctx context.Context, collName string, alias str
 		Alias:          alias,
 	}
 
-	resp, err := c.Service.CreateAlias(ctx, req)
+	resp, err := service.CreateAlias(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -47,16 +49,18 @@ func (c *GrpcClient) CreateAlias(ctx context.Context, collName string, alias str
 
 // DropAlias drops the specified Alias
 func (c *GrpcClient) DropAlias(ctx context.Context, alias string) error {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return ErrClientNotReady
 	}
+	defer service.Close()
 
 	req := &milvuspb.DropAliasRequest{
 		DbName: "", // reserved
 		Alias:  alias,
 	}
 
-	resp, err := c.Service.DropAlias(ctx, req)
+	resp, err := service.DropAlias(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -69,9 +73,11 @@ func (c *GrpcClient) DropAlias(ctx context.Context, alias string) error {
 
 // AlterAlias changes collection alias to provided alias
 func (c *GrpcClient) AlterAlias(ctx context.Context, collName string, alias string) error {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return ErrClientNotReady
 	}
+	defer service.Close()
 
 	req := &milvuspb.AlterAliasRequest{
 		DbName:         "", // reserved
@@ -79,7 +85,7 @@ func (c *GrpcClient) AlterAlias(ctx context.Context, collName string, alias stri
 		Alias:          alias,
 	}
 
-	resp, err := c.Service.AlterAlias(ctx, req)
+	resp, err := service.AlterAlias(ctx, req)
 	if err != nil {
 		return err
 	}

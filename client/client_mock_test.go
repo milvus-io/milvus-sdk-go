@@ -66,6 +66,8 @@ func (s *MockSuiteBase) SetupTest() {
 			grpc.WithTransportCredentials(insecure.NewCredentials()),
 			grpc.WithContextDialer(s.mockDialer),
 		},
+		ConnPoolInit: 1,
+		ConnPoolMax:  1,
 	})
 	s.Require().NoError(err)
 	s.setupConnect()

@@ -9,14 +9,16 @@ import (
 
 // CreateCredential create new user and password
 func (c *GrpcClient) CreateCredential(ctx context.Context, username string, password string) error {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return ErrClientNotReady
 	}
+	defer service.Close()
 	req := &milvuspb.CreateCredentialRequest{
 		Username: username,
 		Password: crypto.Base64Encode(password),
 	}
-	resp, err := c.Service.CreateCredential(ctx, req)
+	resp, err := service.CreateCredential(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -29,15 +31,17 @@ func (c *GrpcClient) CreateCredential(ctx context.Context, username string, pass
 
 // UpdateCredential update password for a user
 func (c *GrpcClient) UpdateCredential(ctx context.Context, username string, oldPassword string, newPassword string) error {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return ErrClientNotReady
 	}
+	defer service.Close()
 	req := &milvuspb.UpdateCredentialRequest{
 		Username:    username,
 		OldPassword: crypto.Base64Encode(oldPassword),
 		NewPassword: crypto.Base64Encode(newPassword),
 	}
-	resp, err := c.Service.UpdateCredential(ctx, req)
+	resp, err := service.UpdateCredential(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -50,13 +54,15 @@ func (c *GrpcClient) UpdateCredential(ctx context.Context, username string, oldP
 
 // DeleteCredential delete a user
 func (c *GrpcClient) DeleteCredential(ctx context.Context, username string) error {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return ErrClientNotReady
 	}
+	defer service.Close()
 	req := &milvuspb.DeleteCredentialRequest{
 		Username: username,
 	}
-	resp, err := c.Service.DeleteCredential(ctx, req)
+	resp, err := service.DeleteCredential(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -69,11 +75,13 @@ func (c *GrpcClient) DeleteCredential(ctx context.Context, username string) erro
 
 // ListCredUsers list all usernames
 func (c *GrpcClient) ListCredUsers(ctx context.Context) ([]string, error) {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return nil, ErrClientNotReady
 	}
+	defer service.Close()
 	req := &milvuspb.ListCredUsersRequest{}
-	resp, err := c.Service.ListCredUsers(ctx, req)
+	resp, err := service.ListCredUsers(ctx, req)
 	if err != nil {
 		return nil, err
 	}

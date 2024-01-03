@@ -15,9 +15,11 @@ import (
 
 // CreateCollectionByRow create collection by row
 func (c *GrpcClient) CreateCollectionByRow(ctx context.Context, row entity.Row, shardNum int32) error {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return ErrClientNotReady
 	}
+	defer service.Close()
 	// parse schema from row definition
 	sch, err := entity.ParseSchema(row)
 	if err != nil {
@@ -25,7 +27,7 @@ func (c *GrpcClient) CreateCollectionByRow(ctx context.Context, row entity.Row, 
 	}
 
 	// check collection already exists
-	has, err := c.HasCollection(ctx, sch.CollectionName)
+	has, err := c.requestHasCollection(ctx, service, sch.CollectionName)
 	if err != nil {
 		return err
 	}
@@ -46,7 +48,7 @@ func (c *GrpcClient) CreateCollectionByRow(ctx context.Context, row entity.Row, 
 		Schema:         bs,
 		ShardsNum:      shardNum,
 	}
-	resp, err := c.Service.CreateCollection(ctx, req)
+	resp, err := service.CreateCollection(ctx, req)
 	// handles response
 	if err != nil {
 		return err
@@ -73,22 +75,24 @@ func (c *GrpcClient) InsertByRows(ctx context.Context, collName string, partitio
 // rows could be struct or map.
 func (c *GrpcClient) InsertRows(ctx context.Context, collName string, partitionName string,
 	rows []interface{}) (entity.Column, error) {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return nil, ErrClientNotReady
 	}
+	defer service.Close()
 	if len(rows) == 0 {
 		return nil, errors.New("empty rows provided")
 	}
 
-	if err := c.checkCollectionExists(ctx, collName); err != nil {
+	if err := c.checkCollectionExists(ctx, service, collName); err != nil {
 		return nil, err
 	}
 	if partitionName != "" {
-		if err := c.checkPartitionExists(ctx, collName, partitionName); err != nil {
+		if err := c.checkPartitionExists(ctx, service, collName, partitionName); err != nil {
 			return nil, err
 		}
 	}
-	coll, err := c.DescribeCollection(ctx, collName)
+	coll, err := c.requestDescribeCollection(ctx, service, collName)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +113,7 @@ func (c *GrpcClient) InsertRows(ctx context.Context, collName string, partitionN
 	for _, column := range columns {
 		req.FieldsData = append(req.FieldsData, column.FieldData())
 	}
-	resp, err := c.Service.Insert(ctx, req)
+	resp, err := service.Insert(ctx, req)
 	if err != nil {
 		return nil, err
 	}

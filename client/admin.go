@@ -20,10 +20,12 @@ import (
 
 // GetVersion returns milvus server version information.
 func (c *GrpcClient) GetVersion(ctx context.Context) (string, error) {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return "", ErrClientNotReady
 	}
-	resp, err := c.Service.GetVersion(ctx, &milvuspb.GetVersionRequest{})
+	defer service.Close()
+	resp, err := service.GetVersion(ctx, &milvuspb.GetVersionRequest{})
 	if err != nil {
 		return "", err
 	}
@@ -32,10 +34,12 @@ func (c *GrpcClient) GetVersion(ctx context.Context) (string, error) {
 
 // CheckHealth returns milvus state
 func (c *GrpcClient) CheckHealth(ctx context.Context) (*entity.MilvusState, error) {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return nil, ErrClientNotReady
 	}
-	resp, err := c.Service.CheckHealth(ctx, &milvuspb.CheckHealthRequest{})
+	defer service.Close()
+	resp, err := service.CheckHealth(ctx, &milvuspb.CheckHealthRequest{})
 	if err != nil {
 		return nil, err
 	}

@@ -31,23 +31,25 @@ import (
 // partitionName is the partition to insert, if not specified(empty), default partition will be used
 // columns are slice of the column-based data
 func (c *GrpcClient) Insert(ctx context.Context, collName string, partitionName string, columns ...entity.Column) (entity.Column, error) {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return nil, ErrClientNotReady
 	}
+	defer service.Close()
 	// 1. validation for all input params
 	// collection
-	if err := c.checkCollectionExists(ctx, collName); err != nil {
+	if err := c.checkCollectionExists(ctx, service, collName); err != nil {
 		return nil, err
 	}
 	if partitionName != "" {
-		err := c.checkPartitionExists(ctx, collName, partitionName)
+		err := c.checkPartitionExists(ctx, service, collName, partitionName)
 		if err != nil {
 			return nil, err
 		}
 	}
 	// fields
 	var rowSize int
-	coll, err := c.DescribeCollection(ctx, collName)
+	coll, err := c.requestDescribeCollection(ctx, service, collName)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +70,7 @@ func (c *GrpcClient) Insert(ctx context.Context, collName string, partitionName 
 
 	req.NumRows = uint32(rowSize)
 
-	resp, err := c.Service.Insert(ctx, req)
+	resp, err := service.Insert(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -198,10 +200,12 @@ func (c *GrpcClient) Flush(ctx context.Context, collName string, async bool, opt
 // Flush force collection to flush memory records into storage
 // in sync mode, flush will wait all segments to be flushed
 func (c *GrpcClient) FlushV2(ctx context.Context, collName string, async bool, opts ...FlushOption) ([]int64, []int64, int64, error) {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return nil, nil, 0, ErrClientNotReady
 	}
-	if err := c.checkCollectionExists(ctx, collName); err != nil {
+	defer service.Close()
+	if err := c.checkCollectionExists(ctx, service, collName); err != nil {
 		return nil, nil, 0, err
 	}
 	req := &milvuspb.FlushRequest{
@@ -211,7 +215,7 @@ func (c *GrpcClient) FlushV2(ctx context.Context, collName string, async bool, o
 	for _, opt := range opts {
 		opt(req)
 	}
-	resp, err := c.Service.Flush(ctx, req)
+	resp, err := service.Flush(ctx, req)
 	if err != nil {
 		return nil, nil, 0, err
 	}
@@ -223,7 +227,7 @@ func (c *GrpcClient) FlushV2(ctx context.Context, collName string, async bool, o
 		ids := segmentIDs.GetData()
 		if has && len(ids) > 0 {
 			flushed := func() bool {
-				resp, err := c.Service.GetFlushState(ctx, &milvuspb.GetFlushStateRequest{
+				resp, err := service.GetFlushState(ctx, &milvuspb.GetFlushStateRequest{
 					SegmentIDs: ids,
 				})
 				if err != nil {
@@ -248,21 +252,23 @@ func (c *GrpcClient) FlushV2(ctx context.Context, collName string, async bool, o
 
 // DeleteByPks deletes entries related to provided primary keys
 func (c *GrpcClient) DeleteByPks(ctx context.Context, collName string, partitionName string, ids entity.Column) error {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return ErrClientNotReady
 	}
+	defer service.Close()
 
 	// check collection name
-	if err := c.checkCollectionExists(ctx, collName); err != nil {
+	if err := c.checkCollectionExists(ctx, service, collName); err != nil {
 		return err
 	}
-	coll, err := c.DescribeCollection(ctx, collName)
+	coll, err := c.requestDescribeCollection(ctx, service, collName)
 	if err != nil {
 		return err
 	}
 	// check partition name
 	if partitionName != "" {
-		err := c.checkPartitionExists(ctx, collName, partitionName)
+		err := c.checkPartitionExists(ctx, service, collName, partitionName)
 		if err != nil {
 			return err
 		}
@@ -290,7 +296,7 @@ func (c *GrpcClient) DeleteByPks(ctx context.Context, collName string, partition
 		Expr:           expr,
 	}
 
-	resp, err := c.Service.Delete(ctx, req)
+	resp, err := service.Delete(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -304,18 +310,20 @@ func (c *GrpcClient) DeleteByPks(ctx context.Context, collName string, partition
 
 // Delete deletes entries match expression
 func (c *GrpcClient) Delete(ctx context.Context, collName string, partitionName string, expr string) error {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return ErrClientNotReady
 	}
+	defer service.Close()
 
 	// check collection name
-	if err := c.checkCollectionExists(ctx, collName); err != nil {
+	if err := c.checkCollectionExists(ctx, service, collName); err != nil {
 		return err
 	}
 
 	// check partition name
 	if partitionName != "" {
-		err := c.checkPartitionExists(ctx, collName, partitionName)
+		err := c.checkPartitionExists(ctx, service, collName, partitionName)
 		if err != nil {
 			return err
 		}
@@ -328,7 +336,7 @@ func (c *GrpcClient) Delete(ctx context.Context, collName string, partitionName 
 		Expr:           expr,
 	}
 
-	resp, err := c.Service.Delete(ctx, req)
+	resp, err := service.Delete(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -345,23 +353,25 @@ func (c *GrpcClient) Delete(ctx context.Context, collName string, partitionName 
 // partitionName is the partition to upsert, if not specified(empty), default partition will be used
 // columns are slice of the column-based data
 func (c *GrpcClient) Upsert(ctx context.Context, collName string, partitionName string, columns ...entity.Column) (entity.Column, error) {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return nil, ErrClientNotReady
 	}
+	defer service.Close()
 	// 1. validation for all input params
 	// collection
-	if err := c.checkCollectionExists(ctx, collName); err != nil {
+	if err := c.checkCollectionExists(ctx, service, collName); err != nil {
 		return nil, err
 	}
 	if partitionName != "" {
-		err := c.checkPartitionExists(ctx, collName, partitionName)
+		err := c.checkPartitionExists(ctx, service, collName, partitionName)
 		if err != nil {
 			return nil, err
 		}
 	}
 	// fields
 	var rowSize int
-	coll, err := c.DescribeCollection(ctx, collName)
+	coll, err := c.requestDescribeCollection(ctx, service, collName)
 	if err != nil {
 		return nil, err
 	}
@@ -381,7 +391,7 @@ func (c *GrpcClient) Upsert(ctx context.Context, collName string, partitionName 
 
 	req.NumRows = uint32(rowSize)
 
-	resp, err := c.Service.Upsert(ctx, req)
+	resp, err := service.Upsert(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -395,9 +405,11 @@ func (c *GrpcClient) Upsert(ctx context.Context, collName string, partitionName 
 
 // BulkInsert data files(json, numpy, etc.) on MinIO/S3 storage, read and parse them into sealed segments
 func (c *GrpcClient) BulkInsert(ctx context.Context, collName string, partitionName string, files []string, opts ...BulkInsertOption) (int64, error) {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return 0, ErrClientNotReady
 	}
+	defer service.Close()
 	req := &milvuspb.ImportRequest{
 		CollectionName: collName,
 		PartitionName:  partitionName,
@@ -408,7 +420,7 @@ func (c *GrpcClient) BulkInsert(ctx context.Context, collName string, partitionN
 		opt(req)
 	}
 
-	resp, err := c.Service.Import(ctx, req)
+	resp, err := service.Import(ctx, req)
 	if err != nil {
 		return 0, err
 	}
@@ -421,13 +433,15 @@ func (c *GrpcClient) BulkInsert(ctx context.Context, collName string, partitionN
 
 // GetBulkInsertState checks import task state
 func (c *GrpcClient) GetBulkInsertState(ctx context.Context, taskID int64) (*entity.BulkInsertTaskState, error) {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return nil, ErrClientNotReady
 	}
+	defer service.Close()
 	req := &milvuspb.GetImportStateRequest{
 		Task: taskID,
 	}
-	resp, err := c.Service.GetImportState(ctx, req)
+	resp, err := service.GetImportState(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -449,14 +463,16 @@ func (c *GrpcClient) GetBulkInsertState(ctx context.Context, taskID int64) (*ent
 
 // ListBulkInsertTasks list state of all import tasks
 func (c *GrpcClient) ListBulkInsertTasks(ctx context.Context, collName string, limit int64) ([]*entity.BulkInsertTaskState, error) {
-	if c.Service == nil {
+	service := c.Service(ctx)
+	if service == nil {
 		return nil, ErrClientNotReady
 	}
+	defer service.Close()
 	req := &milvuspb.ListImportTasksRequest{
 		CollectionName: collName,
 		Limit:          limit,
 	}
-	resp, err := c.Service.ListImportTasks(ctx, req)
+	resp, err := service.ListImportTasks(ctx, req)
 	if err != nil {
 		return nil, err
 	}
