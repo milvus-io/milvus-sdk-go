@@ -59,8 +59,8 @@ type MilvusServiceServer_AllocTimestamp_Call struct {
 }
 
 // AllocTimestamp is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.AllocTimestampRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.AllocTimestampRequest
 func (_e *MilvusServiceServer_Expecter) AllocTimestamp(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_AllocTimestamp_Call {
 	return &MilvusServiceServer_AllocTimestamp_Call{Call: _e.mock.On("AllocTimestamp", _a0, _a1)}
 }
@@ -114,8 +114,8 @@ type MilvusServiceServer_AlterAlias_Call struct {
 }
 
 // AlterAlias is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.AlterAliasRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.AlterAliasRequest
 func (_e *MilvusServiceServer_Expecter) AlterAlias(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_AlterAlias_Call {
 	return &MilvusServiceServer_AlterAlias_Call{Call: _e.mock.On("AlterAlias", _a0, _a1)}
 }
@@ -169,8 +169,8 @@ type MilvusServiceServer_AlterCollection_Call struct {
 }
 
 // AlterCollection is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.AlterCollectionRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.AlterCollectionRequest
 func (_e *MilvusServiceServer_Expecter) AlterCollection(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_AlterCollection_Call {
 	return &MilvusServiceServer_AlterCollection_Call{Call: _e.mock.On("AlterCollection", _a0, _a1)}
 }
@@ -188,6 +188,61 @@ func (_c *MilvusServiceServer_AlterCollection_Call) Return(_a0 *commonpb.Status,
 }
 
 func (_c *MilvusServiceServer_AlterCollection_Call) RunAndReturn(run func(context.Context, *milvuspb.AlterCollectionRequest) (*commonpb.Status, error)) *MilvusServiceServer_AlterCollection_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// AlterIndex provides a mock function with given fields: _a0, _a1
+func (_m *MilvusServiceServer) AlterIndex(_a0 context.Context, _a1 *milvuspb.AlterIndexRequest) (*commonpb.Status, error) {
+	ret := _m.Called(_a0, _a1)
+
+	var r0 *commonpb.Status
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *milvuspb.AlterIndexRequest) (*commonpb.Status, error)); ok {
+		return rf(_a0, _a1)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *milvuspb.AlterIndexRequest) *commonpb.Status); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*commonpb.Status)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *milvuspb.AlterIndexRequest) error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MilvusServiceServer_AlterIndex_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AlterIndex'
+type MilvusServiceServer_AlterIndex_Call struct {
+	*mock.Call
+}
+
+// AlterIndex is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - _a1 *milvuspb.AlterIndexRequest
+func (_e *MilvusServiceServer_Expecter) AlterIndex(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_AlterIndex_Call {
+	return &MilvusServiceServer_AlterIndex_Call{Call: _e.mock.On("AlterIndex", _a0, _a1)}
+}
+
+func (_c *MilvusServiceServer_AlterIndex_Call) Run(run func(_a0 context.Context, _a1 *milvuspb.AlterIndexRequest)) *MilvusServiceServer_AlterIndex_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*milvuspb.AlterIndexRequest))
+	})
+	return _c
+}
+
+func (_c *MilvusServiceServer_AlterIndex_Call) Return(_a0 *commonpb.Status, _a1 error) *MilvusServiceServer_AlterIndex_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MilvusServiceServer_AlterIndex_Call) RunAndReturn(run func(context.Context, *milvuspb.AlterIndexRequest) (*commonpb.Status, error)) *MilvusServiceServer_AlterIndex_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -224,8 +279,8 @@ type MilvusServiceServer_CalcDistance_Call struct {
 }
 
 // CalcDistance is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.CalcDistanceRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.CalcDistanceRequest
 func (_e *MilvusServiceServer_Expecter) CalcDistance(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_CalcDistance_Call {
 	return &MilvusServiceServer_CalcDistance_Call{Call: _e.mock.On("CalcDistance", _a0, _a1)}
 }
@@ -279,8 +334,8 @@ type MilvusServiceServer_CheckHealth_Call struct {
 }
 
 // CheckHealth is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.CheckHealthRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.CheckHealthRequest
 func (_e *MilvusServiceServer_Expecter) CheckHealth(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_CheckHealth_Call {
 	return &MilvusServiceServer_CheckHealth_Call{Call: _e.mock.On("CheckHealth", _a0, _a1)}
 }
@@ -334,8 +389,8 @@ type MilvusServiceServer_Connect_Call struct {
 }
 
 // Connect is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.ConnectRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.ConnectRequest
 func (_e *MilvusServiceServer_Expecter) Connect(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_Connect_Call {
 	return &MilvusServiceServer_Connect_Call{Call: _e.mock.On("Connect", _a0, _a1)}
 }
@@ -389,8 +444,8 @@ type MilvusServiceServer_CreateAlias_Call struct {
 }
 
 // CreateAlias is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.CreateAliasRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.CreateAliasRequest
 func (_e *MilvusServiceServer_Expecter) CreateAlias(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_CreateAlias_Call {
 	return &MilvusServiceServer_CreateAlias_Call{Call: _e.mock.On("CreateAlias", _a0, _a1)}
 }
@@ -444,8 +499,8 @@ type MilvusServiceServer_CreateCollection_Call struct {
 }
 
 // CreateCollection is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.CreateCollectionRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.CreateCollectionRequest
 func (_e *MilvusServiceServer_Expecter) CreateCollection(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_CreateCollection_Call {
 	return &MilvusServiceServer_CreateCollection_Call{Call: _e.mock.On("CreateCollection", _a0, _a1)}
 }
@@ -499,8 +554,8 @@ type MilvusServiceServer_CreateCredential_Call struct {
 }
 
 // CreateCredential is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.CreateCredentialRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.CreateCredentialRequest
 func (_e *MilvusServiceServer_Expecter) CreateCredential(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_CreateCredential_Call {
 	return &MilvusServiceServer_CreateCredential_Call{Call: _e.mock.On("CreateCredential", _a0, _a1)}
 }
@@ -554,8 +609,8 @@ type MilvusServiceServer_CreateDatabase_Call struct {
 }
 
 // CreateDatabase is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.CreateDatabaseRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.CreateDatabaseRequest
 func (_e *MilvusServiceServer_Expecter) CreateDatabase(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_CreateDatabase_Call {
 	return &MilvusServiceServer_CreateDatabase_Call{Call: _e.mock.On("CreateDatabase", _a0, _a1)}
 }
@@ -609,8 +664,8 @@ type MilvusServiceServer_CreateIndex_Call struct {
 }
 
 // CreateIndex is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.CreateIndexRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.CreateIndexRequest
 func (_e *MilvusServiceServer_Expecter) CreateIndex(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_CreateIndex_Call {
 	return &MilvusServiceServer_CreateIndex_Call{Call: _e.mock.On("CreateIndex", _a0, _a1)}
 }
@@ -664,8 +719,8 @@ type MilvusServiceServer_CreatePartition_Call struct {
 }
 
 // CreatePartition is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.CreatePartitionRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.CreatePartitionRequest
 func (_e *MilvusServiceServer_Expecter) CreatePartition(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_CreatePartition_Call {
 	return &MilvusServiceServer_CreatePartition_Call{Call: _e.mock.On("CreatePartition", _a0, _a1)}
 }
@@ -719,8 +774,8 @@ type MilvusServiceServer_CreateResourceGroup_Call struct {
 }
 
 // CreateResourceGroup is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.CreateResourceGroupRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.CreateResourceGroupRequest
 func (_e *MilvusServiceServer_Expecter) CreateResourceGroup(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_CreateResourceGroup_Call {
 	return &MilvusServiceServer_CreateResourceGroup_Call{Call: _e.mock.On("CreateResourceGroup", _a0, _a1)}
 }
@@ -774,8 +829,8 @@ type MilvusServiceServer_CreateRole_Call struct {
 }
 
 // CreateRole is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.CreateRoleRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.CreateRoleRequest
 func (_e *MilvusServiceServer_Expecter) CreateRole(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_CreateRole_Call {
 	return &MilvusServiceServer_CreateRole_Call{Call: _e.mock.On("CreateRole", _a0, _a1)}
 }
@@ -829,8 +884,8 @@ type MilvusServiceServer_Delete_Call struct {
 }
 
 // Delete is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.DeleteRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.DeleteRequest
 func (_e *MilvusServiceServer_Expecter) Delete(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_Delete_Call {
 	return &MilvusServiceServer_Delete_Call{Call: _e.mock.On("Delete", _a0, _a1)}
 }
@@ -884,8 +939,8 @@ type MilvusServiceServer_DeleteCredential_Call struct {
 }
 
 // DeleteCredential is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.DeleteCredentialRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.DeleteCredentialRequest
 func (_e *MilvusServiceServer_Expecter) DeleteCredential(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_DeleteCredential_Call {
 	return &MilvusServiceServer_DeleteCredential_Call{Call: _e.mock.On("DeleteCredential", _a0, _a1)}
 }
@@ -939,8 +994,8 @@ type MilvusServiceServer_DescribeAlias_Call struct {
 }
 
 // DescribeAlias is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.DescribeAliasRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.DescribeAliasRequest
 func (_e *MilvusServiceServer_Expecter) DescribeAlias(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_DescribeAlias_Call {
 	return &MilvusServiceServer_DescribeAlias_Call{Call: _e.mock.On("DescribeAlias", _a0, _a1)}
 }
@@ -994,8 +1049,8 @@ type MilvusServiceServer_DescribeCollection_Call struct {
 }
 
 // DescribeCollection is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.DescribeCollectionRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.DescribeCollectionRequest
 func (_e *MilvusServiceServer_Expecter) DescribeCollection(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_DescribeCollection_Call {
 	return &MilvusServiceServer_DescribeCollection_Call{Call: _e.mock.On("DescribeCollection", _a0, _a1)}
 }
@@ -1049,8 +1104,8 @@ type MilvusServiceServer_DescribeIndex_Call struct {
 }
 
 // DescribeIndex is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.DescribeIndexRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.DescribeIndexRequest
 func (_e *MilvusServiceServer_Expecter) DescribeIndex(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_DescribeIndex_Call {
 	return &MilvusServiceServer_DescribeIndex_Call{Call: _e.mock.On("DescribeIndex", _a0, _a1)}
 }
@@ -1104,8 +1159,8 @@ type MilvusServiceServer_DescribeResourceGroup_Call struct {
 }
 
 // DescribeResourceGroup is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.DescribeResourceGroupRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.DescribeResourceGroupRequest
 func (_e *MilvusServiceServer_Expecter) DescribeResourceGroup(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_DescribeResourceGroup_Call {
 	return &MilvusServiceServer_DescribeResourceGroup_Call{Call: _e.mock.On("DescribeResourceGroup", _a0, _a1)}
 }
@@ -1159,8 +1214,8 @@ type MilvusServiceServer_DescribeSegmentIndexData_Call struct {
 }
 
 // DescribeSegmentIndexData is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *federpb.DescribeSegmentIndexDataRequest
+//   - _a0 context.Context
+//   - _a1 *federpb.DescribeSegmentIndexDataRequest
 func (_e *MilvusServiceServer_Expecter) DescribeSegmentIndexData(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_DescribeSegmentIndexData_Call {
 	return &MilvusServiceServer_DescribeSegmentIndexData_Call{Call: _e.mock.On("DescribeSegmentIndexData", _a0, _a1)}
 }
@@ -1214,8 +1269,8 @@ type MilvusServiceServer_DropAlias_Call struct {
 }
 
 // DropAlias is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.DropAliasRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.DropAliasRequest
 func (_e *MilvusServiceServer_Expecter) DropAlias(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_DropAlias_Call {
 	return &MilvusServiceServer_DropAlias_Call{Call: _e.mock.On("DropAlias", _a0, _a1)}
 }
@@ -1269,8 +1324,8 @@ type MilvusServiceServer_DropCollection_Call struct {
 }
 
 // DropCollection is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.DropCollectionRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.DropCollectionRequest
 func (_e *MilvusServiceServer_Expecter) DropCollection(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_DropCollection_Call {
 	return &MilvusServiceServer_DropCollection_Call{Call: _e.mock.On("DropCollection", _a0, _a1)}
 }
@@ -1324,8 +1379,8 @@ type MilvusServiceServer_DropDatabase_Call struct {
 }
 
 // DropDatabase is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.DropDatabaseRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.DropDatabaseRequest
 func (_e *MilvusServiceServer_Expecter) DropDatabase(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_DropDatabase_Call {
 	return &MilvusServiceServer_DropDatabase_Call{Call: _e.mock.On("DropDatabase", _a0, _a1)}
 }
@@ -1379,8 +1434,8 @@ type MilvusServiceServer_DropIndex_Call struct {
 }
 
 // DropIndex is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.DropIndexRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.DropIndexRequest
 func (_e *MilvusServiceServer_Expecter) DropIndex(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_DropIndex_Call {
 	return &MilvusServiceServer_DropIndex_Call{Call: _e.mock.On("DropIndex", _a0, _a1)}
 }
@@ -1434,8 +1489,8 @@ type MilvusServiceServer_DropPartition_Call struct {
 }
 
 // DropPartition is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.DropPartitionRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.DropPartitionRequest
 func (_e *MilvusServiceServer_Expecter) DropPartition(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_DropPartition_Call {
 	return &MilvusServiceServer_DropPartition_Call{Call: _e.mock.On("DropPartition", _a0, _a1)}
 }
@@ -1489,8 +1544,8 @@ type MilvusServiceServer_DropResourceGroup_Call struct {
 }
 
 // DropResourceGroup is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.DropResourceGroupRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.DropResourceGroupRequest
 func (_e *MilvusServiceServer_Expecter) DropResourceGroup(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_DropResourceGroup_Call {
 	return &MilvusServiceServer_DropResourceGroup_Call{Call: _e.mock.On("DropResourceGroup", _a0, _a1)}
 }
@@ -1544,8 +1599,8 @@ type MilvusServiceServer_DropRole_Call struct {
 }
 
 // DropRole is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.DropRoleRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.DropRoleRequest
 func (_e *MilvusServiceServer_Expecter) DropRole(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_DropRole_Call {
 	return &MilvusServiceServer_DropRole_Call{Call: _e.mock.On("DropRole", _a0, _a1)}
 }
@@ -1599,8 +1654,8 @@ type MilvusServiceServer_Dummy_Call struct {
 }
 
 // Dummy is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.DummyRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.DummyRequest
 func (_e *MilvusServiceServer_Expecter) Dummy(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_Dummy_Call {
 	return &MilvusServiceServer_Dummy_Call{Call: _e.mock.On("Dummy", _a0, _a1)}
 }
@@ -1654,8 +1709,8 @@ type MilvusServiceServer_Flush_Call struct {
 }
 
 // Flush is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.FlushRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.FlushRequest
 func (_e *MilvusServiceServer_Expecter) Flush(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_Flush_Call {
 	return &MilvusServiceServer_Flush_Call{Call: _e.mock.On("Flush", _a0, _a1)}
 }
@@ -1709,8 +1764,8 @@ type MilvusServiceServer_FlushAll_Call struct {
 }
 
 // FlushAll is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.FlushAllRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.FlushAllRequest
 func (_e *MilvusServiceServer_Expecter) FlushAll(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_FlushAll_Call {
 	return &MilvusServiceServer_FlushAll_Call{Call: _e.mock.On("FlushAll", _a0, _a1)}
 }
@@ -1764,8 +1819,8 @@ type MilvusServiceServer_GetCollectionStatistics_Call struct {
 }
 
 // GetCollectionStatistics is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.GetCollectionStatisticsRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.GetCollectionStatisticsRequest
 func (_e *MilvusServiceServer_Expecter) GetCollectionStatistics(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_GetCollectionStatistics_Call {
 	return &MilvusServiceServer_GetCollectionStatistics_Call{Call: _e.mock.On("GetCollectionStatistics", _a0, _a1)}
 }
@@ -1819,8 +1874,8 @@ type MilvusServiceServer_GetCompactionState_Call struct {
 }
 
 // GetCompactionState is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.GetCompactionStateRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.GetCompactionStateRequest
 func (_e *MilvusServiceServer_Expecter) GetCompactionState(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_GetCompactionState_Call {
 	return &MilvusServiceServer_GetCompactionState_Call{Call: _e.mock.On("GetCompactionState", _a0, _a1)}
 }
@@ -1874,8 +1929,8 @@ type MilvusServiceServer_GetCompactionStateWithPlans_Call struct {
 }
 
 // GetCompactionStateWithPlans is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.GetCompactionPlansRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.GetCompactionPlansRequest
 func (_e *MilvusServiceServer_Expecter) GetCompactionStateWithPlans(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_GetCompactionStateWithPlans_Call {
 	return &MilvusServiceServer_GetCompactionStateWithPlans_Call{Call: _e.mock.On("GetCompactionStateWithPlans", _a0, _a1)}
 }
@@ -1929,8 +1984,8 @@ type MilvusServiceServer_GetComponentStates_Call struct {
 }
 
 // GetComponentStates is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.GetComponentStatesRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.GetComponentStatesRequest
 func (_e *MilvusServiceServer_Expecter) GetComponentStates(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_GetComponentStates_Call {
 	return &MilvusServiceServer_GetComponentStates_Call{Call: _e.mock.On("GetComponentStates", _a0, _a1)}
 }
@@ -1984,8 +2039,8 @@ type MilvusServiceServer_GetFlushAllState_Call struct {
 }
 
 // GetFlushAllState is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.GetFlushAllStateRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.GetFlushAllStateRequest
 func (_e *MilvusServiceServer_Expecter) GetFlushAllState(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_GetFlushAllState_Call {
 	return &MilvusServiceServer_GetFlushAllState_Call{Call: _e.mock.On("GetFlushAllState", _a0, _a1)}
 }
@@ -2039,8 +2094,8 @@ type MilvusServiceServer_GetFlushState_Call struct {
 }
 
 // GetFlushState is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.GetFlushStateRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.GetFlushStateRequest
 func (_e *MilvusServiceServer_Expecter) GetFlushState(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_GetFlushState_Call {
 	return &MilvusServiceServer_GetFlushState_Call{Call: _e.mock.On("GetFlushState", _a0, _a1)}
 }
@@ -2094,8 +2149,8 @@ type MilvusServiceServer_GetImportState_Call struct {
 }
 
 // GetImportState is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.GetImportStateRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.GetImportStateRequest
 func (_e *MilvusServiceServer_Expecter) GetImportState(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_GetImportState_Call {
 	return &MilvusServiceServer_GetImportState_Call{Call: _e.mock.On("GetImportState", _a0, _a1)}
 }
@@ -2149,8 +2204,8 @@ type MilvusServiceServer_GetIndexBuildProgress_Call struct {
 }
 
 // GetIndexBuildProgress is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.GetIndexBuildProgressRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.GetIndexBuildProgressRequest
 func (_e *MilvusServiceServer_Expecter) GetIndexBuildProgress(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_GetIndexBuildProgress_Call {
 	return &MilvusServiceServer_GetIndexBuildProgress_Call{Call: _e.mock.On("GetIndexBuildProgress", _a0, _a1)}
 }
@@ -2204,8 +2259,8 @@ type MilvusServiceServer_GetIndexState_Call struct {
 }
 
 // GetIndexState is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.GetIndexStateRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.GetIndexStateRequest
 func (_e *MilvusServiceServer_Expecter) GetIndexState(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_GetIndexState_Call {
 	return &MilvusServiceServer_GetIndexState_Call{Call: _e.mock.On("GetIndexState", _a0, _a1)}
 }
@@ -2259,8 +2314,8 @@ type MilvusServiceServer_GetIndexStatistics_Call struct {
 }
 
 // GetIndexStatistics is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.GetIndexStatisticsRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.GetIndexStatisticsRequest
 func (_e *MilvusServiceServer_Expecter) GetIndexStatistics(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_GetIndexStatistics_Call {
 	return &MilvusServiceServer_GetIndexStatistics_Call{Call: _e.mock.On("GetIndexStatistics", _a0, _a1)}
 }
@@ -2314,8 +2369,8 @@ type MilvusServiceServer_GetLoadState_Call struct {
 }
 
 // GetLoadState is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.GetLoadStateRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.GetLoadStateRequest
 func (_e *MilvusServiceServer_Expecter) GetLoadState(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_GetLoadState_Call {
 	return &MilvusServiceServer_GetLoadState_Call{Call: _e.mock.On("GetLoadState", _a0, _a1)}
 }
@@ -2369,8 +2424,8 @@ type MilvusServiceServer_GetLoadingProgress_Call struct {
 }
 
 // GetLoadingProgress is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.GetLoadingProgressRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.GetLoadingProgressRequest
 func (_e *MilvusServiceServer_Expecter) GetLoadingProgress(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_GetLoadingProgress_Call {
 	return &MilvusServiceServer_GetLoadingProgress_Call{Call: _e.mock.On("GetLoadingProgress", _a0, _a1)}
 }
@@ -2424,8 +2479,8 @@ type MilvusServiceServer_GetMetrics_Call struct {
 }
 
 // GetMetrics is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.GetMetricsRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.GetMetricsRequest
 func (_e *MilvusServiceServer_Expecter) GetMetrics(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_GetMetrics_Call {
 	return &MilvusServiceServer_GetMetrics_Call{Call: _e.mock.On("GetMetrics", _a0, _a1)}
 }
@@ -2479,8 +2534,8 @@ type MilvusServiceServer_GetPartitionStatistics_Call struct {
 }
 
 // GetPartitionStatistics is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.GetPartitionStatisticsRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.GetPartitionStatisticsRequest
 func (_e *MilvusServiceServer_Expecter) GetPartitionStatistics(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_GetPartitionStatistics_Call {
 	return &MilvusServiceServer_GetPartitionStatistics_Call{Call: _e.mock.On("GetPartitionStatistics", _a0, _a1)}
 }
@@ -2534,8 +2589,8 @@ type MilvusServiceServer_GetPersistentSegmentInfo_Call struct {
 }
 
 // GetPersistentSegmentInfo is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.GetPersistentSegmentInfoRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.GetPersistentSegmentInfoRequest
 func (_e *MilvusServiceServer_Expecter) GetPersistentSegmentInfo(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_GetPersistentSegmentInfo_Call {
 	return &MilvusServiceServer_GetPersistentSegmentInfo_Call{Call: _e.mock.On("GetPersistentSegmentInfo", _a0, _a1)}
 }
@@ -2589,8 +2644,8 @@ type MilvusServiceServer_GetQuerySegmentInfo_Call struct {
 }
 
 // GetQuerySegmentInfo is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.GetQuerySegmentInfoRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.GetQuerySegmentInfoRequest
 func (_e *MilvusServiceServer_Expecter) GetQuerySegmentInfo(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_GetQuerySegmentInfo_Call {
 	return &MilvusServiceServer_GetQuerySegmentInfo_Call{Call: _e.mock.On("GetQuerySegmentInfo", _a0, _a1)}
 }
@@ -2644,8 +2699,8 @@ type MilvusServiceServer_GetReplicas_Call struct {
 }
 
 // GetReplicas is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.GetReplicasRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.GetReplicasRequest
 func (_e *MilvusServiceServer_Expecter) GetReplicas(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_GetReplicas_Call {
 	return &MilvusServiceServer_GetReplicas_Call{Call: _e.mock.On("GetReplicas", _a0, _a1)}
 }
@@ -2699,8 +2754,8 @@ type MilvusServiceServer_GetVersion_Call struct {
 }
 
 // GetVersion is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.GetVersionRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.GetVersionRequest
 func (_e *MilvusServiceServer_Expecter) GetVersion(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_GetVersion_Call {
 	return &MilvusServiceServer_GetVersion_Call{Call: _e.mock.On("GetVersion", _a0, _a1)}
 }
@@ -2754,8 +2809,8 @@ type MilvusServiceServer_HasCollection_Call struct {
 }
 
 // HasCollection is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.HasCollectionRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.HasCollectionRequest
 func (_e *MilvusServiceServer_Expecter) HasCollection(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_HasCollection_Call {
 	return &MilvusServiceServer_HasCollection_Call{Call: _e.mock.On("HasCollection", _a0, _a1)}
 }
@@ -2809,8 +2864,8 @@ type MilvusServiceServer_HasPartition_Call struct {
 }
 
 // HasPartition is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.HasPartitionRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.HasPartitionRequest
 func (_e *MilvusServiceServer_Expecter) HasPartition(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_HasPartition_Call {
 	return &MilvusServiceServer_HasPartition_Call{Call: _e.mock.On("HasPartition", _a0, _a1)}
 }
@@ -2864,8 +2919,8 @@ type MilvusServiceServer_Import_Call struct {
 }
 
 // Import is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.ImportRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.ImportRequest
 func (_e *MilvusServiceServer_Expecter) Import(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_Import_Call {
 	return &MilvusServiceServer_Import_Call{Call: _e.mock.On("Import", _a0, _a1)}
 }
@@ -2919,8 +2974,8 @@ type MilvusServiceServer_Insert_Call struct {
 }
 
 // Insert is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.InsertRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.InsertRequest
 func (_e *MilvusServiceServer_Expecter) Insert(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_Insert_Call {
 	return &MilvusServiceServer_Insert_Call{Call: _e.mock.On("Insert", _a0, _a1)}
 }
@@ -2974,8 +3029,8 @@ type MilvusServiceServer_ListAliases_Call struct {
 }
 
 // ListAliases is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.ListAliasesRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.ListAliasesRequest
 func (_e *MilvusServiceServer_Expecter) ListAliases(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_ListAliases_Call {
 	return &MilvusServiceServer_ListAliases_Call{Call: _e.mock.On("ListAliases", _a0, _a1)}
 }
@@ -3029,8 +3084,8 @@ type MilvusServiceServer_ListCredUsers_Call struct {
 }
 
 // ListCredUsers is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.ListCredUsersRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.ListCredUsersRequest
 func (_e *MilvusServiceServer_Expecter) ListCredUsers(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_ListCredUsers_Call {
 	return &MilvusServiceServer_ListCredUsers_Call{Call: _e.mock.On("ListCredUsers", _a0, _a1)}
 }
@@ -3084,8 +3139,8 @@ type MilvusServiceServer_ListDatabases_Call struct {
 }
 
 // ListDatabases is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.ListDatabasesRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.ListDatabasesRequest
 func (_e *MilvusServiceServer_Expecter) ListDatabases(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_ListDatabases_Call {
 	return &MilvusServiceServer_ListDatabases_Call{Call: _e.mock.On("ListDatabases", _a0, _a1)}
 }
@@ -3139,8 +3194,8 @@ type MilvusServiceServer_ListImportTasks_Call struct {
 }
 
 // ListImportTasks is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.ListImportTasksRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.ListImportTasksRequest
 func (_e *MilvusServiceServer_Expecter) ListImportTasks(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_ListImportTasks_Call {
 	return &MilvusServiceServer_ListImportTasks_Call{Call: _e.mock.On("ListImportTasks", _a0, _a1)}
 }
@@ -3194,8 +3249,8 @@ type MilvusServiceServer_ListIndexedSegment_Call struct {
 }
 
 // ListIndexedSegment is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *federpb.ListIndexedSegmentRequest
+//   - _a0 context.Context
+//   - _a1 *federpb.ListIndexedSegmentRequest
 func (_e *MilvusServiceServer_Expecter) ListIndexedSegment(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_ListIndexedSegment_Call {
 	return &MilvusServiceServer_ListIndexedSegment_Call{Call: _e.mock.On("ListIndexedSegment", _a0, _a1)}
 }
@@ -3249,8 +3304,8 @@ type MilvusServiceServer_ListResourceGroups_Call struct {
 }
 
 // ListResourceGroups is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.ListResourceGroupsRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.ListResourceGroupsRequest
 func (_e *MilvusServiceServer_Expecter) ListResourceGroups(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_ListResourceGroups_Call {
 	return &MilvusServiceServer_ListResourceGroups_Call{Call: _e.mock.On("ListResourceGroups", _a0, _a1)}
 }
@@ -3304,8 +3359,8 @@ type MilvusServiceServer_LoadBalance_Call struct {
 }
 
 // LoadBalance is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.LoadBalanceRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.LoadBalanceRequest
 func (_e *MilvusServiceServer_Expecter) LoadBalance(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_LoadBalance_Call {
 	return &MilvusServiceServer_LoadBalance_Call{Call: _e.mock.On("LoadBalance", _a0, _a1)}
 }
@@ -3359,8 +3414,8 @@ type MilvusServiceServer_LoadCollection_Call struct {
 }
 
 // LoadCollection is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.LoadCollectionRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.LoadCollectionRequest
 func (_e *MilvusServiceServer_Expecter) LoadCollection(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_LoadCollection_Call {
 	return &MilvusServiceServer_LoadCollection_Call{Call: _e.mock.On("LoadCollection", _a0, _a1)}
 }
@@ -3414,8 +3469,8 @@ type MilvusServiceServer_LoadPartitions_Call struct {
 }
 
 // LoadPartitions is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.LoadPartitionsRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.LoadPartitionsRequest
 func (_e *MilvusServiceServer_Expecter) LoadPartitions(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_LoadPartitions_Call {
 	return &MilvusServiceServer_LoadPartitions_Call{Call: _e.mock.On("LoadPartitions", _a0, _a1)}
 }
@@ -3469,8 +3524,8 @@ type MilvusServiceServer_ManualCompaction_Call struct {
 }
 
 // ManualCompaction is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.ManualCompactionRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.ManualCompactionRequest
 func (_e *MilvusServiceServer_Expecter) ManualCompaction(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_ManualCompaction_Call {
 	return &MilvusServiceServer_ManualCompaction_Call{Call: _e.mock.On("ManualCompaction", _a0, _a1)}
 }
@@ -3524,8 +3579,8 @@ type MilvusServiceServer_OperatePrivilege_Call struct {
 }
 
 // OperatePrivilege is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.OperatePrivilegeRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.OperatePrivilegeRequest
 func (_e *MilvusServiceServer_Expecter) OperatePrivilege(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_OperatePrivilege_Call {
 	return &MilvusServiceServer_OperatePrivilege_Call{Call: _e.mock.On("OperatePrivilege", _a0, _a1)}
 }
@@ -3579,8 +3634,8 @@ type MilvusServiceServer_OperateUserRole_Call struct {
 }
 
 // OperateUserRole is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.OperateUserRoleRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.OperateUserRoleRequest
 func (_e *MilvusServiceServer_Expecter) OperateUserRole(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_OperateUserRole_Call {
 	return &MilvusServiceServer_OperateUserRole_Call{Call: _e.mock.On("OperateUserRole", _a0, _a1)}
 }
@@ -3634,8 +3689,8 @@ type MilvusServiceServer_Query_Call struct {
 }
 
 // Query is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.QueryRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.QueryRequest
 func (_e *MilvusServiceServer_Expecter) Query(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_Query_Call {
 	return &MilvusServiceServer_Query_Call{Call: _e.mock.On("Query", _a0, _a1)}
 }
@@ -3689,8 +3744,8 @@ type MilvusServiceServer_RegisterLink_Call struct {
 }
 
 // RegisterLink is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.RegisterLinkRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.RegisterLinkRequest
 func (_e *MilvusServiceServer_Expecter) RegisterLink(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_RegisterLink_Call {
 	return &MilvusServiceServer_RegisterLink_Call{Call: _e.mock.On("RegisterLink", _a0, _a1)}
 }
@@ -3744,8 +3799,8 @@ type MilvusServiceServer_ReleaseCollection_Call struct {
 }
 
 // ReleaseCollection is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.ReleaseCollectionRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.ReleaseCollectionRequest
 func (_e *MilvusServiceServer_Expecter) ReleaseCollection(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_ReleaseCollection_Call {
 	return &MilvusServiceServer_ReleaseCollection_Call{Call: _e.mock.On("ReleaseCollection", _a0, _a1)}
 }
@@ -3799,8 +3854,8 @@ type MilvusServiceServer_ReleasePartitions_Call struct {
 }
 
 // ReleasePartitions is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.ReleasePartitionsRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.ReleasePartitionsRequest
 func (_e *MilvusServiceServer_Expecter) ReleasePartitions(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_ReleasePartitions_Call {
 	return &MilvusServiceServer_ReleasePartitions_Call{Call: _e.mock.On("ReleasePartitions", _a0, _a1)}
 }
@@ -3854,8 +3909,8 @@ type MilvusServiceServer_RenameCollection_Call struct {
 }
 
 // RenameCollection is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.RenameCollectionRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.RenameCollectionRequest
 func (_e *MilvusServiceServer_Expecter) RenameCollection(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_RenameCollection_Call {
 	return &MilvusServiceServer_RenameCollection_Call{Call: _e.mock.On("RenameCollection", _a0, _a1)}
 }
@@ -3964,8 +4019,8 @@ type MilvusServiceServer_Search_Call struct {
 }
 
 // Search is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.SearchRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.SearchRequest
 func (_e *MilvusServiceServer_Expecter) Search(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_Search_Call {
 	return &MilvusServiceServer_Search_Call{Call: _e.mock.On("Search", _a0, _a1)}
 }
@@ -3983,6 +4038,61 @@ func (_c *MilvusServiceServer_Search_Call) Return(_a0 *milvuspb.SearchResults, _
 }
 
 func (_c *MilvusServiceServer_Search_Call) RunAndReturn(run func(context.Context, *milvuspb.SearchRequest) (*milvuspb.SearchResults, error)) *MilvusServiceServer_Search_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// SearchV2 provides a mock function with given fields: _a0, _a1
+func (_m *MilvusServiceServer) SearchV2(_a0 context.Context, _a1 *milvuspb.SearchRequestV2) (*milvuspb.SearchResults, error) {
+	ret := _m.Called(_a0, _a1)
+
+	var r0 *milvuspb.SearchResults
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *milvuspb.SearchRequestV2) (*milvuspb.SearchResults, error)); ok {
+		return rf(_a0, _a1)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *milvuspb.SearchRequestV2) *milvuspb.SearchResults); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*milvuspb.SearchResults)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *milvuspb.SearchRequestV2) error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MilvusServiceServer_SearchV2_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SearchV2'
+type MilvusServiceServer_SearchV2_Call struct {
+	*mock.Call
+}
+
+// SearchV2 is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - _a1 *milvuspb.SearchRequestV2
+func (_e *MilvusServiceServer_Expecter) SearchV2(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_SearchV2_Call {
+	return &MilvusServiceServer_SearchV2_Call{Call: _e.mock.On("SearchV2", _a0, _a1)}
+}
+
+func (_c *MilvusServiceServer_SearchV2_Call) Run(run func(_a0 context.Context, _a1 *milvuspb.SearchRequestV2)) *MilvusServiceServer_SearchV2_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*milvuspb.SearchRequestV2))
+	})
+	return _c
+}
+
+func (_c *MilvusServiceServer_SearchV2_Call) Return(_a0 *milvuspb.SearchResults, _a1 error) *MilvusServiceServer_SearchV2_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MilvusServiceServer_SearchV2_Call) RunAndReturn(run func(context.Context, *milvuspb.SearchRequestV2) (*milvuspb.SearchResults, error)) *MilvusServiceServer_SearchV2_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -4019,8 +4129,8 @@ type MilvusServiceServer_SelectGrant_Call struct {
 }
 
 // SelectGrant is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.SelectGrantRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.SelectGrantRequest
 func (_e *MilvusServiceServer_Expecter) SelectGrant(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_SelectGrant_Call {
 	return &MilvusServiceServer_SelectGrant_Call{Call: _e.mock.On("SelectGrant", _a0, _a1)}
 }
@@ -4074,8 +4184,8 @@ type MilvusServiceServer_SelectRole_Call struct {
 }
 
 // SelectRole is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.SelectRoleRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.SelectRoleRequest
 func (_e *MilvusServiceServer_Expecter) SelectRole(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_SelectRole_Call {
 	return &MilvusServiceServer_SelectRole_Call{Call: _e.mock.On("SelectRole", _a0, _a1)}
 }
@@ -4129,8 +4239,8 @@ type MilvusServiceServer_SelectUser_Call struct {
 }
 
 // SelectUser is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.SelectUserRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.SelectUserRequest
 func (_e *MilvusServiceServer_Expecter) SelectUser(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_SelectUser_Call {
 	return &MilvusServiceServer_SelectUser_Call{Call: _e.mock.On("SelectUser", _a0, _a1)}
 }
@@ -4184,8 +4294,8 @@ type MilvusServiceServer_ShowCollections_Call struct {
 }
 
 // ShowCollections is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.ShowCollectionsRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.ShowCollectionsRequest
 func (_e *MilvusServiceServer_Expecter) ShowCollections(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_ShowCollections_Call {
 	return &MilvusServiceServer_ShowCollections_Call{Call: _e.mock.On("ShowCollections", _a0, _a1)}
 }
@@ -4239,8 +4349,8 @@ type MilvusServiceServer_ShowPartitions_Call struct {
 }
 
 // ShowPartitions is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.ShowPartitionsRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.ShowPartitionsRequest
 func (_e *MilvusServiceServer_Expecter) ShowPartitions(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_ShowPartitions_Call {
 	return &MilvusServiceServer_ShowPartitions_Call{Call: _e.mock.On("ShowPartitions", _a0, _a1)}
 }
@@ -4294,8 +4404,8 @@ type MilvusServiceServer_TransferNode_Call struct {
 }
 
 // TransferNode is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.TransferNodeRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.TransferNodeRequest
 func (_e *MilvusServiceServer_Expecter) TransferNode(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_TransferNode_Call {
 	return &MilvusServiceServer_TransferNode_Call{Call: _e.mock.On("TransferNode", _a0, _a1)}
 }
@@ -4349,8 +4459,8 @@ type MilvusServiceServer_TransferReplica_Call struct {
 }
 
 // TransferReplica is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.TransferReplicaRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.TransferReplicaRequest
 func (_e *MilvusServiceServer_Expecter) TransferReplica(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_TransferReplica_Call {
 	return &MilvusServiceServer_TransferReplica_Call{Call: _e.mock.On("TransferReplica", _a0, _a1)}
 }
@@ -4404,8 +4514,8 @@ type MilvusServiceServer_UpdateCredential_Call struct {
 }
 
 // UpdateCredential is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.UpdateCredentialRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.UpdateCredentialRequest
 func (_e *MilvusServiceServer_Expecter) UpdateCredential(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_UpdateCredential_Call {
 	return &MilvusServiceServer_UpdateCredential_Call{Call: _e.mock.On("UpdateCredential", _a0, _a1)}
 }
@@ -4459,8 +4569,8 @@ type MilvusServiceServer_Upsert_Call struct {
 }
 
 // Upsert is a helper method to define mock.On call
-//  - _a0 context.Context
-//  - _a1 *milvuspb.UpsertRequest
+//   - _a0 context.Context
+//   - _a1 *milvuspb.UpsertRequest
 func (_e *MilvusServiceServer_Expecter) Upsert(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_Upsert_Call {
 	return &MilvusServiceServer_Upsert_Call{Call: _e.mock.On("Upsert", _a0, _a1)}
 }
