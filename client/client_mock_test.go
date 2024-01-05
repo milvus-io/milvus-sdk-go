@@ -554,6 +554,15 @@ func (m *MockServer) CreateIndex(ctx context.Context, req *milvuspb.CreateIndexR
 	return SuccessStatus()
 }
 
+func (m *MockServer) AlterIndex(ctx context.Context, req *milvuspb.AlterIndexRequest) (*commonpb.Status, error) {
+	f := m.GetInjection(MAlterIndex)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*commonpb.Status), err
+	}
+	return SuccessStatus()
+}
+
 func (m *MockServer) DescribeIndex(ctx context.Context, req *milvuspb.DescribeIndexRequest) (*milvuspb.DescribeIndexResponse, error) {
 	f := m.GetInjection(MDescribeIndex)
 	if f != nil {
@@ -1006,15 +1015,6 @@ func (m *MockServer) Upsert(ctx context.Context, req *milvuspb.UpsertRequest) (*
 	}
 	s, err := SuccessStatus()
 	return &milvuspb.MutationResult{Status: s}, err
-}
-
-func (m *MockServer) AlterIndex(ctx context.Context, req *milvuspb.AlterIndexRequest) (*commonpb.Status, error) {
-	f := m.GetInjection(MUpsert)
-	if f != nil {
-		r, err := f(ctx, req)
-		return r.(*commonpb.Status), err
-	}
-	return SuccessStatus()
 }
 
 func (m *MockServer) SearchV2(ctx context.Context, req *milvuspb.SearchRequestV2) (*milvuspb.SearchResults, error) {
