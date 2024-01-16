@@ -13,18 +13,6 @@ pull_request_rules:
         add:
           - ci-passed
           
-  - name: Test passed for code changed for branch
-    conditions:
-      - or:
-        - base=master
-        - base~=^v2(\.\d+).x$
-      - "status-success=Unittest AMD64 Ubuntu 18.04"
-      - "status-success=lint"
-    actions:
-      label:
-        add:
-          - ci-passed
-
   - name: Test passed for e2e changed
     conditions:
       - or:
