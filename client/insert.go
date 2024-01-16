@@ -34,17 +34,7 @@ func (c *GrpcClient) Insert(ctx context.Context, collName string, partitionName 
 	if c.Service == nil {
 		return nil, ErrClientNotReady
 	}
-	// 1. validation for all input params
-	// collection
-	if err := c.checkCollectionExists(ctx, collName); err != nil {
-		return nil, err
-	}
-	if partitionName != "" {
-		err := c.checkPartitionExists(ctx, collName, partitionName)
-		if err != nil {
-			return nil, err
-		}
-	}
+
 	// fields
 	var rowSize int
 	coll, err := c.DescribeCollection(ctx, collName)
@@ -201,9 +191,7 @@ func (c *GrpcClient) FlushV2(ctx context.Context, collName string, async bool, o
 	if c.Service == nil {
 		return nil, nil, 0, ErrClientNotReady
 	}
-	if err := c.checkCollectionExists(ctx, collName); err != nil {
-		return nil, nil, 0, err
-	}
+
 	req := &milvuspb.FlushRequest{
 		DbName:          "", // reserved,
 		CollectionNames: []string{collName},
@@ -252,21 +240,11 @@ func (c *GrpcClient) DeleteByPks(ctx context.Context, collName string, partition
 		return ErrClientNotReady
 	}
 
-	// check collection name
-	if err := c.checkCollectionExists(ctx, collName); err != nil {
-		return err
-	}
 	coll, err := c.DescribeCollection(ctx, collName)
 	if err != nil {
 		return err
 	}
-	// check partition name
-	if partitionName != "" {
-		err := c.checkPartitionExists(ctx, collName, partitionName)
-		if err != nil {
-			return err
-		}
-	}
+
 	// check primary keys
 	if ids.Len() == 0 {
 		return errors.New("ids len must not be zero")
@@ -308,19 +286,6 @@ func (c *GrpcClient) Delete(ctx context.Context, collName string, partitionName 
 		return ErrClientNotReady
 	}
 
-	// check collection name
-	if err := c.checkCollectionExists(ctx, collName); err != nil {
-		return err
-	}
-
-	// check partition name
-	if partitionName != "" {
-		err := c.checkPartitionExists(ctx, collName, partitionName)
-		if err != nil {
-			return err
-		}
-	}
-
 	req := &milvuspb.DeleteRequest{
 		DbName:         "",
 		CollectionName: collName,
@@ -348,17 +313,7 @@ func (c *GrpcClient) Upsert(ctx context.Context, collName string, partitionName 
 	if c.Service == nil {
 		return nil, ErrClientNotReady
 	}
-	// 1. validation for all input params
-	// collection
-	if err := c.checkCollectionExists(ctx, collName); err != nil {
-		return nil, err
-	}
-	if partitionName != "" {
-		err := c.checkPartitionExists(ctx, collName, partitionName)
-		if err != nil {
-			return nil, err
-		}
-	}
+
 	// fields
 	var rowSize int
 	coll, err := c.DescribeCollection(ctx, collName)

@@ -3,7 +3,6 @@
 package testcases
 
 import (
-	"fmt"
 	"log"
 	"testing"
 	"time"
@@ -46,7 +45,7 @@ func TestLoadCollectionNotExist(t *testing.T) {
 
 	// Load collection
 	errLoad := mc.LoadCollection(ctx, "collName", false)
-	common.CheckErr(t, errLoad, false, "exist")
+	common.CheckErr(t, errLoad, false, "collection not found")
 }
 
 // test load collection async
@@ -139,7 +138,7 @@ func TestLoadEmptyPartitionName(t *testing.T) {
 
 	// load partition with empty partition names
 	errLoadEmpty := mc.LoadPartitions(ctx, collName, []string{""}, false)
-	common.CheckErr(t, errLoadEmpty, false, "request failed")
+	common.CheckErr(t, errLoadEmpty, false, "partition not found")
 }
 
 // test load partitions with empty slice []string{}
@@ -177,11 +176,11 @@ func TestLoadPartitionsNotExist(t *testing.T) {
 
 	// load with not exist partition names
 	errLoadNotExist := mc.LoadPartitions(ctx, collName, []string{"xxx"}, false)
-	common.CheckErr(t, errLoadNotExist, false, fmt.Sprintf("partition xxx of collection %s does not exist", collName))
+	common.CheckErr(t, errLoadNotExist, false, "partition not found")
 
 	// load partition with part exist partition names
 	errLoadPartExist := mc.LoadPartitions(ctx, collName, []string{"xxx", partitionName}, false)
-	common.CheckErr(t, errLoadPartExist, false, fmt.Sprintf("partition xxx of collection %s does not exist", collName))
+	common.CheckErr(t, errLoadPartExist, false, "partition not found")
 }
 
 // test load partition
@@ -359,7 +358,7 @@ func TestReleaseCollectionNotExist(t *testing.T) {
 
 	// release collection
 	errRelease := mc.ReleaseCollection(ctx, "collName")
-	common.CheckErr(t, errRelease, false, "not exist")
+	common.CheckErr(t, errRelease, false, "collection not found")
 }
 
 // test release partitions

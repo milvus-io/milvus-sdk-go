@@ -399,17 +399,6 @@ func (s *CollectionSuite) TestRenameCollection() {
 		s.NoError(err)
 	})
 
-	s.Run("coll_not_exist", func() {
-		defer s.resetMock()
-
-		newCollName := fmt.Sprintf("new_%s", randStr(6))
-
-		s.mock.EXPECT().HasCollection(mock.Anything, &milvuspb.HasCollectionRequest{CollectionName: testCollectionName}).Return(&milvuspb.BoolResponse{Status: &commonpb.Status{}, Value: false}, nil)
-
-		err := c.RenameCollection(ctx, testCollectionName, newCollName)
-		s.Error(err)
-	})
-
 	s.Run("rename_failed", func() {
 		defer s.resetMock()
 
@@ -449,19 +438,6 @@ func (s *CollectionSuite) TestAlterCollection() {
 
 		err := c.AlterCollection(ctx, testCollectionName, entity.CollectionTTL(100000))
 		s.NoError(err)
-	})
-
-	s.Run("collection_not_exist", func() {
-		defer s.resetMock()
-
-		s.mock.EXPECT().HasCollection(mock.Anything, mock.AnythingOfType("*milvuspb.HasCollectionRequest")).
-			Return(&milvuspb.BoolResponse{
-				Status: &commonpb.Status{},
-				Value:  false,
-			}, nil)
-
-		err := c.AlterCollection(ctx, testCollectionName, entity.CollectionTTL(100000))
-		s.Error(err)
 	})
 
 	s.Run("no_attributes", func() {
@@ -560,26 +536,6 @@ func (s *CollectionSuite) TestLoadCollection() {
 
 		err := c.LoadCollection(ctx, testCollectionName, true, WithReplicaNumber(testMultiReplicaNumber))
 		s.NoError(err)
-	})
-
-	s.Run("has_collection_failure", func() {
-		s.Run("return_false", func() {
-			defer s.resetMock()
-			s.mock.EXPECT().HasCollection(mock.Anything, &milvuspb.HasCollectionRequest{CollectionName: testCollectionName}).
-				Return(&milvuspb.BoolResponse{Status: &commonpb.Status{}, Value: false}, nil)
-
-			err := c.LoadCollection(ctx, testCollectionName, true)
-			s.Error(err)
-		})
-
-		s.Run("return_error", func() {
-			defer s.resetMock()
-			s.mock.EXPECT().HasCollection(mock.Anything, &milvuspb.HasCollectionRequest{CollectionName: testCollectionName}).
-				Return(nil, errors.New("mock error"))
-
-			err := c.LoadCollection(ctx, testCollectionName, true)
-			s.Error(err)
-		})
 	})
 
 	s.Run("load_collection_failure", func() {
@@ -872,11 +828,6 @@ func TestGrpcClientGetReplicas(t *testing.T) {
 		assert.Equal(t, replicaID, groups[0].ReplicaID)
 		assert.Equal(t, nodeIds, groups[0].NodeIDs)
 		assert.Equal(t, 2, len(groups[0].ShardReplicas))
-	})
-
-	t.Run("get replicas invalid name", func(t *testing.T) {
-		_, err := c.GetReplicas(ctx, "invalid name")
-		assert.Error(t, err)
 	})
 
 	t.Run("get replicas grpc error", func(t *testing.T) {

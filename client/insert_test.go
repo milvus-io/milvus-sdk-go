@@ -33,22 +33,6 @@ func (s *InsertSuite) TestInsertFail() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	s.Run("collection_not_exist", func() {
-		defer s.resetMock()
-		s.setupHasCollection()
-		_, err := c.Insert(ctx, testCollectionName, "")
-		s.Error(err)
-	})
-
-	s.Run("partition_not_exist", func() {
-		defer s.resetMock()
-		s.setupHasCollection(testCollectionName)
-		s.setupHasPartition(testCollectionName)
-
-		_, err := c.Insert(ctx, testCollectionName, "partition_name")
-		s.Error(err)
-	})
-
 	s.Run("field_not_exist", func() {
 		defer s.resetMock()
 		s.setupHasCollection(testCollectionName)

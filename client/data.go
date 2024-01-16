@@ -421,15 +421,6 @@ func (c *GrpcClient) CalcDistance(ctx context.Context, collName string, partitio
 		return nil, errors.New("operators cannot be nil")
 	}
 
-	// check meta
-	if err := c.checkCollectionExists(ctx, collName); err != nil {
-		return nil, err
-	}
-	for _, partition := range partitions {
-		if err := c.checkPartitionExists(ctx, collName, partition); err != nil {
-			return nil, err
-		}
-	}
 	if err := c.checkCollField(ctx, collName, opLeft.Name(), isVectorField); err != nil {
 		return nil, err
 	}

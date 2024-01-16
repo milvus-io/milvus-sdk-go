@@ -80,14 +80,6 @@ func (c *GrpcClient) InsertRows(ctx context.Context, collName string, partitionN
 		return nil, errors.New("empty rows provided")
 	}
 
-	if err := c.checkCollectionExists(ctx, collName); err != nil {
-		return nil, err
-	}
-	if partitionName != "" {
-		if err := c.checkPartitionExists(ctx, collName, partitionName); err != nil {
-			return nil, err
-		}
-	}
 	coll, err := c.DescribeCollection(ctx, collName)
 	if err != nil {
 		return nil, err

@@ -288,9 +288,6 @@ func (c *GrpcClient) DropCollection(ctx context.Context, collName string, opts .
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
-	if err := c.checkCollectionExists(ctx, collName); err != nil {
-		return err
-	}
 
 	req := &milvuspb.DropCollectionRequest{
 		CollectionName: collName,
@@ -337,10 +334,6 @@ func (c *GrpcClient) GetCollectionStatistics(ctx context.Context, collName strin
 		return nil, ErrClientNotReady
 	}
 
-	if err := c.checkCollectionExists(ctx, collName); err != nil {
-		return nil, err
-	}
-
 	req := &milvuspb.GetCollectionStatisticsRequest{
 		CollectionName: collName,
 	}
@@ -359,10 +352,6 @@ func (c *GrpcClient) ShowCollection(ctx context.Context, collName string) (*enti
 	if c.Service == nil {
 		return nil, ErrClientNotReady
 	}
-	if err := c.checkCollectionExists(ctx, collName); err != nil {
-		return nil, err
-	}
-
 	req := &milvuspb.ShowCollectionsRequest{
 		Type:            milvuspb.ShowType_InMemory,
 		CollectionNames: []string{collName},
@@ -391,10 +380,6 @@ func (c *GrpcClient) RenameCollection(ctx context.Context, collName, newName str
 		return ErrClientNotReady
 	}
 
-	if err := c.checkCollectionExists(ctx, collName); err != nil {
-		return err
-	}
-
 	req := &milvuspb.RenameCollectionRequest{
 		OldName: collName,
 		NewName: newName,
@@ -410,10 +395,6 @@ func (c *GrpcClient) RenameCollection(ctx context.Context, collName, newName str
 func (c *GrpcClient) LoadCollection(ctx context.Context, collName string, async bool, opts ...LoadCollectionOption) error {
 	if c.Service == nil {
 		return ErrClientNotReady
-	}
-
-	if err := c.checkCollectionExists(ctx, collName); err != nil {
-		return err
 	}
 
 	req := &milvuspb.LoadCollectionRequest{
@@ -458,9 +439,6 @@ func (c *GrpcClient) LoadCollection(ctx context.Context, collName string, async 
 func (c *GrpcClient) ReleaseCollection(ctx context.Context, collName string, opts ...ReleaseCollectionOption) error {
 	if c.Service == nil {
 		return ErrClientNotReady
-	}
-	if err := c.checkCollectionExists(ctx, collName); err != nil {
-		return err
 	}
 
 	req := &milvuspb.ReleaseCollectionRequest{
@@ -525,9 +503,6 @@ func (c *GrpcClient) GetLoadingProgress(ctx context.Context, collName string, pa
 	if c.Service == nil {
 		return 0, ErrClientNotReady
 	}
-	if err := c.checkCollectionExists(ctx, collName); err != nil {
-		return 0, err
-	}
 
 	req := &milvuspb.GetLoadingProgressRequest{
 		CollectionName: collName,
@@ -546,10 +521,6 @@ func (c *GrpcClient) GetLoadState(ctx context.Context, collName string, partitio
 	if c.Service == nil {
 		return 0, ErrClientNotReady
 	}
-	if err := c.checkCollectionExists(ctx, collName); err != nil {
-		return 0, err
-	}
-
 	req := &milvuspb.GetLoadStateRequest{
 		CollectionName: collName,
 		PartitionNames: partitionNames,
@@ -566,9 +537,6 @@ func (c *GrpcClient) GetLoadState(ctx context.Context, collName string, partitio
 func (c *GrpcClient) AlterCollection(ctx context.Context, collName string, attrs ...entity.CollectionAttribute) error {
 	if c.Service == nil {
 		return ErrClientNotReady
-	}
-	if err := c.checkCollectionExists(ctx, collName); err != nil {
-		return err
 	}
 
 	if len(attrs) == 0 {

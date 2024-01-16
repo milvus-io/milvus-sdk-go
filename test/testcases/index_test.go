@@ -129,7 +129,7 @@ func TestCreateIndexJsonField(t *testing.T) {
 	// create vector index on json field
 	idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
 	err := mc.CreateIndex(ctx, collName, common.DefaultJSONFieldName, idx, false, client.WithIndexName("json_index"))
-	common.CheckErr(t, err, false, "create index on json field is not supported")
+	common.CheckErr(t, err, false, "create index on JSON field is not supported")
 
 	// create scalar index on json field
 	//err = mc.CreateIndex(ctx, collName, common.DefaultJSONFieldName, entity.NewScalarIndex(), false, client.WithIndexName("json_index"))
@@ -163,10 +163,10 @@ func TestCreateIndexArrayField(t *testing.T) {
 		if field.DataType == entity.FieldTypeArray {
 			// create scalar index
 			err := mc.CreateIndex(ctx, collName, field.Name, scalarIdx, false, client.WithIndexName("scalar_index"))
-			common.CheckErr(t, err, false, "create index on json field is not supported: invalid parameter")
+			common.CheckErr(t, err, false, "create index on Array field is not supported: invalid parameter")
 			// create vector index
 			err1 := mc.CreateIndex(ctx, collName, field.Name, vectorIdx, false, client.WithIndexName("vector_index"))
-			common.CheckErr(t, err1, false, "create index on json field is not supported: invalid parameter")
+			common.CheckErr(t, err1, false, "create index on Array field is not supported: invalid parameter")
 		}
 	}
 }

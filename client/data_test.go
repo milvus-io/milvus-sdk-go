@@ -225,16 +225,8 @@ func TestGrpcDeleteByPks(t *testing.T) {
 		mockServer.SetInjection(MHasPartition, hasPartitionInjection(t, testCollectionName, false, partName))
 		defer mockServer.DelInjection(MHasPartition)
 
-		// non-exist collection
-		err := c.DeleteByPks(ctx, "non-exists-collection", "", entity.NewColumnInt64("pk", []int64{}))
-		assert.Error(t, err)
-
-		// non-exist parition
-		err = c.DeleteByPks(ctx, testCollectionName, "non-exists-part", entity.NewColumnInt64("pk", []int64{}))
-		assert.Error(t, err)
-
 		// zero length pk
-		err = c.DeleteByPks(ctx, testCollectionName, "", entity.NewColumnInt64(testPrimaryField, []int64{}))
+		err := c.DeleteByPks(ctx, testCollectionName, "", entity.NewColumnInt64(testPrimaryField, []int64{}))
 		assert.Error(t, err)
 
 		// string pk field
@@ -299,19 +291,6 @@ func TestGrpcDelete(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
-	t.Run("Bad request deletes", func(t *testing.T) {
-		partName := "testPart"
-		mockServer.SetInjection(MHasPartition, hasPartitionInjection(t, testCollectionName, false, partName))
-		defer mockServer.DelInjection(MHasPartition)
-
-		// non-exist collection
-		err := c.Delete(ctx, "non-exists-collection", "", "")
-		assert.Error(t, err)
-
-		// non-exist parition
-		err = c.Delete(ctx, testCollectionName, "non-exists-part", "")
-		assert.Error(t, err)
-	})
 	t.Run("delete services fail", func(t *testing.T) {
 		mockServer.SetInjection(MDelete, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			resp := &milvuspb.MutationResult{}
