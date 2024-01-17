@@ -8,7 +8,7 @@ require (
 	github.com/golang/protobuf v1.5.2
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	github.com/klauspost/compress v1.9.7
-	github.com/milvus-io/milvus-proto/go-api/v2 v2.3.4
+	github.com/milvus-io/milvus-proto/go-api/v2 v2.3.5
 	github.com/stretchr/testify v1.8.1
 	github.com/tidwall/gjson v1.14.4
 	google.golang.org/grpc v1.48.0
