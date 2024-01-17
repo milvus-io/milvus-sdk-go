@@ -419,7 +419,7 @@ func TestCreateJsonCollection(t *testing.T) {
 
 	// schema
 	collName := common.GenRandomString(6)
-	schema := common.GenSchema(collName, false, fields)
+	schema := common.GenSchema(collName, true, fields)
 
 	// create collection
 	err := mc.CreateCollection(ctx, schema, common.DefaultShards)
