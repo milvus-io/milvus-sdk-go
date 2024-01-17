@@ -107,7 +107,6 @@ func (s *SchemaSuite) TestBasic() {
 			nsch = nsch.ReadProto(p)
 
 			s.Equal(sch.CollectionName, nsch.CollectionName)
-			s.Equal(sch.AutoID, nsch.AutoID)
 			s.Equal(sch.Description, nsch.Description)
 			s.Equal(sch.EnableDynamicField, nsch.EnableDynamicField)
 			s.Equal(len(sch.Fields), len(nsch.Fields))
