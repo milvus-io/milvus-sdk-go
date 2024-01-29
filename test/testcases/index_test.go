@@ -3,6 +3,7 @@
 package testcases
 
 import (
+	"fmt"
 	"log"
 	"testing"
 	"time"
@@ -129,7 +130,7 @@ func TestCreateIndexJsonField(t *testing.T) {
 	// create vector index on json field
 	idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
 	err := mc.CreateIndex(ctx, collName, common.DefaultJSONFieldName, idx, false, client.WithIndexName("json_index"))
-	common.CheckErr(t, err, false, "create index on json field is not supported")
+	common.CheckErr(t, err, false, "create index on JSON field is not supported")
 
 	// create scalar index on json field
 	//err = mc.CreateIndex(ctx, collName, common.DefaultJSONFieldName, entity.NewScalarIndex(), false, client.WithIndexName("json_index"))
@@ -163,10 +164,10 @@ func TestCreateIndexArrayField(t *testing.T) {
 		if field.DataType == entity.FieldTypeArray {
 			// create scalar index
 			err := mc.CreateIndex(ctx, collName, field.Name, scalarIdx, false, client.WithIndexName("scalar_index"))
-			common.CheckErr(t, err, false, "create index on json field is not supported: invalid parameter")
+			common.CheckErr(t, err, false, "create index on Array field is not supported: invalid parameter")
 			// create vector index
 			err1 := mc.CreateIndex(ctx, collName, field.Name, vectorIdx, false, client.WithIndexName("vector_index"))
-			common.CheckErr(t, err1, false, "create index on json field is not supported: invalid parameter")
+			common.CheckErr(t, err1, false, "create index on Array field is not supported: invalid parameter")
 		}
 	}
 }
@@ -440,13 +441,15 @@ func TestCreateIndexInvalidParams(t *testing.T) {
 		idxScann, errScann2 := entity.NewIndexSCANN(mt, 64, true)
 		common.CheckErr(t, errScann2, true)
 		err := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idxScann, false)
-		common.CheckErr(t, err, false, "metric type not found or not supported, supported: [L2 IP COSINE]")
+		common.CheckErr(t, err, false,
+			fmt.Sprintf("metric type %s not found or not supported, supported: [L2 IP COSINE]", mt))
 	}
 
 	// invalid flat metric type jaccard for flat index
 	idx, _ := entity.NewIndexFlat(entity.JACCARD)
 	errMetricType := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false)
-	common.CheckErr(t, errMetricType, false, "metric type not found or not supported, supported: [L2 IP COSINE]")
+	common.CheckErr(t, errMetricType, false,
+		"metric type JACCARD not found or not supported, supported: [L2 IP COSINE]")
 }
 
 // test create index with nil index
