@@ -32,6 +32,7 @@ const (
 	limitKey         = `limit`
 	ignoreGrowingKey = `ignore_growing`
 	forTuningKey     = `for_tuning`
+	groupByKey       = `group_by_field`
 )
 
 // Search with bool expression
@@ -74,11 +75,22 @@ func (c *GrpcClient) Search(ctx context.Context, collName string, partitions []s
 	results := resp.GetResults()
 	offset := 0
 	fieldDataList := results.GetFieldsData()
+	gb := results.GetGroupByFieldValue()
+	var gbc entity.Column
+	if gb != nil {
+		gbc, err = entity.FieldDataColumn(gb, 0, -1)
+		if err != nil {
+			return nil, err
+		}
+	}
 	for i := 0; i < int(results.GetNumQueries()); i++ {
 		rc := int(results.GetTopks()[i]) // result entry count for current query
 		entry := SearchResult{
 			ResultCount: rc,
 			Scores:      results.GetScores()[offset : offset+rc],
+		}
+		if gbc != nil {
+			entry.GroupByValue, _ = gbc.Get(i)
 		}
 		// parse result set if current nq is not empty
 		if rc > 0 {
@@ -335,7 +347,9 @@ func prepareSearchRequest(collName string, partitions []string,
 		"round_decimal":  "-1",
 		ignoreGrowingKey: strconv.FormatBool(opt.IgnoreGrowing),
 		offsetKey:        fmt.Sprintf("%d", opt.Offset),
+		groupByKey:       opt.GroupByField,
 	})
+
 	req := &milvuspb.SearchRequest{
 		DbName:             "",
 		CollectionName:     collName,

@@ -1017,8 +1017,8 @@ func (m *MockServer) Upsert(ctx context.Context, req *milvuspb.UpsertRequest) (*
 	return &milvuspb.MutationResult{Status: s}, err
 }
 
-func (m *MockServer) SearchV2(ctx context.Context, req *milvuspb.SearchRequestV2) (*milvuspb.SearchResults, error) {
-	f := m.GetInjection(MUpsert)
+func (m *MockServer) HybridSearch(ctx context.Context, req *milvuspb.HybridSearchRequest) (*milvuspb.SearchResults, error) {
+	f := m.GetInjection(MSearchV2)
 	if f != nil {
 		r, err := f(ctx, req)
 		return r.(*milvuspb.SearchResults), err
