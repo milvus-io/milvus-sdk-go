@@ -132,6 +132,8 @@ type SearchQueryOption struct {
 
 	IgnoreGrowing bool
 	ForTuning     bool
+
+	GroupByField string
 }
 
 // SearchQueryOptionFunc is a function which modifies SearchOption
@@ -160,6 +162,12 @@ func WithOffset(offset int64) SearchQueryOptionFunc {
 func WithLimit(limit int64) SearchQueryOptionFunc {
 	return func(option *SearchQueryOption) {
 		option.Limit = limit
+	}
+}
+
+func WithGroupByField(groupByField string) SearchQueryOptionFunc {
+	return func(option *SearchQueryOption) {
+		option.GroupByField = groupByField
 	}
 }
 

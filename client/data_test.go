@@ -344,6 +344,7 @@ func (s *SearchSuite) SetupSuite() {
 
 	s.sch = entity.NewSchema().WithName(testCollectionName).
 		WithField(entity.NewField().WithName("ID").WithDataType(entity.FieldTypeInt64).WithIsPrimaryKey(true)).
+		WithField(entity.NewField().WithName("Attr").WithDataType(entity.FieldTypeInt64)).
 		WithField(entity.NewField().WithName("vector").WithDataType(entity.FieldTypeFloatVector).WithDim(testVectorDim))
 	s.schDynamic = entity.NewSchema().WithName(testCollectionName).WithDynamicFieldEnabled(true).
 		WithField(entity.NewField().WithName("ID").WithDataType(entity.FieldTypeInt64).WithIsPrimaryKey(true)).
@@ -530,6 +531,46 @@ func (s *SearchSuite) TestSearchSuccess() {
 		str, err := column.GetAsString(1)
 		s.NoError(err)
 		s.Equal("abc", str)
+	})
+
+	s.Run("group_by", func() {
+		defer s.resetMock()
+		s.setupDescribeCollection(testCollectionName, s.sch)
+		s.mock.EXPECT().Search(mock.Anything, mock.AnythingOfType("*milvuspb.SearchRequest")).
+			Run(func(_ context.Context, req *milvuspb.SearchRequest) {
+				s.Equal(testCollectionName, req.GetCollectionName())
+				s.Equal(expr, req.GetDsl())
+				s.Equal(commonpb.DslType_BoolExprV1, req.GetDslType())
+				s.ElementsMatch([]string{"ID"}, req.GetOutputFields())
+				s.ElementsMatch([]string{partName}, req.GetPartitionNames())
+			}).
+			Return(&milvuspb.SearchResults{
+				Status: getSuccessStatus(),
+				Results: &schemapb.SearchResultData{
+					NumQueries: 1,
+					TopK:       10,
+					FieldsData: []*schemapb.FieldData{
+						s.getInt64FieldData("ID", []int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}),
+					},
+					Ids: &schemapb.IDs{
+						IdField: &schemapb.IDs_IntId{
+							IntId: &schemapb.LongArray{
+								Data: []int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+							},
+						},
+					},
+					Scores:            make([]float32, 10),
+					Topks:             []int64{10},
+					GroupByFieldValue: s.getInt64FieldData("Attr", []int64{10}),
+				},
+			}, nil)
+
+		r, err := c.Search(ctx, testCollectionName, []string{partName}, expr, []string{"ID"}, []entity.Vector{entity.FloatVector(vectors[0])},
+			testVectorField, entity.L2, 10, sp, WithIgnoreGrowing(), WithForTuning(), WithSearchQueryConsistencyLevel(entity.ClCustomized), WithGuaranteeTimestamp(10000000000), WithGroupByField("Attr"))
+		s.NoError(err)
+		s.Require().Equal(1, len(r))
+		result := r[0]
+		s.Require().NotNil(result.Fields.GetColumn("ID"))
 	})
 }
 
