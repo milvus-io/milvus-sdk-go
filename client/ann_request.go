@@ -27,6 +27,7 @@ func NewANNSearchRequest(fieldName string, metricsType entity.MetricType, vector
 		metricType:  metricsType,
 		searchParam: searchParam,
 		limit:       limit,
+		options:     options,
 	}
 }
 func (r *ANNSearchRequest) WithExpr(expr string) *ANNSearchRequest {
@@ -34,14 +35,14 @@ func (r *ANNSearchRequest) WithExpr(expr string) *ANNSearchRequest {
 	return r
 }
 
-func (req *ANNSearchRequest) getMilvusSearchRequest(collectionInfo *collInfo) (*milvuspb.SearchRequest, error) {
+func (r *ANNSearchRequest) getMilvusSearchRequest(collectionInfo *collInfo) (*milvuspb.SearchRequest, error) {
 	opt := &SearchQueryOption{
 		ConsistencyLevel: collectionInfo.ConsistencyLevel, // default
 	}
-	for _, o := range req.options {
+	for _, o := range r.options {
 		o(opt)
 	}
-	params := req.searchParam.Params()
+	params := r.searchParam.Params()
 	params[forTuningKey] = opt.ForTuning
 	bs, err := json.Marshal(params)
 	if err != nil {
@@ -49,10 +50,10 @@ func (req *ANNSearchRequest) getMilvusSearchRequest(collectionInfo *collInfo) (*
 	}
 
 	searchParams := entity.MapKvPairs(map[string]string{
-		"anns_field":     req.fieldName,
-		"topk":           fmt.Sprintf("%d", req.limit),
+		"anns_field":     r.fieldName,
+		"topk":           fmt.Sprintf("%d", r.limit),
 		"params":         string(bs),
-		"metric_type":    string(req.metricType),
+		"metric_type":    string(r.metricType),
 		"round_decimal":  "-1",
 		ignoreGrowingKey: strconv.FormatBool(opt.IgnoreGrowing),
 		offsetKey:        fmt.Sprintf("%d", opt.Offset),
@@ -61,12 +62,12 @@ func (req *ANNSearchRequest) getMilvusSearchRequest(collectionInfo *collInfo) (*
 
 	result := &milvuspb.SearchRequest{
 		DbName:             "",
-		Dsl:                req.expr,
-		PlaceholderGroup:   vector2PlaceholderGroupBytes(req.vectors),
+		Dsl:                r.expr,
+		PlaceholderGroup:   vector2PlaceholderGroupBytes(r.vectors),
 		DslType:            commonpb.DslType_BoolExprV1,
 		SearchParams:       searchParams,
 		GuaranteeTimestamp: opt.GuaranteeTimestamp,
-		Nq:                 int64(len(req.vectors)),
+		Nq:                 int64(len(r.vectors)),
 	}
 	return result, nil
 }
