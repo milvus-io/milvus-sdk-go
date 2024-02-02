@@ -25,6 +25,7 @@ import (
 	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
 	"github.com/milvus-io/milvus-proto/go-api/v2/schemapb"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
+	"github.com/milvus-io/milvus-sdk-go/v2/merr"
 )
 
 const (
@@ -34,6 +35,59 @@ const (
 	forTuningKey     = `for_tuning`
 	groupByKey       = `group_by_field`
 )
+
+func (c *GrpcClient) HybridSearch(ctx context.Context, collName string, partitions []string, limit int, outputFields []string, reranker Reranker, subRequests []*ANNSearchRequest) ([]SearchResult, error) {
+	if c.Service == nil {
+		return nil, ErrClientNotReady
+	}
+
+	var schema *entity.Schema
+	collInfo, ok := MetaCache.getCollectionInfo(collName)
+	if !ok {
+		coll, err := c.DescribeCollection(ctx, collName)
+		if err != nil {
+			return nil, err
+		}
+		schema = coll.Schema
+	} else {
+		schema = collInfo.Schema
+	}
+
+	sReqs := make([]*milvuspb.SearchRequest, 0, len(subRequests))
+	nq := 0
+	for _, subRequest := range subRequests {
+		r, err := subRequest.getMilvusSearchRequest(collInfo)
+		if err != nil {
+			return nil, err
+		}
+		r.CollectionName = collName
+		r.PartitionNames = partitions
+		r.OutputFields = outputFields
+		nq = len(subRequest.vectors)
+		sReqs = append(sReqs, r)
+	}
+
+	params := reranker.GetParams()
+	params = append(params, &commonpb.KeyValuePair{Key: limitKey, Value: strconv.FormatInt(int64(limit), 10)})
+
+	req := &milvuspb.HybridSearchRequest{
+		CollectionName:   collName,
+		PartitionNames:   partitions,
+		Requests:         sReqs,
+		OutputFields:     outputFields,
+		ConsistencyLevel: commonpb.ConsistencyLevel(collInfo.ConsistencyLevel),
+		RankParams:       params,
+	}
+
+	result, err := c.Service.HybridSearch(ctx, req)
+
+	err = merr.CheckRPCCall(result, err)
+	if err != nil {
+		return nil, err
+	}
+
+	return c.handleSearchResult(schema, outputFields, nq, result)
+}
 
 // Search with bool expression
 func (c *GrpcClient) Search(ctx context.Context, collName string, partitions []string,
@@ -63,7 +117,6 @@ func (c *GrpcClient) Search(ctx context.Context, collName string, partitions []s
 		return nil, err
 	}
 
-	sr := make([]SearchResult, 0, len(vectors))
 	resp, err := c.Service.Search(ctx, req)
 	if err != nil {
 		return nil, err
@@ -71,6 +124,13 @@ func (c *GrpcClient) Search(ctx context.Context, collName string, partitions []s
 	if err := handleRespStatus(resp.GetStatus()); err != nil {
 		return nil, err
 	}
+	// 3. parse result into result
+	return c.handleSearchResult(schema, outputFields, len(vectors), resp)
+}
+
+func (c *GrpcClient) handleSearchResult(schema *entity.Schema, outputFields []string, nq int, resp *milvuspb.SearchResults) ([]SearchResult, error) {
+	var err error
+	sr := make([]SearchResult, 0, nq)
 	// 3. parse result into result
 	results := resp.GetResults()
 	offset := 0

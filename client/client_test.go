@@ -150,6 +150,7 @@ func TestGrpcClientNil(t *testing.T) {
 			if m.Name == "Close" || m.Name == "Connect" || // skip connect & close
 				m.Name == "UsingDatabase" || // skip use database
 				m.Name == "Search" || // type alias MetricType treated as string
+				m.Name == "HybridSearch" || // type alias MetricType treated as string
 				m.Name == "CalcDistance" ||
 				m.Name == "ManualCompaction" || // time.Duration hard to detect in reflect
 				m.Name == "Insert" || m.Name == "Upsert" { // complex methods with ...
