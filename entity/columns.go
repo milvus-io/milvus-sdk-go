@@ -88,6 +88,40 @@ func (fv FloatVector) Serialize() []byte {
 	return data
 }
 
+// FloatVector float32 vector wrapper.
+type Float16Vector []byte
+
+// Dim returns vector dimension.
+func (fv Float16Vector) Dim() int {
+	return len(fv) / 2
+}
+
+// FieldType returns coresponding field type.
+func (fv Float16Vector) FieldType() FieldType {
+	return FieldTypeFloat16Vector
+}
+
+func (fv Float16Vector) Serialize() []byte {
+	return fv
+}
+
+// FloatVector float32 vector wrapper.
+type BFloat16Vector []byte
+
+// Dim returns vector dimension.
+func (fv BFloat16Vector) Dim() int {
+	return len(fv) / 2
+}
+
+// FieldType returns coresponding field type.
+func (fv BFloat16Vector) FieldType() FieldType {
+	return FieldTypeBFloat16Vector
+}
+
+func (fv BFloat16Vector) Serialize() []byte {
+	return fv
+}
+
 // BinaryVector []byte vector wrapper
 type BinaryVector []byte
 
@@ -306,6 +340,43 @@ func FieldDataColumn(fd *schema.FieldData, begin, end int) (Column, error) {
 		}
 		return NewColumnBinaryVector(fd.GetFieldName(), dim, vector), nil
 
+	case schema.DataType_Float16Vector:
+		vectors := fd.GetVectors()
+		x, ok := vectors.GetData().(*schema.VectorField_Float16Vector)
+		if !ok {
+			return nil, errFieldDataTypeNotMatch
+		}
+		data := x.Float16Vector
+		dim := int(vectors.GetDim())
+		if end < 0 {
+			end = int(len(data) / dim)
+		}
+		vector := make([][]byte, 0, end-begin)
+		for i := begin; i < end; i++ {
+			v := make([]byte, dim)
+			copy(v, data[i*dim:(i+1)*dim])
+			vector = append(vector, v)
+		}
+		return NewColumnFloat16Vector(fd.GetFieldName(), dim, vector), nil
+
+	case schema.DataType_BFloat16Vector:
+		vectors := fd.GetVectors()
+		x, ok := vectors.GetData().(*schema.VectorField_Bfloat16Vector)
+		if !ok {
+			return nil, errFieldDataTypeNotMatch
+		}
+		data := x.Bfloat16Vector
+		dim := int(vectors.GetDim())
+		if end < 0 {
+			end = int(len(data) / dim)
+		}
+		vector := make([][]byte, 0, end-begin) // shall not have remanunt
+		for i := begin; i < end; i++ {
+			v := make([]byte, dim)
+			copy(v, data[i*dim:(i+1)*dim])
+			vector = append(vector, v)
+		}
+		return NewColumnBFloat16Vector(fd.GetFieldName(), dim, vector), nil
 	default:
 		return nil, fmt.Errorf("unsupported data type %s", fd.GetType())
 	}
@@ -447,6 +518,36 @@ func FieldDataVector(fd *schema.FieldData) (Column, error) {
 			vector = append(vector, v)
 		}
 		return NewColumnBinaryVector(fd.GetFieldName(), dim, vector), nil
+	case schema.DataType_Float16Vector:
+		vectors := fd.GetVectors()
+		x, ok := vectors.GetData().(*schema.VectorField_Float16Vector)
+		if !ok {
+			return nil, errFieldDataTypeNotMatch
+		}
+		data := x.Float16Vector
+		dim := int(vectors.GetDim())
+		vector := make([][]byte, 0, len(data)/dim) // shall not have remanunt
+		for i := 0; i < len(data)/dim; i++ {
+			v := make([]byte, dim)
+			copy(v, data[i*dim:(i+1)*dim])
+			vector = append(vector, v)
+		}
+		return NewColumnFloat16Vector(fd.GetFieldName(), dim, vector), nil
+	case schema.DataType_BFloat16Vector:
+		vectors := fd.GetVectors()
+		x, ok := vectors.GetData().(*schema.VectorField_Bfloat16Vector)
+		if !ok {
+			return nil, errFieldDataTypeNotMatch
+		}
+		data := x.Bfloat16Vector
+		dim := int(vectors.GetDim())
+		vector := make([][]byte, 0, len(data)/dim) // shall not have remanunt
+		for i := 0; i < len(data)/dim; i++ {
+			v := make([]byte, dim)
+			copy(v, data[i*dim:(i+1)*dim])
+			vector = append(vector, v)
+		}
+		return NewColumnBFloat16Vector(fd.GetFieldName(), dim, vector), nil
 	default:
 		return nil, errors.New("unsupported data type")
 	}

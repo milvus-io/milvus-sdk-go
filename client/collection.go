@@ -218,7 +218,10 @@ func (c *GrpcClient) validateSchema(sch *entity.Schema) error {
 		if field.IsPartitionKey {
 			hasPartitionKey = true
 		}
-		if field.DataType == entity.FieldTypeFloatVector || field.DataType == entity.FieldTypeBinaryVector {
+		if field.DataType == entity.FieldTypeFloatVector ||
+			field.DataType == entity.FieldTypeBinaryVector ||
+			field.DataType == entity.FieldTypeBFloat16Vector ||
+			field.DataType == entity.FieldTypeFloat16Vector {
 			vectors++
 		}
 	}

@@ -26,6 +26,8 @@ func TestFieldSchema(t *testing.T) {
 		NewField().WithName("string_field").WithDataType(FieldTypeString).WithIsAutoID(false).WithIsPrimaryKey(true).WithIsDynamic(false).WithTypeParams("max_len", "32").WithDescription("string_field desc"),
 		NewField().WithName("partition_key").WithDataType(FieldTypeInt32).WithIsPartitionKey(true),
 		NewField().WithName("array_field").WithDataType(FieldTypeArray).WithElementType(FieldTypeBool).WithMaxCapacity(128),
+		NewField().WithName("fp16_field").WithDataType(FieldTypeFloat16Vector).WithDim(128),
+		NewField().WithName("bf16_field").WithDataType(FieldTypeBFloat16Vector).WithDim(128),
 		/*
 			NewField().WithName("default_value_bool").WithDataType(FieldTypeBool).WithDefaultValueBool(true),
 			NewField().WithName("default_value_int").WithDataType(FieldTypeInt32).WithDefaultValueInt(1),
@@ -89,6 +91,45 @@ func (s *SchemaSuite) TestBasic() {
 			NewSchema().WithName("dynamic_schema").WithDescription("dynamic_schema desc").WithAutoID(true).WithDynamicFieldEnabled(true).
 				WithField(NewField().WithName("ID").WithDataType(FieldTypeVarChar).WithMaxLength(256)).
 				WithField(NewField().WithName("$meta").WithIsDynamic(true)),
+			"",
+		},
+	}
+
+	for _, c := range cases {
+		s.Run(c.tag, func() {
+			sch := c.input
+			p := sch.ProtoMessage()
+			s.Equal(sch.CollectionName, p.GetName())
+			s.Equal(sch.AutoID, p.GetAutoID())
+			s.Equal(sch.Description, p.GetDescription())
+			s.Equal(sch.EnableDynamicField, p.GetEnableDynamicField())
+			s.Equal(len(sch.Fields), len(p.GetFields()))
+
+			nsch := &Schema{}
+			nsch = nsch.ReadProto(p)
+
+			s.Equal(sch.CollectionName, nsch.CollectionName)
+			s.Equal(sch.AutoID, nsch.AutoID)
+			s.Equal(sch.Description, nsch.Description)
+			s.Equal(sch.EnableDynamicField, nsch.EnableDynamicField)
+			s.Equal(len(sch.Fields), len(nsch.Fields))
+			s.Equal(c.pkName, sch.PKFieldName())
+			s.Equal(c.pkName, nsch.PKFieldName())
+		})
+	}
+}
+
+func (s *SchemaSuite) TestFp16Vector() {
+	cases := []struct {
+		tag    string
+		input  *Schema
+		pkName string
+	}{
+		{
+			"test_collection",
+			NewSchema().WithName("test_collection_1").WithDescription("test_collection_1 desc").WithAutoID(true).
+				WithField(NewField().WithName("fp16_field").WithDataType(FieldTypeFloat16Vector).WithDim(128)).
+				WithField(NewField().WithName("bf16_field").WithDataType(FieldTypeBFloat16Vector).WithDim(128)),
 			"",
 		},
 	}

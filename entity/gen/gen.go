@@ -204,17 +204,19 @@ func (c *Column{{.TypeName}}) FieldData() *schema.FieldData {
 	fd.Field = &schema.FieldData_Vectors{
 		Vectors: &schema.VectorField{
 			Dim: int64(c.dim),
-			{{if eq .TypeName "BinaryVector" }}
-			Data: &schema.VectorField_BinaryVector{
-				BinaryVector: data,
-			},
-			{{else}}
-			Data: &schema.VectorField_FloatVector{
+			{{if eq .TypeName "FloatVector" }}
+			Data: &schema.VectorField_{{.TypeName}}{
 				FloatVector: &schema.FloatArray{
 					Data: data,
 				},
-			},
+			{{else if eq .TypeName "BFloat16Vector"}}
+			Data: &schema.VectorField_Bfloat16Vector{
+				Bfloat16Vector: data,
+			{{else}}
+			Data: &schema.VectorField_{{.TypeName}}{				
+				{{.TypeName}}: data,
 			{{end}}
+			},
 		},
 	}
 	return fd
@@ -377,6 +379,7 @@ func TestColumn{{.TypeName}}(t *testing.T) {
 	v := make([]{{.TypeDef}},0, columnLen)
 	dlen := dim
 	{{if eq .TypeName "BinaryVector" }}dlen /= 8{{end}}
+	{{if or (eq .TypeName "BFloat16Vector") (eq .TypeName "Float16Vector") }}dlen *= 2{{end}}
 	
 	for i := 0; i < columnLen; i++ {
 		entry := make({{.TypeDef}}, dlen)
@@ -447,6 +450,8 @@ func main() {
 	vectorFieldTypes := []entity.FieldType{
 		entity.FieldTypeBinaryVector,
 		entity.FieldTypeFloatVector,
+		entity.FieldTypeFloat16Vector,
+		entity.FieldTypeBFloat16Vector,
 	}
 
 	pf := func(ft entity.FieldType) interface{} {
