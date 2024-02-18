@@ -366,6 +366,10 @@ func (t FieldType) Name() string {
 		return "BinaryVector"
 	case FieldTypeFloatVector:
 		return "FloatVector"
+	case FieldTypeFloat16Vector:
+		return "Float16Vector"
+	case FieldTypeBFloat16Vector:
+		return "BFloat16Vector"
 	default:
 		return "undefined"
 	}
@@ -400,6 +404,10 @@ func (t FieldType) String() string {
 		return "[]byte"
 	case FieldTypeFloatVector:
 		return "[]float32"
+	case FieldTypeFloat16Vector:
+		return "[]byte"
+	case FieldTypeBFloat16Vector:
+		return "[]byte"
 	default:
 		return "undefined"
 	}
@@ -432,6 +440,10 @@ func (t FieldType) PbFieldType() (string, string) {
 		return "[]byte", ""
 	case FieldTypeFloatVector:
 		return "[]float32", ""
+	case FieldTypeFloat16Vector:
+		return "[]byte", ""
+	case FieldTypeBFloat16Vector:
+		return "[]byte", ""
 	default:
 		return "undefined", ""
 	}
@@ -467,4 +479,8 @@ const (
 	FieldTypeBinaryVector FieldType = 100
 	// FieldTypeFloatVector field type float vector
 	FieldTypeFloatVector FieldType = 101
+	// FieldTypeBinaryVector field type float16 vector
+	FieldTypeFloat16Vector FieldType = 102
+	// FieldTypeBinaryVector field type bf16 vector
+	FieldTypeBFloat16Vector FieldType = 103
 )
