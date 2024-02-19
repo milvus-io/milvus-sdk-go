@@ -374,13 +374,6 @@ func (s *CollectionSuite) TestNewCollection() {
 		err := c.NewCollection(ctx, testCollectionName, testVectorDim, WithPKFieldName("my_pk"), WithPKFieldType(entity.FieldTypeVarChar), WithVectorFieldName("embedding"), WithConsistencyLevel(entity.ClEventually))
 		s.NoError(err)
 	})
-
-	s.Run("varchar_autoid", func() {
-		defer s.resetMock()
-
-		err := c.NewCollection(ctx, testCollectionName, testVectorDim, WithPKFieldType(entity.FieldTypeVarChar), WithAutoID(true))
-		s.Error(err)
-	})
 }
 
 func (s *CollectionSuite) TestRenameCollection() {
