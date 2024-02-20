@@ -107,11 +107,13 @@ func (s *Schema) ProtoMessage() *schema.CollectionSchema {
 
 // ReadProto parses proto Collection Schema
 func (s *Schema) ReadProto(p *schema.CollectionSchema) *Schema {
-	s.AutoID = p.GetAutoID()
 	s.Description = p.GetDescription()
 	s.CollectionName = p.GetName()
 	s.Fields = make([]*Field, 0, len(p.GetFields()))
 	for _, fp := range p.GetFields() {
+		if fp.GetAutoID() {
+			s.AutoID = true
+		}
 		s.Fields = append(s.Fields, NewField().ReadProto(fp))
 	}
 	s.EnableDynamicField = p.GetEnableDynamicField()
