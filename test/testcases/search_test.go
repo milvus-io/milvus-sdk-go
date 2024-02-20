@@ -1230,7 +1230,7 @@ func TestRangeSearchScannL2(t *testing.T) {
 	sp.AddRangeFilter(20)
 	_, errRange := mc.Search(ctx, collName, []string{}, "", []string{"*"}, queryVec, common.DefaultFloatVecFieldName,
 		entity.L2, common.DefaultTopK, sp)
-	common.CheckErr(t, errRange, false, "range_filter must be less than radius for L2/HAMMING/JACCARD")
+	common.CheckErr(t, errRange, false, fmt.Sprintf("range_filter(%f) must be less than radius(%f) for L2/HAMMING/JACCARD", 20.0, 15.0))
 }
 
 // test range search with scann index and IP COSINE metric type
@@ -1289,7 +1289,7 @@ func TestRangeSearchScannIPCosine(t *testing.T) {
 		sp.AddRangeFilter(10)
 		_, errRange := mc.Search(ctx, collName, []string{}, "", []string{"*"}, queryVec, common.DefaultFloatVecFieldName,
 			metricType, common.DefaultTopK, sp)
-		common.CheckErr(t, errRange, false, "range_filter must be greater than radius for IP/COSINE")
+		common.CheckErr(t, errRange, false, fmt.Sprintf("range_filter(%f) must be greater(%f) than radius for IP/COSINE", 10.0, 20.0))
 	}
 }
 
@@ -1350,7 +1350,7 @@ func TestRangeSearchScannBinary(t *testing.T) {
 		sp.AddRangeFilter(100)
 		_, errRange := mc.Search(ctx, collName, []string{}, "", []string{"*"}, queryVec, common.DefaultBinaryVecFieldName,
 			metricType, common.DefaultTopK, sp)
-		common.CheckErr(t, errRange, false, "range_filter must be less than radius for L2/HAMMING/JACCARD")
+		common.CheckErr(t, errRange, false, fmt.Sprintf("range_filter(%f) must be less than radius(%f) for L2/HAMMING/JACCARD", 100.0, 0.0))
 	}
 }
 
