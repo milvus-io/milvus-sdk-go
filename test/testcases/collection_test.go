@@ -220,20 +220,19 @@ func TestCreateCollectionNonInt64AutoField(t *testing.T) {
 		entity.FieldTypeInt32,
 		entity.FieldTypeFloat,
 		entity.FieldTypeDouble,
-		entity.FieldTypeVarChar,
+		// entity.FieldTypeVarChar,
 		entity.FieldTypeString,
 		entity.FieldTypeNone,
 		entity.FieldTypeJSON,
 	}
 	for _, fieldType := range invalidPkFields {
 		fields := []*entity.Field{
-			common.GenField("non-auto-id", fieldType, common.WithAutoID(true)),
-			common.GenField(common.DefaultIntFieldName, entity.FieldTypeInt64, common.WithIsPrimaryKey(true), common.WithAutoID(true)),
+			common.GenField(common.DefaultIntFieldName, fieldType, common.WithIsPrimaryKey(true), common.WithAutoID(true)),
 			common.GenField(common.DefaultFloatVecFieldName, entity.FieldTypeFloatVector, common.WithDim(common.DefaultDim)),
 		}
 		schema := common.GenSchema(common.GenRandomString(6), true, fields)
 		errNonInt64Field := mc.CreateCollection(ctx, schema, common.DefaultShards)
-		common.CheckErr(t, errNonInt64Field, false, "only int64 column can be auto generated id")
+		common.CheckErr(t, errNonInt64Field, false, "only int64 and varchar column can be primary key for now")
 	}
 }
 
