@@ -204,9 +204,6 @@ func (c *GrpcClient) validateSchema(sch *entity.Schema) error {
 			if autoID {
 				return errors.New("only one auto id is available")
 			}
-			if field.DataType != entity.FieldTypeInt64 {
-				return errors.New("only int64 column can be auto generated id")
-			}
 			autoID = true
 		}
 		if field.DataType == entity.FieldTypeJSON {
