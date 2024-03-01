@@ -3,6 +3,7 @@
 package testcases
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"strconv"
@@ -484,7 +485,12 @@ func TestQueryJsonDynamicField(t *testing.T) {
 			outputFields,
 		)
 		common.CheckErr(t, err, true)
-		jsonColumn := common.GenDefaultJSONData(common.DefaultJSONFieldName, 0, 2)
+		m0 := common.JSONStruct{String: strconv.Itoa(0), Bool: true}
+		j0, _ := json.Marshal(&m0)
+		m1 := common.JSONStruct{Number: int32(1), String: strconv.Itoa(1), Bool: false, List: []int64{int64(1), int64(2)}}
+		j1, _ := json.Marshal(&m1)
+		jsonValues := [][]byte{j0, j1}
+		jsonColumn := entity.NewColumnJSONBytes(common.DefaultJSONFieldName, jsonValues)
 		actualColumns := []entity.Column{pkColumn, jsonColumn}
 		if dynamicField {
 			dynamicColumn := common.MergeColumnsToDynamic(2, common.GenDynamicFieldData(0, 2))
@@ -578,11 +584,11 @@ func TestQueryCountJsonDynamicExpr(t *testing.T) {
 		{expr: fmt.Sprintf("%s < 1000", common.DefaultFloatFieldName), count: 1000},
 
 		// json and dynamic field filter expr: == < in bool/ list/ int
-		{expr: fmt.Sprintf("%s['number'] == 0", common.DefaultJSONFieldName), count: 1500},
+		{expr: fmt.Sprintf("%s['number'] == 0", common.DefaultJSONFieldName), count: 1500 / 2},
 		{expr: fmt.Sprintf("%s['number'] < 100 and %s['number'] != 0", common.DefaultJSONFieldName, common.DefaultJSONFieldName), count: 50},
 		{expr: fmt.Sprintf("%s < 100", common.DefaultDynamicNumberField), count: 100},
 		{expr: "dynamicNumber % 2 == 0", count: 1500},
-		{expr: fmt.Sprintf("%s['bool'] == true", common.DefaultJSONFieldName), count: 1500},
+		{expr: fmt.Sprintf("%s['bool'] == true", common.DefaultJSONFieldName), count: 1500 / 2},
 		{expr: fmt.Sprintf("%s == false", common.DefaultDynamicBoolField), count: 2000},
 		{expr: fmt.Sprintf("%s in ['1', '2'] ", common.DefaultDynamicStringField), count: 2},
 		{expr: fmt.Sprintf("%s['string'] in ['1', '2', '5'] ", common.DefaultJSONFieldName), count: 3},
@@ -600,12 +606,20 @@ func TestQueryCountJsonDynamicExpr(t *testing.T) {
 		{expr: "dynamicString like '1%' ", count: 1111},
 
 		// key exist
-		{expr: fmt.Sprintf("exists %s['list']", common.DefaultJSONFieldName), count: common.DefaultNb},
+		{expr: fmt.Sprintf("exists %s['list']", common.DefaultJSONFieldName), count: common.DefaultNb / 2},
 		{expr: fmt.Sprintf("exists a "), count: 0},
 		{expr: fmt.Sprintf("exists %s ", common.DefaultDynamicListField), count: 0},
 		{expr: fmt.Sprintf("exists %s ", common.DefaultDynamicStringField), count: common.DefaultNb},
 		// data type not match and no error
 		{expr: fmt.Sprintf("%s['number'] == '0' ", common.DefaultJSONFieldName), count: 0},
+
+		// json field
+		{expr: fmt.Sprintf("%s >= 1500", common.DefaultJSONFieldName), count: 1500 / 2},    // json >= 1500
+		{expr: fmt.Sprintf("%s > 1499.5", common.DefaultJSONFieldName), count: 1500 / 2},   // json >= 1500.0
+		{expr: fmt.Sprintf("%s like '21%%'", common.DefaultJSONFieldName), count: 100 / 4}, // json like '21%'
+		{expr: fmt.Sprintf("%s == [1503, 1504]", common.DefaultJSONFieldName), count: 1},   // json == [1,2]
+		{expr: fmt.Sprintf("%s[0] > 1", common.DefaultJSONFieldName), count: 1500 / 4},     // json[0] > 1
+		{expr: fmt.Sprintf("%s[0][0] > 1", common.DefaultJSONFieldName), count: 0},         // json == [1,2]
 	}
 
 	for _, _exprCount := range exprCounts {
@@ -838,7 +852,13 @@ func TestQueryJsonDynamicFieldRows(t *testing.T) {
 		[]string{common.DefaultIntFieldName, common.DefaultJSONFieldName, common.DefaultDynamicFieldName},
 	)
 	common.CheckErr(t, err, true)
-	jsonColumn := common.GenDefaultJSONData(common.DefaultJSONFieldName, 0, 2)
+	//jsonColumn := common.GenDefaultJSONData(common.DefaultJSONFieldName, 0, 2)
+	m0 := common.JSONStruct{String: strconv.Itoa(0), Bool: true}
+	j0, _ := json.Marshal(&m0)
+	m1 := common.JSONStruct{Number: int32(1), String: strconv.Itoa(1), Bool: false, List: []int64{int64(1), int64(2)}}
+	j1, _ := json.Marshal(&m1)
+	jsonValues := [][]byte{j0, j1}
+	jsonColumn := entity.NewColumnJSONBytes(common.DefaultJSONFieldName, jsonValues)
 	dynamicColumn := common.MergeColumnsToDynamic(2, common.GenDynamicFieldData(0, 2))
 	// gen dynamic json column
 

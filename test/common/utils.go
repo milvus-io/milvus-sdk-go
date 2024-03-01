@@ -412,28 +412,42 @@ func GenArrayColumnData(start int, nb int, fieldName string, opts ...GenColumnDa
 	}
 }
 
+type JSONStruct struct {
+	Number int32   `json:"number" milvus:"name:number"`
+	String string  `json:"string" milvus:"name:string"`
+	Bool   bool    `json:"bool" milvus:"name:bool"`
+	List   []int64 `json:"list" milvus:"name:list"`
+}
+
 // GenDefaultJSONData gen default column with data
 func GenDefaultJSONData(columnName string, start int, nb int) *entity.ColumnJSONBytes {
-	type JSONStruct struct {
-		Number int32   `json:"number" milvus:"name:number"`
-		String string  `json:"string" milvus:"name:string"`
-		Bool   bool    `json:"bool" milvus:"name:bool"`
-		List   []int64 `json:"list" milvus:"name:list"`
-	}
 	jsonValues := make([][]byte, 0, nb)
-	var m JSONStruct
+	var m interface{}
 	for i := start; i < start+nb; i++ {
-		if i%2 == 0 {
-			m = JSONStruct{
-				String: strconv.Itoa(i),
-				Bool:   i%2 == 0,
+		if i < (start+nb)/2 {
+			if i%2 == 0 {
+				m = JSONStruct{
+					String: strconv.Itoa(i),
+					Bool:   i%2 == 0,
+				}
+			} else {
+				m = JSONStruct{
+					Number: int32(i),
+					String: strconv.Itoa(i),
+					Bool:   i%2 == 0,
+					List:   []int64{int64(i), int64(i + 1)},
+				}
 			}
 		} else {
-			m = JSONStruct{
-				Number: int32(i),
-				String: strconv.Itoa(i),
-				Bool:   i%2 == 0,
-				List:   []int64{int64(i), int64(i + 1)},
+			switch i % 4 {
+			case 0:
+				m = i
+			case 1:
+				m = float32(i)
+			case 2:
+				m = strconv.Itoa(i)
+			case 3:
+				m = []int64{int64(i), int64(i + 1)}
 			}
 		}
 		bs, err := json.Marshal(&m)
@@ -668,12 +682,6 @@ func GenDefaultVarcharRows(start int, nb int, dim int64, enableDynamicField bool
 
 func GenDefaultJSONRows(start int, nb int, dim int64, enableDynamicField bool) []interface{} {
 	rows := make([]interface{}, 0, nb)
-	type JSONStruct struct {
-		Number int32   `json:"number" milvus:"name:number"`
-		String string  `json:"string" milvus:"name:string"`
-		Bool   bool    `json:"bool" milvus:"name:bool"`
-		List   []int64 `json:"list" milvus:"name:list"`
-	}
 
 	// BaseRow generate insert rows
 	type BaseRow struct {
@@ -1030,26 +1038,37 @@ func MergeColumnsToDynamic(nb int, columns []entity.Column) *entity.ColumnJSONBy
 // --- gen row data ---
 
 // --- index utils ---
+var SupportFloatMetricType = []entity.MetricType{
+	entity.L2,
+	entity.IP,
+	entity.COSINE,
+}
+
+var SupportBinFlatMetricType = []entity.MetricType{
+	entity.JACCARD,
+	entity.HAMMING,
+	entity.SUBSTRUCTURE,
+	entity.SUPERSTRUCTURE,
+}
+
+var SupportBinIvfFlatMetricType = []entity.MetricType{
+	entity.JACCARD,
+	entity.HAMMING,
+}
 
 // GenAllFloatIndex gen all float vector index
-func GenAllFloatIndex(metricType entity.MetricType) []entity.Index {
+func GenAllFloatIndex() []entity.Index {
 	nlist := 128
-	idxFlat, _ := entity.NewIndexFlat(metricType)
-	idxIvfFlat, _ := entity.NewIndexIvfFlat(metricType, nlist)
-	idxIvfSq8, _ := entity.NewIndexIvfSQ8(metricType, nlist)
-	idxIvfPq, _ := entity.NewIndexIvfPQ(metricType, nlist, 16, 8)
-	idxHnsw, _ := entity.NewIndexHNSW(metricType, 8, 96)
-	idxScann, _ := entity.NewIndexSCANN(metricType, 16, false)
-	idxDiskAnn, _ := entity.NewIndexDISKANN(metricType)
-
-	allFloatIndex := []entity.Index{
-		idxFlat,
-		idxIvfFlat,
-		idxIvfSq8,
-		idxIvfPq,
-		idxHnsw,
-		idxScann,
-		idxDiskAnn,
+	var allFloatIndex []entity.Index
+	for _, metricType := range SupportFloatMetricType {
+		idxFlat, _ := entity.NewIndexFlat(metricType)
+		idxIvfFlat, _ := entity.NewIndexIvfFlat(metricType, nlist)
+		idxIvfSq8, _ := entity.NewIndexIvfSQ8(metricType, nlist)
+		idxIvfPq, _ := entity.NewIndexIvfPQ(metricType, nlist, 16, 8)
+		idxHnsw, _ := entity.NewIndexHNSW(metricType, 8, 96)
+		idxScann, _ := entity.NewIndexSCANN(metricType, 16, false)
+		idxDiskAnn, _ := entity.NewIndexDISKANN(metricType)
+		allFloatIndex = append(allFloatIndex, idxFlat, idxIvfFlat, idxIvfSq8, idxIvfPq, idxHnsw, idxScann, idxDiskAnn)
 	}
 	return allFloatIndex
 }
@@ -1084,15 +1103,17 @@ type InvalidExprStruct struct {
 }
 
 var InvalidExpressions = []InvalidExprStruct{
-	{Expr: "id in [0]", ErrNil: true, ErrMsg: "fieldName(id) not found"},                // not exist field but no error
-	{Expr: "int64 in not [0]", ErrNil: false, ErrMsg: "cannot parse expression"},        // wrong term expr keyword
-	{Expr: "int64 < floatVec", ErrNil: false, ErrMsg: "not supported"},                  // unsupported compare field
-	{Expr: "floatVec in [0]", ErrNil: false, ErrMsg: "cannot be casted to FloatVector"}, // value and field type mismatch
-	{Expr: fmt.Sprintf("%s == 1", DefaultJSONFieldName), ErrNil: false, ErrMsg: "can not comparisons jsonField directly"},
-	{Expr: fmt.Sprintf("%s == 1", DefaultDynamicFieldName), ErrNil: false, ErrMsg: "can not comparisons jsonField directly"},
+	{Expr: "id in [0]", ErrNil: true, ErrMsg: "fieldName(id) not found"},                  // not exist field but no error
+	{Expr: "int64 in not [0]", ErrNil: false, ErrMsg: "cannot parse expression"},          // wrong term expr keyword
+	{Expr: "int64 < floatVec", ErrNil: false, ErrMsg: "not supported"},                    // unsupported compare field
+	{Expr: "floatVec in [0]", ErrNil: false, ErrMsg: "cannot be casted to FloatVector"},   // value and field type mismatch
+	{Expr: fmt.Sprintf("%s == 1", DefaultJSONFieldName), ErrNil: true, ErrMsg: ""},        // hist empty
+	{Expr: fmt.Sprintf("%s like 'a%%' ", DefaultJSONFieldName), ErrNil: true, ErrMsg: ""}, // hist empty
+	{Expr: fmt.Sprintf("%s > 1", DefaultDynamicFieldName), ErrNil: true, ErrMsg: ""},      // hits empty
 	{Expr: fmt.Sprintf("%s[\"dynamicList\"] == [2, 3]", DefaultDynamicFieldName), ErrNil: true, ErrMsg: ""},
 	{Expr: fmt.Sprintf("%s['a'] == [2, 3]", DefaultJSONFieldName), ErrNil: true, ErrMsg: ""},      // json field not exist
 	{Expr: fmt.Sprintf("%s['number'] == [2, 3]", DefaultJSONFieldName), ErrNil: true, ErrMsg: ""}, // field exist but type not match
+	{Expr: fmt.Sprintf("%s[0] == [2, 3]", DefaultJSONFieldName), ErrNil: true, ErrMsg: ""},        // field exist but type not match
 	{Expr: fmt.Sprintf("json_contains (%s['number'], 2)", DefaultJSONFieldName), ErrNil: true, ErrMsg: ""},
 	{Expr: fmt.Sprintf("json_contains (%s['list'], [2])", DefaultJSONFieldName), ErrNil: true, ErrMsg: ""},
 	{Expr: fmt.Sprintf("json_contains_all (%s['list'], 2)", DefaultJSONFieldName), ErrNil: false, ErrMsg: "contains_all operation element must be an array"},
@@ -1100,6 +1121,7 @@ var InvalidExpressions = []InvalidExprStruct{
 	{Expr: fmt.Sprintf("json_contains_aby (%s['list'], 2)", DefaultJSONFieldName), ErrNil: false, ErrMsg: "invalid expression: json_contains_aby"},
 	{Expr: fmt.Sprintf("json_contains_aby (%s['list'], 2)", DefaultJSONFieldName), ErrNil: false, ErrMsg: "invalid expression: json_contains_aby"},
 	{Expr: fmt.Sprintf("%s[-1] > %d", DefaultInt8ArrayField, TestCapacity), ErrNil: false, ErrMsg: "cannot parse expression"}, //  array[-1] >
+	{Expr: fmt.Sprintf(fmt.Sprintf("%s[-1] > 1", DefaultJSONFieldName)), ErrNil: false, ErrMsg: "invalid expression"},         //  json[-1] >
 }
 
 // --- search utils ---

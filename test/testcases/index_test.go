@@ -16,12 +16,26 @@ import (
 	"github.com/milvus-io/milvus-sdk-go/v2/test/common"
 )
 
+func supportScalarIndexFieldType(field entity.FieldType) bool {
+	vectorFieldTypes := []entity.FieldType{
+		entity.FieldTypeBinaryVector, entity.FieldTypeFloatVector,
+		entity.FieldTypeFloat16Vector, entity.FieldTypeBFloat16Vector,
+		entity.FieldTypeArray, entity.FieldTypeJSON,
+	}
+	for _, vectorFieldType := range vectorFieldTypes {
+		if field == vectorFieldType {
+			return false
+		}
+	}
+	return true
+}
+
 // test create index with supported float vector index, L2 metric type
 func TestCreateIndex(t *testing.T) {
 	t.Parallel()
 
 	// create index
-	allFloatIndexes := common.GenAllFloatIndex(entity.L2)
+	allFloatIndexes := common.GenAllFloatIndex()
 	for _, idx := range allFloatIndexes {
 		ctx := createContext(t, time.Second*common.DefaultTimeout*3)
 		// connect
@@ -60,21 +74,37 @@ func TestCreateIndexDup(t *testing.T) {
 	common.CheckErr(t, err, false, "CreateIndex failed: at most one distinct index is allowed per field")
 }
 
-// test create index for varchar field
-func TestCreateIndexString(t *testing.T) {
+// test create scalar index on all scalar field
+func TestCreateScalarIndex(t *testing.T) {
+	t.Skip("https://github.com/milvus-io/milvus-sdk-go/issues/671")
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	//connect
 	mc := createMilvusClient(ctx, t)
 
-	collName, _ := createVarcharCollectionWithDataIndex(ctx, t, mc, false)
-	idx := entity.NewScalarIndex()
-	err := mc.CreateIndex(ctx, collName, common.DefaultVarcharFieldName, idx, false, client.WithIndexName("scalar_index"))
-	common.CheckErr(t, err, true)
+	// create collection with all datatype
+	cp := CollectionParams{CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: true,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+	collName := createCollection(ctx, t, mc, cp)
 
-	// describe index
-	indexes, _ := mc.DescribeIndex(ctx, collName, common.DefaultVarcharFieldName)
-	expIndex := entity.NewGenericIndex("scalar_index", "", idx.Params())
-	common.CheckIndexResult(t, indexes, expIndex)
+	// insert
+	dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: AllFields,
+		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
+	_, _ = insertData(ctx, t, mc, dp)
+	mc.Flush(ctx, collName, false)
+
+	coll, _ := mc.DescribeCollection(ctx, collName)
+	idx := entity.NewScalarIndex()
+	for _, field := range coll.Schema.Fields {
+		if supportScalarIndexFieldType(field.DataType) {
+			err := mc.CreateIndex(ctx, collName, field.Name, idx, false, client.WithIndexName(field.Name))
+			common.CheckErr(t, err, true)
+
+			// describe index
+			indexes, _ := mc.DescribeIndex(ctx, collName, field.Name)
+			expIndex := entity.NewGenericIndex(field.Name, "", idx.Params())
+			common.CheckIndexResult(t, indexes, expIndex)
+		}
+	}
 }
 
 // test create scalar index with vector field name
@@ -172,38 +202,12 @@ func TestCreateIndexArrayField(t *testing.T) {
 	}
 }
 
-// test create index with supported float vector index, Ip metric type
-func TestCreateIndexIp(t *testing.T) {
-	t.Parallel()
-
-	// create index
-	allFloatIndexes := common.GenAllFloatIndex(entity.IP)
-	for _, idx := range allFloatIndexes {
-		ctx := createContext(t, time.Second*common.DefaultTimeout*3)
-		// connect
-		mc := createMilvusClient(ctx, t)
-		// create default collection with flush data
-		collName, _ := createCollectionWithDataIndex(ctx, t, mc, false, false)
-		err := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false, client.WithIndexName("my_index"))
-		common.CheckErr(t, err, true)
-
-		// describe index
-		indexes, _ := mc.DescribeIndex(ctx, collName, common.DefaultFloatVecFieldName)
-		expIndex := entity.NewGenericIndex("my_index", idx.IndexType(), idx.Params())
-		common.CheckIndexResult(t, indexes, expIndex)
-	}
-}
-
 // test create index with supported binary vector index
 func TestCreateIndexBinaryFlat(t *testing.T) {
 	t.Parallel()
 
 	// create index
-	metricTypes := []entity.MetricType{
-		entity.JACCARD,
-		entity.HAMMING,
-	}
-	for _, metricType := range metricTypes {
+	for _, metricType := range common.SupportBinFlatMetricType {
 		idx, _ := entity.NewIndexBinFlat(metricType, 128)
 		ctx := createContext(t, time.Second*common.DefaultTimeout)
 		// connect
@@ -226,11 +230,7 @@ func TestCreateIndexBinaryIvfFlat(t *testing.T) {
 	t.Parallel()
 
 	// create index
-	metricTypes := []entity.MetricType{
-		entity.JACCARD,
-		entity.HAMMING,
-	}
-	for _, metricType := range metricTypes {
+	for _, metricType := range common.SupportBinIvfFlatMetricType {
 		idx, _ := entity.NewIndexBinIvfFlat(metricType, 128)
 		ctx := createContext(t, time.Second*common.DefaultTimeout)
 		// connect
@@ -258,6 +258,8 @@ func TestCreateBinaryIndexNotSupportedMetricsType(t *testing.T) {
 	// create BinIvfFlat, BinFlat index with not supported metric type
 	invalidMetricTypes := []entity.MetricType{
 		entity.L2,
+		entity.COSINE,
+		entity.IP,
 		entity.TANIMOTO,
 	}
 	for _, metricType := range invalidMetricTypes {
@@ -265,11 +267,22 @@ func TestCreateBinaryIndexNotSupportedMetricsType(t *testing.T) {
 		idxBinFlat, _ := entity.NewIndexBinFlat(metricType, 128)
 		err := mc.CreateIndex(ctx, collName, common.DefaultBinaryVecFieldName, idxBinFlat, false, client.WithIndexName("my_index"))
 		common.CheckErr(t, err, false, "supported: [HAMMING JACCARD SUBSTRUCTURE SUPERSTRUCTURE]")
+	}
 
+	invalidMetricTypes2 := []entity.MetricType{
+		entity.L2,
+		entity.COSINE,
+		entity.IP,
+		entity.TANIMOTO,
+		entity.SUBSTRUCTURE,
+		entity.SUPERSTRUCTURE,
+	}
+
+	for _, metricType := range invalidMetricTypes2 {
 		// create BinIvfFlat index
 		idxBinIvfFlat, _ := entity.NewIndexBinIvfFlat(metricType, 128)
 		errIvf := mc.CreateIndex(ctx, collName, common.DefaultBinaryVecFieldName, idxBinIvfFlat, false, client.WithIndexName("my_index2"))
-		common.CheckErr(t, errIvf, false, "supported: [HAMMING JACCARD SUBSTRUCTURE SUPERSTRUCTURE]")
+		common.CheckErr(t, errIvf, false, fmt.Sprintf("metric type %v not found or not supported", metricType))
 	}
 
 }
