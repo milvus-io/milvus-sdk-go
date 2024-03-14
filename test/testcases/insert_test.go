@@ -205,6 +205,11 @@ func TestInsertColumnsMismatchFields(t *testing.T) {
 	_, errInsert2 := mc.Insert(ctx, collName, "", intColumn, floatColumn, vecColumn, floatColumn)
 	common.CheckErr(t, errInsert2, false, "duplicated column")
 
+	//
+	binaryColumn := common.GenColumnData(0, common.DefaultNb, entity.FieldTypeBinaryVector, "binaryVec", common.WithVectorDim(common.DefaultDim))
+	_, errInsert4 := mc.Insert(ctx, collName, "", intColumn, floatColumn, vecColumn, binaryColumn)
+	common.CheckErr(t, errInsert4, false, "does not exist")
+
 	// order(column) != order(fields)
 	_, errInsert3 := mc.Insert(ctx, collName, "", floatColumn, vecColumn, intColumn)
 	common.CheckErr(t, errInsert3, true)
@@ -440,20 +445,22 @@ func TestInsertArrayRows(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create collection
-	cp := CollectionParams{CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: false,
-		ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxCapacity: common.TestCapacity}
-	collName := createCollection(ctx, t, mc, cp)
+	for _, dynamic := range []bool{true, false} {
+		cp := CollectionParams{CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: dynamic,
+			ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxCapacity: common.TestCapacity}
+		collName := createCollection(ctx, t, mc, cp)
 
-	// prepare and insert array rows data
-	dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: AllFields,
-		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: false, WithRows: true}
-	_, _ = insertData(ctx, t, mc, dp, common.WithArrayCapacity(common.TestCapacity))
+		// prepare and insert array rows data
+		dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: AllFields,
+			start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: dynamic, WithRows: true}
+		_, _ = insertData(ctx, t, mc, dp, common.WithArrayCapacity(common.TestCapacity))
 
-	// flush and check row count
-	errFlush := mc.Flush(ctx, collName, false)
-	common.CheckErr(t, errFlush, true)
-	stats, _ := mc.GetCollectionStatistics(ctx, collName)
-	require.Equal(t, strconv.Itoa(common.DefaultNb), stats[common.RowCount])
+		// flush and check row count
+		errFlush := mc.Flush(ctx, collName, false)
+		common.CheckErr(t, errFlush, true)
+		stats, _ := mc.GetCollectionStatistics(ctx, collName)
+		require.Equal(t, strconv.Itoa(common.DefaultNb), stats[common.RowCount])
+	}
 }
 
 // test insert array data type not match array field element type

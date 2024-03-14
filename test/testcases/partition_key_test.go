@@ -173,7 +173,6 @@ func TestPartitionKeyDefaultVarchar(t *testing.T) {
 }
 
 func TestPartitionKeyInvalidNumPartition(t *testing.T) {
-	t.Skip("https://github.com/milvus-io/milvus-sdk-go/issues/537")
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	mc := createMilvusClient(ctx, t)
 
@@ -190,7 +189,6 @@ func TestPartitionKeyInvalidNumPartition(t *testing.T) {
 		numPartitions int64
 		errMsg        string
 	}{
-		{0, "the specified partitions should be greater than 0 if partition key is used"},
 		{common.MaxPartitionNum + 1, "exceeds max configuration (4096)"},
 		{-1, "the specified partitions should be greater than 0 if partition key is used"},
 	}
@@ -200,6 +198,12 @@ func TestPartitionKeyInvalidNumPartition(t *testing.T) {
 		err := mc.CreateCollection(ctx, schema, common.DefaultShards, client.WithPartitionNum(npStruct.numPartitions))
 		common.CheckErr(t, err, false, npStruct.errMsg)
 	}
+
+	// PartitionNum is 0, actually default 64 partitions
+	err := mc.CreateCollection(ctx, schema, common.DefaultShards, client.WithPartitionNum(0))
+	common.CheckErr(t, err, true)
+	partitions, _ := mc.ShowPartitions(ctx, collName)
+	require.Equal(t, len(partitions), common.DefaultPartitionNum)
 }
 
 func TestPartitionKeyNumPartition(t *testing.T) {
@@ -372,10 +376,9 @@ func TestPartitionKeyPartitionOperation(t *testing.T) {
 	err = mc.DeleteByPks(ctx, collName, partitions[2].Name, entity.NewColumnInt64(common.DefaultIntFieldName, []int64{0, 1}))
 	common.CheckErr(t, err, false, "not support manually specifying the partition names if partition key mode is used")
 
-	// TODO https://github.com/milvus-io/milvus-sdk-go/issues/538
 	// bulk insert -> error
-	//_, err = mc.BulkInsert(ctx, collName, partitions[0].Name, []string{""})
-	//common.CheckErr(t, err, false, "not support manually specifying the partition names if partition key mode is used")
+	_, err = mc.BulkInsert(ctx, collName, partitions[0].Name, []string{""})
+	common.CheckErr(t, err, false, "not allow to set partition name for collection with partition key: importing data failed")
 
 	// query partitions -> error
 	_, err = mc.QueryByPks(

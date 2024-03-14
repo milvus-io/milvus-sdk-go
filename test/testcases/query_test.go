@@ -235,8 +235,15 @@ func TestQueryNonPrimaryFields(t *testing.T) {
 	mc.Flush(ctx, collName, false)
 
 	// create index
-	idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
-	mc.CreateIndex(ctx, collName, "floatVec", idx, false)
+	indexHnsw, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
+	indexBinary, _ := entity.NewIndexBinIvfFlat(entity.JACCARD, 64)
+	for _, fieldName := range common.AllVectorsFieldsName {
+		if fieldName == common.DefaultBinaryVecFieldName {
+			mc.CreateIndex(ctx, collName, fieldName, indexBinary, false)
+		} else {
+			mc.CreateIndex(ctx, collName, fieldName, indexHnsw, false)
+		}
+	}
 
 	// Load collection
 	errLoad := mc.LoadCollection(ctx, collName, false)
@@ -264,7 +271,6 @@ func TestQueryNonPrimaryFields(t *testing.T) {
 
 // test query empty or one scalar output fields
 func TestQueryEmptyOutputFields(t *testing.T) {
-	t.Skip("https://github.com/milvus-io/milvus/issues/28465")
 	t.Parallel()
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect
@@ -291,8 +297,11 @@ func TestQueryEmptyOutputFields(t *testing.T) {
 			entity.NewColumnInt64(common.DefaultIntFieldName, ids.(*entity.ColumnInt64).Data()[:10]),
 			[]string{""},
 		)
-
-		common.CheckErr(t, err, false, "not exist")
+		if enableDynamic {
+			common.CheckErr(t, err, false, "parse output field name failed")
+		} else {
+			common.CheckErr(t, err, false, "not exist")
+		}
 
 		// query with "float" output fields -> output "int64, float"
 		queryFloatOutputs, _ := mc.QueryByPks(
@@ -406,7 +415,9 @@ func TestOutputAllFields(t *testing.T) {
 		common.CheckErr(t, errFlush, true)
 
 		idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
-		_ = mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false)
+		for _, fieldName := range []string{"floatVec", "fp16Vec", "bf16Vec", "binaryVec"} {
+			_ = mc.CreateIndex(ctx, collName, fieldName, idx, false)
+		}
 
 		// Load collection
 		errLoad := mc.LoadCollection(ctx, collName, false)
@@ -414,7 +425,7 @@ func TestOutputAllFields(t *testing.T) {
 
 		// query output all fields -> output all fields, includes vector and $meta field
 		allFieldsName := append(common.AllArrayFieldsName, "int64", "bool", "int8", "int16", "int32", "float",
-			"double", "varchar", "json", "floatVec", common.DefaultDynamicFieldName)
+			"double", "varchar", "json", "floatVec", "fp16Vec", "bf16Vec", "binaryVec", common.DefaultDynamicFieldName)
 		queryResultAll, errQuery := mc.Query(ctx, collName, []string{},
 			fmt.Sprintf("%s == 0", common.DefaultIntFieldName), []string{"*"})
 		common.CheckErr(t, errQuery, true)
@@ -652,8 +663,18 @@ func TestQueryArrayFieldExpr(t *testing.T) {
 		errFlush := mc.Flush(ctx, collName, false)
 		common.CheckErr(t, errFlush, true)
 
-		idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
-		_ = mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false)
+		// index
+		indexHnsw, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
+		indexBinary, _ := entity.NewIndexBinIvfFlat(entity.JACCARD, 64)
+		for _, fieldName := range common.AllVectorsFieldsName {
+			if fieldName == common.DefaultBinaryVecFieldName {
+				err := mc.CreateIndex(ctx, collName, fieldName, indexBinary, false)
+				common.CheckErr(t, err, true)
+			} else {
+				err := mc.CreateIndex(ctx, collName, fieldName, indexHnsw, false)
+				common.CheckErr(t, err, true)
+			}
+		}
 
 		// Load collection
 		errLoad := mc.LoadCollection(ctx, collName, false)
