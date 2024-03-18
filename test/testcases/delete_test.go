@@ -351,7 +351,6 @@ func TestDeleteExpressions(t *testing.T) {
 }
 
 func TestDeleteInvalidExpr(t *testing.T) {
-	t.Skip("invalid error message like failed to create expr plan or collection not loaded")
 	t.Parallel()
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect
@@ -379,8 +378,14 @@ func TestDeleteInvalidExpr(t *testing.T) {
 	}
 	_, _ = insertData(ctx, t, mc, dp)
 
-	err := mc.Delete(ctx, collName, "", "")
-	common.CheckErr(t, err, false, "invalid expression: expected=valid expr, actual=empty expr: invalid parameter")
+	idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
+	_ = mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false)
+
+	err := mc.LoadCollection(ctx, collName, false)
+	common.CheckErr(t, err, true, "")
+
+	err = mc.Delete(ctx, collName, "", "")
+	common.CheckErr(t, err, false, "invalid expression")
 
 	for _, _invalidExprs := range common.InvalidExpressions {
 		err := mc.Delete(ctx, collName, "", _invalidExprs.Expr)
