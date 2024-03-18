@@ -79,10 +79,14 @@ func (c *GrpcClient) HybridSearch(ctx context.Context, collName string, partitio
 		RankParams:       params,
 	}
 
-	result, err := c.Service.HybridSearch(ctx, req)
-
-	err = merr.CheckRPCCall(result, err)
+	r, err := RetryOnMilvusErrors(ctx, func() (interface{}, error) {
+		return c.Service.HybridSearch(ctx, req)
+	}, OnMerrCodes(merr.Code(merr.ErrInconsistentRequery)))
 	if err != nil {
+		return nil, err
+	}
+	result := r.(*milvuspb.SearchResults)
+	if err = handleRespStatus(result.GetStatus()); err != nil {
 		return nil, err
 	}
 
@@ -117,10 +121,13 @@ func (c *GrpcClient) Search(ctx context.Context, collName string, partitions []s
 		return nil, err
 	}
 
-	resp, err := c.Service.Search(ctx, req)
+	r, err := RetryOnMilvusErrors(ctx, func() (interface{}, error) {
+		return c.Service.Search(ctx, req)
+	}, OnMerrCodes(merr.Code(merr.ErrInconsistentRequery)))
 	if err != nil {
 		return nil, err
 	}
+	resp := r.(*milvuspb.SearchResults)
 	if err := handleRespStatus(resp.GetStatus()); err != nil {
 		return nil, err
 	}

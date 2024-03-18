@@ -1433,6 +1433,40 @@ func TestRangeSearchScannBinary(t *testing.T) {
 	}
 }
 
+func TestVectorOutputField(t *testing.T) {
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	// connect
+	mc := createMilvusClient(ctx, t)
+
+	// create collection with data
+	collName, _ := createCollectionWithDataIndex(ctx, t, mc, false, true)
+
+	// load collection
+	errLoad := mc.LoadCollection(ctx, collName, false)
+	common.CheckErr(t, errLoad, true)
+
+	// search vector
+	for i := 0; i < 20; i++ {
+		sp, _ := entity.NewIndexHNSWSearchParam(74)
+		searchResult, errSearch := mc.Search(
+			ctx, collName,
+			[]string{common.DefaultPartition},
+			"",
+			[]string{common.DefaultFloatVecFieldName},
+			//[]entity.Vector{entity.FloatVector([]float32{0.1, 0.2})},
+			common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeFloatVector),
+			common.DefaultFloatVecFieldName,
+			entity.L2,
+			common.DefaultTopK,
+			sp,
+		)
+		common.CheckErr(t, errSearch, true)
+		common.CheckOutputFields(t, searchResult[0].Fields, []string{common.DefaultFloatVecFieldName})
+		common.CheckSearchResult(t, searchResult, common.DefaultNq, common.DefaultTopK)
+		log.Printf("search %d done\n", i)
+	}
+}
+
 // TODO offset and limit
 // TODO consistency level
 // TODO WithGuaranteeTimestamp
