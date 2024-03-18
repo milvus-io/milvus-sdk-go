@@ -372,7 +372,7 @@ func TestCreateCollectionDescription(t *testing.T) {
 }
 
 // test create collection with invalid dim
-func TestCreateCollectionInvalidDim(t *testing.T) {
+func TestCreateBinaryCollectionInvalidDim(t *testing.T) {
 	t.Parallel()
 	type invalidDimStruct struct {
 		dim    string
@@ -380,11 +380,13 @@ func TestCreateCollectionInvalidDim(t *testing.T) {
 	}
 	invalidDims := []invalidDimStruct{
 		{dim: "10", errMsg: "should be multiple of 8"},
-		{dim: "0", errMsg: "should be in range 1 ~ 32768"},
+		{dim: "0", errMsg: "should be in range 2 ~ 32768"},
+		{dim: "1", errMsg: "should be in range 2 ~ 32768"},
 		{dim: "", errMsg: "invalid syntax"},
 		{dim: "中文", errMsg: "invalid syntax"},
 		{dim: "%$#", errMsg: "invalid syntax"},
-		{dim: fmt.Sprintf("%d", common.MaxDim+1), errMsg: "should be in range 1 ~ 32768"},
+		{dim: fmt.Sprintf("%d", common.MaxDim*9), errMsg: "binary vector dimension should be in range 2 ~ 262144"},
+		{dim: fmt.Sprintf("%d", common.MaxDim*8+1), errMsg: "binary vector dimension should be multiple of 8"},
 	}
 
 	// connect
@@ -398,6 +400,39 @@ func TestCreateCollectionInvalidDim(t *testing.T) {
 		binaryFields := entity.NewField().
 			WithName(common.DefaultFloatVecFieldName).
 			WithDataType(entity.FieldTypeBinaryVector).
+			WithTypeParams(entity.TypeParamDim, invalidDim.dim)
+		schema := common.GenSchema(collName, true, []*entity.Field{pkField, binaryFields})
+		errCreate := mc.CreateCollection(ctx, schema, common.DefaultShards)
+		common.CheckErr(t, errCreate, false, invalidDim.errMsg)
+	}
+}
+
+func TestCreateFloatCollectionInvalidDim(t *testing.T) {
+	t.Parallel()
+	type invalidDimStruct struct {
+		dim    string
+		errMsg string
+	}
+	invalidDims := []invalidDimStruct{
+		{dim: "0", errMsg: "should be in range 2 ~ 32768"},
+		{dim: "1", errMsg: "should be in range 2 ~ 32768"},
+		{dim: "", errMsg: "invalid syntax"},
+		{dim: "中文", errMsg: "invalid syntax"},
+		{dim: "%$#", errMsg: "invalid syntax"},
+		{dim: fmt.Sprintf("%d", common.MaxDim+1), errMsg: "float vector dimension should be in range 2 ~ 32768"},
+	}
+
+	// connect
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	mc := createMilvusClient(ctx, t)
+
+	// create binary collection with autoID true
+	pkField := common.GenField("", entity.FieldTypeInt64, common.WithIsPrimaryKey(true), common.WithAutoID(true))
+	for _, invalidDim := range invalidDims {
+		collName := common.GenRandomString(6)
+		binaryFields := entity.NewField().
+			WithName(common.DefaultFloatVecFieldName).
+			WithDataType(entity.FieldTypeFloatVector).
 			WithTypeParams(entity.TypeParamDim, invalidDim.dim)
 		schema := common.GenSchema(collName, true, []*entity.Field{pkField, binaryFields})
 		errCreate := mc.CreateCollection(ctx, schema, common.DefaultShards)
