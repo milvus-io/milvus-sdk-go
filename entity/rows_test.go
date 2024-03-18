@@ -117,6 +117,18 @@ func TestParseSchema(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, "RowBase", sch.CollectionName)
 
+		getVectorField := func(schema *Schema) *Field {
+			for _, field := range schema.Fields {
+				if field.DataType == FieldTypeFloatVector ||
+					field.DataType == FieldTypeBinaryVector ||
+					field.DataType == FieldTypeBFloat16Vector ||
+					field.DataType == FieldTypeFloat16Vector {
+					return field
+				}
+			}
+			return nil
+		}
+
 		type ValidStruct struct {
 			RowBase
 			ID     int64 `milvus:"primary_key"`
@@ -133,6 +145,44 @@ func TestParseSchema(t *testing.T) {
 		assert.Nil(t, err)
 		assert.NotNil(t, sch)
 		assert.Equal(t, "ValidStruct", sch.CollectionName)
+
+		type ValidFp16Struct struct {
+			RowBase
+			ID     int64 `milvus:"primary_key"`
+			Attr1  int8
+			Attr2  int16
+			Attr3  int32
+			Attr4  float32
+			Attr5  float64
+			Attr6  string
+			Vector []byte `milvus:"dim:128;vector_type:fp16"`
+		}
+		fp16Vs := &ValidFp16Struct{}
+		sch, err = ParseSchema(fp16Vs)
+		assert.Nil(t, err)
+		assert.NotNil(t, sch)
+		assert.Equal(t, "ValidFp16Struct", sch.CollectionName)
+		vectorField := getVectorField(sch)
+		assert.Equal(t, FieldTypeFloat16Vector, vectorField.DataType)
+
+		type ValidBf16Struct struct {
+			RowBase
+			ID     int64 `milvus:"primary_key"`
+			Attr1  int8
+			Attr2  int16
+			Attr3  int32
+			Attr4  float32
+			Attr5  float64
+			Attr6  string
+			Vector []byte `milvus:"dim:128;vector_type:bf16"`
+		}
+		bf16Vs := &ValidBf16Struct{}
+		sch, err = ParseSchema(bf16Vs)
+		assert.Nil(t, err)
+		assert.NotNil(t, sch)
+		assert.Equal(t, "ValidBf16Struct", sch.CollectionName)
+		vectorField = getVectorField(sch)
+		assert.Equal(t, FieldTypeBFloat16Vector, vectorField.DataType)
 
 		type ValidByteStruct struct {
 			RowBase
@@ -238,6 +288,32 @@ func (s *RowsSuite) TestRowsToColumns() {
 		s.Nil(err)
 		s.Require().Equal(1, len(columns))
 		s.Equal("Vector", columns[0].Name())
+	})
+
+	s.Run("fp16", func() {
+		type BF16Struct struct {
+			RowBase
+			ID     int64  `milvus:"primary_key;auto_id"`
+			Vector []byte `milvus:"dim:16;vector_type:bf16"`
+		}
+		columns, err := RowsToColumns([]Row{&BF16Struct{}})
+		s.Nil(err)
+		s.Require().Equal(1, len(columns))
+		s.Equal("Vector", columns[0].Name())
+		s.Equal(FieldTypeBFloat16Vector, columns[0].Type())
+	})
+
+	s.Run("fp16", func() {
+		type FP16Struct struct {
+			RowBase
+			ID     int64  `milvus:"primary_key;auto_id"`
+			Vector []byte `milvus:"dim:16;vector_type:fp16"`
+		}
+		columns, err := RowsToColumns([]Row{&FP16Struct{}})
+		s.Nil(err)
+		s.Require().Equal(1, len(columns))
+		s.Equal("Vector", columns[0].Name())
+		s.Equal(FieldTypeFloat16Vector, columns[0].Type())
 	})
 
 	s.Run("invalid_cases", func() {
