@@ -1,4 +1,4 @@
-///go:build L0
+//go:build L0
 
 package testcases
 
@@ -46,6 +46,80 @@ func TestSearch(t *testing.T) {
 	common.CheckSearchResult(t, searchResult, common.DefaultNq, common.DefaultTopK)
 }
 
+func TestSearchFloatGrowing(t *testing.T) {
+	t.Parallel()
+	for _, idx := range common.GenAllFloatIndex() {
+		ctx := createContext(t, time.Second*common.DefaultTimeout)
+		// connect
+		mc := createMilvusClient(ctx, t)
+
+		// create collection with all datatype
+		cp := CollectionParams{CollectionFieldsType: Int64FloatVec, AutoID: false, EnableDynamicField: true,
+			ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+		collName := createCollection(ctx, t, mc, cp)
+
+		// create index and load
+		err := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false)
+		common.CheckErr(t, err, true)
+		err = mc.LoadCollection(ctx, collName, false)
+		common.CheckErr(t, err, true)
+
+		// insert
+		dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVec,
+			start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
+		_, err = insertData(ctx, t, mc, dp)
+		common.CheckErr(t, err, true)
+
+		// search params
+		queryVec := common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeFloatVector)
+		sp, _ := entity.NewIndexBinIvfFlatSearchParam(64)
+		searchResult, errSearch := mc.Search(ctx, collName, []string{}, "", []string{"*"}, queryVec,
+			common.DefaultFloatVecFieldName, entity.MetricType(idx.Params()["metrics_type"]), common.DefaultTopK, sp,
+			client.WithSearchQueryConsistencyLevel(entity.ClStrong))
+		common.CheckErr(t, errSearch, true)
+		common.CheckOutputFields(t, searchResult[0].Fields, []string{common.DefaultIntFieldName, common.DefaultFloatVecFieldName,
+			common.DefaultFloatFieldName, common.DefaultDynamicFieldName})
+		common.CheckSearchResult(t, searchResult, common.DefaultNq, common.DefaultTopK)
+	}
+}
+
+func TestSearchBinaryGrowing(t *testing.T) {
+	t.Parallel()
+	for _, metricType := range common.SupportBinIvfFlatMetricType {
+		idxBinIvfFlat, _ := entity.NewIndexBinIvfFlat(metricType, 128)
+		ctx := createContext(t, time.Second*common.DefaultTimeout)
+		// connect
+		mc := createMilvusClient(ctx, t)
+
+		// create collection with all datatype
+		cp := CollectionParams{CollectionFieldsType: VarcharBinaryVec, AutoID: false, EnableDynamicField: false,
+			ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+		collName := createCollection(ctx, t, mc, cp)
+
+		// create index and load
+		err := mc.CreateIndex(ctx, collName, common.DefaultBinaryVecFieldName, idxBinIvfFlat, false)
+		common.CheckErr(t, err, true)
+		err = mc.LoadCollection(ctx, collName, false)
+		common.CheckErr(t, err, true)
+
+		// insert
+		dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: VarcharBinaryVec,
+			start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: false, WithRows: false}
+		_, err = insertData(ctx, t, mc, dp)
+		common.CheckErr(t, err, true)
+
+		// search params
+		queryVec := common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeBinaryVector)
+		sp, _ := entity.NewIndexBinIvfFlatSearchParam(64)
+		searchResult, errSearch := mc.Search(ctx, collName, []string{}, "", []string{"*"}, queryVec,
+			common.DefaultBinaryVecFieldName, metricType, common.DefaultTopK, sp,
+			client.WithSearchQueryConsistencyLevel(entity.ClStrong))
+		common.CheckErr(t, errSearch, true)
+		common.CheckOutputFields(t, searchResult[0].Fields, []string{common.DefaultVarcharFieldName, common.DefaultBinaryVecFieldName})
+		common.CheckSearchResult(t, searchResult, common.DefaultNq, common.DefaultTopK)
+	}
+}
+
 // test search collection not exist
 func TestSearchCollectionNotExist(t *testing.T) {
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
@@ -66,7 +140,7 @@ func TestSearchCollectionNotExist(t *testing.T) {
 		common.DefaultTopK,
 		sp,
 	)
-	common.CheckErr(t, errSearch, false, "collection not found")
+	common.CheckErr(t, errSearch, false, "can't find collection")
 }
 
 // test search empty collection -> return empty
@@ -877,12 +951,18 @@ func TestSearchJsonFieldExpr(t *testing.T) {
 			fmt.Sprintf("exists %s['number'] ", common.DefaultJSONFieldName),   // exists
 			"json[\"number\"] > 1 and json[\"number\"] < 1000",                 // > and
 			fmt.Sprintf("%s[\"number\"] > 10", common.DefaultJSONFieldName),    // number >
+			fmt.Sprintf("%s != 10 ", common.DefaultJSONFieldName),              // json != 10
 			fmt.Sprintf("%s[\"number\"] < 2000", common.DefaultJSONFieldName),  // number <
 			fmt.Sprintf("%s[\"bool\"] != true", common.DefaultJSONFieldName),   // bool !=
 			fmt.Sprintf("%s[\"bool\"] == False", common.DefaultJSONFieldName),  // bool ==
 			fmt.Sprintf("%s[\"bool\"] in [true]", common.DefaultJSONFieldName), // bool in
 			fmt.Sprintf("%s[\"string\"] >= '1' ", common.DefaultJSONFieldName), // string >=
 			fmt.Sprintf("%s['list'][0] > 200", common.DefaultJSONFieldName),    // list filter
+			fmt.Sprintf("%s['list'] != [2, 3]", common.DefaultJSONFieldName),   // json[list] !=
+			fmt.Sprintf("%s > 2000", common.DefaultJSONFieldName),              // json > 2000
+			fmt.Sprintf("%s like '2%%' ", common.DefaultJSONFieldName),         // json like '2%'
+			fmt.Sprintf("%s[0] > 2000 ", common.DefaultJSONFieldName),          // json[0] > 2000
+			fmt.Sprintf("%s > 2000.5 ", common.DefaultJSONFieldName),           // json > 2000.5
 		}
 
 		// search with jsonField expr key datatype and json data type mismatch
@@ -1230,7 +1310,7 @@ func TestRangeSearchScannL2(t *testing.T) {
 	sp.AddRangeFilter(20)
 	_, errRange := mc.Search(ctx, collName, []string{}, "", []string{"*"}, queryVec, common.DefaultFloatVecFieldName,
 		entity.L2, common.DefaultTopK, sp)
-	common.CheckErr(t, errRange, false, "range_filter(20) must be less than radius(15) for L2/HAMMING/JACCARD")
+	common.CheckErr(t, errRange, false, "range_filter must be less than radius for L2/HAMMING/JACCARD")
 }
 
 // test range search with scann index and IP COSINE metric type
@@ -1289,15 +1369,14 @@ func TestRangeSearchScannIPCosine(t *testing.T) {
 		sp.AddRangeFilter(10)
 		_, errRange := mc.Search(ctx, collName, []string{}, "", []string{"*"}, queryVec, common.DefaultFloatVecFieldName,
 			metricType, common.DefaultTopK, sp)
-		common.CheckErr(t, errRange, false, "range_filter(10) must be greater than radius(20) for IP/COSINE")
+		common.CheckErr(t, errRange, false, "range_filter must be greater than radius for IP/COSINE")
 	}
 }
 
-// test range search with scann index and entity.HAMMING, entity.JACCARD, entity.TANIMOTO metric type
+// test range search with scann index and entity.HAMMING, entity.JACCARD metric type
 func TestRangeSearchScannBinary(t *testing.T) {
-	// not supported  entity.TANIMOTO ??
 	t.Parallel()
-	for _, metricType := range []entity.MetricType{entity.HAMMING, entity.JACCARD} {
+	for _, metricType := range common.SupportBinIvfFlatMetricType {
 		ctx := createContext(t, time.Second*common.DefaultTimeout)
 		// connect
 		mc := createMilvusClient(ctx, t)
@@ -1350,7 +1429,7 @@ func TestRangeSearchScannBinary(t *testing.T) {
 		sp.AddRangeFilter(100)
 		_, errRange := mc.Search(ctx, collName, []string{}, "", []string{"*"}, queryVec, common.DefaultBinaryVecFieldName,
 			metricType, common.DefaultTopK, sp)
-		common.CheckErr(t, errRange, false, "range_filter(100) must be less than radius(0) for L2/HAMMING/JACCARD")
+		common.CheckErr(t, errRange, false, "range_filter must be less than radius for L2/HAMMING/JACCARD")
 	}
 }
 
