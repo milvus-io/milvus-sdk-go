@@ -25,6 +25,7 @@ import (
 	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
 	"github.com/milvus-io/milvus-proto/go-api/v2/schemapb"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
+	"github.com/milvus-io/milvus-sdk-go/v2/merr"
 )
 
 const (
@@ -80,7 +81,7 @@ func (c *GrpcClient) HybridSearch(ctx context.Context, collName string, partitio
 
 	r, err := RetryOnMilvusErrors(ctx, func() (interface{}, error) {
 		return c.Service.HybridSearch(ctx, req)
-	}, OnMerrCodes(2200))
+	}, OnMerrCodes(merr.Code(merr.ErrInconsistentRequery)))
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +123,7 @@ func (c *GrpcClient) Search(ctx context.Context, collName string, partitions []s
 
 	r, err := RetryOnMilvusErrors(ctx, func() (interface{}, error) {
 		return c.Service.Search(ctx, req)
-	}, OnMerrCodes(2200))
+	}, OnMerrCodes(merr.Code(merr.ErrInconsistentRequery)))
 	if err != nil {
 		return nil, err
 	}
