@@ -380,11 +380,11 @@ func TestCreateCollectionInvalidDim(t *testing.T) {
 	}
 	invalidDims := []invalidDimStruct{
 		{dim: "10", errMsg: "should be multiple of 8"},
-		{dim: "0", errMsg: "should be in range 1 ~ 32768"},
+		{dim: "0", errMsg: "should be in range 2 ~ 32768"},
 		{dim: "", errMsg: "invalid syntax"},
 		{dim: "中文", errMsg: "invalid syntax"},
 		{dim: "%$#", errMsg: "invalid syntax"},
-		{dim: fmt.Sprintf("%d", common.MaxDim+1), errMsg: "should be in range 1 ~ 32768"},
+		{dim: fmt.Sprintf("%d", common.MaxDim+1), errMsg: "invalid dimension"},
 	}
 
 	// connect

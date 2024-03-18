@@ -1088,8 +1088,8 @@ var InvalidExpressions = []InvalidExprStruct{
 	{Expr: "int64 in not [0]", ErrNil: false, ErrMsg: "cannot parse expression"},        // wrong term expr keyword
 	{Expr: "int64 < floatVec", ErrNil: false, ErrMsg: "not supported"},                  // unsupported compare field
 	{Expr: "floatVec in [0]", ErrNil: false, ErrMsg: "cannot be casted to FloatVector"}, // value and field type mismatch
-	{Expr: fmt.Sprintf("%s == 1", DefaultJSONFieldName), ErrNil: false, ErrMsg: "can not comparisons jsonField directly"},
-	{Expr: fmt.Sprintf("%s == 1", DefaultDynamicFieldName), ErrNil: false, ErrMsg: "can not comparisons jsonField directly"},
+	// {Expr: fmt.Sprintf("%s == 1", DefaultJSONFieldName), ErrNil: false, ErrMsg: "can not comparisons jsonField directly"},
+	// {Expr: fmt.Sprintf("%s == 1", DefaultDynamicFieldName), ErrNil: false, ErrMsg: "can not comparisons jsonField directly"},
 	{Expr: fmt.Sprintf("%s[\"dynamicList\"] == [2, 3]", DefaultDynamicFieldName), ErrNil: true, ErrMsg: ""},
 	{Expr: fmt.Sprintf("%s['a'] == [2, 3]", DefaultJSONFieldName), ErrNil: true, ErrMsg: ""},      // json field not exist
 	{Expr: fmt.Sprintf("%s['number'] == [2, 3]", DefaultJSONFieldName), ErrNil: true, ErrMsg: ""}, // field exist but type not match

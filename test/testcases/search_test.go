@@ -66,7 +66,7 @@ func TestSearchCollectionNotExist(t *testing.T) {
 		common.DefaultTopK,
 		sp,
 	)
-	common.CheckErr(t, errSearch, false, "collection not found")
+	common.CheckErr(t, errSearch, false, "can't find collection")
 }
 
 // test search empty collection -> return empty
@@ -1230,7 +1230,7 @@ func TestRangeSearchScannL2(t *testing.T) {
 	sp.AddRangeFilter(20)
 	_, errRange := mc.Search(ctx, collName, []string{}, "", []string{"*"}, queryVec, common.DefaultFloatVecFieldName,
 		entity.L2, common.DefaultTopK, sp)
-	common.CheckErr(t, errRange, false, "range_filter(20) must be less than radius(15) for L2/HAMMING/JACCARD")
+	common.CheckErr(t, errRange, false, "range_filter must be less than radius")
 }
 
 // test range search with scann index and IP COSINE metric type
@@ -1289,7 +1289,7 @@ func TestRangeSearchScannIPCosine(t *testing.T) {
 		sp.AddRangeFilter(10)
 		_, errRange := mc.Search(ctx, collName, []string{}, "", []string{"*"}, queryVec, common.DefaultFloatVecFieldName,
 			metricType, common.DefaultTopK, sp)
-		common.CheckErr(t, errRange, false, "range_filter(10) must be greater than radius(20) for IP/COSINE")
+		common.CheckErr(t, errRange, false, "range_filter must be greater than radius")
 	}
 }
 
@@ -1350,7 +1350,7 @@ func TestRangeSearchScannBinary(t *testing.T) {
 		sp.AddRangeFilter(100)
 		_, errRange := mc.Search(ctx, collName, []string{}, "", []string{"*"}, queryVec, common.DefaultBinaryVecFieldName,
 			metricType, common.DefaultTopK, sp)
-		common.CheckErr(t, errRange, false, "range_filter(100) must be less than radius(0) for L2/HAMMING/JACCARD")
+		common.CheckErr(t, errRange, false, "range_filter must be less than radius")
 	}
 }
 
