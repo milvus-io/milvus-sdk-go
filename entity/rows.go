@@ -38,6 +38,9 @@ const (
 	// VectorDimTag struct tag const for vector dimension
 	VectorDimTag = `DIM`
 
+	// VectorTypeTag struct tag const for binary vector type
+	VectorTypeTag = `VECTOR_TYPE`
+
 	// MilvusPrimaryKey struct tag const for primary key indicator
 	MilvusPrimaryKey = `PRIMARY_KEY`
 
@@ -197,8 +200,15 @@ func ParseSchemaAny(r interface{}) (*Schema, error) {
 			}
 			elemType := ft.Elem()
 			switch elemType.Kind() {
-			case reflect.Uint8: // []byte!
-				field.DataType = FieldTypeBinaryVector
+			case reflect.Uint8: // []byte, could be BinaryVector, fp16, bf 6
+				switch tagSettings[VectorTypeTag] {
+				case "fp16":
+					field.DataType = FieldTypeFloat16Vector
+				case "bf16":
+					field.DataType = FieldTypeBFloat16Vector
+				default:
+					field.DataType = FieldTypeBinaryVector
+				}
 			case reflect.Float32:
 				field.DataType = FieldTypeFloatVector
 			default:
@@ -354,6 +364,30 @@ func AnyToColumns(rows []interface{}, schemas ...*Schema) ([]Column, error) {
 				return []Column{}, fmt.Errorf("vector field with bad format dim: %s", err.Error())
 			}
 			col := NewColumnBinaryVector(field.Name, int(dim), data)
+			nameColumns[field.Name] = col
+		case FieldTypeFloat16Vector:
+			data := make([][]byte, 0, rowsLen)
+			dimStr, has := field.TypeParams[TypeParamDim]
+			if !has {
+				return []Column{}, errors.New("vector field with no dim")
+			}
+			dim, err := strconv.ParseInt(dimStr, 10, 64)
+			if err != nil {
+				return []Column{}, fmt.Errorf("vector field with bad format dim: %s", err.Error())
+			}
+			col := NewColumnFloat16Vector(field.Name, int(dim), data)
+			nameColumns[field.Name] = col
+		case FieldTypeBFloat16Vector:
+			data := make([][]byte, 0, rowsLen)
+			dimStr, has := field.TypeParams[TypeParamDim]
+			if !has {
+				return []Column{}, errors.New("vector field with no dim")
+			}
+			dim, err := strconv.ParseInt(dimStr, 10, 64)
+			if err != nil {
+				return []Column{}, fmt.Errorf("vector field with bad format dim: %s", err.Error())
+			}
+			col := NewColumnBFloat16Vector(field.Name, int(dim), data)
 			nameColumns[field.Name] = col
 		}
 	}
