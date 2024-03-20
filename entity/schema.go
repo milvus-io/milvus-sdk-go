@@ -483,4 +483,6 @@ const (
 	FieldTypeFloat16Vector FieldType = 102
 	// FieldTypeBinaryVector field type bf16 vector
 	FieldTypeBFloat16Vector FieldType = 103
+	// FieldTypeBinaryVector field type sparse vector
+	FieldTypeSparseVector FieldType = 104
 )

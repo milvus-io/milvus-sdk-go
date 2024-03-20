@@ -224,7 +224,9 @@ func (c *GrpcClient) FlushV2(ctx context.Context, collName string, async bool, o
 		if has && len(ids) > 0 {
 			flushed := func() bool {
 				resp, err := c.Service.GetFlushState(ctx, &milvuspb.GetFlushStateRequest{
-					SegmentIDs: ids,
+					SegmentIDs:     ids,
+					FlushTs:        resp.GetCollFlushTs()[collName],
+					CollectionName: collName,
 				})
 				if err != nil {
 					// TODO max retry
@@ -506,6 +508,12 @@ func vector2Placeholder(vectors []entity.Vector) *commonpb.PlaceholderValue {
 		placeHolderType = commonpb.PlaceholderType_FloatVector
 	case entity.BinaryVector:
 		placeHolderType = commonpb.PlaceholderType_BinaryVector
+	case entity.BFloat16Vector:
+		placeHolderType = commonpb.PlaceholderType_BFloat16Vector
+	case entity.Float16Vector:
+		placeHolderType = commonpb.PlaceholderType_FloatVector
+	case entity.SparseEmbedding:
+		placeHolderType = commonpb.PlaceholderType_SparseFloatVector
 	}
 	ph.Type = placeHolderType
 	for _, vector := range vectors {
