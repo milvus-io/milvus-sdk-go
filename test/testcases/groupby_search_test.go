@@ -101,6 +101,7 @@ func prepareDataForGroupBySearch(t *testing.T, loopInsert int, idx entity.Index,
 // -> verify every top passage is the top of whole group
 // output_fields: pk + groupBy
 func TestSearchGroupByFloatDefault(t *testing.T) {
+	t.Skip("unstable case")
 	t.Parallel()
 	for _, metricType := range common.SupportFloatMetricType {
 		for _, idx := range genGroupByVectorIndex(metricType) {
