@@ -1027,6 +1027,6 @@ func (m *MockServer) HybridSearch(ctx context.Context, req *milvuspb.HybridSearc
 	return &milvuspb.SearchResults{Status: status}, err
 }
 
-func (m *MockServer) UpdateResourceGroups(ctx context.Context, req *milvuspb.UpdateResourceGroupsRequest) (*commonpb.Status, error) {
+func (m *MockServer) UpdateResourceGroups(_ context.Context, _ *milvuspb.UpdateResourceGroupsRequest) (*commonpb.Status, error) {
 	return nil, errors.New("not implemented")
 }
