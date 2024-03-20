@@ -23,24 +23,24 @@ import (
 func TestSliceSparseEmbedding(t *testing.T) {
 	t.Run("normal_case", func(t *testing.T) {
 
-		len := 1 + rand.Intn(5)
-		positions := make([]uint32, len)
-		values := make([]float32, len)
-		for i := 0; i < len; i++ {
+		length := 1 + rand.Intn(5)
+		positions := make([]uint32, length)
+		values := make([]float32, length)
+		for i := 0; i < length; i++ {
 			positions[i] = uint32(i)
 			values[i] = rand.Float32()
 		}
 		se, err := NewSliceSparseEmbedding(positions, values)
 		require.NoError(t, err)
 
-		assert.EqualValues(t, len, se.Dim())
-		assert.EqualValues(t, len, se.Len())
+		assert.EqualValues(t, length, se.Dim())
+		assert.EqualValues(t, length, se.Len())
 
 		bs := se.Serialize()
 		nv, err := deserializeSliceSparceEmbedding(bs)
 		require.NoError(t, err)
 
-		for i := 0; i < len; i++ {
+		for i := 0; i < length; i++ {
 			pos, val, ok := se.Get(i)
 			require.True(t, ok)
 			assert.Equal(t, positions[i], pos)
@@ -54,7 +54,7 @@ func TestSliceSparseEmbedding(t *testing.T) {
 
 		_, _, ok := se.Get(-1)
 		assert.False(t, ok)
-		_, _, ok = se.Get(len)
+		_, _, ok = se.Get(length)
 		assert.False(t, ok)
 	})
 
@@ -71,10 +71,10 @@ func TestColumnSparseEmbedding(t *testing.T) {
 
 	v := make([]SparseEmbedding, 0, columnLen)
 	for i := 0; i < columnLen; i++ {
-		len := 1 + rand.Intn(5)
-		positions := make([]uint32, len)
-		values := make([]float32, len)
-		for j := 0; j < len; j++ {
+		length := 1 + rand.Intn(5)
+		positions := make([]uint32, length)
+		values := make([]float32, length)
+		for j := 0; j < length; j++ {
 			positions[j] = uint32(j)
 			values[j] = rand.Float32()
 		}

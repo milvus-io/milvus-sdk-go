@@ -78,20 +78,20 @@ func (e sliceSparseEmbedding) Swap(i, j int) {
 }
 
 func deserializeSliceSparceEmbedding(bs []byte) (sliceSparseEmbedding, error) {
-	len := len(bs)
-	if len%8 != 0 {
+	length := len(bs)
+	if length%8 != 0 {
 		return sliceSparseEmbedding{}, errors.New("not valid sparse embedding bytes")
 	}
 
-	len = len / 8
+	length = length / 8
 
 	result := sliceSparseEmbedding{
-		positions: make([]uint32, len),
-		values:    make([]float32, len),
-		len:       len,
+		positions: make([]uint32, length),
+		values:    make([]float32, length),
+		len:       length,
 	}
 
-	for i := 0; i < len; i++ {
+	for i := 0; i < length; i++ {
 		result.positions[i] = binary.LittleEndian.Uint32(bs[i*8 : i*8+4])
 		result.values[i] = math.Float32frombits(binary.LittleEndian.Uint32(bs[i*8+4 : i*8+8]))
 	}
