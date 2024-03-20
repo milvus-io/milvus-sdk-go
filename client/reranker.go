@@ -50,7 +50,7 @@ func (r *weightedReranker) GetParams() []*commonpb.KeyValuePair {
 	bs, _ := json.Marshal(r)
 
 	return []*commonpb.KeyValuePair{
-		{Key: rerankType, Value: rrfRerankType},
+		{Key: rerankType, Value: weightedRerankType},
 		{Key: rerankParams, Value: string(bs)},
 	}
 }
