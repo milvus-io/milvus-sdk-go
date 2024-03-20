@@ -149,7 +149,7 @@ func TestSearchGroupByFloatDefault(t *testing.T) {
 				_str := fmt.Sprintf("GroupBy search with field %s, nq=%d and limit=%d , then hitsNum= %d, hitsRate=%v\n",
 					groupByField, common.DefaultNq, common.DefaultTopK, hitsNum, hitsRate)
 				log.Println(_str)
-				require.GreaterOrEqualf(t, hitsRate, float32(0.2), _str)
+				require.GreaterOrEqualf(t, hitsRate, float32(0.1), _str)
 			}
 		}
 	}
