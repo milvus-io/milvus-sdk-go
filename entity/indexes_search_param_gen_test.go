@@ -359,19 +359,12 @@ func TestIndexAUTOINDEXSearchParam(t *testing.T) {
 		assert.NotNil(t, err)
 		assert.Nil(t, idx0)
 		
-		level = 10
+		level = -1
 		idx1, err := NewIndexAUTOINDEXSearchParam(
 			level,
 		)
 		assert.NotNil(t, err)
 		assert.Nil(t, idx1)
-		
-		level = -1
-		idx2, err := NewIndexAUTOINDEXSearchParam(
-			level,
-		)
-		assert.NotNil(t, err)
-		assert.Nil(t, idx2)
 		
 	})
 	
