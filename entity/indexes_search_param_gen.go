@@ -302,10 +302,10 @@ func NewIndexAUTOINDEXSearchParam(
 ) (*IndexAUTOINDEXSearchParam, error) {
 	// auto generate parameters validation code, if any
 	if level < 1 {
-		return nil, errors.New("level has to be in range [1, 3]")
+		return nil, errors.New("level has to be in range [1, 9223372036854775807]")
 	}
-	if level > 3 {
-		return nil, errors.New("level has to be in range [1, 3]")
+	if level > 9223372036854775807 {
+		return nil, errors.New("level has to be in range [1, 9223372036854775807]")
 	}
 	
 	sp := &IndexAUTOINDEXSearchParam{

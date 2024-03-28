@@ -622,7 +622,7 @@ func main() {
 				SearchParams: []idxParam{
 					{
 						Name:           "level",
-						ValidationRule: "[1, 3]",
+						ValidationRule: "[1, 9223372036854775807]",
 					},
 				},
 				ValidExamples: []string{
@@ -634,7 +634,6 @@ func main() {
 				},
 				InvalidSearchParams: []string{
 					"level = 0",
-					"level = 10",
 					"level = -1",
 				},
 			},
