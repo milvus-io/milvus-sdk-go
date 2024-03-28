@@ -247,6 +247,7 @@ const (
 	VarcharBinaryVec   CollectionFieldsType = "PkVarcharBinaryVec"  // varchar + binaryVec
 	Int64FloatVecJSON  CollectionFieldsType = "PkInt64FloatVecJson" // int64 + float + floatVec + json
 	Int64FloatVecArray CollectionFieldsType = "Int64FloatVecArray"  // int64 + float + floatVec + all array
+	AllVectors         CollectionFieldsType = "AllVectors"          // int64 + fp32Vec + fp16Vec + binaryVec
 	AllFields          CollectionFieldsType = "AllFields"           // all scalar fields + floatVec
 )
 
@@ -270,6 +271,14 @@ func createCollection(ctx context.Context, t *testing.T, mc *base.MilvusClient, 
 	case Int64FloatVecArray:
 		fields = common.GenDefaultFields(cp.AutoID)
 		fields = append(fields, common.GenAllArrayFieldsWithCapacity(cp.MaxCapacity)...)
+	case AllVectors:
+		fields = []*entity.Field{
+			common.GenField(common.DefaultIntFieldName, entity.FieldTypeInt64, common.WithIsPrimaryKey(true), common.WithAutoID(cp.AutoID)),
+			common.GenField(common.DefaultFloatVecFieldName, entity.FieldTypeFloatVector, common.WithDim(cp.Dim)),
+			common.GenField(common.DefaultFloat16VecFieldName, entity.FieldTypeFloat16Vector, common.WithDim(cp.Dim)),
+			common.GenField(common.DefaultBFloat16VecFieldName, entity.FieldTypeBFloat16Vector, common.WithDim(cp.Dim)),
+			common.GenField(common.DefaultBinaryVecFieldName, entity.FieldTypeBinaryVector, common.WithDim(cp.Dim)),
+		}
 	case AllFields:
 		fields = common.GenAllFields()
 	}
@@ -339,6 +348,11 @@ func insertData(ctx context.Context, t *testing.T, mc *base.MilvusClient, dp Dat
 			data = append(data, intColumn, floatColumn, vecColumn)
 		}
 
+	case AllVectors:
+		if dp.WithRows {
+			rows = common.GenAllVectorsRows(dp.start, dp.nb, dp.dim, dp.EnableDynamicField)
+		}
+		data = common.GenAllVectorsData(dp.start, dp.nb, dp.dim, opts...)
 	case AllFields:
 		if dp.WithRows {
 			rows = common.GenAllFieldsRows(dp.start, dp.nb, dp.dim, dp.EnableDynamicField, opts...)
@@ -429,7 +443,7 @@ func prepareCollection(ctx context.Context, t *testing.T, mc *base.MilvusClient,
 	// default build index
 	idx, err := entity.NewIndexHNSW(entity.L2, 8, 96)
 	common.CheckErr(t, err, true)
-	defaultIndexParams := IndexParams{BuildIndex: true, Index: idx, FieldName: common.DefaultFloatVecFieldName, async: false}
+	defaultIndexParams := []IndexParams{{BuildIndex: true, Index: idx, FieldName: common.DefaultFloatVecFieldName, async: false}}
 
 	// default load collection
 	defaultLp := LoadParams{DoLoad: true, async: false}
@@ -462,14 +476,16 @@ func prepareCollection(ctx context.Context, t *testing.T, mc *base.MilvusClient,
 	}
 
 	// index
-	if opt.IndexParams.BuildIndex {
-		var err error
-		if opt.IndexOpts == nil {
-			err = mc.CreateIndex(ctx, collName, opt.IndexParams.FieldName, opt.IndexParams.Index, opt.IndexParams.async)
-		} else {
-			err = mc.CreateIndex(ctx, collName, opt.IndexParams.FieldName, opt.IndexParams.Index, opt.IndexParams.async, opt.IndexOpts)
+	for _, idxParams := range opt.IndexParams {
+		if idxParams.BuildIndex {
+			var err error
+			if opt.IndexOpts == nil {
+				err = mc.CreateIndex(ctx, collName, idxParams.FieldName, idxParams.Index, idxParams.async)
+			} else {
+				err = mc.CreateIndex(ctx, collName, idxParams.FieldName, idxParams.Index, idxParams.async, opt.IndexOpts)
+			}
+			common.CheckErr(t, err, true)
 		}
-		common.CheckErr(t, err, true)
 	}
 
 	// load

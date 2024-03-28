@@ -610,6 +610,25 @@ func TestCreateCollectionAllFields(t *testing.T) {
 	common.CheckErr(t, errCreateCollection, true)
 }
 
+// the num of vector fields > default limit=4
+func TestCreateMultiVectorExceed(t *testing.T) {
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	mc := createMilvusClient(ctx, t)
+	fields := []*entity.Field{
+		common.GenField(common.DefaultIntFieldName, entity.FieldTypeInt64, common.WithIsPrimaryKey(true)),
+	}
+	for i := 0; i < common.MaxVectorFieldNum+1; i++ {
+		field := common.GenField(fmt.Sprintf("%s-%d", common.DefaultFloatVecFieldName, i), entity.FieldTypeFloatVector, common.WithDim(128))
+		fields = append(fields, field)
+	}
+	collName := common.GenRandomString(6)
+	schema := common.GenSchema(collName, false, fields)
+
+	// create collection
+	errCreateCollection := mc.CreateCollection(ctx, schema, common.DefaultShards)
+	common.CheckErr(t, errCreateCollection, false, "maximum vector field's number should be limited to 4")
+}
+
 // -- Get Collection Statistics --
 
 func TestGetStaticsCollectionNotExisted(t *testing.T) {

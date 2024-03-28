@@ -33,15 +33,15 @@ func supportScalarIndexFieldType(field entity.FieldType) bool {
 // test create index with supported float vector index, L2 metric type
 func TestCreateIndex(t *testing.T) {
 	t.Parallel()
+	ctx := createContext(t, time.Second*common.DefaultTimeout*5)
+	// connect
+	mc := createMilvusClient(ctx, t)
+	collName, _ := createCollectionWithDataIndex(ctx, t, mc, false, false)
 
 	// create index
 	allFloatIndexes := common.GenAllFloatIndex()
 	for _, idx := range allFloatIndexes {
-		ctx := createContext(t, time.Second*common.DefaultTimeout*3)
-		// connect
-		mc := createMilvusClient(ctx, t)
 		// create default collection with flush data
-		collName, _ := createCollectionWithDataIndex(ctx, t, mc, false, false)
 		err := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false, client.WithIndexName(common.DefaultIndexName))
 		common.CheckErr(t, err, true)
 
@@ -49,6 +49,56 @@ func TestCreateIndex(t *testing.T) {
 		indexes, _ := mc.DescribeIndex(ctx, collName, common.DefaultFloatVecFieldName)
 		expIndex := entity.NewGenericIndex(common.DefaultIndexName, idx.IndexType(), idx.Params())
 		common.CheckIndexResult(t, indexes, expIndex)
+
+		// drop index
+		err = mc.DropIndex(ctx, collName, common.DefaultFloatVecFieldName)
+		common.CheckErr(t, err, true)
+	}
+}
+
+// create index for fp16 and bf16 vectors
+func TestCreateIndexMultiVectors(t *testing.T) {
+	ctx := createContext(t, time.Second*common.DefaultTimeout*5)
+	// connect
+	mc := createMilvusClient(ctx, t)
+
+	// create collection
+	cp := CollectionParams{CollectionFieldsType: AllVectors, AutoID: false, EnableDynamicField: true, ShardsNum: 1,
+		Dim: common.DefaultDim}
+	collName := createCollection(ctx, t, mc, cp)
+
+	// insert
+	dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: AllVectors, start: 0,
+		nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true}
+	_, _ = insertData(ctx, t, mc, dp)
+	_ = mc.Flush(ctx, collName, false)
+
+	// create index for all vectors
+	idxHnsw, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
+	mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idxHnsw, false)
+	for _, idx := range common.GenAllFloatIndex() {
+		for _, fieldName := range []string{common.DefaultFloat16VecFieldName, common.DefaultBFloat16VecFieldName} {
+			err := mc.CreateIndex(ctx, collName, fieldName, idx, false, client.WithIndexName(fieldName))
+			common.CheckErr(t, err, true)
+
+			// describe index
+			indexes, _ := mc.DescribeIndex(ctx, collName, fieldName)
+			expIndex := entity.NewGenericIndex(fieldName, idx.IndexType(), idx.Params())
+			common.CheckIndexResult(t, indexes, expIndex)
+
+			// drop index
+			err = mc.DropIndex(ctx, collName, fieldName, client.WithIndexName(fieldName))
+			common.CheckErr(t, err, true)
+		}
+	}
+	for _, metricType := range common.SupportBinIvfFlatMetricType {
+		idx, _ := entity.NewIndexBinFlat(metricType, 64)
+		err := mc.CreateIndex(ctx, collName, common.DefaultBinaryVecFieldName, idx, false, client.WithIndexName(common.DefaultBinaryVecFieldName))
+		common.CheckErr(t, err, true)
+
+		// drop index
+		err = mc.DropIndex(ctx, collName, common.DefaultBinaryVecFieldName, client.WithIndexName(common.DefaultBinaryVecFieldName))
+		common.CheckErr(t, err, true)
 	}
 }
 
@@ -91,6 +141,16 @@ func TestCreateScalarIndex(t *testing.T) {
 		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
 	_, _ = insertData(ctx, t, mc, dp)
 	mc.Flush(ctx, collName, false)
+
+	// create index for all vector fields
+	indexHnsw, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
+	for _, field := range common.AllVectorsFieldsName {
+		err := mc.CreateIndex(ctx, collName, field, indexHnsw, false)
+		common.CheckErr(t, err, true)
+		indexes, _ := mc.DescribeIndex(ctx, collName, field)
+		expIndex := entity.NewGenericIndex(field, entity.HNSW, indexHnsw.Params())
+		common.CheckIndexResult(t, indexes, expIndex)
+	}
 
 	coll, _ := mc.DescribeCollection(ctx, collName)
 	idx := entity.NewScalarIndex()
@@ -500,6 +560,32 @@ func TestCreateIndexAsync(t *testing.T) {
 			t.FailNow()
 		}
 	}
+}
+
+// create same index name on different vector field
+func TestIndexMultiVectorDupName(t *testing.T) {
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	mc := createMilvusClient(ctx, t)
+
+	// create collection with all datatype
+	cp := CollectionParams{CollectionFieldsType: AllVectors, AutoID: false, EnableDynamicField: true,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+	collName := createCollection(ctx, t, mc, cp, client.WithConsistencyLevel(entity.ClStrong))
+
+	// insert
+	dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: AllVectors,
+		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
+	_, err := insertData(ctx, t, mc, dp)
+	common.CheckErr(t, err, true)
+
+	// create index with same indexName on different fields
+	idx, _ := entity.NewIndexHNSW(entity.COSINE, 8, 96)
+	err = mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false, client.WithIndexName("index_1"))
+	common.CheckErr(t, err, true)
+
+	// same index on another field
+	err = mc.CreateIndex(ctx, collName, common.DefaultFloat16VecFieldName, idx, false, client.WithIndexName("index_1"))
+	common.CheckErr(t, err, false, "reateIndex failed: at most one distinct index is allowed per field")
 }
 
 // test get index state

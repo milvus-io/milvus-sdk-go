@@ -2,6 +2,7 @@ package common
 
 import (
 	"bytes"
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -9,40 +10,48 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unsafe"
 
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )
 
 // const default value for test
 const (
-	DefaultIntFieldName       = "int64"
-	DefaultFloatFieldName     = "float"
-	DefaultVarcharFieldName   = "varchar"
-	DefaultJSONFieldName      = "json"
-	DefaultArrayFieldName     = "array"
-	DefaultFloatVecFieldName  = "floatVec"
-	DefaultBinaryVecFieldName = "binaryVec"
-	DefaultDynamicNumberField = "dynamicNumber"
-	DefaultDynamicStringField = "dynamicString"
-	DefaultDynamicBoolField   = "dynamicBool"
-	DefaultDynamicListField   = "dynamicList"
-	DefaultBoolArrayField     = "boolArray"
-	DefaultInt8ArrayField     = "int8Array"
-	DefaultInt16ArrayField    = "int16Array"
-	DefaultInt32ArrayField    = "int32Array"
-	DefaultInt64ArrayField    = "int64Array"
-	DefaultFloatArrayField    = "floatArray"
-	DefaultDoubleArrayField   = "doubleArray"
-	DefaultVarcharArrayField  = "varcharArray"
-	RowCount                  = "row_count"
-	DefaultTimeout            = 120
-	DefaultDim                = int64(128)
-	DefaultShards             = int32(2)
-	DefaultNb                 = 3000
-	DefaultNq                 = 5
-	DefaultTopK               = 10
-	TestCapacity              = 100 // default array field capacity
-	TestMaxLen                = 100 // default varchar field max length
+	DefaultIntFieldName         = "int64"
+	DefaultInt8FieldName        = "int8"
+	DefaultInt16FieldName       = "int16"
+	DefaultInt32FieldName       = "int32"
+	DefaultBoolFieldName        = "bool"
+	DefaultFloatFieldName       = "float"
+	DefaultDoubleFieldName      = "double"
+	DefaultVarcharFieldName     = "varchar"
+	DefaultJSONFieldName        = "json"
+	DefaultArrayFieldName       = "array"
+	DefaultFloatVecFieldName    = "floatVec"
+	DefaultBinaryVecFieldName   = "binaryVec"
+	DefaultFloat16VecFieldName  = "fp16Vec"
+	DefaultBFloat16VecFieldName = "bf16Vec"
+	DefaultDynamicNumberField   = "dynamicNumber"
+	DefaultDynamicStringField   = "dynamicString"
+	DefaultDynamicBoolField     = "dynamicBool"
+	DefaultDynamicListField     = "dynamicList"
+	DefaultBoolArrayField       = "boolArray"
+	DefaultInt8ArrayField       = "int8Array"
+	DefaultInt16ArrayField      = "int16Array"
+	DefaultInt32ArrayField      = "int32Array"
+	DefaultInt64ArrayField      = "int64Array"
+	DefaultFloatArrayField      = "floatArray"
+	DefaultDoubleArrayField     = "doubleArray"
+	DefaultVarcharArrayField    = "varcharArray"
+	RowCount                    = "row_count"
+	DefaultTimeout              = 120
+	DefaultDim                  = int64(128)
+	DefaultShards               = int32(2)
+	DefaultNb                   = 3000
+	DefaultNq                   = 5
+	DefaultTopK                 = 10
+	TestCapacity                = 100 // default array field capacity
+	TestMaxLen                  = 100 // default varchar field max length
 )
 
 // const default value from milvus
@@ -62,6 +71,9 @@ const (
 	DefaultRgCapacity       = 1000000
 	RetentionDuration       = 40   // common.retentionDuration
 	MaxCapacity             = 4096 // max array capacity
+	DefaultPartitionNum     = 64   // default num_partitions
+	MaxTopK                 = 16384
+	MaxVectorFieldNum       = 4
 )
 
 var IndexStateValue = map[string]int32{
@@ -93,6 +105,34 @@ var AllArrayFieldsName = []string{
 	DefaultFloatArrayField,
 	DefaultDoubleArrayField,
 	DefaultVarcharArrayField,
+}
+
+var AllVectorsFieldsName = []string{
+	DefaultFloatVecFieldName,
+	DefaultBinaryVecFieldName,
+	DefaultFloat16VecFieldName,
+	DefaultBFloat16VecFieldName,
+}
+
+// return all fields name
+func GetAllFieldsName(enableDynamicField bool) []string {
+	allFieldName := []string{
+		DefaultIntFieldName,
+		DefaultBoolFieldName,
+		DefaultInt8FieldName,
+		DefaultInt16FieldName,
+		DefaultInt32FieldName,
+		DefaultFloatFieldName,
+		DefaultDoubleFieldName,
+		DefaultVarcharFieldName,
+		DefaultJSONFieldName,
+	}
+	allFieldName = append(allFieldName, AllArrayFieldsName...)
+	allFieldName = append(allFieldName, AllVectorsFieldsName...)
+	if enableDynamicField {
+		allFieldName = append(allFieldName, DefaultDynamicFieldName)
+	}
+	return allFieldName
 }
 
 var r *rand.Rand
@@ -137,6 +177,30 @@ func GenFloatVector(dim int64) []float32 {
 	vector := make([]float32, 0, dim)
 	for j := 0; j < int(dim); j++ {
 		vector = append(vector, rand.Float32())
+	}
+	return vector
+}
+
+func GenFloat16Vector(dim int64) []byte {
+	vector := make([]byte, 0, dim)
+	fp16Data := make([]byte, 2)
+	for i := 0; i < int(dim); i++ {
+		f := rand.Float32()
+		u32 := *(*uint32)(unsafe.Pointer(&f))
+		binary.LittleEndian.PutUint16(fp16Data, uint16(u32>>16))
+		vector = append(vector, fp16Data...)
+	}
+	return vector
+}
+
+func GenBFloat16Vector(dim int64) []byte {
+	vector := make([]byte, 0, dim)
+	bf16Data := make([]byte, 2)
+	for i := 0; i < int(dim); i++ {
+		f := rand.Float32()
+		u32 := *(*uint32)(unsafe.Pointer(&f))
+		binary.LittleEndian.PutUint16(bf16Data, uint16(u32>>16))
+		vector = append(vector, bf16Data...)
 	}
 	return vector
 }
@@ -206,16 +270,19 @@ func GenAllArrayFieldsWithCapacity(capacity int64) []*entity.Field {
 // GenAllFields gen fields with all scala field types
 func GenAllFields() []*entity.Field {
 	allFields := []*entity.Field{
-		GenField("int64", entity.FieldTypeInt64, WithIsPrimaryKey(true)),       // int64
-		GenField("bool", entity.FieldTypeBool),                                 // bool
-		GenField("int8", entity.FieldTypeInt8),                                 // int8
-		GenField("int16", entity.FieldTypeInt16),                               // int16
-		GenField("int32", entity.FieldTypeInt32),                               // int32
-		GenField("float", entity.FieldTypeFloat),                               // float
-		GenField("double", entity.FieldTypeDouble),                             // double
-		GenField("varchar", entity.FieldTypeVarChar, WithMaxLength(MaxLength)), // varchar
-		GenField("json", entity.FieldTypeJSON),                                 // json
-		GenField("floatVec", entity.FieldTypeFloatVector, WithDim(DefaultDim)), // float vector
+		GenField(DefaultIntFieldName, entity.FieldTypeInt64, WithIsPrimaryKey(true)),               // int64
+		GenField(DefaultBoolFieldName, entity.FieldTypeBool),                                       // bool
+		GenField(DefaultInt8FieldName, entity.FieldTypeInt8),                                       // int8
+		GenField(DefaultInt16FieldName, entity.FieldTypeInt16),                                     // int16
+		GenField(DefaultInt32FieldName, entity.FieldTypeInt32),                                     // int32
+		GenField(DefaultFloatFieldName, entity.FieldTypeFloat),                                     // float
+		GenField(DefaultDoubleFieldName, entity.FieldTypeDouble),                                   // double
+		GenField(DefaultVarcharFieldName, entity.FieldTypeVarChar, WithMaxLength(MaxLength)),       // varchar
+		GenField(DefaultJSONFieldName, entity.FieldTypeJSON),                                       // json
+		GenField(DefaultFloatVecFieldName, entity.FieldTypeFloatVector, WithDim(DefaultDim)),       // float vector
+		GenField(DefaultFloat16VecFieldName, entity.FieldTypeFloat16Vector, WithDim(DefaultDim)),   // float16 vector
+		GenField(DefaultBFloat16VecFieldName, entity.FieldTypeBFloat16Vector, WithDim(DefaultDim)), // bf16 vector
+		GenField(DefaultBinaryVecFieldName, entity.FieldTypeBinaryVector, WithDim(DefaultDim)),     // binary vector
 	}
 	allFields = append(allFields, GenAllArrayFields()...)
 	return allFields
@@ -312,6 +379,20 @@ func GenColumnData(start int, nb int, fieldType entity.FieldType, fieldName stri
 			binaryVectors = append(binaryVectors, vec)
 		}
 		return entity.NewColumnBinaryVector(fieldName, int(opt.dim), binaryVectors)
+	case entity.FieldTypeFloat16Vector:
+		fp16Vectors := make([][]byte, 0, nb)
+		for i := start; i < start+nb; i++ {
+			vec := GenFloat16Vector(opt.dim)
+			fp16Vectors = append(fp16Vectors, vec)
+		}
+		return entity.NewColumnFloat16Vector(fieldName, int(opt.dim), fp16Vectors)
+	case entity.FieldTypeBFloat16Vector:
+		bf16Vectors := make([][]byte, 0, nb)
+		for i := start; i < start+nb; i++ {
+			vec := GenBFloat16Vector(opt.dim)
+			bf16Vectors = append(bf16Vectors, vec)
+		}
+		return entity.NewColumnBFloat16Vector(fieldName, int(opt.dim), bf16Vectors)
 	default:
 		return nil
 	}
@@ -424,6 +505,7 @@ func GenDefaultJSONData(columnName string, start int, nb int) *entity.ColumnJSON
 	jsonValues := make([][]byte, 0, nb)
 	var m interface{}
 	for i := start; i < start+nb; i++ {
+		// kv value
 		if i < (start+nb)/2 {
 			if i%2 == 0 {
 				m = JSONStruct{
@@ -439,6 +521,7 @@ func GenDefaultJSONData(columnName string, start int, nb int) *entity.ColumnJSON
 				}
 			}
 		} else {
+			// int, float, string, list
 			switch i % 4 {
 			case 0:
 				m = i
@@ -492,6 +575,23 @@ func GenAllArrayData(start int, nb int, opts ...GenColumnDataOption) []entity.Co
 	return data
 }
 
+func GenAllVectorsData(start int, nb int, dim int64, opts ...GenColumnDataOption) []entity.Column {
+	opt := &genDataOpt{}
+	for _, o := range opts {
+		o(opt)
+	}
+
+	// prepare data
+	data := []entity.Column{
+		GenColumnData(start, nb, entity.FieldTypeInt64, "int64"),
+		GenColumnData(start, nb, entity.FieldTypeFloatVector, "floatVec", WithVectorDim(dim)),
+		GenColumnData(start, nb, entity.FieldTypeFloat16Vector, "fp16Vec", WithVectorDim(dim)),
+		GenColumnData(start, nb, entity.FieldTypeBFloat16Vector, "bf16Vec", WithVectorDim(dim)),
+		GenColumnData(start, nb, entity.FieldTypeBinaryVector, "binaryVec", WithVectorDim(dim)),
+	}
+	return data
+}
+
 func GenAllFieldsData(start int, nb int, dim int64, opts ...GenColumnDataOption) []entity.Column {
 	opt := &genDataOpt{}
 	for _, o := range opts {
@@ -499,16 +599,19 @@ func GenAllFieldsData(start int, nb int, dim int64, opts ...GenColumnDataOption)
 	}
 	// prepare data
 	data := []entity.Column{
-		GenColumnData(start, nb, entity.FieldTypeInt64, "int64"),
-		GenColumnData(start, nb, entity.FieldTypeBool, "bool"),
-		GenColumnData(start, nb, entity.FieldTypeInt8, "int8"),
-		GenColumnData(start, nb, entity.FieldTypeInt16, "int16"),
-		GenColumnData(start, nb, entity.FieldTypeInt32, "int32"),
-		GenColumnData(start, nb, entity.FieldTypeFloat, "float"),
-		GenColumnData(start, nb, entity.FieldTypeDouble, "double"),
-		GenColumnData(start, nb, entity.FieldTypeVarChar, "varchar"),
-		GenDefaultJSONData("json", start, nb),
-		GenColumnData(start, nb, entity.FieldTypeFloatVector, "floatVec", WithVectorDim(dim)),
+		GenColumnData(start, nb, entity.FieldTypeInt64, DefaultIntFieldName),
+		GenColumnData(start, nb, entity.FieldTypeBool, DefaultBoolFieldName),
+		GenColumnData(start, nb, entity.FieldTypeInt8, DefaultInt8FieldName),
+		GenColumnData(start, nb, entity.FieldTypeInt16, DefaultInt16FieldName),
+		GenColumnData(start, nb, entity.FieldTypeInt32, DefaultInt32FieldName),
+		GenColumnData(start, nb, entity.FieldTypeFloat, DefaultFloatFieldName),
+		GenColumnData(start, nb, entity.FieldTypeDouble, DefaultDoubleFieldName),
+		GenColumnData(start, nb, entity.FieldTypeVarChar, DefaultVarcharFieldName),
+		GenDefaultJSONData(DefaultJSONFieldName, start, nb),
+		GenColumnData(start, nb, entity.FieldTypeFloatVector, DefaultFloatVecFieldName, WithVectorDim(dim)),
+		GenColumnData(start, nb, entity.FieldTypeFloat16Vector, DefaultFloat16VecFieldName, WithVectorDim(dim)),
+		GenColumnData(start, nb, entity.FieldTypeBFloat16Vector, DefaultBFloat16VecFieldName, WithVectorDim(dim)),
+		GenColumnData(start, nb, entity.FieldTypeBinaryVector, DefaultBinaryVecFieldName, WithVectorDim(dim)),
 	}
 	data = append(data, GenAllArrayData(start, nb, opts...)...)
 	return data
@@ -869,6 +972,57 @@ func GenDefaultArrayRows(start int, nb int, dim int64, enableDynamicField bool, 
 	return rows
 }
 
+func GenAllVectorsRows(start int, nb int, dim int64, enableDynamicField bool) []interface{} {
+	rows := make([]interface{}, 0, nb)
+	type BaseRow struct {
+		Int64       int64     `json:"int64" milvus:"name:int64"`
+		FloatVec    []float32 `json:"floatVec" milvus:"name:floatVec"`
+		Float16Vec  []byte    `json:"fp16Vec" milvus:"name:fp16Vec"`
+		BFloat16Vec []byte    `json:"bf16Vec" milvus:"name:bf16Vec"`
+		BinaryVec   []byte    `json:"binaryVec" milvus:"name:binaryVec"`
+	}
+
+	type DynamicRow struct {
+		Int64       int64     `json:"int64" milvus:"name:int64"`
+		FloatVec    []float32 `json:"floatVec" milvus:"name:floatVec"`
+		Float16Vec  []byte    `json:"fp16Vec" milvus:"name:fp16Vec"`
+		BFloat16Vec []byte    `json:"bf16Vec" milvus:"name:bf16Vec"`
+		BinaryVec   []byte    `json:"binaryVec" milvus:"name:binaryVec"`
+		Dynamic     Dynamic   `json:"dynamic" milvus:"name:dynamic"`
+	}
+
+	for i := start; i < start+nb; i++ {
+		baseRow := BaseRow{
+			Int64:       int64(i),
+			FloatVec:    GenFloatVector(dim),
+			Float16Vec:  GenFloat16Vector(dim),
+			BFloat16Vec: GenBFloat16Vector(dim),
+			BinaryVec:   GenBinaryVector(dim),
+		}
+		// json and dynamic field
+		dynamicJSON := Dynamic{
+			Number: int32(i),
+			String: strconv.Itoa(i),
+			Bool:   i%2 == 0,
+			List:   []int64{int64(i), int64(i + 1)},
+		}
+		if enableDynamicField {
+			dynamicRow := DynamicRow{
+				Int64:       baseRow.Int64,
+				FloatVec:    baseRow.FloatVec,
+				Float16Vec:  baseRow.Float16Vec,
+				BFloat16Vec: baseRow.BFloat16Vec,
+				BinaryVec:   baseRow.BinaryVec,
+				Dynamic:     dynamicJSON,
+			}
+			rows = append(rows, dynamicRow)
+		} else {
+			rows = append(rows, &baseRow)
+		}
+	}
+	return rows
+}
+
 func GenAllFieldsRows(start int, nb int, dim int64, enableDynamicField bool, opts ...GenColumnDataOption) []interface{} {
 	rows := make([]interface{}, 0, nb)
 
@@ -884,6 +1038,9 @@ func GenAllFieldsRows(start int, nb int, dim int64, enableDynamicField bool, opt
 		Varchar      string    `json:"varchar" milvus:"name:varchar"`
 		JSON         Dynamic   `json:"json" milvus:"name:json"`
 		FloatVec     []float32 `json:"floatVec" milvus:"name:floatVec"`
+		Float16Vec   []byte    `json:"fp16Vec" milvus:"name:fp16Vec"`
+		BFloat16Vec  []byte    `json:"bf16Vec" milvus:"name:bf16Vec"`
+		BinaryVec    []byte    `json:"binaryVec" milvus:"name:binaryVec"`
 		BoolArray    []bool    `json:"boolArray" milvus:"name:boolArray"`
 		Int8Array    []int8    `json:"int8Array" milvus:"name:int8Array"`
 		Int16Array   []int16   `json:"int16Array" milvus:"name:int16Array"`
@@ -905,6 +1062,9 @@ func GenAllFieldsRows(start int, nb int, dim int64, enableDynamicField bool, opt
 		Varchar      string    `json:"varchar" milvus:"name:varchar"`
 		JSON         Dynamic   `json:"json" milvus:"name:json"`
 		FloatVec     []float32 `json:"floatVec" milvus:"name:floatVec"`
+		Float16Vec   []byte    `json:"fp16Vec" milvus:"name:fp16Vec"`
+		BFloat16Vec  []byte    `json:"bf16Vec" milvus:"name:bf16Vec"`
+		BinaryVec    []byte    `json:"binaryVec" milvus:"name:binaryVec"`
 		BoolArray    []bool    `json:"boolArray" milvus:"name:boolArray"`
 		Int8Array    []int8    `json:"int8Array" milvus:"name:int8Array"`
 		Int16Array   []int16   `json:"int16Array" milvus:"name:int16Array"`
@@ -928,6 +1088,9 @@ func GenAllFieldsRows(start int, nb int, dim int64, enableDynamicField bool, opt
 			Double:       float64(i),
 			Varchar:      strconv.Itoa(i),
 			FloatVec:     GenFloatVector(dim),
+			Float16Vec:   GenFloat16Vector(dim),
+			BFloat16Vec:  GenBFloat16Vector(dim),
+			BinaryVec:    GenBinaryVector(dim),
 			BoolArray:    arrayRow.BoolArray,
 			Int8Array:    arrayRow.Int8Array,
 			Int16Array:   arrayRow.Int16Array,
@@ -956,6 +1119,9 @@ func GenAllFieldsRows(start int, nb int, dim int64, enableDynamicField bool, opt
 				Double:       baseRow.Double,
 				Varchar:      baseRow.Varchar,
 				FloatVec:     baseRow.FloatVec,
+				Float16Vec:   baseRow.Float16Vec,
+				BFloat16Vec:  baseRow.BFloat16Vec,
+				BinaryVec:    baseRow.BinaryVec,
 				BoolArray:    arrayRow.BoolArray,
 				Int8Array:    arrayRow.Int8Array,
 				Int16Array:   arrayRow.Int16Array,
@@ -1067,8 +1233,9 @@ func GenAllFloatIndex() []entity.Index {
 		idxIvfPq, _ := entity.NewIndexIvfPQ(metricType, nlist, 16, 8)
 		idxHnsw, _ := entity.NewIndexHNSW(metricType, 8, 96)
 		idxScann, _ := entity.NewIndexSCANN(metricType, 16, false)
-		idxDiskAnn, _ := entity.NewIndexDISKANN(metricType)
-		allFloatIndex = append(allFloatIndex, idxFlat, idxIvfFlat, idxIvfSq8, idxIvfPq, idxHnsw, idxScann, idxDiskAnn)
+		// TODO waiting for PR https://github.com/milvus-io/milvus/pull/30716
+		//idxDiskAnn, _ := entity.NewIndexDISKANN(metricType)
+		allFloatIndex = append(allFloatIndex, idxFlat, idxIvfFlat, idxIvfSq8, idxIvfPq, idxHnsw, idxScann)
 	}
 	return allFloatIndex
 }
@@ -1091,6 +1258,16 @@ func GenSearchVectors(nq int, dim int64, dataType entity.FieldType) []entity.Vec
 			vector := GenBinaryVector(dim)
 			vectors = append(vectors, entity.BinaryVector(vector))
 		}
+	case entity.FieldTypeFloat16Vector:
+		for i := 0; i < nq; i++ {
+			vector := GenFloat16Vector(dim)
+			vectors = append(vectors, entity.Float16Vector(vector))
+		}
+	case entity.FieldTypeBFloat16Vector:
+		for i := 0; i < nq; i++ {
+			vector := GenBFloat16Vector(dim)
+			vectors = append(vectors, entity.BFloat16Vector(vector))
+		}
 	}
 	return vectors
 }
@@ -1103,13 +1280,14 @@ type InvalidExprStruct struct {
 }
 
 var InvalidExpressions = []InvalidExprStruct{
-	{Expr: "id in [0]", ErrNil: true, ErrMsg: "fieldName(id) not found"},                  // not exist field but no error
-	{Expr: "int64 in not [0]", ErrNil: false, ErrMsg: "cannot parse expression"},          // wrong term expr keyword
-	{Expr: "int64 < floatVec", ErrNil: false, ErrMsg: "not supported"},                    // unsupported compare field
-	{Expr: "floatVec in [0]", ErrNil: false, ErrMsg: "cannot be casted to FloatVector"},   // value and field type mismatch
-	{Expr: fmt.Sprintf("%s == 1", DefaultJSONFieldName), ErrNil: true, ErrMsg: ""},        // hist empty
-	{Expr: fmt.Sprintf("%s like 'a%%' ", DefaultJSONFieldName), ErrNil: true, ErrMsg: ""}, // hist empty
-	{Expr: fmt.Sprintf("%s > 1", DefaultDynamicFieldName), ErrNil: true, ErrMsg: ""},      // hits empty
+	{Expr: "id in [0]", ErrNil: true, ErrMsg: "fieldName(id) not found"},                                          // not exist field but no error
+	{Expr: "int64 in not [0]", ErrNil: false, ErrMsg: "cannot parse expression"},                                  // wrong term expr keyword
+	{Expr: "int64 < floatVec", ErrNil: false, ErrMsg: "not supported"},                                            // unsupported compare field
+	{Expr: "floatVec in [0]", ErrNil: false, ErrMsg: "cannot be casted to FloatVector"},                           // value and field type mismatch
+	{Expr: fmt.Sprintf("%s == 1", DefaultJSONFieldName), ErrNil: true, ErrMsg: ""},                                // hist empty
+	{Expr: fmt.Sprintf("%s like 'a%%' ", DefaultJSONFieldName), ErrNil: true, ErrMsg: ""},                         // hist empty
+	{Expr: fmt.Sprintf("%s like `a%%` ", DefaultJSONFieldName), ErrNil: false, ErrMsg: "cannot parse expression"}, // ``
+	{Expr: fmt.Sprintf("%s > 1", DefaultDynamicFieldName), ErrNil: true, ErrMsg: ""},                              // hits empty
 	{Expr: fmt.Sprintf("%s[\"dynamicList\"] == [2, 3]", DefaultDynamicFieldName), ErrNil: true, ErrMsg: ""},
 	{Expr: fmt.Sprintf("%s['a'] == [2, 3]", DefaultJSONFieldName), ErrNil: true, ErrMsg: ""},      // json field not exist
 	{Expr: fmt.Sprintf("%s['number'] == [2, 3]", DefaultJSONFieldName), ErrNil: true, ErrMsg: ""}, // field exist but type not match

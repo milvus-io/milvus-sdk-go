@@ -133,7 +133,7 @@ func TestUpsertVarcharPk(t *testing.T) {
 		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
 
 	idx, _ := entity.NewIndexBinIvfFlat(entity.JACCARD, 16)
-	ip := IndexParams{BuildIndex: true, Index: idx, FieldName: common.DefaultBinaryVecFieldName, async: false}
+	ip := []IndexParams{{BuildIndex: true, Index: idx, FieldName: common.DefaultBinaryVecFieldName, async: false}}
 	collName := prepareCollection(ctx, t, mc, cp, WithIndexParams(ip), WithCreateOption(client.WithConsistencyLevel(entity.ClStrong)))
 
 	upsertNb := 10
@@ -243,7 +243,7 @@ func TestUpsertInvalidColumnData(t *testing.T) {
 	dp := DataParams{DoInsert: true, CollectionFieldsType: Int64FloatVecJSON, start: 0, nb: 200,
 		dim: common.DefaultDim, EnableDynamicField: false}
 	collName := prepareCollection(ctx, t, mc, cp, WithDataParams(dp),
-		WithIndexParams(IndexParams{BuildIndex: false}),
+		WithIndexParams([]IndexParams{{BuildIndex: false}}),
 		WithLoadParams(LoadParams{DoLoad: false}), WithCreateOption(client.WithConsistencyLevel(entity.ClStrong)))
 
 	upsertNb := 10
@@ -405,7 +405,7 @@ func TestUpsertWithoutLoading(t *testing.T) {
 		dim: common.DefaultDim, EnableDynamicField: true}
 	collName := prepareCollection(ctx, t, mc, cp, WithDataParams(dp),
 		WithFlushParams(FlushParams{DoFlush: false}),
-		WithIndexParams(IndexParams{BuildIndex: false}),
+		WithIndexParams([]IndexParams{{BuildIndex: false}}),
 		WithLoadParams(LoadParams{DoLoad: false}), WithCreateOption(client.WithConsistencyLevel(entity.ClStrong)))
 
 	// upsert

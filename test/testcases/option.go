@@ -65,7 +65,7 @@ type LoadParams struct {
 type ClientParamsOption struct {
 	DataParams  DataParams
 	FlushParams FlushParams
-	IndexParams IndexParams
+	IndexParams []IndexParams
 	LoadParams  LoadParams
 	CreateOpts  client.CreateCollectionOption
 	IndexOpts   client.IndexOption
@@ -86,9 +86,9 @@ func WithFlushParams(fp FlushParams) PrepareCollectionOption {
 	}
 }
 
-func WithIndexParams(ip IndexParams) PrepareCollectionOption {
+func WithIndexParams(ips []IndexParams) PrepareCollectionOption {
 	return func(opt *ClientParamsOption) {
-		opt.IndexParams = ip
+		opt.IndexParams = ips
 	}
 }
 

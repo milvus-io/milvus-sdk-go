@@ -139,8 +139,8 @@ func main() {
 
 	result, err = c.HybridSearch(ctx, collectionName, nil, topK, []string{keyCol, embeddingCol1, embeddingCol2},
 		client.NewRRFReranker(), []*client.ANNSearchRequest{
-			client.NewANNSearchRequest(embeddingCol1, entity.L2, vec2search1, sp, topK),
-			client.NewANNSearchRequest(embeddingCol2, entity.L2, vec2search2, sp, topK),
+			client.NewANNSearchRequest(embeddingCol1, entity.L2, "", vec2search1, sp, topK),
+			client.NewANNSearchRequest(embeddingCol2, entity.L2, "", vec2search2, sp, topK),
 		})
 	if err != nil {
 		log.Fatalf("failed to search collection, err: %v", err)
