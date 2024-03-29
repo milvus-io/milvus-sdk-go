@@ -511,7 +511,7 @@ func vector2Placeholder(vectors []entity.Vector) *commonpb.PlaceholderValue {
 	case entity.BFloat16Vector:
 		placeHolderType = commonpb.PlaceholderType_BFloat16Vector
 	case entity.Float16Vector:
-		placeHolderType = commonpb.PlaceholderType_FloatVector
+		placeHolderType = commonpb.PlaceholderType_Float16Vector
 	case entity.SparseEmbedding:
 		placeHolderType = commonpb.PlaceholderType_SparseFloatVector
 	}
