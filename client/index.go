@@ -192,6 +192,9 @@ func (c *GrpcClient) DescribeIndex(ctx context.Context, collName string, fieldNa
 
 	indexes := make([]entity.Index, 0, len(idxDesc))
 	for _, info := range idxDesc {
+		if fieldName != "" && info.GetFieldName() != fieldName {
+			continue
+		}
 		params := entity.KvPairsMap(info.Params)
 		it := params["index_type"] // TODO change to const
 		idx := entity.NewGenericIndex(
