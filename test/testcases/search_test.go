@@ -604,7 +604,6 @@ func TestSearchInvalidVectorField(t *testing.T) {
 }
 
 // test search with invalid vectors
-// TODO Issue https://github.com/milvus-io/milvus-sdk-go/issues/377
 func TestSearchInvalidVectors(t *testing.T) {
 	t.Parallel()
 	ctx := createContext(t, time.Second*common.DefaultTimeout*2)
@@ -628,7 +627,7 @@ func TestSearchInvalidVectors(t *testing.T) {
 		{vectors: common.GenSearchVectors(common.DefaultNq, 64, entity.FieldTypeFloatVector), errMsg: "vector dimension mismatch"},
 
 		// vector type not match
-		{vectors: common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeBinaryVector), errMsg: "vector dimension mismatch"},
+		{vectors: common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeBinaryVector), errMsg: "vector type must be the same"},
 
 		// empty vectors
 		{vectors: []entity.Vector{}, errMsg: "nq [0] is invalid"},
@@ -1375,6 +1374,7 @@ func TestRangeSearchScannIPCosine(t *testing.T) {
 
 // test range search with scann index and entity.HAMMING, entity.JACCARD metric type
 func TestRangeSearchScannBinary(t *testing.T) {
+	t.Skip("https://github.com/milvus-io/milvus-sdk-go/issues/693")
 	t.Parallel()
 	for _, metricType := range common.SupportBinIvfFlatMetricType {
 		ctx := createContext(t, time.Second*common.DefaultTimeout)

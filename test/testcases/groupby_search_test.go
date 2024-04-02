@@ -193,7 +193,7 @@ func TestSearchGroupByBinaryDefault(t *testing.T) {
 			for _, groupByField := range supportedGroupByFields {
 				_, err := mc.Search(ctx, collName, []string{}, "", []string{common.DefaultVarcharFieldName, groupByField}, queryVec,
 					common.DefaultBinaryVecFieldName, metricType, common.DefaultTopK, sp, client.WithGroupByField(groupByField))
-				common.CheckErr(t, err, false, "Unsupported dataType for chunk brute force iterator:VECTOR_BINARY")
+				common.CheckErr(t, err, false, "not support search_group_by operation based on binary vector column")
 			}
 		}
 	}
@@ -237,7 +237,7 @@ func TestSearchGroupByBinaryGrowing(t *testing.T) {
 			_, err := mc.Search(ctx, collName, []string{}, "", []string{common.DefaultVarcharFieldName,
 				groupByField}, queryVec, common.DefaultBinaryVecFieldName, metricType, common.DefaultTopK, sp,
 				client.WithGroupByField(groupByField), client.WithSearchQueryConsistencyLevel(entity.ClStrong))
-			common.CheckErr(t, err, false, "Unsupported dataType for chunk brute force iterator:VECTOR_BINARY")
+			common.CheckErr(t, err, false, "not support search_group_by operation based on binary vector column")
 		}
 	}
 }
@@ -335,8 +335,7 @@ func TestSearchGroupByUnsupportedIndex(t *testing.T) {
 		_, err := mc.Search(ctx, collName, []string{}, "", []string{common.DefaultIntFieldName, common.DefaultVarcharFieldName},
 			queryVec, common.DefaultFloatVecFieldName, entity.MetricType(idx.Params()["metrics_type"]),
 			common.DefaultTopK, sp, client.WithGroupByField(common.DefaultVarcharFieldName))
-		common.CheckErr(t, err, false, "trying to groupBy on unsupported index type will fail, "+
-			"currently only support ivf-flat, ivf_cc and HNSW")
+		common.CheckErr(t, err, false, "doesn't support search_group_by")
 	}
 }
 

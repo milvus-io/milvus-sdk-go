@@ -36,7 +36,9 @@ jobs:
       id: extracter
       working-directory: ci/scripts
       run: |
-        echo "IMAGE_TAG=$(./docker_image_find_tag.sh -n ${IMAGE_REPO} -t ${TAG_PREFIX}latest -f ${TAG_PREFIX} -F -L -q)" >> $GITHUB_ENV
+        url="https://registry.hub.docker.com/v2/repositories/$IMAGE_REPO/tags?page=1&name=$TAG_PREFIX"
+        echo "IMAGE_TAG=$(curl -s $url | jq -r '."results"[]["name"] | select(test("amd64$"))' | head -n 1)" >> $GITHUB_ENV
+#        echo "IMAGE_TAG=$(./docker_image_find_tag.sh -n ${IMAGE_REPO} -t ${TAG_PREFIX}latest -f ${TAG_PREFIX} -F -L -q)" >> $GITHUB_ENV
         # echo "::set-output name=tag::$(./docker_image_find_tag.sh -n ${IMAGE_REPO}/milvus-dev -t ${TAG_PREFIX}latest -f ${TAG_PREFIX} -F -L -q)"
 
     - name: Create cluster
@@ -94,7 +96,9 @@ jobs:
       id: extracter
       working-directory: ci/scripts
       run: |
-        echo "IMAGE_TAG=$(./docker_image_find_tag.sh -n ${IMAGE_REPO} -t ${TAG_PREFIX}latest -f ${TAG_PREFIX} -F -L -q)" >> $GITHUB_ENV
+        url="https://registry.hub.docker.com/v2/repositories/$IMAGE_REPO/tags?page=1&name=$TAG_PREFIX"
+        echo "IMAGE_TAG=$(curl -s $url | jq -r '."results"[]["name"] | select(test("amd64$"))' | head -n 1)" >> $GITHUB_ENV
+#        echo "IMAGE_TAG=$(./docker_image_find_tag.sh -n ${IMAGE_REPO} -t ${TAG_PREFIX}latest -f ${TAG_PREFIX} -F -L -q)" >> $GITHUB_ENV
         # echo "::set-output name=tag::$(./docker_image_find_tag.sh -n ${IMAGE_REPO}/milvus-dev -t ${TAG_PREFIX}latest -f ${TAG_PREFIX} -F -L -q)"
 
     - name: Create cluster
@@ -152,7 +156,9 @@ jobs:
       id: extracter
       working-directory: ci/scripts
       run: |
-        echo "IMAGE_TAG=$(./docker_image_find_tag.sh -n ${IMAGE_REPO} -t ${TAG_PREFIX}latest -f ${TAG_PREFIX} -F -L -q)" >> $GITHUB_ENV
+        url="https://registry.hub.docker.com/v2/repositories/$IMAGE_REPO/tags?page=1&name=$TAG_PREFIX"
+        echo "IMAGE_TAG=$(curl -s $url | jq -r '."results"[]["name"] | select(test("amd64$"))' | head -n 1)" >> $GITHUB_ENV
+#        echo "IMAGE_TAG=$(./docker_image_find_tag.sh -n ${IMAGE_REPO} -t ${TAG_PREFIX}latest -f ${TAG_PREFIX} -F -L -q)" >> $GITHUB_ENV
         # echo "::set-output name=tag::$(./docker_image_find_tag.sh -n ${IMAGE_REPO}/milvus-dev -t ${TAG_PREFIX}latest -f ${TAG_PREFIX} -F -L -q)"
 
     - name: Create cluster
