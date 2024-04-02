@@ -12,8 +12,14 @@ func (i *indexScalar) Params() map[string]string {
 
 func NewScalarIndex() Index {
 	return &indexScalar{
+		baseIndex: baseIndex{},
+	}
+}
+
+func NewScalarIndexWithType(indexType IndexType) Index {
+	return &indexScalar{
 		baseIndex: baseIndex{
-			it: Scalar,
+			it: indexType,
 		},
 	}
 }

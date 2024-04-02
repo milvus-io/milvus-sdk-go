@@ -44,7 +44,12 @@ const (
 	GPUCagra      IndexType = "GPU_CAGRA"
 	GPUBruteForce IndexType = "GPU_BRUTE_FORCE"
 
-	Scalar IndexType = "SCALAR"
+	// DEPRECATED
+	Scalar IndexType = ""
+
+	Trie     IndexType = "Trie"
+	Sorted   IndexType = "STL_SORT"
+	Inverted IndexType = "INVERTED"
 )
 
 // Metric Constants
