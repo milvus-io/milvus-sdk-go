@@ -20,11 +20,12 @@ type ANNSearchRequest struct {
 	limit       int
 }
 
-func NewANNSearchRequest(fieldName string, metricsType entity.MetricType, vectors []entity.Vector, searchParam entity.SearchParam, limit int, options ...SearchQueryOptionFunc) *ANNSearchRequest {
+func NewANNSearchRequest(fieldName string, metricsType entity.MetricType, expr string, vectors []entity.Vector, searchParam entity.SearchParam, limit int, options ...SearchQueryOptionFunc) *ANNSearchRequest {
 	return &ANNSearchRequest{
 		fieldName:   fieldName,
 		vectors:     vectors,
 		metricType:  metricsType,
+		expr:        expr,
 		searchParam: searchParam,
 		limit:       limit,
 		options:     options,
