@@ -14,4 +14,10 @@ func TestScalarIndex(t *testing.T) {
 	idxWithType := NewScalarIndexWithType(Sorted)
 
 	assert.EqualValues(t, Sorted, idxWithType.IndexType())
+	assert.EqualValues(t, Sorted, idxWithType.Params()[tIndexType])
+
+	idxWithType = NewScalarIndexWithType(Trie)
+
+	assert.EqualValues(t, Trie, idxWithType.IndexType())
+	assert.EqualValues(t, Trie, idxWithType.Params()[tIndexType])
 }

@@ -7,7 +7,9 @@ type indexScalar struct {
 }
 
 func (i *indexScalar) Params() map[string]string {
-	return map[string]string{}
+	return map[string]string{
+		tIndexType: string(i.baseIndex.it),
+	}
 }
 
 func NewScalarIndex() Index {
