@@ -10,6 +10,8 @@ func TestScalarIndex(t *testing.T) {
 	oldScalarIdx := NewScalarIndex()
 
 	assert.EqualValues(t, "", oldScalarIdx.IndexType(), "use AUTO index when index type not provided")
+	_, has := oldScalarIdx.Params()[tIndexType]
+	assert.False(t, has)
 
 	idxWithType := NewScalarIndexWithType(Sorted)
 
