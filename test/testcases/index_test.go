@@ -104,7 +104,6 @@ func TestCreateIndexMultiVectors(t *testing.T) {
 }
 
 func TestDescribeIndexMultiVectors(t *testing.T) {
-	t.Skip("https://github.com/milvus-io/milvus-sdk-go/issues/689")
 	ctx := createContext(t, time.Second*common.DefaultTimeout*2)
 	// connect
 	mc := createMilvusClient(ctx, t)
@@ -119,10 +118,16 @@ func TestDescribeIndexMultiVectors(t *testing.T) {
 	ips := GenDefaultIndexParamsForAllVectors()
 
 	collName := prepareCollection(ctx, t, mc, cp, WithDataParams(dp), WithIndexParams(ips), WithCreateOption(client.WithConsistencyLevel(entity.ClStrong)))
-	indexes, err := mc.DescribeIndex(ctx, collName, common.DefaultFloatVecFieldName)
-	common.CheckErr(t, err, true)
-	for _, idx := range indexes {
-		log.Println(idx.Params(), idx.IndexType())
+	for _, fieldName := range common.AllVectorsFieldsName {
+		indexes, err := mc.DescribeIndex(ctx, collName, fieldName)
+		common.CheckErr(t, err, true)
+		require.Len(t, indexes, 1)
+		for _, ip := range ips {
+			if ip.FieldName == fieldName {
+				expIndex := entity.NewGenericIndex(fieldName, ip.Index.IndexType(), ip.Index.Params())
+				common.CheckIndexResult(t, indexes, expIndex)
+			}
+		}
 	}
 }
 
@@ -150,7 +155,6 @@ func TestCreateIndexDup(t *testing.T) {
 
 // test create scalar index on all scalar field
 func TestCreateScalarIndex(t *testing.T) {
-	t.Skip("https://github.com/milvus-io/milvus-sdk-go/issues/671")
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	//connect
 	mc := createMilvusClient(ctx, t)
@@ -168,11 +172,19 @@ func TestCreateScalarIndex(t *testing.T) {
 
 	// create index for all vector fields
 	indexHnsw, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
-	for _, field := range common.AllVectorsFieldsName {
-		err := mc.CreateIndex(ctx, collName, field, indexHnsw, false)
+	indexBinary, _ := entity.NewIndexBinIvfFlat(entity.JACCARD, 64)
+	var expIndex entity.Index
+	var err error
+	for _, fieldName := range common.AllVectorsFieldsName {
+		if fieldName == common.DefaultBinaryVecFieldName {
+			err = mc.CreateIndex(ctx, collName, fieldName, indexBinary, false)
+			expIndex = entity.NewGenericIndex(fieldName, entity.BinIvfFlat, indexBinary.Params())
+		} else {
+			err = mc.CreateIndex(ctx, collName, fieldName, indexHnsw, false)
+			expIndex = entity.NewGenericIndex(fieldName, entity.HNSW, indexHnsw.Params())
+		}
 		common.CheckErr(t, err, true)
-		indexes, _ := mc.DescribeIndex(ctx, collName, field)
-		expIndex := entity.NewGenericIndex(field, entity.HNSW, indexHnsw.Params())
+		indexes, _ := mc.DescribeIndex(ctx, collName, fieldName)
 		common.CheckIndexResult(t, indexes, expIndex)
 	}
 
@@ -189,11 +201,182 @@ func TestCreateScalarIndex(t *testing.T) {
 			common.CheckIndexResult(t, indexes, expIndex)
 		}
 	}
+	// load -> search and output all fields
+	err = mc.LoadCollection(ctx, collName, false)
+	common.CheckErr(t, err, true)
+	queryVec := common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeFloatVector)
+	sp, _ := entity.NewIndexHNSWSearchParam(74)
+	searchRes, _ := mc.Search(ctx, collName, []string{}, "", []string{"*"}, queryVec, common.DefaultFloatVecFieldName,
+		entity.L2, common.DefaultTopK, sp)
+	common.CheckOutputFields(t, searchRes[0].Fields, common.GetAllFieldsName(true, false))
+}
+
+// Trie scalar index only supported on varchar
+func TestCreateTrieScalarIndexUnsupportedDataType(t *testing.T) {
+	ctx := createContext(t, time.Second*common.DefaultTimeout*2)
+	// connect
+	mc := createMilvusClient(ctx, t)
+
+	// create -> insert [0, 3000) -> flush -> index -> load
+	cp := CollectionParams{CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: false,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+
+	dp := DataParams{DoInsert: true, CollectionFieldsType: AllFields, start: 0, nb: common.DefaultNb,
+		dim: common.DefaultDim, EnableDynamicField: false}
+
+	// index params
+	ips := []IndexParams{{BuildIndex: false}}
+	lp := LoadParams{DoLoad: false}
+	collName := prepareCollection(ctx, t, mc, cp, WithDataParams(dp), WithIndexParams(ips), WithLoadParams(lp),
+		WithCreateOption(client.WithConsistencyLevel(entity.ClStrong)))
+
+	// create Trie scalar index on varchar field
+	coll, _ := mc.DescribeCollection(ctx, collName)
+	idx := entity.NewScalarIndexWithType(entity.Trie)
+	for _, field := range coll.Schema.Fields {
+		if supportScalarIndexFieldType(field.DataType) {
+			if field.DataType == entity.FieldTypeVarChar {
+				err := mc.CreateIndex(ctx, collName, field.Name, idx, false, client.WithIndexName(field.Name))
+				common.CheckErr(t, err, true)
+
+				// describe index
+				indexes, _ := mc.DescribeIndex(ctx, collName, field.Name)
+				expIndex := entity.NewGenericIndex(field.Name, entity.Trie, idx.Params())
+				common.CheckIndexResult(t, indexes, expIndex)
+			} else {
+				err := mc.CreateIndex(ctx, collName, field.Name, idx, false, client.WithIndexName(field.Name))
+				common.CheckErr(t, err, false, "TRIE are only supported on varchar field")
+			}
+		}
+	}
+}
+
+// Sort scalar index only supported on numeric field
+func TestCreateSortScalarIndexUnsupportedDataType(t *testing.T) {
+	ctx := createContext(t, time.Second*common.DefaultTimeout*2)
+	// connect
+	mc := createMilvusClient(ctx, t)
+
+	// create -> insert [0, 3000) -> flush -> index -> load
+	cp := CollectionParams{CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: false,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+
+	dp := DataParams{DoInsert: true, CollectionFieldsType: AllFields, start: 0, nb: common.DefaultNb,
+		dim: common.DefaultDim, EnableDynamicField: false}
+
+	// index params
+	ips := []IndexParams{{BuildIndex: false}}
+	lp := LoadParams{DoLoad: false}
+	collName := prepareCollection(ctx, t, mc, cp, WithDataParams(dp), WithIndexParams(ips), WithLoadParams(lp),
+		WithCreateOption(client.WithConsistencyLevel(entity.ClStrong)))
+
+	// create Trie scalar index on varchar field
+	coll, _ := mc.DescribeCollection(ctx, collName)
+	idx := entity.NewScalarIndexWithType(entity.Sorted)
+	for _, field := range coll.Schema.Fields {
+		if supportScalarIndexFieldType(field.DataType) {
+			if field.DataType == entity.FieldTypeVarChar || field.DataType == entity.FieldTypeBool {
+				err := mc.CreateIndex(ctx, collName, field.Name, idx, false, client.WithIndexName(field.Name))
+				common.CheckErr(t, err, false, "STL_SORT are only supported on numeric field")
+			} else {
+				log.Println(field.Name, field.DataType)
+				err := mc.CreateIndex(ctx, collName, field.Name, idx, false, client.WithIndexName(field.Name))
+				common.CheckErr(t, err, true)
+				// describe index
+				indexes, _ := mc.DescribeIndex(ctx, collName, field.Name)
+				expIndex := entity.NewGenericIndex(field.Name, entity.Sorted, idx.Params())
+				common.CheckIndexResult(t, indexes, expIndex)
+			}
+		}
+	}
+}
+
+// create Inverted index for all scalar fields
+func TestCreateInvertedScalarIndex(t *testing.T) {
+	ctx := createContext(t, time.Second*common.DefaultTimeout*2)
+	// connect
+	mc := createMilvusClient(ctx, t)
+
+	// create -> insert [0, 3000) -> flush -> index -> load
+	cp := CollectionParams{CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: false,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+
+	dp := DataParams{DoInsert: true, CollectionFieldsType: AllFields, start: 0, nb: common.DefaultNb,
+		dim: common.DefaultDim, EnableDynamicField: false}
+
+	// index params
+	ips := GenDefaultIndexParamsForAllVectors()
+	lp := LoadParams{DoLoad: false}
+	collName := prepareCollection(ctx, t, mc, cp, WithDataParams(dp), WithIndexParams(ips), WithLoadParams(lp),
+		WithCreateOption(client.WithConsistencyLevel(entity.ClStrong)))
+
+	// create Trie scalar index on varchar field
+	coll, _ := mc.DescribeCollection(ctx, collName)
+	idx := entity.NewScalarIndexWithType(entity.Inverted)
+	for _, field := range coll.Schema.Fields {
+		if supportScalarIndexFieldType(field.DataType) {
+			err := mc.CreateIndex(ctx, collName, field.Name, idx, false, client.WithIndexName(field.Name))
+			common.CheckErr(t, err, true)
+
+			// describe index
+			indexes, _ := mc.DescribeIndex(ctx, collName, field.Name)
+			require.Len(t, indexes, 1)
+			log.Println(indexes[0].Name(), indexes[0].IndexType(), indexes[0].Params())
+			expIndex := entity.NewGenericIndex(field.Name, entity.Inverted, idx.Params())
+			common.CheckIndexResult(t, indexes, expIndex)
+		}
+	}
+	// load -> search and output all fields
+	err := mc.LoadCollection(ctx, collName, false)
+	common.CheckErr(t, err, true)
+	queryVec := common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeFloatVector)
+	sp, _ := entity.NewIndexHNSWSearchParam(74)
+	expr := fmt.Sprintf("%s > 10", common.DefaultIntFieldName)
+	searchRes, _ := mc.Search(ctx, collName, []string{}, expr, []string{"*"}, queryVec, common.DefaultFloatVecFieldName,
+		entity.L2, common.DefaultTopK, sp)
+	common.CheckOutputFields(t, searchRes[0].Fields, common.GetAllFieldsName(false, false))
+}
+
+// test create index on vector field
+func TestCreateScalarIndexVectorField(t *testing.T) {
+	t.Skip("https://github.com/milvus-io/milvus-sdk-go/issues/701")
+	ctx := createContext(t, time.Second*common.DefaultTimeout*2)
+	// connect
+	mc := createMilvusClient(ctx, t)
+
+	// create -> insert [0, 3000) -> flush -> index -> load
+	cp := CollectionParams{CollectionFieldsType: AllVectors, AutoID: false, EnableDynamicField: false,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+
+	dp := DataParams{DoInsert: true, CollectionFieldsType: AllVectors, start: 0, nb: common.DefaultNb,
+		dim: common.DefaultDim, EnableDynamicField: false}
+
+	// no index
+	ips := []IndexParams{{BuildIndex: false}}
+	lp := LoadParams{DoLoad: false}
+	collName := prepareCollection(ctx, t, mc, cp, WithDataParams(dp), WithIndexParams(ips), WithLoadParams(lp),
+		WithCreateOption(client.WithConsistencyLevel(entity.ClStrong)))
+
+	for _, ip := range []entity.IndexType{entity.Sorted, entity.Trie, entity.Inverted} {
+		idx := entity.NewScalarIndexWithType(ip)
+		idxDefault := entity.NewScalarIndex()
+		for _, fieldName := range common.AllVectorsFieldsName {
+			err := mc.CreateIndex(ctx, collName, fieldName, idx, false)
+			common.CheckErr(t, err, false, "STL_SORT are only supported on numeric field",
+				"TRIE are only supported on varchar field", "INVERTED are not supported on")
+
+			// create default scalar index on vector field
+			// TODO ???
+			err = mc.CreateIndex(ctx, collName, fieldName, idxDefault, false)
+			common.CheckErr(t, err, true)
+			descIndex, _ := mc.DescribeIndex(ctx, collName, fieldName)
+			log.Println(descIndex[0].IndexType(), descIndex[0].Params())
+		}
+	}
 }
 
 // test create scalar index with vector field name
 func TestCreateIndexWithOtherFieldName(t *testing.T) {
-	t.Skip("index type not pased")
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	//connect
 	mc := createMilvusClient(ctx, t)
@@ -211,46 +394,46 @@ func TestCreateIndexWithOtherFieldName(t *testing.T) {
 	common.CheckIndexResult(t, indexes, expIndex)
 
 	// create index in binary field with default name
-	err = mc.CreateIndex(ctx, collName, common.DefaultBinaryVecFieldName, idx, false)
+	idxBinary, _ := entity.NewIndexBinFlat(entity.JACCARD, 64)
+	err = mc.CreateIndex(ctx, collName, common.DefaultBinaryVecFieldName, idxBinary, false)
 	common.CheckErr(t, err, false, "CreateIndex failed: at most one distinct index is allowed per field")
 }
 
 func TestCreateIndexJsonField(t *testing.T) {
-	t.Skip("index type not passed")
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect
 	mc := createMilvusClient(ctx, t)
 
 	// create collection
-	cp := CollectionParams{
-		CollectionFieldsType: Int64FloatVecJSON,
-		AutoID:               false,
-		EnableDynamicField:   false,
-		ShardsNum:            common.DefaultShards,
-		Dim:                  common.DefaultDim,
-	}
+	cp := CollectionParams{CollectionFieldsType: Int64FloatVecJSON, AutoID: false, EnableDynamicField: false,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
 	collName := createCollection(ctx, t, mc, cp)
 
 	// insert
-	dp := DataParams{
-		CollectionName:       collName,
-		PartitionName:        "",
-		CollectionFieldsType: Int64FloatVecJSON,
-		start:                0,
-		nb:                   common.DefaultNb,
-		dim:                  common.DefaultDim,
-		EnableDynamicField:   false,
-	}
+	dp := DataParams{CollectionName: collName, CollectionFieldsType: Int64FloatVecJSON, start: 0, nb: common.DefaultNb,
+		dim: common.DefaultDim, EnableDynamicField: false}
 	_, _ = insertData(ctx, t, mc, dp)
 
 	// create vector index on json field
-	idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
+	idx, _ := entity.NewIndexSCANN(entity.L2, 8, false)
 	err := mc.CreateIndex(ctx, collName, common.DefaultJSONFieldName, idx, false, client.WithIndexName("json_index"))
-	common.CheckErr(t, err, false, "only support float vector or binary vector")
+	common.CheckErr(t, err, false, "data type should be FloatVector, Float16Vector or BFloat16Vector")
 
 	//create scalar index on json field
-	err = mc.CreateIndex(ctx, collName, common.DefaultJSONFieldName, entity.NewScalarIndexWithType(entity.Sorted), false, client.WithIndexName("json_index"))
-	common.CheckErr(t, err, false, "create auto index on JSON field is not supported")
+	type scalarIndexError struct {
+		indexType entity.IndexType
+		errMsg    string
+	}
+	inxError := []scalarIndexError{
+		{entity.Inverted, "INVERTED are not supported on JSON field"},
+		{entity.Sorted, "STL_SORT are only supported on numeric field"},
+		{entity.Trie, "TRIE are only supported on varchar field"},
+		{entity.Scalar, "create auto index on JSON field is not supported"},
+	}
+	for _, ip := range inxError {
+		err := mc.CreateIndex(ctx, collName, common.DefaultJSONFieldName, entity.NewScalarIndexWithType(ip.indexType), false, client.WithIndexName("json_index"))
+		common.CheckErr(t, err, false, ip.errMsg)
+	}
 }
 
 func TestCreateIndexArrayField(t *testing.T) {
@@ -272,18 +455,31 @@ func TestCreateIndexArrayField(t *testing.T) {
 	errFlush := mc.Flush(ctx, collName, false)
 	common.CheckErr(t, errFlush, true)
 
+	type scalarIndexError struct {
+		indexType entity.IndexType
+		errMsg    string
+	}
+	inxError := []scalarIndexError{
+		{entity.Inverted, "INVERTED are not supported on Array field"},
+		{entity.Sorted, "STL_SORT are only supported on numeric field"},
+		{entity.Trie, "TRIE are only supported on varchar field"},
+		{entity.Scalar, "create auto index on Array field is not supported"},
+	}
+
 	// create scalar and vector index on array field
-	scalarIdx := entity.NewScalarIndex()
 	vectorIdx, _ := entity.NewIndexSCANN(entity.L2, 10, false)
-	collection, _ := mc.DescribeCollection(ctx, collName)
-	for _, field := range collection.Schema.Fields {
-		if field.DataType == entity.FieldTypeArray {
-			// create scalar index
-			err := mc.CreateIndex(ctx, collName, field.Name, scalarIdx, false, client.WithIndexName("scalar_index"))
-			common.CheckErr(t, err, false, "create auto index on Array field is not supported")
-			// create vector index
-			err1 := mc.CreateIndex(ctx, collName, field.Name, vectorIdx, false, client.WithIndexName("vector_index"))
-			common.CheckErr(t, err1, false, "data type should be FloatVector, Float16Vector or BFloat16Vector")
+	for _, ip := range inxError {
+		scalarIdx := entity.NewScalarIndexWithType(ip.indexType)
+		collection, _ := mc.DescribeCollection(ctx, collName)
+		for _, field := range collection.Schema.Fields {
+			if field.DataType == entity.FieldTypeArray {
+				// create scalar index
+				err := mc.CreateIndex(ctx, collName, field.Name, scalarIdx, false, client.WithIndexName("scalar_index"))
+				common.CheckErr(t, err, false, ip.errMsg)
+				// create vector index
+				err1 := mc.CreateIndex(ctx, collName, field.Name, vectorIdx, false, client.WithIndexName("vector_index"))
+				common.CheckErr(t, err1, false, "data type should be FloatVector, Float16Vector or BFloat16Vector")
+			}
 		}
 	}
 }
@@ -396,25 +592,84 @@ func TestCreateIndexWithoutName(t *testing.T) {
 // test create auto index
 func TestCreateIndexWithoutIndexTypeParams(t *testing.T) {
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
-	// connect
+	//connect
 	mc := createMilvusClient(ctx, t)
 
-	// create default collection with flush data
-	collName, _ := createCollectionWithDataIndex(ctx, t, mc, false, false)
+	// create collection with all datatype
+	cp := CollectionParams{CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: true,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+	collName := createCollection(ctx, t, mc, cp)
 
-	// create index
-	idx := entity.NewGenericIndex("", "", nil)
-	err := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false)
+	// insert
+	dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: AllFields,
+		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
+	_, _ = insertData(ctx, t, mc, dp)
+	err := mc.Flush(ctx, collName, false)
 	common.CheckErr(t, err, true)
 
-	// describe index
-	indexes, _ := mc.DescribeIndex(ctx, collName, common.DefaultFloatVecFieldName)
-	expParams := map[string]string{
-		"metric_type": string(entity.IP),
-		"index_type":  string(entity.AUTOINDEX),
+	for _, fieldName := range common.AllVectorsFieldsName {
+		idx, _ := entity.NewIndexAUTOINDEX(entity.COSINE)
+		if fieldName == common.DefaultBinaryVecFieldName {
+			err = mc.CreateIndex(ctx, collName, fieldName, idx, false)
+			common.CheckErr(t, err, false, "HNSW only support float vector data type")
+			// create binary index
+			idxBinary, _ := entity.NewIndexBinIvfFlat(entity.JACCARD, 64)
+			err = mc.CreateIndex(ctx, collName, fieldName, idxBinary, false)
+			common.CheckErr(t, err, true)
+		} else {
+			// create index
+			err = mc.CreateIndex(ctx, collName, fieldName, idx, false)
+			common.CheckErr(t, err, true)
+
+			// describe index
+			indexes, _ := mc.DescribeIndex(ctx, collName, fieldName)
+			expParams := map[string]string{
+				"metric_type": string(entity.COSINE),
+				"index_type":  string(entity.AUTOINDEX),
+			}
+			expIndex := entity.NewGenericIndex(fieldName, entity.AUTOINDEX, expParams)
+			common.CheckIndexResult(t, indexes, expIndex)
+		}
 	}
-	expIndex := entity.NewGenericIndex(common.DefaultFloatVecFieldName, entity.AUTOINDEX, expParams)
-	common.CheckIndexResult(t, indexes, expIndex)
+
+	// load -> search and output all vector fields
+	err = mc.LoadCollection(ctx, collName, false)
+	common.CheckErr(t, err, true)
+	queryVec := common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeFloatVector)
+	sp, _ := entity.NewIndexAUTOINDEXSearchParam(1)
+	searchRes, _ := mc.Search(ctx, collName, []string{}, "", common.AllVectorsFieldsName, queryVec, common.DefaultFloatVecFieldName,
+		entity.COSINE, common.DefaultTopK, sp)
+	common.CheckOutputFields(t, searchRes[0].Fields, common.AllVectorsFieldsName)
+}
+
+// test create default auto index on scalar fields -> error
+func TestCreateAutoIndexScalarFields(t *testing.T) {
+	t.Skip("https://github.com/milvus-io/milvus-sdk-go/issues/702")
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	//connect
+	mc := createMilvusClient(ctx, t)
+
+	// create collection with all datatype
+	cp := CollectionParams{CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: true,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+	collName := createCollection(ctx, t, mc, cp)
+
+	// insert
+	dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: AllFields,
+		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
+	_, _ = insertData(ctx, t, mc, dp)
+	mc.Flush(ctx, collName, false)
+
+	// create index for all vector fields
+	indexAuto, _ := entity.NewIndexAUTOINDEX(entity.L2)
+	coll, _ := mc.DescribeCollection(ctx, collName)
+	for _, field := range coll.Schema.Fields {
+		if supportScalarIndexFieldType(field.DataType) {
+			log.Println(field.Name, field.DataType)
+			err := mc.CreateIndex(ctx, collName, field.Name, indexAuto, false, client.WithIndexName(field.Name))
+			common.CheckErr(t, err, false, "HNSW only support float vector data type")
+		}
+	}
 }
 
 // test new index by Generic index
@@ -674,7 +929,7 @@ func TestDropIndex(t *testing.T) {
 }
 
 func TestDropIndexCreateIndex(t *testing.T) {
-	t.Skip("Issue: https://github.com/milvus-io/milvus-sdk-go/issues/385")
+	//t.Skip("Issue: https://github.com/milvus-io/milvus-sdk-go/issues/385")
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect
 	mc := createMilvusClient(ctx, t)
@@ -697,7 +952,7 @@ func TestDropIndexCreateIndex(t *testing.T) {
 	errDrop := mc.DropIndex(ctx, collName, common.DefaultFloatVecFieldName)
 	common.CheckErr(t, errDrop, true)
 	indexes, errDescribe := mc.DescribeIndex(ctx, collName, common.DefaultFloatVecFieldName)
-	common.CheckErr(t, errDescribe, false, "index doesn't exist, collectionID")
+	common.CheckErr(t, errDescribe, false, "index not found")
 	require.Nil(t, indexes)
 
 	// create IP index
