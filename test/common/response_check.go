@@ -3,6 +3,7 @@ package common
 import (
 	"fmt"
 	"log"
+	"strings"
 	"testing"
 
 	"github.com/milvus-io/milvus-sdk-go/v2/client"
@@ -15,11 +16,22 @@ func CheckErr(t *testing.T, actualErr error, expErrNil bool, expErrorMsg ...stri
 	if expErrNil {
 		require.NoError(t, actualErr)
 	} else {
-		if len(expErrorMsg) == 0 {
+		switch len(expErrorMsg) {
+		case 0:
 			log.Fatal("expect error message should not be empty")
+		case 1:
+			require.ErrorContains(t, actualErr, expErrorMsg[0])
+		default:
+			contains := false
+			for i := 0; i < len(expErrorMsg); i++ {
+				if strings.Contains(actualErr.Error(), expErrorMsg[i]) {
+					contains = true
+				}
+			}
+			if !contains {
+				t.FailNow()
+			}
 		}
-		require.NotEmpty(t, expErrorMsg[0])
-		require.ErrorContains(t, actualErr, expErrorMsg[0])
 	}
 }
 

@@ -32,7 +32,8 @@ func TestUpsert(t *testing.T) {
 		// create -> insert [0, 3000) -> flush -> index -> load
 		cp := CollectionParams{CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: enableDynamic,
 			ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
-		collName := prepareCollection(ctx, t, mc, cp, WithCreateOption(client.WithConsistencyLevel(entity.ClStrong)))
+		ips := GenDefaultIndexParamsForAllVectors()
+		collName := prepareCollection(ctx, t, mc, cp, WithIndexParams(ips), WithCreateOption(client.WithConsistencyLevel(entity.ClStrong)))
 
 		upsertNb := 10
 		// upsert exist entities [0, 10)
@@ -133,7 +134,7 @@ func TestUpsertVarcharPk(t *testing.T) {
 		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
 
 	idx, _ := entity.NewIndexBinIvfFlat(entity.JACCARD, 16)
-	ip := IndexParams{BuildIndex: true, Index: idx, FieldName: common.DefaultBinaryVecFieldName, async: false}
+	ip := []IndexParams{{BuildIndex: true, Index: idx, FieldName: common.DefaultBinaryVecFieldName, async: false}}
 	collName := prepareCollection(ctx, t, mc, cp, WithIndexParams(ip), WithCreateOption(client.WithConsistencyLevel(entity.ClStrong)))
 
 	upsertNb := 10
@@ -243,7 +244,7 @@ func TestUpsertInvalidColumnData(t *testing.T) {
 	dp := DataParams{DoInsert: true, CollectionFieldsType: Int64FloatVecJSON, start: 0, nb: 200,
 		dim: common.DefaultDim, EnableDynamicField: false}
 	collName := prepareCollection(ctx, t, mc, cp, WithDataParams(dp),
-		WithIndexParams(IndexParams{BuildIndex: false}),
+		WithIndexParams([]IndexParams{{BuildIndex: false}}),
 		WithLoadParams(LoadParams{DoLoad: false}), WithCreateOption(client.WithConsistencyLevel(entity.ClStrong)))
 
 	upsertNb := 10
@@ -285,7 +286,9 @@ func TestUpsertSamePksManyTimes(t *testing.T) {
 	// create -> insert [0, 3000) -> flush -> index -> load
 	cp := CollectionParams{CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: true,
 		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
-	collName := prepareCollection(ctx, t, mc, cp, WithCreateOption(client.WithConsistencyLevel(entity.ClStrong)))
+
+	ips := GenDefaultIndexParamsForAllVectors()
+	collName := prepareCollection(ctx, t, mc, cp, WithIndexParams(ips), WithCreateOption(client.WithConsistencyLevel(entity.ClStrong)))
 
 	var data []entity.Column
 	upsertNb := 1000
@@ -405,7 +408,7 @@ func TestUpsertWithoutLoading(t *testing.T) {
 		dim: common.DefaultDim, EnableDynamicField: true}
 	collName := prepareCollection(ctx, t, mc, cp, WithDataParams(dp),
 		WithFlushParams(FlushParams{DoFlush: false}),
-		WithIndexParams(IndexParams{BuildIndex: false}),
+		WithIndexParams([]IndexParams{{BuildIndex: false}}),
 		WithLoadParams(LoadParams{DoLoad: false}), WithCreateOption(client.WithConsistencyLevel(entity.ClStrong)))
 
 	// upsert

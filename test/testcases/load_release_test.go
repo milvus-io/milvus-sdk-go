@@ -316,6 +316,42 @@ func TestLoadPartitionsAsync(t *testing.T) {
 	}
 }
 
+func TestLoadCollectionMultiVectors(t *testing.T) {
+	ctx := createContext(t, time.Second*common.DefaultTimeout*5)
+	// connect
+	mc := createMilvusClient(ctx, t)
+
+	// create collection
+	cp := CollectionParams{CollectionFieldsType: AllVectors, AutoID: false, EnableDynamicField: true,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+	collName := createCollection(ctx, t, mc, cp)
+
+	// insert
+	dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: AllVectors,
+		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
+	_, _ = insertData(ctx, t, mc, dp)
+	mc.Flush(ctx, collName, false)
+
+	// create hnsw index on part vector field and load -> load failed
+	indexHnsw, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
+	for _, field := range []string{common.DefaultFloatVecFieldName, common.DefaultFloat16VecFieldName, common.DefaultBFloat16VecFieldName} {
+		err := mc.CreateIndex(ctx, collName, field, indexHnsw, false)
+		common.CheckErr(t, err, true)
+	}
+
+	err := mc.LoadCollection(ctx, collName, false)
+	common.CheckErr(t, err, false, "there is no vector index on field")
+
+	// create index for another vector field
+	indexBinary, _ := entity.NewIndexBinIvfFlat(entity.JACCARD, 64)
+	for _, field := range []string{common.DefaultBinaryVecFieldName} {
+		err := mc.CreateIndex(ctx, collName, field, indexBinary, false)
+		common.CheckErr(t, err, true)
+	}
+	err = mc.LoadCollection(ctx, collName, false)
+	common.CheckErr(t, err, true)
+}
+
 // test release partition
 func TestReleasePartition(t *testing.T) {
 	ctx := createContext(t, time.Second*common.DefaultTimeout)

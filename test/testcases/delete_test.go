@@ -273,7 +273,7 @@ func TestDeleteExpressions(t *testing.T) {
 
 	// create collection
 	cp := CollectionParams{
-		CollectionFieldsType: Int64FloatVecJSON,
+		CollectionFieldsType: AllFields,
 		AutoID:               false,
 		EnableDynamicField:   true,
 		ShardsNum:            common.DefaultShards,
@@ -285,7 +285,7 @@ func TestDeleteExpressions(t *testing.T) {
 	dp := DataParams{
 		CollectionName:       collName,
 		PartitionName:        "",
-		CollectionFieldsType: Int64FloatVecJSON,
+		CollectionFieldsType: AllFields,
 		start:                0,
 		nb:                   common.DefaultNb,
 		dim:                  common.DefaultDim,
@@ -294,7 +294,10 @@ func TestDeleteExpressions(t *testing.T) {
 	_, _ = insertData(ctx, t, mc, dp)
 
 	idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
-	_ = mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false)
+	for _, field := range common.AllVectorsFieldsName {
+		err := mc.CreateIndex(ctx, collName, field, idx, false)
+		common.CheckErr(t, err, true)
+	}
 
 	// Load collection
 	errLoad := mc.LoadCollection(ctx, collName, false)
@@ -322,6 +325,10 @@ func TestDeleteExpressions(t *testing.T) {
 		fmt.Sprintf("%s['list'] == [0, 1] ", common.DefaultJSONFieldName),
 		fmt.Sprintf("%s['list'][0] < 10 ", common.DefaultJSONFieldName),
 		fmt.Sprintf("%s[\"dynamicList\"] != [2, 3]", common.DefaultDynamicFieldName),
+		fmt.Sprintf("%s > 2500", common.DefaultJSONFieldName),
+		fmt.Sprintf("%s > 2000.5", common.DefaultJSONFieldName),
+		fmt.Sprintf("%s[0] == 2503", common.DefaultJSONFieldName),
+		fmt.Sprintf("%s like '21%%' ", common.DefaultJSONFieldName),
 
 		// json contains
 		fmt.Sprintf("json_contains (%s['list'], 2)", common.DefaultJSONFieldName),
@@ -382,13 +389,42 @@ func TestDeleteInvalidExpr(t *testing.T) {
 	_ = mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false)
 
 	err := mc.LoadCollection(ctx, collName, false)
-	common.CheckErr(t, err, true, "")
+	common.CheckErr(t, err, true)
 
 	err = mc.Delete(ctx, collName, "", "")
-	common.CheckErr(t, err, false, "invalid expression")
+	common.CheckErr(t, err, false, "invalid expression: invalid parameter")
 
 	for _, _invalidExprs := range common.InvalidExpressions {
 		err := mc.Delete(ctx, collName, "", _invalidExprs.Expr)
 		common.CheckErr(t, err, _invalidExprs.ErrNil, _invalidExprs.ErrMsg)
 	}
+}
+
+func TestDeleteComplexExprWithoutLoading(t *testing.T) {
+	// TODO
+	ctx := createContext(t, time.Second*common.DefaultTimeout*3)
+	// connect
+	mc := createMilvusClient(ctx, t)
+
+	cp := CollectionParams{CollectionFieldsType: Int64FloatVecJSON, AutoID: false, EnableDynamicField: true,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+	collName := createCollection(ctx, t, mc, cp, client.WithConsistencyLevel(entity.ClStrong))
+
+	// prepare and insert data
+	dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVecJSON,
+		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
+	_, _ = insertData(ctx, t, mc, dp)
+	mc.Flush(ctx, collName, false)
+
+	err := mc.Delete(ctx, collName, "", "int64 < 100")
+	common.CheckErr(t, err, false, "collection not loaded")
+
+	// load
+	idx, _ := entity.NewIndexHNSW(entity.L2, 8, 72)
+	_ = mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false)
+	err = mc.LoadCollection(ctx, collName, false)
+	common.CheckErr(t, err, true)
+
+	err = mc.Delete(ctx, collName, "", "int64 < 100")
+	common.CheckErr(t, err, true)
 }

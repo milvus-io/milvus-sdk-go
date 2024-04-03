@@ -20,13 +20,15 @@ func TestCompact(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create collection with 1 shard
-	collName := createDefaultCollection(ctx, t, mc, true, 1)
+	cp := CollectionParams{CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: true,
+		ShardsNum: 1, Dim: common.DefaultDim}
+	collName := createCollection(ctx, t, mc, cp)
 
-	// insert data
-	for i := 0; i < 2; i++ {
-		_, floatColumn, vecColumn := common.GenDefaultColumnData((i+1)*common.DefaultNb, common.DefaultNb, common.DefaultDim)
-		_, errInsert := mc.Insert(ctx, collName, common.DefaultPartition, floatColumn, vecColumn)
-		common.CheckErr(t, errInsert, true)
+	// insert
+	for i := 0; i < 4; i++ {
+		dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: AllFields,
+			start: i * common.DefaultNb, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
+		_, _ = insertData(ctx, t, mc, dp)
 		mc.Flush(ctx, collName, false)
 	}
 
@@ -34,6 +36,12 @@ func TestCompact(t *testing.T) {
 	segments, _ := mc.GetPersistentSegmentInfo(ctx, collName)
 	for _, s := range segments {
 		log.Printf("Id: %d, numRows: %d", s.ID, s.NumRows)
+	}
+
+	indexHnsw, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
+	for _, field := range common.AllVectorsFieldsName {
+		err := mc.CreateIndex(ctx, collName, field, indexHnsw, false)
+		common.CheckErr(t, err, true)
 	}
 
 	// compact

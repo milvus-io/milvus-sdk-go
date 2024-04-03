@@ -336,7 +336,6 @@ func TestSearchPartitions(t *testing.T) {
 
 // test search empty output fields []string{} -> [], []string{""}
 func TestSearchEmptyOutputFields(t *testing.T) {
-	t.Skip("https://github.com/milvus-io/milvus/issues/28465")
 	t.Parallel()
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect
@@ -368,11 +367,11 @@ func TestSearchEmptyOutputFields(t *testing.T) {
 		common.CheckSearchResult(t, searchResPkOutput, common.DefaultNq, common.DefaultTopK)
 
 		// search vector output fields []string{""}
-		_, errSearchExist := mc.Search(
+		res, errSearchExist := mc.Search(
 			ctx, collName,
 			[]string{},
 			"",
-			[]string{""},
+			[]string{"a"},
 			common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeFloatVector),
 			common.DefaultFloatVecFieldName,
 			entity.L2,
@@ -380,25 +379,24 @@ func TestSearchEmptyOutputFields(t *testing.T) {
 			sp,
 		)
 
-		//if enableDynamic {
-		//	common.CheckErr(t, errSearchExist, true)
-		//	common.CheckOutputFields(t, sp1[0].Fields, []string{""})
-		//} else {
-		common.CheckErr(t, errSearchExist, false, "not exist")
-		//}
+		if enableDynamic {
+			common.CheckErr(t, errSearchExist, true)
+			common.CheckOutputFields(t, res[0].Fields, []string{"a"})
+		} else {
+			common.CheckErr(t, errSearchExist, false, "not exist")
+		}
 		common.CheckSearchResult(t, searchResPkOutput, common.DefaultNq, common.DefaultTopK)
 	}
 }
 
 // test search output fields not exist -> output existed fields
 func TestSearchNotExistOutputFields(t *testing.T) {
-	t.Skip("https://github.com/milvus-io/milvus/issues/28465")
 	t.Parallel()
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect
 	mc := createMilvusClient(ctx, t)
 
-	for _, enableDynamic := range []bool{false} {
+	for _, enableDynamic := range []bool{false, true} {
 		// create collection with data
 		collName, _ := createCollectionWithDataIndex(ctx, t, mc, false, true, client.WithEnableDynamicSchema(enableDynamic))
 
@@ -425,7 +423,11 @@ func TestSearchNotExistOutputFields(t *testing.T) {
 				common.DefaultTopK,
 				sp,
 			)
-			common.CheckErr(t, errSearch, true)
+			if enableDynamic {
+				common.CheckErr(t, errSearch, true)
+			} else {
+				common.CheckErr(t, errSearch, false, "not exist")
+			}
 		}
 	}
 }
@@ -500,8 +502,15 @@ func TestSearchOutputAllFields(t *testing.T) {
 		_ = mc.Flush(ctx, collName, false)
 
 		// create index
-		idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
-		_ = mc.CreateIndex(ctx, collName, "floatVec", idx, false)
+		indexHnsw, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
+		indexBinary, _ := entity.NewIndexBinIvfFlat(entity.JACCARD, 64)
+		for _, fieldName := range common.AllVectorsFieldsName {
+			if fieldName == common.DefaultBinaryVecFieldName {
+				mc.CreateIndex(ctx, collName, fieldName, indexBinary, false)
+			} else {
+				mc.CreateIndex(ctx, collName, fieldName, indexHnsw, false)
+			}
+		}
 
 		// Load collection
 		errLoad := mc.LoadCollection(ctx, collName, false)
@@ -509,12 +518,7 @@ func TestSearchOutputAllFields(t *testing.T) {
 
 		// search vector output all scalar fields
 		queryVec := common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeFloatVector)
-		allFields := []string{"int64", "bool", "int8", "int16", "int32", "float", "double", "varchar", "json", "floatVec"}
-		allFields = append(allFields, common.AllArrayFieldsName...)
-
-		if enableDynamic {
-			allFields = append(allFields, common.DefaultDynamicFieldName)
-		}
+		allFields := common.GetAllFieldsName(enableDynamic, false)
 		sp, _ := entity.NewIndexHNSWSearchParam(74)
 		searchRes, _ := mc.Search(ctx, collName, []string{},
 			"",
@@ -1465,6 +1469,90 @@ func TestVectorOutputField(t *testing.T) {
 		common.CheckSearchResult(t, searchResult, common.DefaultNq, common.DefaultTopK)
 		log.Printf("search %d done\n", i)
 	}
+}
+
+// test search with fp16/ bf16 /binary vector
+func TestSearchMultiVectors(t *testing.T) {
+	ctx := createContext(t, time.Second*common.DefaultTimeout*2)
+	// connect
+	mc := createMilvusClient(ctx, t)
+
+	// create -> insert [0, 3000) -> flush -> index -> load
+	cp := CollectionParams{CollectionFieldsType: AllVectors, AutoID: false, EnableDynamicField: true,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+
+	dp := DataParams{DoInsert: true, CollectionFieldsType: AllVectors, start: 0, nb: common.DefaultNb * 2,
+		dim: common.DefaultDim, EnableDynamicField: true}
+
+	// index params
+	ips := make([]IndexParams, 4)
+	var idx entity.Index
+	for _, fieldName := range common.AllVectorsFieldsName {
+		if fieldName == common.DefaultBinaryVecFieldName {
+			idx, _ = entity.NewIndexBinFlat(entity.JACCARD, 64)
+		} else {
+			idx, _ = entity.NewIndexFlat(entity.L2)
+		}
+		ips = append(ips, IndexParams{BuildIndex: true, Index: idx, FieldName: fieldName, async: false})
+	}
+
+	collName := prepareCollection(ctx, t, mc, cp, WithDataParams(dp), WithIndexParams(ips), WithCreateOption(client.WithConsistencyLevel(entity.ClStrong)))
+
+	// search with all kinds of vectors
+	type mFieldNameType struct {
+		fieldName  string
+		fieldType  entity.FieldType
+		metricType entity.MetricType
+	}
+	fnts := []mFieldNameType{
+		{fieldName: common.DefaultFloatVecFieldName, fieldType: entity.FieldTypeFloatVector, metricType: entity.L2},
+		{fieldName: common.DefaultBinaryVecFieldName, fieldType: entity.FieldTypeBinaryVector, metricType: entity.JACCARD},
+		{fieldName: common.DefaultFloat16VecFieldName, fieldType: entity.FieldTypeFloat16Vector, metricType: entity.L2},
+		{fieldName: common.DefaultBFloat16VecFieldName, fieldType: entity.FieldTypeBFloat16Vector, metricType: entity.L2},
+	}
+
+	//sp, _ := entity.NewIndexHNSWSearchParam(20)
+	sp, _ := entity.NewIndexFlatSearchParam()
+	for _, fnt := range fnts {
+		queryVec := common.GenSearchVectors(common.DefaultNq, common.DefaultDim, fnt.fieldType)
+
+		// search
+		resSearch, errSearch := mc.Search(ctx, collName, []string{}, fmt.Sprintf("%s > 10", common.DefaultIntFieldName),
+			[]string{"*"}, queryVec, fnt.fieldName, fnt.metricType, common.DefaultTopK*2, sp)
+		common.CheckErr(t, errSearch, true)
+		common.CheckSearchResult(t, resSearch, common.DefaultNq, common.DefaultTopK*2)
+		common.CheckOutputFields(t, resSearch[0].Fields, []string{common.DefaultIntFieldName, common.DefaultFloatVecFieldName,
+			common.DefaultBinaryVecFieldName, common.DefaultFloat16VecFieldName, common.DefaultBFloat16VecFieldName, common.DefaultDynamicFieldName})
+
+		//pagination search
+		resPage, errPage := mc.Search(ctx, collName, []string{}, fmt.Sprintf("%s > 10", common.DefaultIntFieldName),
+			[]string{"*"}, queryVec, fnt.fieldName, fnt.metricType, common.DefaultTopK, sp, client.WithOffset(10))
+		common.CheckErr(t, errPage, true)
+		common.CheckSearchResult(t, resPage, common.DefaultNq, common.DefaultTopK)
+		for i := 0; i < common.DefaultNq; i++ {
+			require.Equal(t, resSearch[i].IDs.(*entity.ColumnInt64).Data()[10:], resPage[i].IDs.(*entity.ColumnInt64).Data())
+		}
+		common.CheckOutputFields(t, resPage[0].Fields, []string{common.DefaultIntFieldName, common.DefaultFloatVecFieldName,
+			common.DefaultBinaryVecFieldName, common.DefaultFloat16VecFieldName, common.DefaultBFloat16VecFieldName, common.DefaultDynamicFieldName})
+
+		// range search
+		sp.AddRadius(50.2)
+		sp.AddRangeFilter(0)
+		resRange, errRange := mc.Search(ctx, collName, []string{}, fmt.Sprintf("%s > 10", common.DefaultIntFieldName),
+			[]string{"*"}, queryVec, fnt.fieldName, fnt.metricType, common.DefaultTopK, sp, client.WithOffset(10))
+		common.CheckErr(t, errRange, true)
+		common.CheckSearchResult(t, resRange, common.DefaultNq, common.DefaultTopK)
+		common.CheckOutputFields(t, resRange[0].Fields, []string{common.DefaultIntFieldName, common.DefaultFloatVecFieldName,
+			common.DefaultBinaryVecFieldName, common.DefaultFloat16VecFieldName, common.DefaultBFloat16VecFieldName, common.DefaultDynamicFieldName})
+		for _, res := range resRange {
+			for _, score := range res.Scores {
+				require.GreaterOrEqual(t, score, float32(0))
+				require.LessOrEqual(t, score, float32(50.2))
+			}
+		}
+		// TODO iterator search
+	}
+
 }
 
 // TODO offset and limit
