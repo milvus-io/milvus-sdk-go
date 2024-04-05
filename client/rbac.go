@@ -18,7 +18,6 @@ package client
 
 import (
 	"context"
-
 	"github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
 	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
@@ -97,7 +96,6 @@ func (c *GrpcClient) RemoveUserRole(ctx context.Context, username string, role s
 	if err != nil {
 		return err
 	}
-
 	return handleRespStatus(resp)
 }
 
@@ -147,6 +145,80 @@ func (c *GrpcClient) ListUsers(ctx context.Context) ([]entity.User, error) {
 	}
 
 	return users, nil
+}
+
+// DescribeUser lists the user descriptions in the system (name, roles)
+func (c *GrpcClient) DescribeUser(ctx context.Context, username string) (entity.UserDescription, error) {
+	if c.Service == nil {
+		return entity.UserDescription{}, ErrClientNotReady
+	}
+
+	req := &milvuspb.SelectUserRequest{
+		User: &milvuspb.UserEntity{
+			Name: username,
+		},
+		IncludeRoleInfo: true,
+	}
+
+	resp, err := c.Service.SelectUser(ctx, req)
+
+	if err != nil {
+		return entity.UserDescription{}, err
+	}
+	if err = handleRespStatus(resp.GetStatus()); err != nil {
+		return entity.UserDescription{}, err
+	}
+	results := resp.GetResults()
+
+	if len(results) == 0 {
+		return entity.UserDescription{}, nil
+	}
+
+	userDescription := entity.UserDescription{
+		Name:  results[0].GetUser().GetName(),
+		Roles: make([]string, 0, len(results[0].GetRoles())),
+	}
+
+	for _, role := range results[0].GetRoles() {
+		userDescription.Roles = append(userDescription.Roles, role.GetName())
+	}
+	return userDescription, nil
+}
+
+// DescribeUsers lists all users with descriptions (names, roles)
+func (c *GrpcClient) DescribeUsers(ctx context.Context) ([]entity.UserDescription, error) {
+	if c.Service == nil {
+		return nil, ErrClientNotReady
+	}
+
+	req := &milvuspb.SelectUserRequest{
+		IncludeRoleInfo: true,
+	}
+
+	resp, err := c.Service.SelectUser(ctx, req)
+
+	if err != nil {
+		return nil, err
+	}
+	if err = handleRespStatus(resp.GetStatus()); err != nil {
+		return nil, err
+	}
+	results := resp.GetResults()
+
+	userDescriptions := make([]entity.UserDescription, 0, len(results))
+
+	for _, result := range results {
+		userDescription := entity.UserDescription{
+			Name:  result.GetUser().GetName(),
+			Roles: make([]string, 0, len(result.GetRoles())),
+		}
+		for _, role := range result.GetRoles() {
+			userDescription.Roles = append(userDescription.Roles, role.GetName())
+		}
+		userDescriptions = append(userDescriptions, userDescription)
+	}
+
+	return userDescriptions, nil
 }
 
 // Grant adds object privileged for role.

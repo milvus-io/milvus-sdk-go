@@ -1,10 +1,18 @@
 package entity
 
-import common "github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
+import (
+	common "github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
+)
 
 // User is the model for RBAC user object.
 type User struct {
 	Name string
+}
+
+// UserDescription is the model for RBAC user description object.
+type UserDescription struct {
+	Name  string
+	Roles []string
 }
 
 // Role is the model for RBAC role object.
