@@ -97,6 +97,7 @@ func (c *GrpcClient) RemoveUserRole(ctx context.Context, username string, role s
 	if err != nil {
 		return err
 	}
+
 	return handleRespStatus(resp)
 }
 
