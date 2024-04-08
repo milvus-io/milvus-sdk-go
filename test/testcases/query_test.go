@@ -415,9 +415,11 @@ func TestOutputAllFields(t *testing.T) {
 		common.CheckErr(t, errFlush, true)
 
 		idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
-		for _, fieldName := range []string{"floatVec", "fp16Vec", "bf16Vec", "binaryVec"} {
+		for _, fieldName := range []string{"floatVec", "fp16Vec", "bf16Vec"} {
 			_ = mc.CreateIndex(ctx, collName, fieldName, idx, false)
 		}
+		binIdx, _ := entity.NewIndexBinFlat(entity.JACCARD, 16)
+		_ = mc.CreateIndex(ctx, collName, "binaryVec", binIdx, false)
 
 		// Load collection
 		errLoad := mc.LoadCollection(ctx, collName, false)

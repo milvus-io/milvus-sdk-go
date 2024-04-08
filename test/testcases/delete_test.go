@@ -294,10 +294,15 @@ func TestDeleteExpressions(t *testing.T) {
 	_, _ = insertData(ctx, t, mc, dp)
 
 	idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
-	for _, field := range common.AllVectorsFieldsName {
+	for _, field := range common.AllFloatVectorsFieldNames {
 		err := mc.CreateIndex(ctx, collName, field, idx, false)
 		common.CheckErr(t, err, true)
 	}
+
+	flatIdx, _ := entity.NewIndexBinFlat(entity.JACCARD, 16)
+
+	err := mc.CreateIndex(ctx, collName, common.DefaultBinaryVecFieldName, flatIdx, false)
+	common.CheckErr(t, err, true)
 
 	// Load collection
 	errLoad := mc.LoadCollection(ctx, collName, false)

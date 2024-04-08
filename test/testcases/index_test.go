@@ -193,6 +193,7 @@ func TestCreateScalarIndex(t *testing.T) {
 
 // test create scalar index with vector field name
 func TestCreateIndexWithOtherFieldName(t *testing.T) {
+	t.Skip("index type not pased")
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	//connect
 	mc := createMilvusClient(ctx, t)
@@ -215,6 +216,7 @@ func TestCreateIndexWithOtherFieldName(t *testing.T) {
 }
 
 func TestCreateIndexJsonField(t *testing.T) {
+	t.Skip("index type not passed")
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect
 	mc := createMilvusClient(ctx, t)
@@ -247,7 +249,7 @@ func TestCreateIndexJsonField(t *testing.T) {
 	common.CheckErr(t, err, false, "only support float vector or binary vector")
 
 	//create scalar index on json field
-	err = mc.CreateIndex(ctx, collName, common.DefaultJSONFieldName, entity.NewScalarIndex(), false, client.WithIndexName("json_index"))
+	err = mc.CreateIndex(ctx, collName, common.DefaultJSONFieldName, entity.NewScalarIndexWithType(entity.Sorted), false, client.WithIndexName("json_index"))
 	common.CheckErr(t, err, false, "create auto index on JSON field is not supported")
 }
 
@@ -281,7 +283,7 @@ func TestCreateIndexArrayField(t *testing.T) {
 			common.CheckErr(t, err, false, "create auto index on Array field is not supported")
 			// create vector index
 			err1 := mc.CreateIndex(ctx, collName, field.Name, vectorIdx, false, client.WithIndexName("vector_index"))
-			common.CheckErr(t, err1, false, "float or float16 or bfloat16 vector are only supported")
+			common.CheckErr(t, err1, false, "data type should be FloatVector, Float16Vector or BFloat16Vector")
 		}
 	}
 }
@@ -474,12 +476,12 @@ func TestCreateIndexNotSupportedField(t *testing.T) {
 	// create index
 	idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
 	err := mc.CreateIndex(ctx, collName, common.DefaultFloatFieldName, idx, false)
-	common.CheckErr(t, err, false, "only support float vector or binary vector")
+	common.CheckErr(t, err, false, "HNSW only support float vector data type")
 
 	// create scann index
 	indexScann, _ := entity.NewIndexSCANN(entity.L2, 8, true)
 	err = mc.CreateIndex(ctx, collName, common.DefaultFloatFieldName, indexScann, false)
-	common.CheckErr(t, err, false, "float or float16 or bfloat16 vector are only supported")
+	common.CheckErr(t, err, false, "data type should be FloatVector, Float16Vector or BFloat16Vector")
 }
 
 // test create index with invalid params

@@ -414,7 +414,7 @@ func TestTransferReplicaInvalidReplicaNumber(t *testing.T) {
 	invalidReplicas := []invalidReplicasStruct{
 		{replicaNumber: 0, errMsg: "invalid parameter[expected=NumReplica > 0][actual=invalid NumReplica 0]"},
 		{replicaNumber: -1, errMsg: "invalid parameter[expected=NumReplica > 0][actual=invalid NumReplica -1]"},
-		{replicaNumber: 1, errMsg: "only found [0] replicas in source resource group"},
+		{replicaNumber: 1, errMsg: "Collection not loaded"},
 	}
 
 	for _, invalidReplica := range invalidReplicas {
