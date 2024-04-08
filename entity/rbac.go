@@ -1,8 +1,6 @@
 package entity
 
-import (
-	common "github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
-)
+import common "github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
 
 // User is the model for RBAC user object.
 type User struct {
