@@ -114,6 +114,12 @@ var AllVectorsFieldsName = []string{
 	DefaultBFloat16VecFieldName,
 }
 
+var AllFloatVectorsFieldNames = []string{
+	DefaultFloatVecFieldName,
+	DefaultFloat16VecFieldName,
+	DefaultBFloat16VecFieldName,
+}
+
 // return all fields name
 func GetAllFieldsName(enableDynamicField bool, onlyScalar bool) []string {
 	allFieldName := []string{
