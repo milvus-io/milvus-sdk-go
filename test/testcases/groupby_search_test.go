@@ -79,15 +79,15 @@ func prepareDataForGroupBySearch(t *testing.T, loopInsert int, insertNi int, idx
 		mc.Flush(ctx, collName, false)
 	}
 
-	// skip scalar index
+	//create scalar index
+	supportedGroupByFields := []string{common.DefaultIntFieldName, common.DefaultInt8FieldName, common.DefaultInt16FieldName,
+		common.DefaultInt32FieldName, common.DefaultVarcharFieldName, common.DefaultBoolFieldName}
+	for _, groupByField := range supportedGroupByFields {
+		err := mc.CreateIndex(ctx, collName, groupByField, entity.NewScalarIndex(), false)
+		common.CheckErr(t, err, true)
+	}
 
-	// create vector index and scalar index
-	//supportedGroupByFields := []string{common.DefaultIntFieldName, "int8", "int16", "int32", "varchar", "bool"}
-	//idxScalar := entity.NewScalarIndex()
-	//for _, groupByField := range supportedGroupByFields {
-	//	mc.CreateIndex(ctx, collName, groupByField, idxScalar, false)
-	//	//common.CheckErr(t, err, true)
-	//}
+	// create vector index
 	idxHnsw, _ := entity.NewIndexHNSW(entity.COSINE, 8, 96)
 	indexBinary, _ := entity.NewIndexBinIvfFlat(entity.JACCARD, 64)
 	for _, fieldName := range common.AllVectorsFieldsName {
