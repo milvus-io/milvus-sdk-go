@@ -26,7 +26,6 @@ import (
 
 	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	"github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
-	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
 )
 
 // ref: https://github.com/grpc-ecosystem/go-grpc-middleware
@@ -68,20 +67,16 @@ func retryOnRateLimit(ctx context.Context) bool {
 	return retry
 }
 
+type withStatus interface {
+	GetStatus() *commonpb.Status
+}
+
 // getResultStatus returns status of response.
 func getResultStatus(reply interface{}) *commonpb.Status {
 	switch r := reply.(type) {
 	case *commonpb.Status:
 		return r
-	case *milvuspb.MutationResult:
-		return r.GetStatus()
-	case *milvuspb.BoolResponse:
-		return r.GetStatus()
-	case *milvuspb.SearchResults:
-		return r.GetStatus()
-	case *milvuspb.QueryResults:
-		return r.GetStatus()
-	case *milvuspb.FlushResponse:
+	case withStatus:
 		return r.GetStatus()
 	default:
 		return nil
