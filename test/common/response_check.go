@@ -190,8 +190,6 @@ func CheckOutputFields(t *testing.T, actualColumns []entity.Column, expFields []
 	for _, actualColumn := range actualColumns {
 		actualFields = append(actualFields, actualColumn.Name())
 	}
-	log.Printf("actual fields: %v", actualFields)
-	log.Printf("expected fields: %v", expFields)
 	require.ElementsMatchf(t, expFields, actualFields, fmt.Sprintf("Expected search output fields: %v, actual: %v", expFields, actualFields))
 }
 
