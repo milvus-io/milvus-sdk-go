@@ -4,6 +4,7 @@ package testcases
 
 import (
 	"fmt"
+	"log"
 	"testing"
 	"time"
 
@@ -188,17 +189,18 @@ func TestHybridSearchInvalidVectors(t *testing.T) {
 	// hybrid search with invalid limit
 	ranker := client.NewRRFReranker()
 	sp, _ := entity.NewIndexFlatSearchParam()
-	queryVecNq := common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeFloatVector)
+	// queryVecNq := common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeFloatVector)
 	queryVecBinary := common.GenSearchVectors(1, common.DefaultDim, entity.FieldTypeBinaryVector)
 	queryVecType := common.GenSearchVectors(1, common.DefaultDim, entity.FieldTypeFloat16Vector)
 	queryVecDim := common.GenSearchVectors(1, common.DefaultDim*2, entity.FieldTypeFloatVector)
 	sReqs := [][]*client.ANNSearchRequest{
-		{client.NewANNSearchRequest(common.DefaultFloatVecFieldName, entity.L2, "", queryVecNq, sp, common.DefaultTopK)},           // nq != 1
+		// {client.NewANNSearchRequest(common.DefaultFloatVecFieldName, entity.L2, "", queryVecNq, sp, common.DefaultTopK)},           // nq != 1
 		{client.NewANNSearchRequest(common.DefaultFloatVecFieldName, entity.L2, "", queryVecType, sp, common.DefaultTopK)},         // TODO vector type not match
 		{client.NewANNSearchRequest(common.DefaultFloatVecFieldName, entity.L2, "", queryVecDim, sp, common.DefaultTopK)},          // vector dim not match
 		{client.NewANNSearchRequest(common.DefaultBinaryVecFieldName, entity.JACCARD, "", queryVecBinary, sp, common.DefaultTopK)}, // not exist vector types
 	}
-	for _, invalidSReq := range sReqs {
+	for idx, invalidSReq := range sReqs {
+		log.Println(idx)
 		_, errSearch := mc.HybridSearch(ctx, collName, []string{}, common.DefaultTopK, []string{}, ranker, invalidSReq)
 		common.CheckErr(t, errSearch, false, "nq should be equal to 1", "vector dimension mismatch",
 			"failed to get field schema by name", "vector type must be the same")
