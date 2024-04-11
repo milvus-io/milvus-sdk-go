@@ -271,6 +271,7 @@ func (c *GrpcClient) DescribeCollection(ctx context.Context, collName string) (*
 		VirtualChannels:  resp.GetVirtualChannelNames(),
 		ConsistencyLevel: entity.ConsistencyLevel(resp.ConsistencyLevel),
 		ShardNum:         resp.GetShardsNum(),
+		Properties:       entity.KvPairsMap(resp.GetProperties()),
 	}
 	collection.Name = collection.Schema.CollectionName
 	colInfo := collInfo{
