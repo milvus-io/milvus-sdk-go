@@ -10,6 +10,7 @@ import (
 	"github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
 	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
 	"github.com/milvus-io/milvus-sdk-go/v2/common"
+	"github.com/milvus-io/milvus-sdk-go/v2/merr"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -76,14 +77,14 @@ func (c *GrpcClient) connectInternal(ctx context.Context) error {
 						disableJSON |
 						disableParitionKey |
 						disableDynamicSchema)
+				return nil
 			}
-			return nil
 		}
 		return err
 	}
 
-	if resp.GetStatus().GetErrorCode() != commonpb.ErrorCode_Success {
-		return fmt.Errorf("connect fail, %s", resp.Status.Reason)
+	if !merr.Ok(resp.GetStatus()) {
+		return fmt.Errorf("connect fail, %s", resp.GetStatus().GetReason())
 	}
 
 	c.config.Identifier = strconv.FormatInt(resp.GetIdentifier(), 10)
