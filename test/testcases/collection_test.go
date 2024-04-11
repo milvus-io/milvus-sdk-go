@@ -489,11 +489,16 @@ func TestCreateCollectionDynamicSchema(t *testing.T) {
 	collections, errListCollection := mc.ListCollections(ctx)
 	common.CheckErr(t, errListCollection, true)
 	common.CheckContainsCollection(t, collections, collName)
+
+	// insert data
+	dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVec,
+		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
+	_, err = insertData(ctx, t, mc, dp)
+	common.CheckErr(t, err, true)
 }
 
 // test create collection enable dynamic field by collection opt
 func TestCreateCollectionDynamic(t *testing.T) {
-	t.Skip("Waiting for congqi to update schema.EnableDynamicField according to the CreateCollectionOption.EnableDynamicSchema")
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	mc := createMilvusClient(ctx, t)
 
@@ -512,6 +517,12 @@ func TestCreateCollectionDynamic(t *testing.T) {
 	collections, errListCollection := mc.ListCollections(ctx)
 	common.CheckErr(t, errListCollection, true)
 	common.CheckContainsCollection(t, collections, collName)
+
+	// insert data
+	dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVec,
+		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
+	_, err = insertData(ctx, t, mc, dp)
+	common.CheckErr(t, err, true)
 }
 
 // test create collection contains field name: $meta -> error

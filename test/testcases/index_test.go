@@ -339,7 +339,6 @@ func TestCreateInvertedScalarIndex(t *testing.T) {
 
 // test create index on vector field
 func TestCreateScalarIndexVectorField(t *testing.T) {
-	t.Skip("https://github.com/milvus-io/milvus-sdk-go/issues/701")
 	ctx := createContext(t, time.Second*common.DefaultTimeout*2)
 	// connect
 	mc := createMilvusClient(ctx, t)
@@ -359,19 +358,18 @@ func TestCreateScalarIndexVectorField(t *testing.T) {
 
 	for _, ip := range []entity.IndexType{entity.Sorted, entity.Trie, entity.Inverted} {
 		idx := entity.NewScalarIndexWithType(ip)
-		idxDefault := entity.NewScalarIndex()
 		for _, fieldName := range common.AllVectorsFieldsName {
 			err := mc.CreateIndex(ctx, collName, fieldName, idx, false)
 			common.CheckErr(t, err, false, "STL_SORT are only supported on numeric field",
 				"TRIE are only supported on varchar field", "INVERTED are not supported on")
-
-			// create default scalar index on vector field
-			// TODO ???
-			err = mc.CreateIndex(ctx, collName, fieldName, idxDefault, false)
-			common.CheckErr(t, err, true)
-			descIndex, _ := mc.DescribeIndex(ctx, collName, fieldName)
-			log.Println(descIndex[0].IndexType(), descIndex[0].Params())
 		}
+	}
+	for _, fieldName := range common.AllFloatVectorsFieldNames {
+		idxDefault := entity.NewScalarIndex()
+		err := mc.CreateIndex(ctx, collName, fieldName, idxDefault, false)
+		common.CheckErr(t, err, true)
+		descIndex, _ := mc.DescribeIndex(ctx, collName, fieldName)
+		require.Equal(t, entity.AUTOINDEX, descIndex[0].IndexType())
 	}
 }
 

@@ -1378,7 +1378,6 @@ func TestRangeSearchScannIPCosine(t *testing.T) {
 
 // test range search with scann index and entity.HAMMING, entity.JACCARD metric type
 func TestRangeSearchScannBinary(t *testing.T) {
-	t.Skip("https://github.com/milvus-io/milvus-sdk-go/issues/693")
 	t.Parallel()
 	for _, metricType := range common.SupportBinIvfFlatMetricType {
 		ctx := createContext(t, time.Second*common.DefaultTimeout)
@@ -1433,7 +1432,7 @@ func TestRangeSearchScannBinary(t *testing.T) {
 		sp.AddRangeFilter(100)
 		_, errRange := mc.Search(ctx, collName, []string{}, "", []string{"*"}, queryVec, common.DefaultBinaryVecFieldName,
 			metricType, common.DefaultTopK, sp)
-		common.CheckErr(t, errRange, false, "range_filter must be less than radius for L2/HAMMING/JACCARD")
+		common.CheckErr(t, errRange, false, "range_filter(100.000000) must be less than radius(0.000000)")
 	}
 }
 

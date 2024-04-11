@@ -3,7 +3,6 @@
 package testcases
 
 import (
-	"log"
 	"testing"
 	"time"
 
@@ -14,7 +13,6 @@ import (
 )
 
 func TestCompact(t *testing.T) {
-	t.Skip("Issue: https://github.com/milvus-io/milvus-sdk-go/issues/379")
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect
 	mc := createMilvusClient(ctx, t)
@@ -34,15 +32,21 @@ func TestCompact(t *testing.T) {
 
 	// get persisted segments
 	segments, _ := mc.GetPersistentSegmentInfo(ctx, collName)
-	for _, s := range segments {
-		log.Printf("Id: %d, numRows: %d", s.ID, s.NumRows)
+	require.Len(t, segments, 4)
+	segIds := make([]int64, 0, 4)
+	for _, seg := range segments {
+		require.Equal(t, seg.NumRows, int64(common.DefaultNb))
+		segIds = append(segIds, seg.ID)
 	}
 
 	indexHnsw, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
-	for _, field := range common.AllVectorsFieldsName {
+	indexBinary, _ := entity.NewIndexBinIvfFlat(entity.JACCARD, 64)
+	for _, field := range common.AllFloatVectorsFieldNames {
 		err := mc.CreateIndex(ctx, collName, field, indexHnsw, false)
 		common.CheckErr(t, err, true)
 	}
+	err := mc.CreateIndex(ctx, collName, common.DefaultBinaryVecFieldName, indexBinary, false)
+	common.CheckErr(t, err, true)
 
 	// compact
 	compactionID, errCompact := mc.Compact(ctx, collName, 100)
@@ -55,14 +59,25 @@ func TestCompact(t *testing.T) {
 	// get compaction plan
 	compactionState2, compactionPlan, errPlan := mc.GetCompactionStateWithPlans(ctx, compactionID)
 	common.CheckErr(t, errPlan, true)
-	log.Println(compactionState2)
-	log.Println(compactionPlan)
+	require.Equal(t, compactionState2, entity.CompactionStateCompleted)
+	var targetSeg int64
+	for _, plan := range compactionPlan {
+		if plan.PlanType == entity.CompactionPlanMergeSegments {
+			require.ElementsMatch(t, segIds, plan.Source)
+			targetSeg = plan.Target
+		}
+	}
 
 	// get persisted segments
 	segments2, _ := mc.GetPersistentSegmentInfo(ctx, collName)
+	var actualSeg []int64
+	actualRows := 0
 	for _, s := range segments2 {
-		log.Printf("Id: %d, numRows: %d", s.ID, s.NumRows)
+		actualSeg = append(actualSeg, s.ID)
+		actualRows = int(s.NumRows) + actualRows
 	}
+	require.Equal(t, common.DefaultNb*4, actualRows)
+	require.ElementsMatch(t, []int64{targetSeg}, actualSeg)
 }
 
 // test compaction collection not exist
