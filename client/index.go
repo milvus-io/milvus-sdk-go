@@ -123,6 +123,8 @@ func (c *GrpcClient) CreateIndex(ctx context.Context, collName string, fieldName
 		ExtraParams:    entity.MapKvPairs(idx.Params()),
 	}
 
+	req.ExtraParams = append(req.ExtraParams, idxDef.params...)
+
 	resp, err := c.Service.CreateIndex(ctx, req)
 	if err != nil {
 		return err
