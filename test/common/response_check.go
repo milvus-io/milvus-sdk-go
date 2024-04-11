@@ -16,6 +16,7 @@ func CheckErr(t *testing.T, actualErr error, expErrNil bool, expErrorMsg ...stri
 	if expErrNil {
 		require.NoError(t, actualErr)
 	} else {
+		require.Error(t, actualErr)
 		switch len(expErrorMsg) {
 		case 0:
 			log.Fatal("expect error message should not be empty")
