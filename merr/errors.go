@@ -144,9 +144,6 @@ var (
 
 	// import
 	ErrImportFailed = newMilvusError("importing data failed", 2100, false)
-
-	// Search/Query related
-	ErrInconsistentRequery = newMilvusError("inconsistent requery result", 2200, true)
 )
 
 type milvusError struct {
