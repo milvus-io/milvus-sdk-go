@@ -561,7 +561,7 @@ func (s *SearchSuite) TestSearchSuccess() {
 					},
 					Scores:            make([]float32, 10),
 					Topks:             []int64{10},
-					GroupByFieldValue: s.getInt64FieldData("Attr", []int64{10}),
+					GroupByFieldValue: s.getInt64FieldData("Attr", []int64{10, 10, 10, 10, 10, 10, 10, 10, 10, 10}),
 				},
 			}, nil)
 
