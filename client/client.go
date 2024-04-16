@@ -120,6 +120,8 @@ type Client interface {
 	// GetIndexState get index state with specified collection and field name
 	// index naming is not supported yet
 	GetIndexState(ctx context.Context, collName string, fieldName string, opts ...IndexOption) (entity.IndexState, error)
+	// AlterIndex modifies the index params.
+	AlterIndex(ctx context.Context, collName, indexName string, opts ...IndexOption) error
 
 	// -- basic operation --
 
