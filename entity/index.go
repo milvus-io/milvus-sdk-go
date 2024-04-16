@@ -44,6 +44,10 @@ const (
 	GPUCagra      IndexType = "GPU_CAGRA"
 	GPUBruteForce IndexType = "GPU_BRUTE_FORCE"
 
+	// Sparse
+	SparseInverted IndexType = "SPARSE_INVERTED_INDEX"
+	SparseWAND     IndexType = "SPARSE_WAND"
+
 	// DEPRECATED
 	Scalar IndexType = ""
 
@@ -66,6 +70,7 @@ const (
 
 // index param field tag
 const (
+	tParams     = `params`
 	tIndexType  = `index_type`
 	tMetricType = `metric_type`
 )
