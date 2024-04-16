@@ -8,7 +8,7 @@ import "github.com/milvus-io/milvus-sdk-go/v2/entity"
 // Scores is actually the distance between the vector current record contains and the search target vector
 type SearchResult struct {
 	ResultCount  int // the returning entry count
-	GroupByValue interface{}
+	GroupByValue entity.Column
 	IDs          entity.Column // auto generated id, can be mapped to the columns from `Insert` API
 	Fields       ResultSet     //[]entity.Column // output field data
 	Scores       []float32     // distance to the target vector

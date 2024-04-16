@@ -117,11 +117,11 @@ func main() {
 	for _, rs := range result {
 		log.Printf("GroupByValue: %v\n", rs.GroupByValue)
 		for i := 0; i < rs.ResultCount; i++ {
-			id, _ := rs.IDs.GetAsInt64(i)
+			id, _ := rs.IDs.GetAsInt64(i) // ignore error here
 			score := rs.Scores[i]
-			embedding, _ := rs.Fields.GetColumn(embeddingCol).Get(i)
+			groupByValue, _ := rs.GroupByValue.Get(i) //ignore error here
 
-			log.Printf("ID: %d, score %f, embedding: %v\n", id, score, embedding)
+			log.Printf("ID: %d, score %f, group by value: %v\n", id, score, groupByValue)
 		}
 	}
 

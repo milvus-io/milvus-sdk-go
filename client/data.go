@@ -129,29 +129,20 @@ func (c *GrpcClient) Search(ctx context.Context, collName string, partitions []s
 }
 
 func (c *GrpcClient) handleSearchResult(schema *entity.Schema, outputFields []string, nq int, resp *milvuspb.SearchResults) ([]SearchResult, error) {
-	var err error
 	sr := make([]SearchResult, 0, nq)
-	// 3. parse result into result
+	// parse result into result
 	results := resp.GetResults()
 	offset := 0
 	fieldDataList := results.GetFieldsData()
 	gb := results.GetGroupByFieldValue()
-	var gbc entity.Column
-	if gb != nil {
-		gbc, err = entity.FieldDataColumn(gb, 0, -1)
-		if err != nil {
-			return nil, err
-		}
-	}
+
 	for i := 0; i < int(results.GetNumQueries()); i++ {
 		rc := int(results.GetTopks()[i]) // result entry count for current query
 		entry := SearchResult{
 			ResultCount: rc,
 			Scores:      results.GetScores()[offset : offset+rc],
 		}
-		if gbc != nil {
-			entry.GroupByValue, _ = gbc.Get(i)
-		}
+
 		// parse result set if current nq is not empty
 		if rc > 0 {
 			entry.IDs, entry.Err = entity.IDColumns(results.GetIds(), offset, offset+rc)
@@ -159,6 +150,15 @@ func (c *GrpcClient) handleSearchResult(schema *entity.Schema, outputFields []st
 				offset += rc
 				continue
 			}
+			// parse group-by values
+			if gb != nil {
+				entry.GroupByValue, entry.Err = entity.FieldDataColumn(gb, offset, offset+rc)
+				if entry.Err != nil {
+					offset += rc
+					continue
+				}
+			}
+			// entry.GroupByValue, entry.Err = c.parseSearchResult()
 			entry.Fields, entry.Err = c.parseSearchResult(schema, outputFields, fieldDataList, i, offset, offset+rc)
 			sr = append(sr, entry)
 		}
