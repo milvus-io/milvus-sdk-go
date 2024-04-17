@@ -208,8 +208,8 @@ func TestHybridSearchInvalidVectors(t *testing.T) {
 
 // hybrid search Pagination -> verify success
 func TestHybridSearchMultiVectorsPagination(t *testing.T) {
-	// TODO "https://github.com/milvus-io/milvus/issues/32174"
-	// TODO "https://github.com/milvus-io/milvus-sdk-go/issues/718"
+	t.Skip("https://github.com/milvus-io/milvus/issues/32376")
+	t.Skip("https://github.com/milvus-io/milvus/issues/32174")
 	t.Parallel()
 	ctx := createContext(t, time.Second*common.DefaultTimeout*2)
 	// connect
@@ -219,7 +219,7 @@ func TestHybridSearchMultiVectorsPagination(t *testing.T) {
 	cp := CollectionParams{CollectionFieldsType: AllVectors, AutoID: false, EnableDynamicField: false,
 		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
 
-	dp := DataParams{DoInsert: true, CollectionFieldsType: AllVectors, start: 0, nb: common.DefaultNb,
+	dp := DataParams{DoInsert: true, CollectionFieldsType: AllVectors, start: 0, nb: common.DefaultNb * 5,
 		dim: common.DefaultDim, EnableDynamicField: false}
 
 	// index params
@@ -232,7 +232,7 @@ func TestHybridSearchMultiVectorsPagination(t *testing.T) {
 	queryVec1 := common.GenSearchVectors(1, common.DefaultDim, entity.FieldTypeFloatVector)
 	queryVec2 := common.GenSearchVectors(1, common.DefaultDim, entity.FieldTypeFloat16Vector)
 	// milvus ignore invalid offset with ANNSearchRequest
-	for _, invalidOffset := range []int64{-1, common.MaxTopK + 1} {
+	for _, invalidOffset := range []int64{-20, common.MaxTopK + 1} {
 		sReqs := []*client.ANNSearchRequest{
 			client.NewANNSearchRequest(common.DefaultFloatVecFieldName, entity.L2, "", queryVec1, sp, common.DefaultTopK, client.WithOffset(invalidOffset)),
 			client.NewANNSearchRequest(common.DefaultFloat16VecFieldName, entity.L2, "", queryVec2, sp, common.DefaultTopK),
@@ -240,9 +240,9 @@ func TestHybridSearchMultiVectorsPagination(t *testing.T) {
 		_, errSearch := mc.HybridSearch(ctx, collName, []string{}, common.DefaultTopK, []string{}, client.NewRRFReranker(), sReqs)
 		common.CheckErr(t, errSearch, true)
 
-		// hybrid search with invalid offset
-		//_, errSearch := mc.HybridSearch(ctx, collName, []string{}, common.DefaultTopK, []string{}, client.NewRRFReranker(), sReqs, client.WithOffset(invalidOffset))
-		//common.CheckErr(t, errSearch, false, "top k should be in range [1, 16384]")
+		//hybrid search with invalid offset
+		_, errSearch = mc.HybridSearch(ctx, collName, []string{}, common.DefaultTopK, []string{}, client.NewRRFReranker(), sReqs, client.WithOffset(invalidOffset))
+		common.CheckErr(t, errSearch, false, "top k should be in range [1, 16384]")
 	}
 
 	// search with different reranker and offset
@@ -253,13 +253,19 @@ func TestHybridSearchMultiVectorsPagination(t *testing.T) {
 		client.NewWeightedReranker([]float64{0.4, 1.0}),
 	} {
 		sReqs := []*client.ANNSearchRequest{
-			client.NewANNSearchRequest(common.DefaultFloatVecFieldName, entity.L2, expr, queryVec1, sp, common.DefaultTopK, client.WithOffset(5)),
+			client.NewANNSearchRequest(common.DefaultFloatVecFieldName, entity.L2, expr, queryVec1, sp, common.DefaultTopK),
 			client.NewANNSearchRequest(common.DefaultFloat16VecFieldName, entity.L2, expr, queryVec2, sp, common.DefaultTopK),
 		}
 		// hybrid search
 		searchRes, errSearch := mc.HybridSearch(ctx, collName, []string{}, common.DefaultTopK, []string{}, reranker, sReqs)
 		common.CheckErr(t, errSearch, true)
+		offsetRes, errSearch := mc.HybridSearch(ctx, collName, []string{}, 5, []string{}, reranker, sReqs, client.WithOffset(5))
+		common.CheckErr(t, errSearch, true)
 		common.CheckSearchResult(t, searchRes, 1, common.DefaultTopK)
+		common.CheckSearchResult(t, offsetRes, 1, 5)
+		for i := 0; i < len(searchRes); i++ {
+			require.Equal(t, searchRes[i].IDs.(*entity.ColumnInt64).Data()[5:], offsetRes[i].IDs.(*entity.ColumnInt64).Data())
+		}
 	}
 }
 
