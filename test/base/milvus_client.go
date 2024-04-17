@@ -198,6 +198,14 @@ func (mc *MilvusClient) HasCollection(ctx context.Context, collName string) (boo
 	return has, err
 }
 
+// AlterCollection changes collection attributes
+func (mc *MilvusClient) AlterCollection(ctx context.Context, collName string, attrs ...entity.CollectionAttribute) error {
+	preRequest("AlterCollection", ctx, collName)
+	err := mc.mClient.AlterCollection(ctx, collName, attrs...)
+	postResponse("AlterCollection", err)
+	return err
+}
+
 // -- alias --
 
 // CreateAlias Create Alias
@@ -354,6 +362,14 @@ func (mc *MilvusClient) GetIndexState(ctx context.Context, collName string, fiel
 	indexState, err := mc.mClient.GetIndexState(ctx, collName, fieldName, opts...)
 	postResponse("GetIndexState", err, indexState)
 	return indexState, err
+}
+
+// AlterIndex modifies the index params.
+func (mc *MilvusClient) AlterIndex(ctx context.Context, collName string, indexName string, opts ...client.IndexOption) error {
+	preRequest("AlterIndex", ctx, collName, indexName, opts)
+	err := mc.mClient.AlterIndex(ctx, collName, indexName, opts...)
+	postResponse("AlterIndex", err)
+	return err
 }
 
 // -- basic operation --
