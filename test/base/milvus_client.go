@@ -427,11 +427,11 @@ func (mc *MilvusClient) Search(ctx context.Context, collName string, partitions 
 }
 
 func (mc *MilvusClient) HybridSearch(ctx context.Context, collName string, partitions []string, limit int, outputFields []string,
-	reranker client.Reranker, subRequests []*client.ANNSearchRequest) ([]client.SearchResult, error) {
+	reranker client.Reranker, subRequests []*client.ANNSearchRequest, opts ...client.SearchQueryOptionFunc) ([]client.SearchResult, error) {
 	funcName := "HybridSearch"
-	preRequest(funcName, ctx, collName, partitions, limit, outputFields, reranker, subRequests)
+	preRequest(funcName, ctx, collName, partitions, limit, outputFields, reranker, subRequests, opts)
 
-	searchResult, err := mc.mClient.HybridSearch(ctx, collName, partitions, limit, outputFields, reranker, subRequests)
+	searchResult, err := mc.mClient.HybridSearch(ctx, collName, partitions, limit, outputFields, reranker, subRequests, opts...)
 	postResponse(funcName, err, searchResult)
 
 	return searchResult, err
