@@ -10,6 +10,7 @@ require (
 	github.com/milvus-io/milvus-proto/go-api/v2 v2.4.0-rc.1
 	github.com/stretchr/testify v1.8.1
 	github.com/tidwall/gjson v1.14.4
+	github.com/x448/float16 v0.8.4
 	google.golang.org/grpc v1.48.0
 	google.golang.org/grpc/examples v0.0.0-20220617181431-3e7b97febc7f
 )

@@ -49,7 +49,6 @@ func TestLoadCollectionReplicas(t *testing.T) {
 
 // config common.retentionDuration=40 -> test compact after delete half
 func TestCompactAfterDelete(t *testing.T) {
-	t.Skip("Issue: https://github.com/milvus-io/milvus-sdk-go/issues/379")
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect
 	mc := createMilvusClient(ctx, t)
@@ -66,6 +65,14 @@ func TestCompactAfterDelete(t *testing.T) {
 	errFlush := mc.Flush(ctx, collName, false)
 	common.CheckErr(t, errFlush, true)
 
+	segments, _ := mc.GetPersistentSegmentInfo(ctx, collName)
+	require.Len(t, segments, 1)
+
+	// index
+	indexHnsw, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
+	err := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, indexHnsw, false)
+	common.CheckErr(t, err, true)
+
 	// delete half ids
 	deleteIds := entity.NewColumnInt64(common.DefaultIntFieldName, ids.(*entity.ColumnInt64).Data()[:common.DefaultNb/2])
 	errDelete := mc.DeleteByPks(ctx, collName, "", deleteIds)
@@ -74,9 +81,12 @@ func TestCompactAfterDelete(t *testing.T) {
 	// compact
 	time.Sleep(common.RetentionDuration + 1)
 	compactionID, _ := mc.Compact(ctx, collName, 0)
-	mc.WaitForCompactionCompleted(ctx, compactionID)
+	err = mc.WaitForCompactionCompleted(ctx, compactionID)
+	common.CheckErr(t, err, true)
 
 	// get compaction plans
-	_, plans, _ := mc.GetCompactionStateWithPlans(ctx, compactionID)
-	log.Println(plans)
+	state, plans, _ := mc.GetCompactionStateWithPlans(ctx, compactionID)
+	require.Equal(t, state, entity.CompactionStateCompleted)
+	require.Len(t, plans, 1)
+	require.ElementsMatch(t, []int64{segments[0].ID}, plans[0].Source)
 }

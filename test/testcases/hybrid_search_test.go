@@ -48,8 +48,9 @@ func TestHybridSearchDefault(t *testing.T) {
 
 // hybrid search default -> verify success
 func TestHybridSearchMultiVectorsDefault(t *testing.T) {
+	t.Skip("https://github.com/milvus-io/milvus/issues/32222")
 	t.Parallel()
-	ctx := createContext(t, time.Second*common.DefaultTimeout*2)
+	ctx := createContext(t, time.Second*common.DefaultTimeout*3)
 	// connect
 	mc := createMilvusClient(ctx, t)
 	for _, enableDynamic := range []bool{false, true} {
@@ -78,8 +79,8 @@ func TestHybridSearchMultiVectorsDefault(t *testing.T) {
 		}
 		sp, _ := entity.NewIndexFlatSearchParam()
 		expr := fmt.Sprintf("%s > 5", common.DefaultIntFieldName)
-		queryVec1 := common.GenSearchVectors(1, common.DefaultDim, entity.FieldTypeFloatVector)
-		queryVec2 := common.GenSearchVectors(1, common.DefaultDim, entity.FieldTypeFloat16Vector)
+		queryVec1 := common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeFloatVector)
+		queryVec2 := common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeFloat16Vector)
 
 		// search with different reranker and limit
 		for _, reranker := range []client.Reranker{client.NewRRFReranker(),
@@ -95,7 +96,7 @@ func TestHybridSearchMultiVectorsDefault(t *testing.T) {
 				}
 				searchRes, errSearch := mc.HybridSearch(ctx, collName, []string{}, limit.limit3, []string{"*"}, reranker, sReqs)
 				common.CheckErr(t, errSearch, true)
-				common.CheckSearchResult(t, searchRes, 1, limit.expLimit)
+				common.CheckSearchResult(t, searchRes, common.DefaultNq, limit.expLimit)
 				common.CheckOutputFields(t, searchRes[0].Fields, common.GetAllFieldsName(enableDynamic, false))
 			}
 		}
@@ -107,7 +108,6 @@ func TestHybridSearchMultiVectorsDefault(t *testing.T) {
 // invalid fieldName: not exist
 // invalid metric type: mismatch
 func TestHybridSearchInvalidParams(t *testing.T) {
-	t.Skip("t.Skip(\"https://github.com/milvus-io/milvus-sdk-go/issues/693\")")
 	ctx := createContext(t, time.Second*common.DefaultTimeout*2)
 	// connect
 	mc := createMilvusClient(ctx, t)
@@ -209,7 +209,8 @@ func TestHybridSearchInvalidVectors(t *testing.T) {
 
 // hybrid search Pagination -> verify success
 func TestHybridSearchMultiVectorsPagination(t *testing.T) {
-	t.Skip("https://github.com/milvus-io/milvus-sdk-go/issues/693")
+	// TODO "https://github.com/milvus-io/milvus/issues/32174"
+	// TODO "https://github.com/milvus-io/milvus-sdk-go/issues/718"
 	t.Parallel()
 	ctx := createContext(t, time.Second*common.DefaultTimeout*2)
 	// connect
@@ -231,13 +232,18 @@ func TestHybridSearchMultiVectorsPagination(t *testing.T) {
 	expr := fmt.Sprintf("%s > 4", common.DefaultIntFieldName)
 	queryVec1 := common.GenSearchVectors(1, common.DefaultDim, entity.FieldTypeFloatVector)
 	queryVec2 := common.GenSearchVectors(1, common.DefaultDim, entity.FieldTypeFloat16Vector)
+	// milvus ignore invalid offset with ANNSearchRequest
 	for _, invalidOffset := range []int64{-1, common.MaxTopK + 1} {
 		sReqs := []*client.ANNSearchRequest{
 			client.NewANNSearchRequest(common.DefaultFloatVecFieldName, entity.L2, "", queryVec1, sp, common.DefaultTopK, client.WithOffset(invalidOffset)),
 			client.NewANNSearchRequest(common.DefaultFloat16VecFieldName, entity.L2, "", queryVec2, sp, common.DefaultTopK),
 		}
 		_, errSearch := mc.HybridSearch(ctx, collName, []string{}, common.DefaultTopK, []string{}, client.NewRRFReranker(), sReqs)
-		common.CheckErr(t, errSearch, false, "top k should be in range [1, 16384]")
+		common.CheckErr(t, errSearch, true)
+
+		// hybrid search with invalid offset
+		//_, errSearch := mc.HybridSearch(ctx, collName, []string{}, common.DefaultTopK, []string{}, client.NewRRFReranker(), sReqs, client.WithOffset(invalidOffset))
+		//common.CheckErr(t, errSearch, false, "top k should be in range [1, 16384]")
 	}
 
 	// search with different reranker and offset
@@ -282,7 +288,7 @@ func TestHybridSearchMultiVectorsRangeSearch(t *testing.T) {
 	queryVec2 := common.GenSearchVectors(1, common.DefaultDim, entity.FieldTypeFloat16Vector)
 
 	// search with different reranker and offset
-	sp.AddRadius(10)
+	sp.AddRadius(20)
 	sp.AddRangeFilter(0.01)
 	for _, reranker := range []client.Reranker{
 		client.NewRRFReranker(),
@@ -300,7 +306,7 @@ func TestHybridSearchMultiVectorsRangeSearch(t *testing.T) {
 		for _, res := range resRange {
 			for _, score := range res.Scores {
 				require.GreaterOrEqual(t, score, float32(0.01))
-				require.LessOrEqual(t, score, float32(5))
+				require.LessOrEqual(t, score, float32(20))
 			}
 		}
 	}

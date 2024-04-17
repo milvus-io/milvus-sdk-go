@@ -6,11 +6,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math"
 	"math/rand"
 	"strconv"
 	"strings"
 	"time"
-	"unsafe"
+
+	"github.com/x448/float16"
 
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )
@@ -191,27 +193,28 @@ func GenFloatVector(dim int64) []float32 {
 }
 
 func GenFloat16Vector(dim int64) []byte {
-	vector := make([]byte, 0, dim)
-	fp16Data := make([]byte, 2)
+	ret := make([]byte, dim*2)
 	for i := 0; i < int(dim); i++ {
-		f := rand.Float32()
-		u32 := *(*uint32)(unsafe.Pointer(&f))
-		binary.LittleEndian.PutUint16(fp16Data, uint16(u32>>16))
-		vector = append(vector, fp16Data...)
+		v := float16.Fromfloat32(rand.Float32()).Bits()
+		binary.LittleEndian.PutUint16(ret[i*2:], v)
 	}
-	return vector
+	return ret
 }
 
 func GenBFloat16Vector(dim int64) []byte {
-	vector := make([]byte, 0, dim)
-	bf16Data := make([]byte, 2)
+	ret16 := make([]uint16, 0, dim)
 	for i := 0; i < int(dim); i++ {
 		f := rand.Float32()
-		u32 := *(*uint32)(unsafe.Pointer(&f))
-		binary.LittleEndian.PutUint16(bf16Data, uint16(u32>>16))
-		vector = append(vector, bf16Data...)
+		bits := math.Float32bits(f)
+		bits >>= 16
+		bits &= 0x7FFF
+		ret16 = append(ret16, uint16(bits))
 	}
-	return vector
+	ret := make([]byte, len(ret16)*2)
+	for i, value := range ret16 {
+		binary.LittleEndian.PutUint16(ret[i*2:], value)
+	}
+	return ret
 }
 
 func GenBinaryVector(dim int64) []byte {
@@ -1242,9 +1245,8 @@ func GenAllFloatIndex() []entity.Index {
 		idxIvfPq, _ := entity.NewIndexIvfPQ(metricType, nlist, 16, 8)
 		idxHnsw, _ := entity.NewIndexHNSW(metricType, 8, 96)
 		idxScann, _ := entity.NewIndexSCANN(metricType, 16, false)
-		// TODO waiting for PR https://github.com/milvus-io/milvus/pull/30716
-		//idxDiskAnn, _ := entity.NewIndexDISKANN(metricType)
-		allFloatIndex = append(allFloatIndex, idxFlat, idxIvfFlat, idxIvfSq8, idxIvfPq, idxHnsw, idxScann)
+		idxDiskAnn, _ := entity.NewIndexDISKANN(metricType)
+		allFloatIndex = append(allFloatIndex, idxFlat, idxIvfFlat, idxIvfSq8, idxIvfPq, idxHnsw, idxScann, idxDiskAnn)
 	}
 	return allFloatIndex
 }

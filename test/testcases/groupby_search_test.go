@@ -115,7 +115,6 @@ func prepareDataForGroupBySearch(t *testing.T, loopInsert int, insertNi int, idx
 // -> verify every top passage is the top of whole group
 // output_fields: pk + groupBy
 func TestSearchGroupByFloatDefault(t *testing.T) {
-	//t.Skip("unstable case and https://github.com/milvus-io/milvus/issues/31494")
 	t.Parallel()
 	for _, metricType := range common.SupportFloatMetricType {
 		for _, idx := range genGroupByVectorIndex(metricType) {
@@ -137,7 +136,7 @@ func TestSearchGroupByFloatDefault(t *testing.T) {
 				total := 0
 				for _, rs := range resGroupBy {
 					for i := 0; i < rs.ResultCount; i++ {
-						groupByValue, _ := rs.Fields.GetColumn(groupByField).Get(i)
+						groupByValue, _ := rs.GroupByValue.Get(i)
 						pkValue, _ := rs.IDs.GetAsInt64(i)
 						var expr string
 						if groupByField == "varchar" {
@@ -164,7 +163,9 @@ func TestSearchGroupByFloatDefault(t *testing.T) {
 				_str := fmt.Sprintf("GroupBy search with field %s, nq=%d and limit=%d , then hitsNum= %d, hitsRate=%v\n",
 					groupByField, common.DefaultNq, common.DefaultTopK, hitsNum, hitsRate)
 				log.Println(_str)
-				//require.GreaterOrEqualf(t, hitsRate, float32(0.1), _str)
+				if groupByField != "bool" {
+					require.GreaterOrEqualf(t, hitsRate, float32(0.8), _str)
+				}
 			}
 		}
 	}
@@ -217,7 +218,6 @@ func TestSearchGroupByBinaryDefault(t *testing.T) {
 // default Bounded ConsistencyLevel -> succ ??
 // strong ConsistencyLevel -> error
 func TestSearchGroupByBinaryGrowing(t *testing.T) {
-	//t.Skip("#31134")
 	t.Parallel()
 	for _, metricType := range common.SupportBinIvfFlatMetricType {
 		idxBinIvfFlat, _ := entity.NewIndexBinIvfFlat(metricType, 128)
@@ -260,7 +260,7 @@ func TestSearchGroupByBinaryGrowing(t *testing.T) {
 func TestSearchGroupByFloatGrowing(t *testing.T) {
 	for _, metricType := range common.SupportFloatMetricType {
 		idxHnsw, _ := entity.NewIndexHNSW(metricType, 8, 96)
-		mc, ctx, collName := prepareDataForGroupBySearch(t, 5, 1000, idxHnsw, true)
+		mc, ctx, collName := prepareDataForGroupBySearch(t, 100, 200, idxHnsw, true)
 
 		// search params
 		queryVec := common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeFloatVector)
@@ -278,7 +278,7 @@ func TestSearchGroupByFloatGrowing(t *testing.T) {
 			// verify each topK entity is the top1 in the group
 			for _, rs := range resGroupBy {
 				for i := 0; i < rs.ResultCount; i++ {
-					groupByValue, _ := rs.Fields.GetColumn(groupByField).Get(i)
+					groupByValue, _ := rs.GroupByValue.Get(i)
 					pkValue, _ := rs.IDs.GetAsInt64(i)
 					var expr string
 					if groupByField == "varchar" {
@@ -288,7 +288,7 @@ func TestSearchGroupByFloatGrowing(t *testing.T) {
 					}
 
 					resFilter, _ := mc.Search(ctx, collName, []string{}, expr, []string{common.DefaultIntFieldName,
-						groupByField}, queryVec, common.DefaultFloatVecFieldName, metricType, 1, sp)
+						groupByField}, queryVec, common.DefaultFloatVecFieldName, metricType, 1, sp, client.WithSearchQueryConsistencyLevel(entity.ClStrong))
 
 					// search filter with groupByValue is the top1
 					filterTop1Pk, _ := resFilter[0].IDs.GetAsInt64(0)
@@ -305,7 +305,9 @@ func TestSearchGroupByFloatGrowing(t *testing.T) {
 			_str := fmt.Sprintf("GroupBy search with field %s, nq=%d and limit=%d , then hitsNum= %d, hitsRate=%v\n",
 				groupByField, common.DefaultNq, common.DefaultTopK, hitsNum, hitsRate)
 			log.Println(_str)
-			//require.GreaterOrEqual(t, hitsRate, float32(0.6), _str)
+			if groupByField != "bool" {
+				require.GreaterOrEqualf(t, hitsRate, float32(0.8), _str)
+			}
 		}
 	}
 }
@@ -407,7 +409,6 @@ func TestSearchGroupByHybridSearch(t *testing.T) {
 		client.NewANNSearchRequest(common.DefaultFloatVecFieldName, entity.L2, expr, queryVec1, sp, common.DefaultTopK, client.WithOffset(2)),
 		client.NewANNSearchRequest(common.DefaultFloatVecFieldName, entity.L2, expr, queryVec2, sp, common.DefaultTopK, client.WithGroupByField("varchar")),
 	}
-	//supportedGroupByFields := []string{common.DefaultIntFieldName, "int8", "int16", "int32", "varchar", "bool"}
 	_, errSearch := mc.HybridSearch(ctx, collName, []string{}, common.DefaultTopK, []string{}, client.NewRRFReranker(), sReqs)
 	common.CheckErr(t, errSearch, false, "not support search_group_by operation in the hybrid search")
 }
