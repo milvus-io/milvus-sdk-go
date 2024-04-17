@@ -36,7 +36,7 @@ const (
 	groupByKey       = `group_by_field`
 )
 
-func (c *GrpcClient) HybridSearch(ctx context.Context, collName string, partitions []string, limit int, outputFields []string, reranker Reranker, subRequests []*ANNSearchRequest) ([]SearchResult, error) {
+func (c *GrpcClient) HybridSearch(ctx context.Context, collName string, partitions []string, limit int, outputFields []string, reranker Reranker, subRequests []*ANNSearchRequest, opts ...SearchQueryOptionFunc) ([]SearchResult, error) {
 	if c.Service == nil {
 		return nil, ErrClientNotReady
 	}
@@ -56,7 +56,7 @@ func (c *GrpcClient) HybridSearch(ctx context.Context, collName string, partitio
 	sReqs := make([]*milvuspb.SearchRequest, 0, len(subRequests))
 	nq := 0
 	for _, subRequest := range subRequests {
-		r, err := subRequest.getMilvusSearchRequest(collInfo)
+		r, err := subRequest.getMilvusSearchRequest(collInfo, opts...)
 		if err != nil {
 			return nil, err
 		}

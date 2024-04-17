@@ -222,7 +222,7 @@ type Client interface {
 		opts ...ReplicateMessageOption,
 	) (*entity.MessageInfo, error)
 
-	HybridSearch(ctx context.Context, collName string, partitions []string, limit int, outputFields []string, reranker Reranker, subRequests []*ANNSearchRequest) ([]SearchResult, error)
+	HybridSearch(ctx context.Context, collName string, partitions []string, limit int, outputFields []string, reranker Reranker, subRequests []*ANNSearchRequest, opts ...SearchQueryOptionFunc) ([]SearchResult, error)
 }
 
 // NewClient create a client connected to remote milvus cluster.

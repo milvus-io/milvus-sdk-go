@@ -36,11 +36,14 @@ func (r *ANNSearchRequest) WithExpr(expr string) *ANNSearchRequest {
 	return r
 }
 
-func (r *ANNSearchRequest) getMilvusSearchRequest(collectionInfo *collInfo) (*milvuspb.SearchRequest, error) {
+func (r *ANNSearchRequest) getMilvusSearchRequest(collectionInfo *collInfo, opts ...SearchQueryOptionFunc) (*milvuspb.SearchRequest, error) {
 	opt := &SearchQueryOption{
 		ConsistencyLevel: collectionInfo.ConsistencyLevel, // default
 	}
 	for _, o := range r.options {
+		o(opt)
+	}
+	for _, o := range opts {
 		o(opt)
 	}
 	params := r.searchParam.Params()
