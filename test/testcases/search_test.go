@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/milvus-io/milvus-sdk-go/v2/client"
@@ -176,7 +177,10 @@ func TestSearchEmptyCollection(t *testing.T) {
 			common.DefaultTopK,
 			sp,
 		)
-		require.Len(t, searchRes, 0)
+		require.Len(t, searchRes, common.DefaultNq)
+		for _, resultSet := range searchRes {
+			assert.EqualValues(t, 0, resultSet.ResultCount)
+		}
 	}
 }
 
@@ -1190,7 +1194,10 @@ func TestSearchArrayFieldExpr(t *testing.T) {
 			sp,
 		)
 		common.CheckErr(t, errSearchEmpty, true)
-		require.Empty(t, searchRes)
+		require.Len(t, searchRes, common.DefaultNq)
+		for _, resultSet := range searchRes {
+			assert.EqualValues(t, 0, resultSet.ResultCount)
+		}
 	}
 }
 
