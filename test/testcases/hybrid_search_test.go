@@ -48,7 +48,6 @@ func TestHybridSearchDefault(t *testing.T) {
 
 // hybrid search default -> verify success
 func TestHybridSearchMultiVectorsDefault(t *testing.T) {
-	t.Skip("https://github.com/milvus-io/milvus/issues/32222")
 	t.Parallel()
 	ctx := createContext(t, time.Second*common.DefaultTimeout*3)
 	// connect
@@ -308,6 +307,56 @@ func TestHybridSearchMultiVectorsRangeSearch(t *testing.T) {
 				require.GreaterOrEqual(t, score, float32(0.01))
 				require.LessOrEqual(t, score, float32(20))
 			}
+		}
+	}
+}
+
+func TestHybridSearchSparseVector(t *testing.T) {
+	t.Parallel()
+	idxInverted := entity.NewGenericIndex(common.DefaultSparseVecFieldName, "SPARSE_INVERTED_INDEX", map[string]string{"drop_ratio_build": "0.2", "metric_type": "IP"})
+	idxWand := entity.NewGenericIndex(common.DefaultSparseVecFieldName, "SPARSE_WAND", map[string]string{"drop_ratio_build": "0.3", "metric_type": "IP"})
+	for _, idx := range []entity.Index{idxInverted, idxWand} {
+		ctx := createContext(t, time.Second*common.DefaultTimeout*2)
+		// connect
+		mc := createMilvusClient(ctx, t)
+
+		// create -> insert [0, 3000) -> flush -> index -> load
+		cp := CollectionParams{CollectionFieldsType: Int64VarcharSparseVec, AutoID: false, EnableDynamicField: true,
+			ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxLength: common.TestMaxLen}
+
+		dp := DataParams{DoInsert: true, CollectionFieldsType: Int64VarcharSparseVec, start: 0, nb: common.DefaultNb * 3,
+			dim: common.DefaultDim, EnableDynamicField: true}
+
+		// index params
+		idxHnsw, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
+		ips := []IndexParams{
+			{BuildIndex: true, Index: idx, FieldName: common.DefaultSparseVecFieldName, async: false},
+			{BuildIndex: true, Index: idxHnsw, FieldName: common.DefaultFloatVecFieldName, async: false},
+		}
+		collName := prepareCollection(ctx, t, mc, cp, WithDataParams(dp), WithIndexParams(ips), WithCreateOption(client.WithConsistencyLevel(entity.ClStrong)))
+
+		// search
+		queryVec1 := common.GenSearchVectors(common.DefaultNq, common.DefaultDim*2, entity.FieldTypeSparseVector)
+		queryVec2 := common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeFloatVector)
+		sp1, _ := entity.NewIndexSparseInvertedSearchParam(0.2)
+		sp2, _ := entity.NewIndexHNSWSearchParam(20)
+		expr := fmt.Sprintf("%s > 1", common.DefaultIntFieldName)
+		sReqs := []*client.ANNSearchRequest{
+			client.NewANNSearchRequest(common.DefaultSparseVecFieldName, entity.IP, expr, queryVec1, sp1, common.DefaultTopK),
+			client.NewANNSearchRequest(common.DefaultFloatVecFieldName, entity.L2, "", queryVec2, sp2, common.DefaultTopK),
+		}
+		for _, reranker := range []client.Reranker{
+			client.NewRRFReranker(),
+			client.NewWeightedReranker([]float64{0.5, 0.6}),
+		} {
+			// hybrid search
+			searchRes, errSearch := mc.HybridSearch(ctx, collName, []string{}, common.DefaultTopK, []string{"*"}, reranker, sReqs)
+			common.CheckErr(t, errSearch, true)
+			common.CheckSearchResult(t, searchRes, common.DefaultNq, common.DefaultTopK)
+			common.CheckErr(t, errSearch, true)
+			outputFields := []string{common.DefaultIntFieldName, common.DefaultVarcharFieldName, common.DefaultFloatVecFieldName,
+				common.DefaultSparseVecFieldName, common.DefaultDynamicFieldName}
+			common.CheckOutputFields(t, searchRes[0].Fields, outputFields)
 		}
 	}
 }

@@ -33,6 +33,7 @@ const (
 	DefaultBinaryVecFieldName   = "binaryVec"
 	DefaultFloat16VecFieldName  = "fp16Vec"
 	DefaultBFloat16VecFieldName = "bf16Vec"
+	DefaultSparseVecFieldName   = "sparseVec"
 	DefaultDynamicNumberField   = "dynamicNumber"
 	DefaultDynamicStringField   = "dynamicString"
 	DefaultDynamicBoolField     = "dynamicBool"
@@ -223,6 +224,21 @@ func GenBinaryVector(dim int64) []byte {
 	return vector
 }
 
+func GenSparseVector(maxLen int) entity.SparseEmbedding {
+	length := 1 + rand.Intn(1+maxLen)
+	positions := make([]uint32, length)
+	values := make([]float32, length)
+	for i := 0; i < length; i++ {
+		positions[i] = uint32(2*i + 1)
+		values[i] = rand.Float32()
+	}
+	vector, err := entity.NewSliceSparseEmbedding(positions, values)
+	if err != nil {
+		log.Fatalf("Generate vector failed %s", err)
+	}
+	return vector
+}
+
 // --- common utils  ---
 
 // --- gen fields ---
@@ -405,6 +421,13 @@ func GenColumnData(start int, nb int, fieldType entity.FieldType, fieldName stri
 			bf16Vectors = append(bf16Vectors, vec)
 		}
 		return entity.NewColumnBFloat16Vector(fieldName, int(opt.dim), bf16Vectors)
+	case entity.FieldTypeSparseVector:
+		vectors := make([]entity.SparseEmbedding, 0, nb)
+		for i := start; i < start+nb; i++ {
+			vec := GenSparseVector(opt.maxLenSparse)
+			vectors = append(vectors, vec)
+		}
+		return entity.NewColumnSparseVectors(fieldName, vectors)
 	default:
 		return nil
 	}
@@ -984,6 +1007,53 @@ func GenDefaultArrayRows(start int, nb int, dim int64, enableDynamicField bool, 
 	return rows
 }
 
+func GenDefaultSparseRows(start int, nb int, dim int64, maxLenSparse int, enableDynamicField bool) []interface{} {
+	rows := make([]interface{}, 0, nb)
+	type BaseRow struct {
+		Int64     int64                  `json:"int64" milvus:"name:int64"`
+		Varchar   string                 `json:"varchar" milvus:"name:varchar"`
+		FloatVec  []float32              `json:"floatVec" milvus:"name:floatVec"`
+		SparseVec entity.SparseEmbedding `json:"sparseVec" milvus:"name:sparseVec"`
+	}
+
+	type DynamicRow struct {
+		Int64     int64                  `json:"int64" milvus:"name:int64"`
+		Varchar   string                 `json:"varchar" milvus:"name:varchar"`
+		FloatVec  []float32              `json:"floatVec" milvus:"name:floatVec"`
+		SparseVec entity.SparseEmbedding `json:"sparseVec" milvus:"name:sparseVec"`
+		Dynamic   Dynamic                `json:"dynamic" milvus:"name:dynamic"`
+	}
+
+	for i := start; i < start+nb; i++ {
+		baseRow := BaseRow{
+			Int64:     int64(i),
+			Varchar:   strconv.Itoa(i),
+			FloatVec:  GenFloatVector(dim),
+			SparseVec: GenSparseVector(maxLenSparse),
+		}
+		// json and dynamic field
+		dynamicJSON := Dynamic{
+			Number: int32(i),
+			String: strconv.Itoa(i),
+			Bool:   i%2 == 0,
+			List:   []int64{int64(i), int64(i + 1)},
+		}
+		if enableDynamicField {
+			dynamicRow := DynamicRow{
+				Int64:     baseRow.Int64,
+				Varchar:   baseRow.Varchar,
+				FloatVec:  baseRow.FloatVec,
+				SparseVec: baseRow.SparseVec,
+				Dynamic:   dynamicJSON,
+			}
+			rows = append(rows, dynamicRow)
+		} else {
+			rows = append(rows, &baseRow)
+		}
+	}
+	return rows
+}
+
 func GenAllVectorsRows(start int, nb int, dim int64, enableDynamicField bool) []interface{} {
 	rows := make([]interface{}, 0, nb)
 	type BaseRow struct {
@@ -1234,11 +1304,28 @@ var SupportBinIvfFlatMetricType = []entity.MetricType{
 	entity.HAMMING,
 }
 
+var UnsupportedSparseVecMetricsType = []entity.MetricType{
+	entity.L2,
+	entity.COSINE,
+	entity.JACCARD,
+	entity.HAMMING,
+	entity.SUBSTRUCTURE,
+	entity.SUPERSTRUCTURE,
+}
+
 // GenAllFloatIndex gen all float vector index
-func GenAllFloatIndex() []entity.Index {
+func GenAllFloatIndex(metricTypes ...entity.MetricType) []entity.Index {
 	nlist := 128
 	var allFloatIndex []entity.Index
-	for _, metricType := range SupportFloatMetricType {
+	var allMetricTypes []entity.MetricType
+	log.Println(metricTypes)
+	if len(metricTypes) == 0 {
+		allMetricTypes = SupportFloatMetricType
+	} else {
+		allMetricTypes = metricTypes
+	}
+	for _, metricType := range allMetricTypes {
+		log.Println(metricType)
 		idxFlat, _ := entity.NewIndexFlat(metricType)
 		idxIvfFlat, _ := entity.NewIndexIvfFlat(metricType, nlist)
 		idxIvfSq8, _ := entity.NewIndexIvfSQ8(metricType, nlist)
@@ -1278,6 +1365,11 @@ func GenSearchVectors(nq int, dim int64, dataType entity.FieldType) []entity.Vec
 		for i := 0; i < nq; i++ {
 			vector := GenBFloat16Vector(dim)
 			vectors = append(vectors, entity.BFloat16Vector(vector))
+		}
+	case entity.FieldTypeSparseVector:
+		for i := 0; i < nq; i++ {
+			vec := GenSparseVector(int(dim))
+			vectors = append(vectors, vec)
 		}
 	}
 	return vectors

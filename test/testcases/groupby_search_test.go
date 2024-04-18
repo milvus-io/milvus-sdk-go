@@ -171,6 +171,70 @@ func TestSearchGroupByFloatDefault(t *testing.T) {
 	}
 }
 
+// test groupBy search sparse vector
+func TestGroupBySearchSparseVector(t *testing.T) {
+	t.Parallel()
+	idxInverted, _ := entity.NewIndexSparseInverted(entity.IP, 0.3)
+	idxWand, _ := entity.NewIndexSparseWAND(entity.IP, 0.2)
+	for _, idx := range []entity.Index{idxInverted, idxWand} {
+		ctx := createContext(t, time.Second*common.DefaultTimeout*2)
+		// connect
+		mc := createMilvusClient(ctx, t)
+
+		// create -> insert [0, 3000) -> flush -> index -> load
+		cp := CollectionParams{CollectionFieldsType: Int64VarcharSparseVec, AutoID: false, EnableDynamicField: true,
+			ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxLength: common.TestMaxLen}
+		collName := createCollection(ctx, t, mc, cp, client.WithConsistencyLevel(entity.ClStrong))
+
+		// insert data
+		dp := DataParams{DoInsert: true, CollectionName: collName, CollectionFieldsType: Int64VarcharSparseVec, start: 0,
+			nb: 200, dim: common.DefaultDim, EnableDynamicField: true}
+		for i := 0; i < 100; i++ {
+			_, _ = insertData(ctx, t, mc, dp)
+		}
+		mc.Flush(ctx, collName, false)
+
+		// index and load
+		idxHnsw, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
+		mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idxHnsw, false)
+		mc.CreateIndex(ctx, collName, common.DefaultSparseVecFieldName, idx, false)
+		mc.LoadCollection(ctx, collName, false)
+
+		// groupBy search
+		queryVec := common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeSparseVector)
+		sp, _ := entity.NewIndexSparseInvertedSearchParam(0.2)
+		resGroupBy, _ := mc.Search(ctx, collName, []string{}, "", []string{common.DefaultIntFieldName, common.DefaultVarcharFieldName}, queryVec,
+			common.DefaultSparseVecFieldName, entity.IP, common.DefaultTopK, sp, client.WithGroupByField(common.DefaultVarcharFieldName))
+
+		// verify each topK entity is the top1 of the whole group
+		hitsNum := 0
+		total := 0
+		for _, rs := range resGroupBy {
+			for i := 0; i < rs.ResultCount; i++ {
+				groupByValue, _ := rs.GroupByValue.Get(i)
+				pkValue, _ := rs.IDs.GetAsInt64(i)
+				expr := fmt.Sprintf("%s == '%v' ", common.DefaultVarcharFieldName, groupByValue)
+
+				// 	search filter with groupByValue is the top1
+				resFilter, _ := mc.Search(ctx, collName, []string{}, expr, []string{common.DefaultIntFieldName,
+					common.DefaultVarcharFieldName}, queryVec, common.DefaultSparseVecFieldName, entity.IP, 1, sp)
+				filterTop1Pk, _ := resFilter[0].IDs.GetAsInt64(0)
+				if filterTop1Pk == pkValue {
+					hitsNum += 1
+				}
+				total += 1
+			}
+		}
+
+		// verify hits rate
+		hitsRate := float32(hitsNum) / float32(total)
+		_str := fmt.Sprintf("GroupBy search with field %s, nq=%d and limit=%d , then hitsNum= %d, hitsRate=%v\n",
+			common.DefaultSparseVecFieldName, common.DefaultNq, common.DefaultTopK, hitsNum, hitsRate)
+		log.Println(_str)
+		require.GreaterOrEqualf(t, hitsRate, float32(0.8), _str)
+	}
+}
+
 // binary vector -> not supported
 func TestSearchGroupByBinaryDefault(t *testing.T) {
 	t.Parallel()

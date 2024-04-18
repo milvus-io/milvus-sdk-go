@@ -817,3 +817,61 @@ func TestMmapAlterIndex(t *testing.T) {
 		common.CheckOutputFields(t, searchRes[0].Fields, []string{common.DefaultIntFieldName, common.DefaultFloatFieldName, common.DefaultFloatVecFieldName})
 	}
 }
+
+// test search when mmap sparse collection
+func TestMmapSparseCollection(t *testing.T) {
+	t.Parallel()
+	idxInverted, _ := entity.NewIndexSparseInverted(entity.IP, 0)
+	idxWand, _ := entity.NewIndexSparseWAND(entity.IP, 0)
+	for _, idx := range []entity.Index{idxInverted, idxWand} {
+		ctx := createContext(t, time.Second*common.DefaultTimeout*2)
+		// connect
+		mc := createMilvusClient(ctx, t)
+
+		// create -> insert [0, 3000) -> flush -> index -> load
+		cp := CollectionParams{CollectionFieldsType: Int64VarcharSparseVec, AutoID: false, EnableDynamicField: true,
+			ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxLength: common.TestMaxLen}
+
+		dp := DataParams{DoInsert: true, CollectionFieldsType: Int64VarcharSparseVec, start: 0, nb: common.DefaultNb * 5,
+			dim: common.DefaultDim, EnableDynamicField: true}
+
+		// index params
+		idxHnsw, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
+		ips := []IndexParams{
+			{BuildIndex: true, Index: idx, FieldName: common.DefaultSparseVecFieldName, async: false},
+			{BuildIndex: true, Index: idxHnsw, FieldName: common.DefaultFloatVecFieldName, async: false},
+		}
+		collName := prepareCollection(ctx, t, mc, cp, WithDataParams(dp), WithIndexParams(ips), WithCreateOption(client.WithConsistencyLevel(entity.ClStrong)))
+
+		// alter mmap
+		mc.ReleaseCollection(ctx, collName)
+		// alter index and enable mmap
+		err := mc.AlterIndex(ctx, collName, common.DefaultSparseVecFieldName, client.WithMmap(true))
+		common.CheckErr(t, err, false, fmt.Sprintf("index type %s does not support mmap", idx.IndexType()))
+		err = mc.AlterIndex(ctx, collName, common.DefaultFloatVecFieldName, client.WithMmap(true))
+		common.CheckErr(t, err, true)
+		err = mc.AlterCollection(ctx, collName, entity.Mmap(true))
+		common.CheckErr(t, err, true)
+		err = mc.LoadCollection(ctx, collName, false)
+		common.CheckErr(t, err, true)
+
+		// search with floatVec field
+		outputFields := []string{common.DefaultIntFieldName, common.DefaultVarcharFieldName, common.DefaultFloatVecFieldName,
+			common.DefaultSparseVecFieldName, common.DefaultDynamicFieldName}
+		queryVecFloat := common.GenSearchVectors(1, common.DefaultDim, entity.FieldTypeFloatVector)
+		sp, _ := entity.NewIndexSparseInvertedSearchParam(0)
+		resSearch, errSearch := mc.Search(ctx, collName, []string{}, "", []string{"*"}, queryVecFloat, common.DefaultFloatVecFieldName,
+			entity.L2, common.DefaultTopK, sp)
+		common.CheckErr(t, errSearch, true)
+		common.CheckSearchResult(t, resSearch, 1, common.DefaultTopK)
+		common.CheckOutputFields(t, resSearch[0].Fields, outputFields)
+
+		// search with sparse vector field
+		queryVecSparse := common.GenSearchVectors(1, common.DefaultDim, entity.FieldTypeSparseVector)
+		resSearch, errSearch = mc.Search(ctx, collName, []string{}, "", []string{"*"}, queryVecSparse, common.DefaultSparseVecFieldName,
+			entity.IP, common.DefaultTopK, sp)
+		common.CheckErr(t, errSearch, true)
+		common.CheckSearchResult(t, resSearch, 1, common.DefaultTopK)
+		common.CheckOutputFields(t, resSearch[0].Fields, outputFields)
+	}
+}

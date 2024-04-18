@@ -242,13 +242,14 @@ func createVarcharCollectionWithDataIndex(ctx context.Context, t *testing.T, mc 
 }
 
 const (
-	Int64FloatVec      CollectionFieldsType = "PkInt64FloatVec"     // int64 + float + floatVec
-	Int64BinaryVec     CollectionFieldsType = "Int64BinaryVec"      // int64 + float + binaryVec
-	VarcharBinaryVec   CollectionFieldsType = "PkVarcharBinaryVec"  // varchar + binaryVec
-	Int64FloatVecJSON  CollectionFieldsType = "PkInt64FloatVecJson" // int64 + float + floatVec + json
-	Int64FloatVecArray CollectionFieldsType = "Int64FloatVecArray"  // int64 + float + floatVec + all array
-	AllVectors         CollectionFieldsType = "AllVectors"          // int64 + fp32Vec + fp16Vec + binaryVec
-	AllFields          CollectionFieldsType = "AllFields"           // all scalar fields + floatVec
+	Int64FloatVec         CollectionFieldsType = "PkInt64FloatVec"       // int64 + float + floatVec
+	Int64BinaryVec        CollectionFieldsType = "Int64BinaryVec"        // int64 + float + binaryVec
+	VarcharBinaryVec      CollectionFieldsType = "PkVarcharBinaryVec"    // varchar + binaryVec
+	Int64FloatVecJSON     CollectionFieldsType = "PkInt64FloatVecJson"   // int64 + float + floatVec + json
+	Int64FloatVecArray    CollectionFieldsType = "Int64FloatVecArray"    // int64 + float + floatVec + all array
+	Int64VarcharSparseVec CollectionFieldsType = "Int64VarcharSparseVec" // int64 + varchar + float32Vec + sparseVec
+	AllVectors            CollectionFieldsType = "AllVectors"            // int64 + fp32Vec + fp16Vec + binaryVec
+	AllFields             CollectionFieldsType = "AllFields"             // all scalar fields + floatVec
 )
 
 func createCollection(ctx context.Context, t *testing.T, mc *base.MilvusClient, cp CollectionParams, opts ...client.CreateCollectionOption) string {
@@ -271,6 +272,14 @@ func createCollection(ctx context.Context, t *testing.T, mc *base.MilvusClient, 
 	case Int64FloatVecArray:
 		fields = common.GenDefaultFields(cp.AutoID)
 		fields = append(fields, common.GenAllArrayFieldsWithCapacity(cp.MaxCapacity)...)
+	case Int64VarcharSparseVec:
+		fields = []*entity.Field{
+			common.GenField(common.DefaultIntFieldName, entity.FieldTypeInt64, common.WithIsPrimaryKey(true), common.WithAutoID(cp.AutoID)),
+			common.GenField(common.DefaultVarcharFieldName, entity.FieldTypeVarChar, common.WithMaxLength(cp.MaxLength)),
+			common.GenField(common.DefaultFloatVecFieldName, entity.FieldTypeFloatVector, common.WithDim(cp.Dim)),
+			common.GenField(common.DefaultSparseVecFieldName, entity.FieldTypeSparseVector),
+		}
+
 	case AllVectors:
 		fields = []*entity.Field{
 			common.GenField(common.DefaultIntFieldName, entity.FieldTypeInt64, common.WithIsPrimaryKey(true), common.WithAutoID(cp.AutoID)),
@@ -347,7 +356,15 @@ func insertData(ctx context.Context, t *testing.T, mc *base.MilvusClient, dp Dat
 			intColumn, floatColumn, vecColumn := common.GenDefaultColumnData(dp.start, dp.nb, dp.dim)
 			data = append(data, intColumn, floatColumn, vecColumn)
 		}
-
+	case Int64VarcharSparseVec:
+		if dp.WithRows {
+			rows = common.GenDefaultSparseRows(dp.start, dp.nb, dp.dim, dp.maxLenSparse, dp.EnableDynamicField)
+		} else {
+			intColumn, _, vecColumn := common.GenDefaultColumnData(dp.start, dp.nb, dp.dim)
+			varColumn := common.GenColumnData(dp.start, dp.nb, entity.FieldTypeVarChar, common.DefaultVarcharFieldName)
+			sparseColumn := common.GenColumnData(dp.start, dp.nb, entity.FieldTypeSparseVector, common.DefaultSparseVecFieldName, opts...)
+			data = append(data, intColumn, varColumn, vecColumn, sparseColumn)
+		}
 	case AllVectors:
 		if dp.WithRows {
 			rows = common.GenAllVectorsRows(dp.start, dp.nb, dp.dim, dp.EnableDynamicField)

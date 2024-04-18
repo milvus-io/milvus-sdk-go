@@ -114,9 +114,10 @@ func GenSchema(name string, autoID bool, fields []*entity.Field, opts ...CreateS
 // GenColumnDataOption -- create column data --
 type GenColumnDataOption func(opt *genDataOpt)
 type genDataOpt struct {
-	dim         int64
-	ElementType entity.FieldType
-	capacity    int64
+	dim          int64
+	ElementType  entity.FieldType
+	capacity     int64
+	maxLenSparse int
 }
 
 func WithVectorDim(dim int64) GenColumnDataOption {
@@ -134,6 +135,12 @@ func WithArrayElementType(eleType entity.FieldType) GenColumnDataOption {
 func WithArrayCapacity(capacity int64) GenColumnDataOption {
 	return func(opt *genDataOpt) {
 		opt.capacity = capacity
+	}
+}
+
+func WithSparseVectorLen(length int) GenColumnDataOption {
+	return func(opt *genDataOpt) {
+		opt.maxLenSparse = length
 	}
 }
 

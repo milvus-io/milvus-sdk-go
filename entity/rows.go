@@ -389,6 +389,10 @@ func AnyToColumns(rows []interface{}, schemas ...*Schema) ([]Column, error) {
 			}
 			col := NewColumnBFloat16Vector(field.Name, int(dim), data)
 			nameColumns[field.Name] = col
+		case FieldTypeSparseVector:
+			data := make([]SparseEmbedding, 0, rowsLen)
+			col := NewColumnSparseVectors(field.Name, data)
+			nameColumns[field.Name] = col
 		}
 	}
 

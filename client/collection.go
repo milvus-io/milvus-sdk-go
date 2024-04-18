@@ -218,7 +218,8 @@ func (c *GrpcClient) validateSchema(sch *entity.Schema) error {
 		if field.DataType == entity.FieldTypeFloatVector ||
 			field.DataType == entity.FieldTypeBinaryVector ||
 			field.DataType == entity.FieldTypeBFloat16Vector ||
-			field.DataType == entity.FieldTypeFloat16Vector {
+			field.DataType == entity.FieldTypeFloat16Vector ||
+			field.DataType == entity.FieldTypeSparseVector {
 			vectors++
 		}
 	}

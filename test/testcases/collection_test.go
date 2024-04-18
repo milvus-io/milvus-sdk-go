@@ -640,6 +640,50 @@ func TestCreateMultiVectorExceed(t *testing.T) {
 	common.CheckErr(t, errCreateCollection, false, "maximum vector field's number should be limited to 4")
 }
 
+// specify dim for sparse vector -> error
+func TestCreateCollectionSparseVectorWithDim(t *testing.T) {
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	mc := createMilvusClient(ctx, t)
+	allFields := []*entity.Field{
+		common.GenField(common.DefaultIntFieldName, entity.FieldTypeInt64, common.WithIsPrimaryKey(true), common.WithAutoID(false)),
+		common.GenField(common.DefaultSparseVecFieldName, entity.FieldTypeSparseVector, common.WithDim(common.DefaultDim)),
+	}
+	collName := common.GenRandomString(6)
+	schema := common.GenSchema(collName, false, allFields)
+
+	// create collection
+	errCreateCollection := mc.CreateCollection(ctx, schema, common.DefaultShards)
+	common.CheckErr(t, errCreateCollection, false, "dim should not be specified for sparse vector field sparseVec(0)")
+}
+
+// create collection with sparse vector
+func TestCreateCollectionSparseVector(t *testing.T) {
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	mc := createMilvusClient(ctx, t)
+	allFields := []*entity.Field{
+		common.GenField(common.DefaultIntFieldName, entity.FieldTypeInt64, common.WithIsPrimaryKey(true), common.WithAutoID(false)),
+		common.GenField(common.DefaultVarcharFieldName, entity.FieldTypeVarChar, common.WithMaxLength(common.TestMaxLen)),
+		common.GenField(common.DefaultSparseVecFieldName, entity.FieldTypeSparseVector),
+	}
+	collName := common.GenRandomString(6)
+	schema := common.GenSchema(collName, false, allFields)
+
+	// create collection
+	errCreateCollection := mc.CreateCollection(ctx, schema, common.DefaultShards)
+	common.CheckErr(t, errCreateCollection, true)
+
+	// describe collection
+	collection, err := mc.DescribeCollection(ctx, collName)
+	common.CheckErr(t, err, true)
+	common.CheckCollection(t, collection, collName, common.DefaultShards, schema, common.DefaultConsistencyLevel)
+	require.Len(t, collection.Schema.Fields, 3)
+	for _, field := range collection.Schema.Fields {
+		if field.DataType == entity.FieldTypeSparseVector {
+			require.Equal(t, common.DefaultSparseVecFieldName, field.Name)
+		}
+	}
+}
+
 // -- Get Collection Statistics --
 
 func TestGetStaticsCollectionNotExisted(t *testing.T) {

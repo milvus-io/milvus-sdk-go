@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math"
 	"math/rand"
 	"strconv"
 	"testing"
@@ -426,7 +427,7 @@ func TestInsertEmptyArray(t *testing.T) {
 	collName := createCollection(ctx, t, mc, cp)
 
 	// prepare and insert data
-	var capacity int64 = 0
+	var capacity int64
 	dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVecArray,
 		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
 	_, _ = insertData(ctx, t, mc, dp, common.WithArrayCapacity(capacity))
@@ -524,4 +525,133 @@ func TestInsertArrayDataCapacityExceed(t *testing.T) {
 		_, err = mc.Insert(ctx, collName, "", intColumn, floatColumn, vectorColumn, arrayColumn)
 		common.CheckErr(t, err, false, "array length exceeds max capacity")
 	}
+}
+
+// test insert sparse vector column and rows
+func TestInsertSparseData(t *testing.T) {
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	// connect
+	mc := createMilvusClient(ctx, t)
+
+	cp := CollectionParams{CollectionFieldsType: Int64VarcharSparseVec, AutoID: false, EnableDynamicField: true,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxLength: common.TestMaxLen}
+	collName := createCollection(ctx, t, mc, cp)
+
+	// insert data column
+	intColumn1 := common.GenColumnData(0, common.DefaultNb, entity.FieldTypeInt64, common.DefaultIntFieldName)
+	data := []entity.Column{
+		intColumn1,
+		common.GenColumnData(0, common.DefaultNb, entity.FieldTypeVarChar, common.DefaultVarcharFieldName),
+		common.GenColumnData(0, common.DefaultNb, entity.FieldTypeFloatVector, common.DefaultFloatVecFieldName, common.WithVectorDim(common.DefaultDim)),
+		common.GenColumnData(0, common.DefaultNb, entity.FieldTypeSparseVector, common.DefaultSparseVecFieldName, common.WithSparseVectorLen(20)),
+	}
+	ids, err := mc.Insert(ctx, collName, "", data...)
+	common.CheckErr(t, err, true)
+	common.CheckInsertResult(t, ids, intColumn1)
+
+	// insert rows
+	rows := common.GenDefaultSparseRows(common.DefaultNb, common.DefaultNb, common.DefaultDim, 50, true)
+	ids2, err := mc.InsertRows(ctx, collName, "", rows)
+	common.CheckErr(t, err, true)
+	require.Equal(t, ids2.Len(), common.DefaultNb)
+
+	// flush and verify
+	err = mc.Flush(ctx, collName, false)
+	common.CheckErr(t, err, true)
+	stats, _ := mc.GetCollectionStatistics(ctx, collName)
+	require.Equal(t, strconv.Itoa(common.DefaultNb*2), stats[common.RowCount])
+}
+
+// the dimension of a sparse embedding can be any value from 0 to (maximum of uint32 - 1)
+func TestInsertSparseDataMaxDim(t *testing.T) {
+	// invalid sparse vector: positions >= uint32
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	// connect
+	mc := createMilvusClient(ctx, t)
+
+	cp := CollectionParams{CollectionFieldsType: Int64VarcharSparseVec, AutoID: false, EnableDynamicField: true,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxLength: common.TestMaxLen}
+	collName := createCollection(ctx, t, mc, cp)
+
+	// insert data column
+	pkColumn := common.GenColumnData(0, 1, entity.FieldTypeInt64, common.DefaultIntFieldName)
+	data := []entity.Column{
+		pkColumn,
+		common.GenColumnData(0, 1, entity.FieldTypeVarChar, common.DefaultVarcharFieldName),
+		common.GenColumnData(0, 1, entity.FieldTypeFloatVector, common.DefaultFloatVecFieldName, common.WithVectorDim(common.DefaultDim)),
+	}
+	// sparse vector with max dim
+	positions := []uint32{0, math.MaxUint32 - 10, math.MaxUint32 - 1}
+	values := []float32{0.453, 5.0776, 100.098}
+	sparseVec, err := entity.NewSliceSparseEmbedding(positions, values)
+	common.CheckErr(t, err, true)
+	data = append(data, entity.NewColumnSparseVectors(common.DefaultSparseVecFieldName, []entity.SparseEmbedding{sparseVec}))
+	ids, err := mc.Insert(ctx, collName, "", data...)
+	common.CheckErr(t, err, true)
+	common.CheckInsertResult(t, ids, pkColumn)
+}
+
+func TestInsertSparseInvalidVector(t *testing.T) {
+	// invalid sparse vector: len(positions) != len(values)
+	positions := []uint32{1, 10}
+	values := []float32{0.4, 5.0, 0.34}
+	_, err := entity.NewSliceSparseEmbedding(positions, values)
+	common.CheckErr(t, err, false, "invalid sparse embedding input, positions shall have same number of values")
+
+	// invalid sparse vector: positions >= uint32
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	// connect
+	mc := createMilvusClient(ctx, t)
+
+	cp := CollectionParams{CollectionFieldsType: Int64VarcharSparseVec, AutoID: false, EnableDynamicField: true,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxLength: common.TestMaxLen}
+	collName := createCollection(ctx, t, mc, cp)
+
+	// insert data column
+	data := []entity.Column{
+		common.GenColumnData(0, 1, entity.FieldTypeInt64, common.DefaultIntFieldName),
+		common.GenColumnData(0, 1, entity.FieldTypeVarChar, common.DefaultVarcharFieldName),
+		common.GenColumnData(0, 1, entity.FieldTypeFloatVector, common.DefaultFloatVecFieldName, common.WithVectorDim(common.DefaultDim)),
+	}
+	// invalid sparse vector: position > (maximum of uint32 - 1)
+	positions = []uint32{math.MaxUint32}
+	values = []float32{0.4}
+	sparseVec, err := entity.NewSliceSparseEmbedding(positions, values)
+	common.CheckErr(t, err, true)
+	data1 := append(data, entity.NewColumnSparseVectors(common.DefaultSparseVecFieldName, []entity.SparseEmbedding{sparseVec}))
+	_, err = mc.Insert(ctx, collName, "", data1...)
+	common.CheckErr(t, err, false, "invalid index in sparse float vector: must be less than 2^32-1")
+
+	// invalid sparse vector: empty position and values
+	positions = []uint32{}
+	values = []float32{}
+	sparseVec, err = entity.NewSliceSparseEmbedding(positions, values)
+	common.CheckErr(t, err, true)
+	data2 := append(data, entity.NewColumnSparseVectors(common.DefaultSparseVecFieldName, []entity.SparseEmbedding{sparseVec}))
+	_, err = mc.Insert(ctx, collName, "", data2...)
+	common.CheckErr(t, err, false, "empty sparse float vector row")
+}
+
+func TestInsertSparseVectorSamePosition(t *testing.T) {
+	// invalid sparse vector: positions >= uint32
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	// connect
+	mc := createMilvusClient(ctx, t)
+
+	cp := CollectionParams{CollectionFieldsType: Int64VarcharSparseVec, AutoID: false, EnableDynamicField: true,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxLength: common.TestMaxLen}
+	collName := createCollection(ctx, t, mc, cp)
+
+	//insert data column
+	data := []entity.Column{
+		common.GenColumnData(0, 1, entity.FieldTypeInt64, common.DefaultIntFieldName),
+		common.GenColumnData(0, 1, entity.FieldTypeVarChar, common.DefaultVarcharFieldName),
+		common.GenColumnData(0, 1, entity.FieldTypeFloatVector, common.DefaultFloatVecFieldName, common.WithVectorDim(common.DefaultDim)),
+	}
+	//invalid sparse vector: position > (maximum of uint32 - 1)
+	sparseVec, err := entity.NewSliceSparseEmbedding([]uint32{2, 10, 2}, []float32{0.4, 0.5, 0.6})
+	common.CheckErr(t, err, true)
+	data = append(data, entity.NewColumnSparseVectors(common.DefaultSparseVecFieldName, []entity.SparseEmbedding{sparseVec}))
+	_, err = mc.Insert(ctx, collName, "", data...)
+	common.CheckErr(t, err, false, "unsorted or same indices in sparse float vector")
 }

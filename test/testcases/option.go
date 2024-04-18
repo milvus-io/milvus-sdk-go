@@ -33,6 +33,7 @@ type DataParams struct {
 	EnableDynamicField   bool // whether insert dynamic field data
 	WithRows             bool
 	DoInsert             bool
+	maxLenSparse         int
 }
 
 func (d DataParams) IsEmpty() bool {

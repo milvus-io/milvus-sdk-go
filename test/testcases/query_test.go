@@ -1075,6 +1075,49 @@ func TestQueryCountAfterDml(t *testing.T) {
 	require.Equal(t, int64(common.DefaultNb+upsertNb), countAfterCompact.GetColumn(common.QueryCountFieldName).(*entity.ColumnInt64).Data()[0])
 }
 
+func TestQuerySparseVector(t *testing.T) {
+	t.Parallel()
+	idxInverted := entity.NewGenericIndex(common.DefaultSparseVecFieldName, "SPARSE_INVERTED_INDEX", map[string]string{"drop_ratio_build": "0.2", "metric_type": "IP"})
+	idxWand := entity.NewGenericIndex(common.DefaultSparseVecFieldName, "SPARSE_WAND", map[string]string{"drop_ratio_build": "0.3", "metric_type": "IP"})
+	for _, idx := range []entity.Index{idxInverted, idxWand} {
+		ctx := createContext(t, time.Second*common.DefaultTimeout*2)
+		// connect
+		mc := createMilvusClient(ctx, t)
+
+		// create -> insert [0, 3000) -> flush -> index -> load
+		cp := CollectionParams{CollectionFieldsType: Int64VarcharSparseVec, AutoID: false, EnableDynamicField: false,
+			ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxLength: common.TestMaxLen}
+		collName := createCollection(ctx, t, mc, cp)
+
+		// index
+		idxHnsw, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
+		mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idxHnsw, false)
+		mc.CreateIndex(ctx, collName, common.DefaultSparseVecFieldName, idx, false)
+
+		// insert
+		intColumn, _, floatColumn := common.GenDefaultColumnData(0, common.DefaultNb, common.DefaultDim)
+		varColumn := common.GenColumnData(0, common.DefaultNb, entity.FieldTypeVarChar, common.DefaultVarcharFieldName)
+		sparseColumn := common.GenColumnData(0, common.DefaultNb, entity.FieldTypeSparseVector, common.DefaultSparseVecFieldName)
+		mc.Insert(ctx, collName, "", intColumn, varColumn, floatColumn, sparseColumn)
+		mc.Flush(ctx, collName, false)
+		mc.LoadCollection(ctx, collName, false)
+
+		// count(*)
+		countRes, _ := mc.Query(ctx, collName, []string{}, fmt.Sprintf("%s >=0", common.DefaultIntFieldName), []string{common.QueryCountFieldName})
+		require.Equal(t, int64(common.DefaultNb), countRes.GetColumn(common.QueryCountFieldName).(*entity.ColumnInt64).Data()[0])
+
+		// query
+		queryResult, err := mc.Query(ctx, collName, []string{}, fmt.Sprintf("%s == 0", common.DefaultIntFieldName), []string{"*"})
+		common.CheckErr(t, err, true)
+		expIntColumn := entity.NewColumnInt64(common.DefaultIntFieldName, intColumn.(*entity.ColumnInt64).Data()[:1])
+		expVarcharColumn := entity.NewColumnVarChar(common.DefaultVarcharFieldName, varColumn.(*entity.ColumnVarChar).Data()[:1])
+		expVecColumn := entity.NewColumnFloatVector(common.DefaultFloatVecFieldName, int(common.DefaultDim), floatColumn.(*entity.ColumnFloatVector).Data()[:1])
+		expSparseColumn := entity.NewColumnSparseVectors(common.DefaultSparseVecFieldName, sparseColumn.(*entity.ColumnSparseFloatVector).Data()[:1])
+		common.CheckOutputFields(t, queryResult, []string{common.DefaultIntFieldName, common.DefaultVarcharFieldName, common.DefaultFloatVecFieldName, common.DefaultSparseVecFieldName})
+		common.CheckQueryResult(t, queryResult, []entity.Column{expIntColumn, expVarcharColumn, expVecColumn, expSparseColumn})
+	}
+}
+
 // TODO offset and limit
 // TODO consistency level
 // TODO ignore growing

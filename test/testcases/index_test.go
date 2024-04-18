@@ -670,6 +670,200 @@ func TestCreateAutoIndexScalarFields(t *testing.T) {
 	}
 }
 
+// TODO https://github.com/milvus-io/milvus-sdk-go/issues/726
+func TestCreateIndexSparseVector(t *testing.T) {
+	t.Parallel()
+	idxInverted := entity.NewGenericIndex(common.DefaultSparseVecFieldName, "SPARSE_INVERTED_INDEX", map[string]string{"drop_ratio_build": "0.2", "metric_type": "IP"})
+	idxWand := entity.NewGenericIndex(common.DefaultSparseVecFieldName, "SPARSE_WAND", map[string]string{"drop_ratio_build": "0.3", "metric_type": "IP"})
+
+	for _, idx := range []entity.Index{idxInverted, idxWand} {
+		ctx := createContext(t, time.Second*common.DefaultTimeout)
+		//connect
+		mc := createMilvusClient(ctx, t)
+
+		// create collection with all datatype
+		cp := CollectionParams{CollectionFieldsType: Int64VarcharSparseVec, AutoID: false, EnableDynamicField: true,
+			ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxLength: 300}
+		collName := createCollection(ctx, t, mc, cp)
+
+		// insert
+		dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64VarcharSparseVec,
+			start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
+		_, _ = insertData(ctx, t, mc, dp, common.WithSparseVectorLen(100))
+		mc.Flush(ctx, collName, false)
+
+		// create index
+		err := mc.CreateIndex(ctx, collName, common.DefaultSparseVecFieldName, idx, false)
+		common.CheckErr(t, err, true)
+
+		// describe index
+		idx2, err := mc.DescribeIndex(ctx, collName, common.DefaultSparseVecFieldName)
+		common.CheckErr(t, err, true)
+		common.CheckIndexResult(t, idx2, idx)
+	}
+}
+
+// TODO https://github.com/milvus-io/milvus-sdk-go/issues/726
+func TestCreateIndexSparseVector2(t *testing.T) {
+	t.Parallel()
+	idxInverted1, _ := entity.NewIndexSparseInverted(entity.IP, 0.2)
+	idxWand1, _ := entity.NewIndexSparseWAND(entity.IP, 0.3)
+	for _, idx := range []entity.Index{idxInverted1, idxWand1} {
+		ctx := createContext(t, time.Second*common.DefaultTimeout)
+		//connect
+		mc := createMilvusClient(ctx, t)
+
+		// create collection with all datatype
+		cp := CollectionParams{CollectionFieldsType: Int64VarcharSparseVec, AutoID: false, EnableDynamicField: true,
+			ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxLength: 300}
+		collName := createCollection(ctx, t, mc, cp)
+
+		// insert
+		dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64VarcharSparseVec,
+			start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
+		_, _ = insertData(ctx, t, mc, dp, common.WithSparseVectorLen(100))
+		mc.Flush(ctx, collName, false)
+
+		// create index
+		err := mc.CreateIndex(ctx, collName, common.DefaultSparseVecFieldName, idx, false)
+		common.CheckErr(t, err, true)
+
+		// describe index
+		idx2, err := mc.DescribeIndex(ctx, collName, common.DefaultSparseVecFieldName)
+		expIndex := entity.NewGenericIndex(common.DefaultSparseVecFieldName, idx.IndexType(), idx.Params())
+		common.CheckErr(t, err, true)
+		common.CheckIndexResult(t, idx2, expIndex)
+	}
+}
+
+// create index on sparse vector with invalid params
+func TestCreateSparseIndexInvalidParams(t *testing.T) {
+	for _, indexType := range []entity.IndexType{"SPARSE_INVERTED_INDEX", "SPARSE_WAND"} {
+		ctx := createContext(t, time.Second*common.DefaultTimeout)
+		//connect
+		mc := createMilvusClient(ctx, t)
+
+		// create collection with all datatype
+		cp := CollectionParams{CollectionFieldsType: Int64VarcharSparseVec, AutoID: false, EnableDynamicField: true,
+			ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxLength: 300}
+		collName := createCollection(ctx, t, mc, cp)
+
+		// insert
+		dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64VarcharSparseVec,
+			start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
+		_, _ = insertData(ctx, t, mc, dp, common.WithSparseVectorLen(100))
+		mc.Flush(ctx, collName, false)
+
+		// create index with invalid metric type
+		for _, mt := range common.UnsupportedSparseVecMetricsType {
+			idx := entity.NewGenericIndex(common.DefaultSparseVecFieldName, indexType, map[string]string{"drop_ratio_build": "0.2", "metric_type": string(mt)})
+			err := mc.CreateIndex(ctx, collName, common.DefaultSparseVecFieldName, idx, false)
+			common.CheckErr(t, err, false, "only IP is the supported metric type for sparse index")
+		}
+
+		// create index with invalid drop_ratio_build
+		for _, drb := range []string{"a", "-0.1", "1.3"} {
+			idx := entity.NewGenericIndex(common.DefaultSparseVecFieldName, indexType, map[string]string{"drop_ratio_build": drb, "metric_type": "IP"})
+			err := mc.CreateIndex(ctx, collName, common.DefaultSparseVecFieldName, idx, false)
+			common.CheckErr(t, err, false, "must be in range [0, 1)")
+		}
+
+		// create index and describe index
+		idx := entity.NewGenericIndex(common.DefaultSparseVecFieldName, indexType, map[string]string{"drop_ratio_build": "0", "metric_type": "IP"})
+		err := mc.CreateIndex(ctx, collName, common.DefaultSparseVecFieldName, idx, false)
+		common.CheckErr(t, err, true)
+
+		descIdx, _ := mc.DescribeIndex(ctx, collName, common.DefaultSparseVecFieldName)
+		common.CheckIndexResult(t, descIdx, idx)
+	}
+}
+
+func TestCreateSparseIndexInvalidParams2(t *testing.T) {
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	//connect
+	mc := createMilvusClient(ctx, t)
+
+	// create collection with all datatype
+	cp := CollectionParams{CollectionFieldsType: Int64VarcharSparseVec, AutoID: false, EnableDynamicField: true,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxLength: 300}
+	collName := createCollection(ctx, t, mc, cp)
+
+	// insert
+	dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64VarcharSparseVec,
+		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
+	_, _ = insertData(ctx, t, mc, dp, common.WithSparseVectorLen(100))
+	mc.Flush(ctx, collName, false)
+
+	// create index with invalid metric type
+	for _, mt := range common.UnsupportedSparseVecMetricsType {
+		idx, _ := entity.NewIndexSparseInverted(mt, 0.2)
+		err := mc.CreateIndex(ctx, collName, common.DefaultSparseVecFieldName, idx, false)
+		common.CheckErr(t, err, false, "only IP is the supported metric type for sparse index")
+
+		idxWand, _ := entity.NewIndexSparseWAND(mt, 0.2)
+		err = mc.CreateIndex(ctx, collName, common.DefaultSparseVecFieldName, idxWand, false)
+		common.CheckErr(t, err, false, "only IP is the supported metric type for sparse index")
+	}
+
+	// create index with invalid drop_ratio_build
+	for _, drb := range []float64{-0.3, 1.3} {
+		_, err := entity.NewIndexSparseInverted(entity.IP, drb)
+		common.CheckErr(t, err, false, "must be in range [0, 1)")
+
+		_, err = entity.NewIndexSparseWAND(entity.IP, drb)
+		common.CheckErr(t, err, false, "must be in range [0, 1)")
+	}
+
+	// create index and describe index
+	idx, _ := entity.NewIndexSparseInverted(entity.IP, 0.1)
+	err := mc.CreateIndex(ctx, collName, common.DefaultSparseVecFieldName, idx, false)
+	common.CheckErr(t, err, true)
+
+	descIdx, _ := mc.DescribeIndex(ctx, collName, common.DefaultSparseVecFieldName)
+	expIdx := entity.NewGenericIndex(common.DefaultSparseVecFieldName, idx.IndexType(), idx.Params())
+	common.CheckIndexResult(t, descIdx, expIdx)
+}
+
+//create sparse unsupported index: other vector index and scalar index and auto index
+func TestCreateSparseUnsupportedIndex(t *testing.T) {
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	//connect
+	mc := createMilvusClient(ctx, t)
+
+	// create collection with all datatype
+	cp := CollectionParams{CollectionFieldsType: Int64VarcharSparseVec, AutoID: false, EnableDynamicField: true,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxLength: 300}
+	collName := createCollection(ctx, t, mc, cp)
+
+	// insert
+	dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64VarcharSparseVec,
+		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
+	_, _ = insertData(ctx, t, mc, dp, common.WithSparseVectorLen(100))
+	mc.Flush(ctx, collName, false)
+
+	// create unsupported vector index on sparse field
+	autoIdx, _ := entity.NewIndexAUTOINDEX(entity.IP)
+	vectorIndex := append(common.GenAllFloatIndex(entity.IP), autoIdx)
+	for _, idx := range vectorIndex {
+		err := mc.CreateIndex(ctx, collName, common.DefaultSparseVecFieldName, idx, false)
+		common.CheckErr(t, err, false, "data type should be FloatVector, Float16Vector or BFloat16Vector",
+			"HNSW only support float vector data type")
+	}
+
+	// create scalar index on sparse vector
+	for _, idx := range []entity.Index{
+		entity.NewScalarIndex(),
+		entity.NewScalarIndexWithType(entity.Trie),
+		entity.NewScalarIndexWithType(entity.Sorted),
+		entity.NewScalarIndexWithType(entity.Inverted),
+	} {
+		err := mc.CreateIndex(ctx, collName, common.DefaultSparseVecFieldName, idx, false)
+		common.CheckErr(t, err, false, "TRIE are only supported on varchar field",
+			"STL_SORT are only supported on numeric field", "HNSW only support float vector data type",
+			"INVERTED are not supported on SparseFloatVector field")
+	}
+}
+
 // test new index by Generic index
 func TestCreateIndexGeneric(t *testing.T) {
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
