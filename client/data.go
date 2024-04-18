@@ -143,25 +143,20 @@ func (c *GrpcClient) handleSearchResult(schema *entity.Schema, outputFields []st
 			Scores:      results.GetScores()[offset : offset+rc],
 		}
 
-		// parse result set if current nq is not empty
-		if rc > 0 {
-			entry.IDs, entry.Err = entity.IDColumns(results.GetIds(), offset, offset+rc)
+		entry.IDs, entry.Err = entity.IDColumns(schema, results.GetIds(), offset, offset+rc)
+		if entry.Err != nil {
+			continue
+		}
+		// parse group-by values
+		if gb != nil {
+			entry.GroupByValue, entry.Err = entity.FieldDataColumn(gb, offset, offset+rc)
 			if entry.Err != nil {
 				offset += rc
 				continue
 			}
-			// parse group-by values
-			if gb != nil {
-				entry.GroupByValue, entry.Err = entity.FieldDataColumn(gb, offset, offset+rc)
-				if entry.Err != nil {
-					offset += rc
-					continue
-				}
-			}
-			// entry.GroupByValue, entry.Err = c.parseSearchResult()
-			entry.Fields, entry.Err = c.parseSearchResult(schema, outputFields, fieldDataList, i, offset, offset+rc)
-			sr = append(sr, entry)
 		}
+		entry.Fields, entry.Err = c.parseSearchResult(schema, outputFields, fieldDataList, i, offset, offset+rc)
+		sr = append(sr, entry)
 
 		offset += rc
 	}

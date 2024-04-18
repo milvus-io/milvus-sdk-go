@@ -77,7 +77,7 @@ func (c *GrpcClient) Insert(ctx context.Context, collName string, partitionName 
 	}
 	MetaCache.setSessionTs(collName, resp.Timestamp)
 	// 3. parse id column
-	return entity.IDColumns(resp.GetIDs(), 0, -1)
+	return entity.IDColumns(coll.Schema, resp.GetIDs(), 0, -1)
 }
 
 func (c *GrpcClient) processInsertColumns(colSchema *entity.Schema, columns ...entity.Column) ([]*schemapb.FieldData, int, error) {
@@ -392,7 +392,7 @@ func (c *GrpcClient) Upsert(ctx context.Context, collName string, partitionName 
 	}
 	MetaCache.setSessionTs(collName, resp.Timestamp)
 	// 3. parse id column
-	return entity.IDColumns(resp.GetIDs(), 0, -1)
+	return entity.IDColumns(coll.Schema, resp.GetIDs(), 0, -1)
 }
 
 // BulkInsert data files(json, numpy, etc.) on MinIO/S3 storage, read and parse them into sealed segments

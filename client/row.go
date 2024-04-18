@@ -118,7 +118,7 @@ func (c *GrpcClient) InsertRows(ctx context.Context, collName string, partitionN
 	}
 	MetaCache.setSessionTs(collName, resp.Timestamp)
 	// 3. parse id column
-	return entity.IDColumns(resp.GetIDs(), 0, -1)
+	return entity.IDColumns(coll.Schema, resp.GetIDs(), 0, -1)
 }
 
 // SearchResultByRows search result for row-based Search
