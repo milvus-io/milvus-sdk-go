@@ -397,7 +397,7 @@ func TestDeleteInvalidExpr(t *testing.T) {
 	common.CheckErr(t, err, true)
 
 	err = mc.Delete(ctx, collName, "", "")
-	common.CheckErr(t, err, false, "invalid expression: invalid parameter")
+	common.CheckErr(t, err, false, "delete plan can't be empty or always true")
 
 	for _, _invalidExprs := range common.InvalidExpressions {
 		err := mc.Delete(ctx, collName, "", _invalidExprs.Expr)

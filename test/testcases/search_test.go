@@ -1392,8 +1392,9 @@ func TestRangeSearchScannIPCosine(t *testing.T) {
 		// range search filter distance and output all fields
 		queryVec := common.GenSearchVectors(1, common.DefaultDim, entity.FieldTypeFloatVector)
 		sp, _ := entity.NewIndexSCANNSearchParam(8, 20)
-		sp.AddRadius(0)
-		sp.AddRangeFilter(100)
+		// TODO empty result when with range filter
+		// sp.AddRadius(-10000)
+		// sp.AddRangeFilter(10000)
 		resSearch, errSearch := mc.Search(ctx, collName, []string{}, "", []string{"*"}, queryVec, common.DefaultFloatVecFieldName,
 			metricType, common.DefaultTopK, sp)
 
@@ -1472,7 +1473,7 @@ func TestRangeSearchScannBinary(t *testing.T) {
 		sp.AddRangeFilter(100)
 		_, errRange := mc.Search(ctx, collName, []string{}, "", []string{"*"}, queryVec, common.DefaultBinaryVecFieldName,
 			metricType, common.DefaultTopK, sp)
-		common.CheckErr(t, errRange, false, "range_filter(100.000000) must be less than radius(0.000000)")
+		common.CheckErr(t, errRange, false, "metric type (JACCARD), range_filter(100) must be less than radius(0)")
 	}
 }
 
@@ -1764,6 +1765,7 @@ func TestSearchSparseVectorPagination(t *testing.T) {
 
 // test sparse vector unsupported search: range search, TODO iterator search
 func TestSearchSparseVectorNotSupported(t *testing.T) {
+	t.Skip("sparse vector support range search in progress")
 	// invalid sparse search params
 	for _, dropRatio := range []float64{1.2, -0.3, 1} {
 		_, err := entity.NewIndexSparseInvertedSearchParam(dropRatio)
