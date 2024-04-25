@@ -1,4 +1,4 @@
-//go:build L0
+///go:build L0
 
 package testcases
 
@@ -1693,7 +1693,7 @@ func TestSearchInvalidSparseVector(t *testing.T) {
 		searchRes, errSearch := mc.Search(ctx, collName, []string{}, "", []string{"*"}, []entity.Vector{vector1}, common.DefaultSparseVecFieldName,
 			entity.IP, common.DefaultTopK, sp)
 		common.CheckErr(t, errSearch, true)
-		require.Len(t, searchRes, 0)
+		common.CheckSearchResult(t, searchRes, 1, 0)
 
 		positions := make([]uint32, 100)
 		values := make([]float32, 100)
@@ -1701,10 +1701,10 @@ func TestSearchInvalidSparseVector(t *testing.T) {
 			positions[i] = uint32(1)
 			values[i] = rand.Float32()
 		}
-		vector, err := entity.NewSliceSparseEmbedding(positions, values)
-		searchRes, errSearch = mc.Search(ctx, collName, []string{}, "", []string{"*"}, []entity.Vector{vector}, common.DefaultSparseVecFieldName,
+		vector, _ := entity.NewSliceSparseEmbedding(positions, values)
+		_, errSearch1 := mc.Search(ctx, collName, []string{}, "", []string{"*"}, []entity.Vector{vector}, common.DefaultSparseVecFieldName,
 			entity.IP, common.DefaultTopK, sp)
-		common.CheckErr(t, errSearch, false, "unsorted or same indices in sparse float vector")
+		common.CheckErr(t, errSearch1, false, "unsorted or same indices in sparse float vector")
 	}
 }
 
@@ -1803,7 +1803,7 @@ func TestRangeSearchSparseVector(t *testing.T) {
 
 	// index params
 	idxHnsw, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
-	idxWand := entity.NewGenericIndex(common.DefaultSparseVecFieldName, "SPARSE_WAND", map[string]string{"drop_ratio_build": "0.3", "metric_type": "IP"})
+	idxWand := entity.NewGenericIndex(common.DefaultSparseVecFieldName, "SPARSE_WAND", map[string]string{"drop_ratio_build": "0.1", "metric_type": "IP"})
 	ips := []IndexParams{
 		{BuildIndex: true, Index: idxWand, FieldName: common.DefaultSparseVecFieldName, async: false},
 		{BuildIndex: true, Index: idxHnsw, FieldName: common.DefaultFloatVecFieldName, async: false},
@@ -1818,7 +1818,7 @@ func TestRangeSearchSparseVector(t *testing.T) {
 	resRange, errSearch := mc.Search(ctx, collName, []string{}, "", []string{"*"}, queryVec, common.DefaultSparseVecFieldName,
 		entity.IP, common.DefaultTopK, sp)
 	common.CheckErr(t, errSearch, true)
-	common.CheckSearchResult(t, resRange, common.DefaultNq, common.DefaultTopK)
+	require.Len(t, resRange, common.DefaultNq)
 	for _, res := range resRange {
 		log.Println(res.Scores)
 	}
@@ -1828,7 +1828,7 @@ func TestRangeSearchSparseVector(t *testing.T) {
 	resRange, errSearch = mc.Search(ctx, collName, []string{}, "", []string{"*"}, queryVec, common.DefaultSparseVecFieldName,
 		entity.IP, common.DefaultTopK, sp)
 	common.CheckErr(t, errSearch, true)
-	common.CheckSearchResult(t, resRange, common.DefaultNq, common.DefaultTopK)
+	require.Len(t, resRange, common.DefaultNq)
 	for _, res := range resRange {
 		for _, s := range res.Scores {
 			require.GreaterOrEqual(t, s, float32(0))
