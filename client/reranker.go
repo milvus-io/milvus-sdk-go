@@ -17,6 +17,7 @@ const (
 )
 
 type Reranker interface {
+	WithOffset(offset int64)
 	GetParams() []*commonpb.KeyValuePair
 }
 
