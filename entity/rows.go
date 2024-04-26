@@ -549,7 +549,7 @@ func reflectValueCandi(v reflect.Value) (map[string]fieldCandi, error) {
 
 			v := v.Field(i)
 			if v.Kind() == reflect.Array {
-				v = v.Slice(0, v.Len()-1)
+				v = v.Slice(0, v.Len())
 			}
 
 			result[name] = fieldCandi{
