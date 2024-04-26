@@ -188,7 +188,11 @@ type Client interface {
 	ListRoles(ctx context.Context) ([]entity.Role, error)
 	// ListUsers lists the user objects in system.
 	ListUsers(ctx context.Context) ([]entity.User, error)
-	// Grant adds object privileged for role.
+	// DescribeUser describes specific user attributes in the system
+	DescribeUser(ctx context.Context, username string) (entity.UserDescription, error)
+	// DescribeUsers describe all users attributes in the system
+	DescribeUsers(ctx context.Context) ([]entity.UserDescription, error)
+	// Grant adds privilege for role.
 	Grant(ctx context.Context, role string, objectType entity.PriviledgeObjectType, object string) error
 	// Revoke removes privilege from role.
 	Revoke(ctx context.Context, role string, objectType entity.PriviledgeObjectType, object string) error

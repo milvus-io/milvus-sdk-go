@@ -7,6 +7,12 @@ type User struct {
 	Name string
 }
 
+// UserDescription is the model for RBAC user description object.
+type UserDescription struct {
+	Name  string
+	Roles []string
+}
+
 // Role is the model for RBAC role object.
 type Role struct {
 	Name string
