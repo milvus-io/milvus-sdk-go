@@ -67,8 +67,13 @@ func (c *GrpcClient) HybridSearch(ctx context.Context, collName string, partitio
 		sReqs = append(sReqs, r)
 	}
 
+	opt := &SearchQueryOption{}
+	for _, o := range opts {
+		o(opt)
+	}
 	params := reranker.GetParams()
 	params = append(params, &commonpb.KeyValuePair{Key: limitKey, Value: strconv.FormatInt(int64(limit), 10)})
+	params = append(params, &commonpb.KeyValuePair{Key: offsetKey, Value: strconv.FormatInt(int64(opt.Offset), 10)})
 
 	req := &milvuspb.HybridSearchRequest{
 		CollectionName:   collName,

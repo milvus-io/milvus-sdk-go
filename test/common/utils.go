@@ -52,9 +52,10 @@ const (
 	DefaultShards               = int32(2)
 	DefaultNb                   = 3000
 	DefaultNq                   = 5
-	DefaultTopK                 = 10
-	TestCapacity                = 100 // default array field capacity
-	TestMaxLen                  = 100 // default varchar field max length
+	//DefaultNq    = 1
+	DefaultTopK  = 10
+	TestCapacity = 100 // default array field capacity
+	TestMaxLen   = 100 // default varchar field max length
 )
 
 // const default value from milvus
