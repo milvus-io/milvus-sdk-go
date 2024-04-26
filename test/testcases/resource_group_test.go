@@ -117,7 +117,7 @@ func TestRgDefault(t *testing.T) {
 
 	// try to drop default rg
 	errDropDefault := mc.DropResourceGroup(ctx, common.DefaultRgName)
-	common.CheckErr(t, errDropDefault, false, "delete default rg is not permitted")
+	common.CheckErr(t, errDropDefault, false, "default resource group is not deletable")
 }
 
 // test create rg with invalid name
@@ -185,7 +185,7 @@ func TestDropRgNonEmpty(t *testing.T) {
 
 	// drop rg and rg available node is not 0
 	errDrop := mc.DropResourceGroup(ctx, rgName)
-	common.CheckErr(t, errDrop, false, "delete non-empty rg is not permitted")
+	common.CheckErr(t, errDrop, false, "resource group's limits node num is not 0")
 }
 
 // drop empty default rg
@@ -216,7 +216,7 @@ func TestDropEmptyRg(t *testing.T) {
 
 	// drop empty default rg
 	errDrop := mc.DropResourceGroup(ctx, common.DefaultRgName)
-	common.CheckErr(t, errDrop, false, "delete default rg is not permitted")
+	common.CheckErr(t, errDrop, false, "default resource group is not deletable")
 }
 
 // test list rgs
@@ -262,7 +262,7 @@ func TestTransferInvalidNodes(t *testing.T) {
 	invalidNodes := []invalidNodesStruct{
 		{nodesNum: 0, errMsg: "invalid parameter[expected=NumNode > 0][actual=invalid NumNode 0]"},
 		{nodesNum: -1, errMsg: "invalid parameter[expected=NumNode > 0][actual=invalid NumNode -1]"},
-		{nodesNum: 99, errMsg: "nodes not enough"},
+		{nodesNum: 99, errMsg: "resource group node not enough"},
 	}
 	// transfer node
 	for _, invalidNode := range invalidNodes {
@@ -280,15 +280,15 @@ func TestTransferRgNotExisted(t *testing.T) {
 
 	// source not exist
 	errSource := mc.TransferNode(ctx, common.GenRandomString(6), common.DefaultRgName, newRgNode)
-	common.CheckErr(t, errSource, false, "source resource group not found")
+	common.CheckErr(t, errSource, false, "resource group not found")
 
 	// target not exist
 	errTarget := mc.TransferNode(ctx, common.DefaultRgName, common.GenRandomString(6), newRgNode)
-	common.CheckErr(t, errTarget, false, "target resource group not found")
+	common.CheckErr(t, errTarget, false, "resource group not found")
 
 	// transfer to self
 	errSelf := mc.TransferNode(ctx, common.DefaultRgName, common.DefaultRgName, newRgNode)
-	common.CheckErr(t, errSelf, true)
+	common.CheckErr(t, errSelf, false, "source resource group and target resource group should not be the same")
 
 	defaultRg, _ := mc.DescribeResourceGroup(ctx, common.DefaultRgName)
 	require.Equal(t, configQnNodes, defaultRg.AvailableNodesNumber)
@@ -451,7 +451,7 @@ func TestTransferReplicaRgNotExisted(t *testing.T) {
 
 	// transfer to self -> error
 	errSelf := mc.TransferReplica(ctx, rgName, rgName, collName, 1)
-	common.CheckErr(t, errSelf, false, "replicas of same collection in target resource group")
+	common.CheckErr(t, errSelf, false, "source resource group and target resource group should not be the same")
 
 	// transfer to default rg
 	errTransfer := mc.TransferReplica(ctx, rgName, common.DefaultRgName, collName, 1)
