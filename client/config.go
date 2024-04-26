@@ -136,18 +136,19 @@ func (c *Config) setIdentifier(identifier string) {
 
 // Get parsed grpc dial options, should be called after parse was called.
 func (c *Config) getDialOption() []grpc.DialOption {
-	options := c.DialOptions
-	if c.DialOptions == nil {
-		// Add default connection options.
-		options = make([]grpc.DialOption, len(DefaultGrpcOpts))
-		copy(options, DefaultGrpcOpts)
-	}
-
+	var options []grpc.DialOption
 	// Construct dial option.
 	if c.EnableTLSAuth {
 		options = append(options, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})))
 	} else {
 		options = append(options, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	}
+
+	if c.DialOptions == nil {
+		// Add default connection options.
+		options = append(options, DefaultGrpcOpts...)
+	} else {
+		options = append(options, c.DialOptions...)
 	}
 
 	options = append(options,
