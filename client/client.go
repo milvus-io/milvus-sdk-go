@@ -43,6 +43,9 @@ type Client interface {
 	CreateDatabase(ctx context.Context, dbName string, opts ...CreateDatabaseOption) error
 	// DropDatabase drop database with the given db name.
 	DropDatabase(ctx context.Context, dbName string, opts ...DropDatabaseOption) error
+	// AlterDatabase alter database props with given db name.
+	AlterDatabase(ctx context.Context, collName string, attrs ...entity.DatabaseAttribute) error
+	DescribeDatabase(ctx context.Context, dbName string) (*entity.Database, error)
 
 	// -- collection --
 

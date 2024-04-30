@@ -27,6 +27,19 @@ func main() {
 	if err != nil {
 		log.Fatalf("list database failed: %+v", err)
 	}
+	fmt.Println("db:", dbs)
+
+	dbInfo, err := clientDefault.DescribeDatabase(ctx, "db1")
+	if err != nil {
+		log.Fatalf("describe default db failed")
+	}
+	fmt.Println("db props", dbInfo.Properties)
+	clientDefault.AlterDatabase(ctx, "db1", entity.DatabaseReplica(3), entity.DatabaseResourceGroups([]string{"rg1", "rg2", "rg3"}))
+	dbInfo, err = clientDefault.DescribeDatabase(ctx, "db1")
+	if err != nil {
+		log.Fatalf("describe default db failed")
+	}
+	fmt.Println("db props", dbInfo.Properties)
 
 	fmt.Println("using db1...")
 	cfg.DBName = ""
@@ -53,6 +66,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("list on db1 failed: %+v", err)
 	}
+	fmt.Println("collections:", collections)
 
 	fmt.Println("create db2...")
 	if err := clientDefault.CreateDatabase(ctx, "db2"); err != nil {
@@ -62,6 +76,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("list database failed: %+v", err)
 	}
+	fmt.Println("db:", dbs)
 
 	fmt.Println("connect to db2 with existing client...")
 	clientDefault.UsingDatabase(ctx, "db2")
@@ -84,6 +99,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("list database failed: %+v", err)
 	}
+	fmt.Println("db:", dbs)
 
 	fmt.Println("drop db1: drop non-empty database should be fail...")
 	if err := clientDB1.DropDatabase(ctx, "db1"); err == nil {
@@ -114,7 +130,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("list database failed: %+v", err)
 	}
-
 	fmt.Println("db:", dbs)
 }
 
