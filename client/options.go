@@ -284,6 +284,8 @@ type CreateDatabaseOption func(*milvuspb.CreateDatabaseRequest)
 
 type DropDatabaseOption func(*milvuspb.DropDatabaseRequest)
 
+type DescribeDatabaseOption func(*milvuspb.DescribeDatabaseRequest)
+
 type ReplicateMessageOption func(*milvuspb.ReplicateMessageRequest)
 
 type CreatePartitionOption func(*milvuspb.CreatePartitionRequest)

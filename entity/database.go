@@ -1,5 +1,7 @@
 package entity
 
+import "github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
+
 // Licensed to the LF AI & Data foundation under one
 // or more contributor license agreements. See the NOTICE file
 // distributed with this work for additional information
@@ -18,5 +20,6 @@ package entity
 
 // Database represents a database in a remote Milvus cluster.
 type Database struct {
-	Name string // Database name.
+	Name       string // Database name.
+	Properties []*commonpb.KeyValuePair
 }

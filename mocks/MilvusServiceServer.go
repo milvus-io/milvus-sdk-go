@@ -192,6 +192,61 @@ func (_c *MilvusServiceServer_AlterCollection_Call) RunAndReturn(run func(contex
 	return _c
 }
 
+// AlterDatabase provides a mock function with given fields: _a0, _a1
+func (_m *MilvusServiceServer) AlterDatabase(_a0 context.Context, _a1 *milvuspb.AlterDatabaseRequest) (*commonpb.Status, error) {
+	ret := _m.Called(_a0, _a1)
+
+	var r0 *commonpb.Status
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *milvuspb.AlterDatabaseRequest) (*commonpb.Status, error)); ok {
+		return rf(_a0, _a1)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *milvuspb.AlterDatabaseRequest) *commonpb.Status); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*commonpb.Status)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *milvuspb.AlterDatabaseRequest) error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MilvusServiceServer_AlterDatabase_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AlterDatabase'
+type MilvusServiceServer_AlterDatabase_Call struct {
+	*mock.Call
+}
+
+// AlterDatabase is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - _a1 *milvuspb.AlterDatabaseRequest
+func (_e *MilvusServiceServer_Expecter) AlterDatabase(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_AlterDatabase_Call {
+	return &MilvusServiceServer_AlterDatabase_Call{Call: _e.mock.On("AlterDatabase", _a0, _a1)}
+}
+
+func (_c *MilvusServiceServer_AlterDatabase_Call) Run(run func(_a0 context.Context, _a1 *milvuspb.AlterDatabaseRequest)) *MilvusServiceServer_AlterDatabase_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*milvuspb.AlterDatabaseRequest))
+	})
+	return _c
+}
+
+func (_c *MilvusServiceServer_AlterDatabase_Call) Return(_a0 *commonpb.Status, _a1 error) *MilvusServiceServer_AlterDatabase_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MilvusServiceServer_AlterDatabase_Call) RunAndReturn(run func(context.Context, *milvuspb.AlterDatabaseRequest) (*commonpb.Status, error)) *MilvusServiceServer_AlterDatabase_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // AlterIndex provides a mock function with given fields: _a0, _a1
 func (_m *MilvusServiceServer) AlterIndex(_a0 context.Context, _a1 *milvuspb.AlterIndexRequest) (*commonpb.Status, error) {
 	ret := _m.Called(_a0, _a1)
@@ -1068,6 +1123,61 @@ func (_c *MilvusServiceServer_DescribeCollection_Call) Return(_a0 *milvuspb.Desc
 }
 
 func (_c *MilvusServiceServer_DescribeCollection_Call) RunAndReturn(run func(context.Context, *milvuspb.DescribeCollectionRequest) (*milvuspb.DescribeCollectionResponse, error)) *MilvusServiceServer_DescribeCollection_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// DescribeDatabase provides a mock function with given fields: _a0, _a1
+func (_m *MilvusServiceServer) DescribeDatabase(_a0 context.Context, _a1 *milvuspb.DescribeDatabaseRequest) (*milvuspb.DescribeDatabaseResponse, error) {
+	ret := _m.Called(_a0, _a1)
+
+	var r0 *milvuspb.DescribeDatabaseResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *milvuspb.DescribeDatabaseRequest) (*milvuspb.DescribeDatabaseResponse, error)); ok {
+		return rf(_a0, _a1)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *milvuspb.DescribeDatabaseRequest) *milvuspb.DescribeDatabaseResponse); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*milvuspb.DescribeDatabaseResponse)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *milvuspb.DescribeDatabaseRequest) error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MilvusServiceServer_DescribeDatabase_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DescribeDatabase'
+type MilvusServiceServer_DescribeDatabase_Call struct {
+	*mock.Call
+}
+
+// DescribeDatabase is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - _a1 *milvuspb.DescribeDatabaseRequest
+func (_e *MilvusServiceServer_Expecter) DescribeDatabase(_a0 interface{}, _a1 interface{}) *MilvusServiceServer_DescribeDatabase_Call {
+	return &MilvusServiceServer_DescribeDatabase_Call{Call: _e.mock.On("DescribeDatabase", _a0, _a1)}
+}
+
+func (_c *MilvusServiceServer_DescribeDatabase_Call) Run(run func(_a0 context.Context, _a1 *milvuspb.DescribeDatabaseRequest)) *MilvusServiceServer_DescribeDatabase_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*milvuspb.DescribeDatabaseRequest))
+	})
+	return _c
+}
+
+func (_c *MilvusServiceServer_DescribeDatabase_Call) Return(_a0 *milvuspb.DescribeDatabaseResponse, _a1 error) *MilvusServiceServer_DescribeDatabase_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MilvusServiceServer_DescribeDatabase_Call) RunAndReturn(run func(context.Context, *milvuspb.DescribeDatabaseRequest) (*milvuspb.DescribeDatabaseResponse, error)) *MilvusServiceServer_DescribeDatabase_Call {
 	_c.Call.Return(run)
 	return _c
 }

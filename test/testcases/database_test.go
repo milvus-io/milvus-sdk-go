@@ -8,7 +8,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 	"github.com/milvus-io/milvus-sdk-go/v2/test/base"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/milvus-io/milvus-sdk-go/v2/client"
 	"github.com/milvus-io/milvus-sdk-go/v2/test/common"
@@ -260,4 +262,36 @@ func TestClientWithDb(t *testing.T) {
 	common.CheckErr(t, err, true)
 	collections, _ = mcEmpty.ListCollections(ctx)
 	common.CheckContainsCollection(t, collections, collDefault)
+}
+
+func TestAlterDatabase(t *testing.T) {
+	teardownSuite := teardownTest(t)
+	defer teardownSuite(t)
+
+	// create db
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	mc := createMilvusClient(ctx, t)
+	dbName := common.GenRandomString(4)
+	err := mc.CreateDatabase(ctx, dbName)
+	common.CheckErr(t, err, true)
+
+	dbInfo, err := mc.DescribeDatabase(ctx, dbName)
+	common.CheckErr(t, err, true)
+	assert.Equal(t, dbInfo.Name, dbName)
+
+	err = mc.AlterDatabase(ctx, dbName, entity.DatabaseResourceGroups([]string{"rg1"}))
+	common.CheckErr(t, err, true)
+
+	dbInfo, err = mc.DescribeDatabase(ctx, dbName)
+	common.CheckErr(t, err, true)
+	assert.Equal(t, dbInfo.Name, dbName)
+	assert.Len(t, dbInfo.Properties, 1)
+
+	err = mc.AlterDatabase(ctx, dbName, entity.DatabaseReplica(1))
+	common.CheckErr(t, err, true)
+
+	dbInfo, err = mc.DescribeDatabase(ctx, dbName)
+	common.CheckErr(t, err, true)
+	assert.Equal(t, dbInfo.Name, dbName)
+	assert.Len(t, dbInfo.Properties, 2)
 }

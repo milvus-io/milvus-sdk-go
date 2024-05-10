@@ -13,6 +13,7 @@ package entity
 
 import (
 	"strconv"
+	"strings"
 
 	"github.com/cockroachdb/errors"
 )
@@ -21,8 +22,10 @@ const (
 	// cakTTL const for collection attribute key TTL in seconds.
 	cakTTL = `collection.ttl.seconds`
 	// cakAutoCompaction const for collection attribute key autom compaction enabled.
-	cakAutoCompaction = `collection.autocompaction.enabled`
-	akMmap            = "mmap.enabled"
+	cakAutoCompaction      = `collection.autocompaction.enabled`
+	akMmap                 = "mmap.enabled"
+	databaseReplica        = "database.replica"
+	databaseResourceGroups = "database.resource_groups"
 )
 
 // CollectionAttribute is the interface for altering collection attributes.
@@ -106,6 +109,50 @@ func (ca mmapAttr) Valid() error {
 	_, err := strconv.ParseBool(ca.value)
 	if err != nil {
 		return errors.Wrap(err, "mmap setting is not valid boolean")
+	}
+
+	return nil
+}
+
+type DatabaseAttribute = CollectionAttribute
+
+type databaseAttrBase = collAttrBase
+
+type databaseReplicaAttr struct {
+	databaseAttrBase
+}
+
+func DatabaseReplica(replica int64) databaseReplicaAttr {
+	attr := databaseReplicaAttr{}
+	attr.key = databaseReplica
+	attr.value = strconv.FormatInt(replica, 10)
+	return attr
+}
+
+func (ca databaseReplicaAttr) Valid() error {
+	value, err := strconv.ParseInt(ca.value, 10, 64)
+	if err != nil || value <= 0 {
+		return errors.Wrap(err, "replica setting is not valid integer")
+	}
+
+	return nil
+}
+
+type databaseResourceGroupsAttr struct {
+	collAttrBase
+}
+
+func DatabaseResourceGroups(resourceGroups []string) databaseResourceGroupsAttr {
+	attr := databaseResourceGroupsAttr{}
+	attr.key = databaseResourceGroups
+	attr.value = strconv.Quote(strings.Join(resourceGroups, ","))
+	return attr
+}
+
+func (ca databaseResourceGroupsAttr) Valid() error {
+	values := strings.Split(ca.value, ",")
+	if len(values) == 0 {
+		return errors.New("resource groups setting is not valid")
 	}
 
 	return nil

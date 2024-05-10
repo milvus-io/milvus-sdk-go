@@ -13,6 +13,7 @@ import (
 	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
 	"github.com/milvus-io/milvus-proto/go-api/v2/schemapb"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
+	"github.com/milvus-io/milvus-sdk-go/v2/merr"
 	"github.com/milvus-io/milvus-sdk-go/v2/mocks"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -299,9 +300,11 @@ const (
 	MGetVersion         ServiceMethod = 901
 	MCheckHealth        ServiceMethod = 902
 
-	MListDatabase   ServiceMethod = 1000
-	MCreateDatabase ServiceMethod = 1001
-	MDropDatabase   ServiceMethod = 1002
+	MListDatabase     ServiceMethod = 1000
+	MCreateDatabase   ServiceMethod = 1001
+	MDropDatabase     ServiceMethod = 1002
+	MAlterDatabase    ServiceMethod = 1003
+	MDescribeDatabase ServiceMethod = 1004
 
 	MReplicateMessage ServiceMethod = 1100
 )
@@ -373,6 +376,28 @@ func (m *MockServer) DropDatabase(ctx context.Context, req *milvuspb.DropDatabas
 		return r.(*commonpb.Status), err
 	}
 	return SuccessStatus()
+}
+
+func (m *MockServer) AlterDatabase(ctx context.Context, req *milvuspb.AlterDatabaseRequest) (*commonpb.Status, error) {
+	f := m.GetInjection(MAlterDatabase)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*commonpb.Status), err
+	}
+	return SuccessStatus()
+}
+
+func (m *MockServer) DescribeDatabase(ctx context.Context, req *milvuspb.DescribeDatabaseRequest) (*milvuspb.DescribeDatabaseResponse, error) {
+	f := m.GetInjection(MDescribeDatabase)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*milvuspb.DescribeDatabaseResponse), err
+	}
+
+	resp := &milvuspb.DescribeDatabaseResponse{
+		Status: merr.Success(),
+	}
+	return resp, nil
 }
 
 func (m *MockServer) CreateCollection(ctx context.Context, req *milvuspb.CreateCollectionRequest) (*commonpb.Status, error) {

@@ -19,6 +19,8 @@ package client
 import (
 	"context"
 
+	"github.com/cockroachdb/errors"
+	"github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
 	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )
@@ -106,4 +108,73 @@ func (c *GrpcClient) DropDatabase(ctx context.Context, dbName string, opts ...Dr
 		return err
 	}
 	return handleRespStatus(resp)
+}
+
+// AlterDatabase changes the database attribute.
+func (c *GrpcClient) AlterDatabase(ctx context.Context, dbName string, attrs ...entity.DatabaseAttribute) error {
+	if c.Service == nil {
+		return ErrClientNotReady
+	}
+
+	if c.config.hasFlags(disableDatabase) {
+		return ErrFeatureNotSupported
+	}
+
+	if len(attrs) == 0 {
+		return errors.New("no database attribute provided")
+	}
+
+	keys := make(map[string]struct{})
+	props := make([]*commonpb.KeyValuePair, 0, len(attrs))
+	for _, attr := range attrs {
+		k, v := attr.KeyValue()
+		if _, exists := keys[k]; exists {
+			return errors.New("duplicated attributed received")
+		}
+		keys[k] = struct{}{}
+		props = append(props, &commonpb.KeyValuePair{
+			Key:   k,
+			Value: v,
+		})
+	}
+
+	req := &milvuspb.AlterDatabaseRequest{
+		DbName:     dbName,
+		Properties: props,
+	}
+
+	resp, err := c.Service.AlterDatabase(ctx, req)
+	if err != nil {
+		return err
+	}
+	return handleRespStatus(resp)
+}
+
+// DropDatabase drop all database in milvus cluster.
+func (c *GrpcClient) DescribeDatabase(ctx context.Context, dbName string) (*entity.Database, error) {
+	if c.Service == nil {
+		return nil, ErrClientNotReady
+	}
+	if c.config.hasFlags(disableDatabase) {
+		return nil, ErrFeatureNotSupported
+	}
+
+	req := &milvuspb.DescribeDatabaseRequest{
+		DbName: dbName,
+	}
+
+	resp, err := c.Service.DescribeDatabase(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	err = handleRespStatus(resp.GetStatus())
+	if err != nil {
+		return nil, err
+	}
+	database := &entity.Database{
+		Name:       resp.GetDbName(),
+		Properties: resp.GetProperties(),
+	}
+
+	return database, nil
 }
