@@ -15,6 +15,7 @@ Go SDK for [Milvus](https://github.com/milvus-io/milvus). To contribute code to 
 
 |Milvus version| Recommended Go SDK version |
 |:-----:|:-----:|
+| 2.4.x | [2.4.0](https://github.com/milvus-io/milvus-sdk-go/tree/v2.4.0) |
 | 2.3.x | [2.3.1](https://github.com/milvus-io/milvus-sdk-go/tree/v2.3.1) |
 | 2.2.x | [2.2.8](https://github.com/milvus-io/milvus-sdk-go/tree/v2.2.8) |
 | 2.1.0 | [2.1.0](https://github.com/milvus-io/milvus-sdk-go/tree/v2.1.0) |
