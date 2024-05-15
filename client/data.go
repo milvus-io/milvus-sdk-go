@@ -400,7 +400,7 @@ func prepareSearchRequest(collName string, partitions []string,
 		return nil, err
 	}
 
-	searchParams := entity.MapKvPairs(map[string]string{
+	spMap := map[string]string{
 		"anns_field":     vectorField,
 		"topk":           fmt.Sprintf("%d", topK),
 		"params":         string(bs),
@@ -409,7 +409,11 @@ func prepareSearchRequest(collName string, partitions []string,
 		ignoreGrowingKey: strconv.FormatBool(opt.IgnoreGrowing),
 		offsetKey:        fmt.Sprintf("%d", opt.Offset),
 		groupByKey:       opt.GroupByField,
-	})
+	}
+	if opt.GroupByField != "" {
+		spMap[groupByKey] = opt.GroupByField
+	}
+	searchParams := entity.MapKvPairs(spMap)
 
 	req := &milvuspb.SearchRequest{
 		DbName:             "",
