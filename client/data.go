@@ -49,6 +49,7 @@ func (c *GrpcClient) HybridSearch(ctx context.Context, collName string, partitio
 			return nil, err
 		}
 		schema = coll.Schema
+		collInfo, _ = MetaCache.getCollectionInfo(collName)
 	} else {
 		schema = collInfo.Schema
 	}
