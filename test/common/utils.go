@@ -75,7 +75,7 @@ const (
 	DefaultRgCapacity       = 1000000
 	RetentionDuration       = 40   // common.retentionDuration
 	MaxCapacity             = 4096 // max array capacity
-	DefaultPartitionNum     = 64   // default num_partitions
+	DefaultPartitionNum     = 16   // default num_partitions
 	MaxTopK                 = 16384
 	MaxVectorFieldNum       = 4
 )
