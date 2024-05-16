@@ -53,7 +53,7 @@ func (r *ANNSearchRequest) getMilvusSearchRequest(collectionInfo *collInfo, opts
 		return nil, err
 	}
 
-	searchParams := entity.MapKvPairs(map[string]string{
+	sp := map[string]string{
 		"anns_field":     r.fieldName,
 		"topk":           fmt.Sprintf("%d", r.limit),
 		"params":         string(bs),
@@ -61,8 +61,12 @@ func (r *ANNSearchRequest) getMilvusSearchRequest(collectionInfo *collInfo, opts
 		"round_decimal":  "-1",
 		ignoreGrowingKey: strconv.FormatBool(opt.IgnoreGrowing),
 		offsetKey:        fmt.Sprintf("%d", opt.Offset),
-		groupByKey:       opt.GroupByField,
-	})
+	}
+	if opt.GroupByField != "" {
+		sp[groupByKey] = opt.GroupByField
+	}
+
+	searchParams := entity.MapKvPairs(sp)
 
 	result := &milvuspb.SearchRequest{
 		DbName:             "",
