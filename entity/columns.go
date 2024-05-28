@@ -28,6 +28,7 @@ type Column interface {
 	Name() string
 	Type() FieldType
 	Len() int
+	Slice(int, int) Column
 	FieldData() *schemapb.FieldData
 	AppendValue(interface{}) error
 	Get(int) (interface{}, error)

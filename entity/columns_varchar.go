@@ -45,6 +45,17 @@ func (c *ColumnVarChar) GetAsString(idx int) (string, error) {
 	return c.values[idx], nil
 }
 
+func (c *ColumnVarChar) Slice(start, end int) Column {
+	if end == -1 || end > c.Len() {
+		end = c.Len()
+	}
+	return &ColumnVarChar{
+		ColumnBase: c.ColumnBase,
+		name:       c.name,
+		values:     c.values[start:end],
+	}
+}
+
 // FieldData return column data mapped to schema.FieldData
 func (c *ColumnVarChar) FieldData() *schema.FieldData {
 	fd := &schema.FieldData{
