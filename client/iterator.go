@@ -59,7 +59,7 @@ func (c *GrpcClient) QueryIterator(ctx context.Context, opt *QueryIteratorOption
 		sch = collInfo.Schema
 	}
 
-	return &QueryIterator{
+	itr := &QueryIterator{
 		client: c,
 
 		collectionName: opt.collectionName,
@@ -70,7 +70,13 @@ func (c *GrpcClient) QueryIterator(ctx context.Context, opt *QueryIteratorOption
 
 		batchSize: opt.batchSize,
 		expr:      opt.expr,
-	}, nil
+	}
+
+	err := itr.init(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return itr, nil
 }
 
 type QueryIterator struct {
@@ -91,6 +97,17 @@ type QueryIterator struct {
 
 	// internal grpc client
 	client *GrpcClient
+}
+
+// init fetches the first batch of data and put it into cache.
+// this operation could be used to check all the parameters before returning the iterator.
+func (itr *QueryIterator) init(ctx context.Context) error {
+	rs, err := itr.fetchNextBatch(ctx)
+	if err != nil {
+		return err
+	}
+	itr.cached = rs
+	return nil
 }
 
 func (itr *QueryIterator) composeIteratorExpr() string {
@@ -116,7 +133,7 @@ func (itr *QueryIterator) composeIteratorExpr() string {
 
 func (itr *QueryIterator) fetchNextBatch(ctx context.Context) (ResultSet, error) {
 	return itr.client.Query(ctx, itr.collectionName, itr.partitionNames, itr.composeIteratorExpr(), itr.outputFields,
-		WithLimit(int64(float64(itr.batchSize)*1.5)), withIterator(), reduceForBest(true))
+		WithLimit(int64(float64(itr.batchSize))), withIterator(), reduceForBest(true))
 }
 
 func (itr *QueryIterator) cachedSufficient() bool {
