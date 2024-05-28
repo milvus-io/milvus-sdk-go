@@ -116,7 +116,7 @@ func TestUpsertAutoID(t *testing.T) {
 	// upsert with pks
 	pkColumn := entity.NewColumnInt64(common.DefaultIntFieldName, ids.(*entity.ColumnInt64).Data()[:100])
 	_, err = mc.Upsert(ctx, collName, "", pkColumn, floatColumn1, vecColumn1)
-	common.CheckErr(t, err, false, "the number of fields is less than needed")
+	common.CheckErr(t, err, false, "upsert can not assign primary field data when auto id enabled")
 }
 
 func TestUpsertVarcharPk(t *testing.T) {
