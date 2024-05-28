@@ -820,6 +820,7 @@ func TestMmapAlterIndex(t *testing.T) {
 
 // test search when mmap sparse collection
 func TestMmapSparseCollection(t *testing.T) {
+	t.Skip("sparse index support mmap now")
 	t.Parallel()
 	idxInverted, _ := entity.NewIndexSparseInverted(entity.IP, 0)
 	idxWand, _ := entity.NewIndexSparseWAND(entity.IP, 0)

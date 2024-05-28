@@ -34,6 +34,8 @@ const (
 	ignoreGrowingKey = `ignore_growing`
 	forTuningKey     = `for_tuning`
 	groupByKey       = `group_by_field`
+	iteratorKey      = `iterator`
+	reduceForBestKey = `reduce_stop_for_best`
 )
 
 func (c *GrpcClient) HybridSearch(ctx context.Context, collName string, partitions []string, limit int, outputFields []string, reranker Reranker, subRequests []*ANNSearchRequest, opts ...SearchQueryOptionFunc) ([]SearchResult, error) {
@@ -351,6 +353,12 @@ func (c *GrpcClient) Query(ctx context.Context, collectionName string, partition
 	}
 	if option.IgnoreGrowing {
 		req.QueryParams = append(req.QueryParams, &commonpb.KeyValuePair{Key: ignoreGrowingKey, Value: strconv.FormatBool(option.IgnoreGrowing)})
+	}
+	if option.isIterator {
+		req.QueryParams = append(req.QueryParams, &commonpb.KeyValuePair{Key: iteratorKey, Value: strconv.FormatBool(true)})
+	}
+	if option.reduceForBest {
+		req.QueryParams = append(req.QueryParams, &commonpb.KeyValuePair{Key: reduceForBestKey, Value: strconv.FormatBool(true)})
 	}
 
 	resp, err := c.Service.Query(ctx, req)

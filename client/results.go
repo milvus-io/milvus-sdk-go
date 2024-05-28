@@ -18,6 +18,21 @@ type SearchResult struct {
 // ResultSet is an alias type for column slice.
 type ResultSet []entity.Column
 
+func (rs ResultSet) Len() int {
+	if len(rs) == 0 {
+		return 0
+	}
+	return rs[0].Len()
+}
+
+func (rs ResultSet) Slice(start, end int) ResultSet {
+	result := make([]entity.Column, 0, len(rs))
+	for _, col := range rs {
+		result = append(result, col.Slice(start, end))
+	}
+	return result
+}
+
 // GetColumn returns column with provided field name.
 func (rs ResultSet) GetColumn(fieldName string) entity.Column {
 	for _, column := range rs {

@@ -35,6 +35,17 @@ func (c *ColumnJSONBytes) Len() int {
 	return len(c.values)
 }
 
+func (c *ColumnJSONBytes) Slice(start, end int) Column {
+	if end == -1 || end > c.Len() {
+		end = c.Len()
+	}
+	return &ColumnJSONBytes{
+		ColumnBase: c.ColumnBase,
+		name:       c.name,
+		values:     c.values[start:end],
+	}
+}
+
 // Get returns value at index as interface{}.
 func (c *ColumnJSONBytes) Get(idx int) (interface{}, error) {
 	if idx < 0 || idx > c.Len() {
