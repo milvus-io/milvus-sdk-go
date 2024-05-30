@@ -223,6 +223,102 @@ func (c *GrpcClient) DescribeUsers(ctx context.Context) ([]entity.UserDescriptio
 	return userDescriptions, nil
 }
 
+// ListGrants lists the role grants in the system
+func (c *GrpcClient) ListGrants(ctx context.Context, role string, dbName string) ([]entity.RoleGrants, error) {
+	RoleGrantsList := make([]entity.RoleGrants, 0)
+	if c.Service == nil {
+		return RoleGrantsList, ErrClientNotReady
+	}
+
+	req := &milvuspb.SelectGrantRequest{
+		Entity: &milvuspb.GrantEntity{
+			Role: &milvuspb.RoleEntity{
+				Name: role,
+			},
+			DbName: dbName,
+		},
+	}
+
+	resp, err := c.Service.SelectGrant(ctx, req)
+
+	if err != nil {
+		return RoleGrantsList, err
+	}
+	if err = handleRespStatus(resp.GetStatus()); err != nil {
+		return RoleGrantsList, err
+	}
+
+	results := resp.GetEntities()
+
+	if len(results) == 0 {
+		return RoleGrantsList, nil
+	}
+
+	for _, roleEntity := range results {
+		RoleGrant := entity.RoleGrants{
+			Object:        roleEntity.Object.Name,
+			ObjectName:    roleEntity.ObjectName,
+			RoleName:      roleEntity.Role.Name,
+			GrantorName:   roleEntity.Grantor.User.Name,
+			PrivilegeName: roleEntity.Grantor.Privilege.Name,
+			DbName:        roleEntity.DbName,
+		}
+		RoleGrantsList = append(RoleGrantsList, RoleGrant)
+	}
+
+	return RoleGrantsList, nil
+}
+
+// ListGrant lists a grant info for the role and the specific object
+func (c *GrpcClient) ListGrant(ctx context.Context, role string, object string, objectName string, dbName string) ([]entity.RoleGrants, error) {
+	RoleGrantsList := make([]entity.RoleGrants, 0)
+	if c.Service == nil {
+		return RoleGrantsList, ErrClientNotReady
+	}
+
+	req := &milvuspb.SelectGrantRequest{
+		Entity: &milvuspb.GrantEntity{
+			Role: &milvuspb.RoleEntity{
+				Name: role,
+			},
+			Object: &milvuspb.ObjectEntity{
+				Name: object,
+			},
+			ObjectName: objectName,
+			DbName:     dbName,
+		},
+	}
+
+	resp, err := c.Service.SelectGrant(ctx, req)
+
+	if err != nil {
+		return RoleGrantsList, err
+	}
+	if err = handleRespStatus(resp.GetStatus()); err != nil {
+		return RoleGrantsList, err
+	}
+
+	results := resp.GetEntities()
+
+	if len(results) == 0 {
+		return RoleGrantsList, nil
+	}
+
+	for _, roleEntity := range results {
+		RoleGrant := entity.RoleGrants{
+			Object:        roleEntity.Object.Name,
+			ObjectName:    roleEntity.ObjectName,
+			RoleName:      roleEntity.Role.Name,
+			GrantorName:   roleEntity.Grantor.User.Name,
+			PrivilegeName: roleEntity.Grantor.Privilege.Name,
+			DbName:        roleEntity.DbName,
+		}
+		RoleGrantsList = append(RoleGrantsList, RoleGrant)
+	}
+
+	return RoleGrantsList, nil
+}
+
 // Grant adds object privileged for role.
 func (c *GrpcClient) Grant(ctx context.Context, role string, objectType entity.PriviledgeObjectType, object string) error {
 	if c.Service == nil {
