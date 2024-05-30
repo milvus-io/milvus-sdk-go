@@ -35,6 +35,9 @@ func (c * ColumnBinaryVector) Len() int {
 }
 
 func (c *ColumnBinaryVector) Slice(start, end int) Column {
+	if start > c.Len() {
+		start = c.Len()
+	}
 	if end == -1 || end > c.Len() {
 		end = c.Len()
 	}
@@ -147,6 +150,9 @@ func (c *ColumnFloatVector) Get(idx int) (interface{}, error) {
 }
 
 func (c *ColumnFloatVector) Slice(start, end int) Column {
+	if start > c.Len() {
+		start = c.Len()
+	}
 	if end == -1 || end > c.Len() {
 		end = c.Len()
 	}
@@ -235,6 +241,9 @@ func (c * ColumnFloat16Vector) Len() int {
 }
 
 func (c *ColumnFloat16Vector) Slice(start, end int) Column {
+	if start > c.Len() {
+		start = c.Len()
+	}
 	if end == -1 || end > c.Len() {
 		end = c.Len()
 	}
@@ -334,6 +343,9 @@ func (c * ColumnBFloat16Vector) Len() int {
 }
 
 func (c *ColumnBFloat16Vector) Slice(start, end int) Column {
+	if start > c.Len() {
+		start = c.Len()
+	}
 	if end == -1 || end > c.Len() {
 		end = c.Len()
 	}

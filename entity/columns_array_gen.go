@@ -34,6 +34,9 @@ func (c *ColumnBoolArray) Len() int {
 }
 
 func (c *ColumnBoolArray) Slice(start, end int) Column {
+	if start > c.Len() {
+		start = c.Len()
+	}
 	if end == -1 || end > c.Len() {
 		end = c.Len()
 	}
@@ -144,6 +147,9 @@ func (c *ColumnInt8Array) Len() int {
 }
 
 func (c *ColumnInt8Array) Slice(start, end int) Column {
+	if start > c.Len() {
+		start = c.Len()
+	}
 	if end == -1 || end > c.Len() {
 		end = c.Len()
 	}
@@ -254,6 +260,9 @@ func (c *ColumnInt16Array) Len() int {
 }
 
 func (c *ColumnInt16Array) Slice(start, end int) Column {
+	if start > c.Len() {
+		start = c.Len()
+	}
 	if end == -1 || end > c.Len() {
 		end = c.Len()
 	}
@@ -364,6 +373,9 @@ func (c *ColumnInt32Array) Len() int {
 }
 
 func (c *ColumnInt32Array) Slice(start, end int) Column {
+	if start > c.Len() {
+		start = c.Len()
+	}
 	if end == -1 || end > c.Len() {
 		end = c.Len()
 	}
@@ -474,6 +486,9 @@ func (c *ColumnInt64Array) Len() int {
 }
 
 func (c *ColumnInt64Array) Slice(start, end int) Column {
+	if start > c.Len() {
+		start = c.Len()
+	}
 	if end == -1 || end > c.Len() {
 		end = c.Len()
 	}
@@ -584,6 +599,9 @@ func (c *ColumnFloatArray) Len() int {
 }
 
 func (c *ColumnFloatArray) Slice(start, end int) Column {
+	if start > c.Len() {
+		start = c.Len()
+	}
 	if end == -1 || end > c.Len() {
 		end = c.Len()
 	}
@@ -694,6 +712,9 @@ func (c *ColumnDoubleArray) Len() int {
 }
 
 func (c *ColumnDoubleArray) Slice(start, end int) Column {
+	if start > c.Len() {
+		start = c.Len()
+	}
 	if end == -1 || end > c.Len() {
 		end = c.Len()
 	}
