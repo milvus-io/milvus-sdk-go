@@ -46,6 +46,9 @@ func (c *ColumnVarChar) GetAsString(idx int) (string, error) {
 }
 
 func (c *ColumnVarChar) Slice(start, end int) Column {
+	if start > c.Len() {
+		start = c.Len()
+	}
 	if end == -1 || end > c.Len() {
 		end = c.Len()
 	}

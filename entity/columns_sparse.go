@@ -144,6 +144,9 @@ func (c *ColumnSparseFloatVector) Len() int {
 }
 
 func (c *ColumnSparseFloatVector) Slice(start, end int) Column {
+	if start > c.Len() {
+		start = c.Len()
+	}
 	if end == -1 || end > c.Len() {
 		end = c.Len()
 	}
