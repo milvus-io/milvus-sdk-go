@@ -34,26 +34,20 @@ func (c *GrpcClient) Insert(ctx context.Context, collName string, partitionName 
 	if c.Service == nil {
 		return nil, ErrClientNotReady
 	}
-	// 1. validation for all input params
-	// collection
-	if err := c.checkCollectionExists(ctx, collName); err != nil {
-		return nil, err
-	}
-	if partitionName != "" {
-		err := c.checkPartitionExists(ctx, collName, partitionName)
+	var schema *entity.Schema
+	collInfo, ok := MetaCache.getCollectionInfo(collName)
+	if !ok {
+		coll, err := c.DescribeCollection(ctx, collName)
 		if err != nil {
 			return nil, err
 		}
-	}
-	// fields
-	var rowSize int
-	coll, err := c.DescribeCollection(ctx, collName)
-	if err != nil {
-		return nil, err
+		schema = coll.Schema
+	} else {
+		schema = collInfo.Schema
 	}
 
 	// convert columns to field data
-	fieldsData, rowSize, err := c.processInsertColumns(coll.Schema, columns...)
+	fieldsData, rowSize, err := c.processInsertColumns(schema, columns...)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +71,7 @@ func (c *GrpcClient) Insert(ctx context.Context, collName string, partitionName 
 	}
 	MetaCache.setSessionTs(collName, resp.Timestamp)
 	// 3. parse id column
-	return entity.IDColumns(coll.Schema, resp.GetIDs(), 0, -1)
+	return entity.IDColumns(schema, resp.GetIDs(), 0, -1)
 }
 
 func (c *GrpcClient) processInsertColumns(colSchema *entity.Schema, columns ...entity.Column) ([]*schemapb.FieldData, int, error) {
@@ -350,25 +344,19 @@ func (c *GrpcClient) Upsert(ctx context.Context, collName string, partitionName 
 	if c.Service == nil {
 		return nil, ErrClientNotReady
 	}
-	// 1. validation for all input params
-	// collection
-	if err := c.checkCollectionExists(ctx, collName); err != nil {
-		return nil, err
-	}
-	if partitionName != "" {
-		err := c.checkPartitionExists(ctx, collName, partitionName)
+	var schema *entity.Schema
+	collInfo, ok := MetaCache.getCollectionInfo(collName)
+	if !ok {
+		coll, err := c.DescribeCollection(ctx, collName)
 		if err != nil {
 			return nil, err
 		}
-	}
-	// fields
-	var rowSize int
-	coll, err := c.DescribeCollection(ctx, collName)
-	if err != nil {
-		return nil, err
+		schema = coll.Schema
+	} else {
+		schema = collInfo.Schema
 	}
 
-	fieldsData, rowSize, err := c.processInsertColumns(coll.Schema, columns...)
+	fieldsData, rowSize, err := c.processInsertColumns(schema, columns...)
 	if err != nil {
 		return nil, err
 	}
@@ -392,7 +380,7 @@ func (c *GrpcClient) Upsert(ctx context.Context, collName string, partitionName 
 	}
 	MetaCache.setSessionTs(collName, resp.Timestamp)
 	// 3. parse id column
-	return entity.IDColumns(coll.Schema, resp.GetIDs(), 0, -1)
+	return entity.IDColumns(schema, resp.GetIDs(), 0, -1)
 }
 
 // BulkInsert data files(json, numpy, etc.) on MinIO/S3 storage, read and parse them into sealed segments

@@ -133,7 +133,7 @@ func TestInsertNotExistCollection(t *testing.T) {
 	// insert
 	intColumn, floatColumn, vecColumn := common.GenDefaultColumnData(0, common.DefaultNb, common.DefaultDim)
 	_, errInsert := mc.Insert(ctx, "notExist", "", intColumn, floatColumn, vecColumn)
-	common.CheckErr(t, errInsert, false, "does not exist")
+	common.CheckErr(t, errInsert, false, "can't find collection")
 }
 
 // test insert into an not existed partition
@@ -149,7 +149,7 @@ func TestInsertNotExistPartition(t *testing.T) {
 	// insert
 	_, floatColumn, vecColumn := common.GenDefaultColumnData(0, common.DefaultNb, common.DefaultDim)
 	_, errInsert := mc.Insert(ctx, collName, "aaa", floatColumn, vecColumn)
-	common.CheckErr(t, errInsert, false, "does not exist")
+	common.CheckErr(t, errInsert, false, "partition not found")
 }
 
 // test insert data into collection that has all scala fields
