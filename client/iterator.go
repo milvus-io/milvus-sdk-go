@@ -117,7 +117,7 @@ func (itr *QueryIterator) composeIteratorExpr() string {
 
 	expr := strings.TrimSpace(itr.expr)
 	if expr != "" {
-		expr += " AND "
+		expr += " and "
 	}
 
 	switch itr.pkField.DataType {
