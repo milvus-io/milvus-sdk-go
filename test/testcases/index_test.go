@@ -435,6 +435,7 @@ func TestCreateIndexJsonField(t *testing.T) {
 }
 
 func TestCreateIndexArrayField(t *testing.T) {
+	t.Skip("array index supported")
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect
 	mc := createMilvusClient(ctx, t)
@@ -824,7 +825,7 @@ func TestCreateSparseIndexInvalidParams2(t *testing.T) {
 	common.CheckIndexResult(t, descIdx, expIdx)
 }
 
-//create sparse unsupported index: other vector index and scalar index and auto index
+// create sparse unsupported index: other vector index and scalar index and auto index
 func TestCreateSparseUnsupportedIndex(t *testing.T) {
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	//connect
