@@ -1,7 +1,9 @@
 package common
 
 import (
+	"context"
 	"fmt"
+	"io"
 	"log"
 	"strings"
 	"testing"
@@ -201,6 +203,75 @@ func CheckSearchResult(t *testing.T, actualSearchResults []client.SearchResult, 
 	}
 	//expContainedIds entity.Column
 
+}
+
+func EqualIntSlice(a []int, b []int) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
+type CheckIteratorOption func(opt *checkIteratorOpt)
+
+type checkIteratorOpt struct {
+	expBatchSize    []int
+	expOutputFields []string
+}
+
+func WithExpBatchSize(expBatchSize []int) CheckIteratorOption {
+	return func(opt *checkIteratorOpt) {
+		opt.expBatchSize = expBatchSize
+	}
+}
+
+func WithExpOutputFields(expOutputFields []string) CheckIteratorOption {
+	return func(opt *checkIteratorOpt) {
+		opt.expOutputFields = expOutputFields
+	}
+}
+
+// check queryIterator: result limit, each batch size, output fields
+func CheckQueryIteratorResult(ctx context.Context, t *testing.T, itr *client.QueryIterator, expLimit int, opts ...CheckIteratorOption) {
+	opt := &checkIteratorOpt{}
+	for _, o := range opts {
+		o(opt)
+	}
+	actualLimit := 0
+	var actualBatchSize []int
+	for {
+		rs, err := itr.Next(ctx)
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			log.Fatalf("QueryIterator next gets error: %v", err)
+		}
+		log.Printf("QueryIterator result len: %d", rs.Len())
+		log.Printf("QueryIterator result data: %d", rs.GetColumn("int64"))
+
+		if opt.expBatchSize != nil {
+			actualBatchSize = append(actualBatchSize, rs.Len())
+		}
+		var actualOutputFields []string
+		if opt.expOutputFields != nil {
+			for _, column := range rs {
+				actualOutputFields = append(actualOutputFields, column.Name())
+			}
+			require.ElementsMatch(t, opt.expOutputFields, actualOutputFields)
+		}
+		actualLimit = actualLimit + rs.Len()
+	}
+	require.Equal(t, expLimit, actualLimit)
+	if opt.expBatchSize != nil {
+		log.Printf("QueryIterator result len: %v", actualBatchSize)
+		require.True(t, EqualIntSlice(opt.expBatchSize, actualBatchSize))
+	}
 }
 
 // CheckPersistentSegments check persistent segments

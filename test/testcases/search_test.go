@@ -1,4 +1,4 @@
-///go:build L0
+//go:build L0
 
 package testcases
 
@@ -667,7 +667,7 @@ func TestSearchInvalidVectors(t *testing.T) {
 		// dim not match
 		{vectors: common.GenSearchVectors(common.DefaultNq, 64, entity.FieldTypeFloatVector), errMsg: "vector dimension mismatch"},
 
-		// vector type not match
+		//vector type not match
 		{vectors: common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeBinaryVector), errMsg: "vector type must be the same"},
 
 		// empty vectors
@@ -689,6 +689,53 @@ func TestSearchInvalidVectors(t *testing.T) {
 			common.DefaultTopK,
 			sp,
 		)
+		common.CheckErr(t, errSearchEmpty, false, invalidVector.errMsg)
+	}
+}
+
+// test search with invalid vectors
+func TestSearchInvalidVectorsEmptyCollection(t *testing.T) {
+	t.Skip("https://github.com/milvus-io/milvus/issues/33639")
+	t.Skip("https://github.com/milvus-io/milvus/issues/33637")
+	t.Parallel()
+	ctx := createContext(t, time.Second*common.DefaultTimeout*2)
+	// connect
+	mc := createMilvusClient(ctx, t)
+
+	// create collection with data
+	collName := createDefaultCollection(ctx, t, mc, false, common.DefaultShards)
+
+	// index
+	idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
+	err := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false, client.WithIndexName(""))
+	common.CheckErr(t, err, true)
+
+	// load collection
+	errLoad := mc.LoadCollection(ctx, collName, false)
+	common.CheckErr(t, errLoad, true)
+
+	type invalidVectorsStruct struct {
+		vectors []entity.Vector
+		errMsg  string
+	}
+
+	invalidVectors := []invalidVectorsStruct{
+		// dim not match
+		{vectors: common.GenSearchVectors(common.DefaultNq, 64, entity.FieldTypeFloatVector), errMsg: "vector dimension mismatch"},
+
+		//vector type not match
+		{vectors: common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeBinaryVector), errMsg: "vector type must be the same"},
+
+		// empty vectors
+		{vectors: []entity.Vector{}, errMsg: "nq [0] is invalid"},
+		{vectors: []entity.Vector{entity.FloatVector{}}, errMsg: "vector dimension mismatch"},
+	}
+
+	sp, _ := entity.NewIndexHNSWSearchParam(74)
+	for _, invalidVector := range invalidVectors {
+		// search vectors empty slice
+		_, errSearchEmpty := mc.Search(ctx, collName, []string{}, "", []string{"*"}, invalidVector.vectors,
+			common.DefaultFloatVecFieldName, entity.L2, common.DefaultTopK, sp)
 		common.CheckErr(t, errSearchEmpty, false, invalidVector.errMsg)
 	}
 }

@@ -487,6 +487,15 @@ func (mc *MilvusClient) Get(ctx context.Context, collName string, ids entity.Col
 	return queryResults, err
 }
 
+// QueryIterator QueryIterator from collection
+func (mc *MilvusClient) QueryIterator(ctx context.Context, opt *client.QueryIteratorOption) (*client.QueryIterator, error) {
+	funcName := "QueryIterator"
+	preRequest(funcName, ctx, opt)
+	itr, err := mc.mClient.QueryIterator(ctx, opt)
+	postResponse(funcName, err, itr)
+	return itr, err
+}
+
 // -- row based apis --
 
 // CreateCollectionByRow Create Collection By Row

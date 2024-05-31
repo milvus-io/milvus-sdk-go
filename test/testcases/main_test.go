@@ -248,7 +248,7 @@ const (
 	Int64FloatVecJSON     CollectionFieldsType = "PkInt64FloatVecJson"   // int64 + float + floatVec + json
 	Int64FloatVecArray    CollectionFieldsType = "Int64FloatVecArray"    // int64 + float + floatVec + all array
 	Int64VarcharSparseVec CollectionFieldsType = "Int64VarcharSparseVec" // int64 + varchar + float32Vec + sparseVec
-	AllVectors            CollectionFieldsType = "AllVectors"            // int64 + fp32Vec + fp16Vec + binaryVec
+	AllVectors            CollectionFieldsType = "AllVectors"            // int64 + fp32Vec + fp16Vec + bf16Vec + binaryVec
 	AllFields             CollectionFieldsType = "AllFields"             // all scalar fields + floatVec
 )
 
