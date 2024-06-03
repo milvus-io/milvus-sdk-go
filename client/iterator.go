@@ -116,15 +116,12 @@ func (itr *QueryIterator) composeIteratorExpr() string {
 	}
 
 	expr := strings.TrimSpace(itr.expr)
-	if expr != "" {
-		expr += " and "
-	}
 
 	switch itr.pkField.DataType {
 	case entity.FieldTypeInt64:
-		expr += fmt.Sprintf("%s > %d", itr.pkField.Name, itr.lastPK)
+		expr = fmt.Sprintf("(%s) and %s > %d", expr, itr.pkField.Name, itr.lastPK)
 	case entity.FieldTypeVarChar:
-		expr += fmt.Sprintf(`%s > "%s"`, itr.pkField.Name, itr.lastPK)
+		expr += fmt.Sprintf(`(%s) and %s > "%s"`, expr, itr.pkField.Name, itr.lastPK)
 	default:
 		return itr.expr
 	}
