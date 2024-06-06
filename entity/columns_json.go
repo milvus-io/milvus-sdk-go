@@ -36,11 +36,12 @@ func (c *ColumnJSONBytes) Len() int {
 }
 
 func (c *ColumnJSONBytes) Slice(start, end int) Column {
-	if start > c.Len() {
-		start = c.Len()
+	l := c.Len()
+	if start > l {
+		start = l
 	}
-	if end == -1 || end > c.Len() {
-		end = c.Len()
+	if end == -1 || end > l {
+		end = l
 	}
 	return &ColumnJSONBytes{
 		ColumnBase: c.ColumnBase,

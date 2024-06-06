@@ -1,6 +1,8 @@
 package client
 
-import "github.com/milvus-io/milvus-sdk-go/v2/entity"
+import (
+	"github.com/milvus-io/milvus-sdk-go/v2/entity"
+)
 
 // SearchResult contains the result from Search api of client
 // IDs is the auto generated id values for the entities
