@@ -162,14 +162,48 @@ func EqualColumn(t *testing.T, columnA entity.Column, columnB entity.Column) {
 		require.ElementsMatch(t, columnA.(*entity.ColumnFloatVector).Data(), columnB.(*entity.ColumnFloatVector).Data())
 	case entity.FieldTypeBinaryVector:
 		require.ElementsMatch(t, columnA.(*entity.ColumnBinaryVector).Data(), columnB.(*entity.ColumnBinaryVector).Data())
+	case entity.FieldTypeFloat16Vector:
+		require.ElementsMatch(t, columnA.(*entity.ColumnFloat16Vector).Data(), columnB.(*entity.ColumnFloat16Vector).Data())
+	case entity.FieldTypeBFloat16Vector:
+		require.ElementsMatch(t, columnA.(*entity.ColumnBFloat16Vector).Data(), columnB.(*entity.ColumnBFloat16Vector).Data())
+	case entity.FieldTypeSparseVector:
+		require.ElementsMatch(t, columnA.(*entity.ColumnSparseFloatVector).Data(), columnB.(*entity.ColumnSparseFloatVector).Data())
 	case entity.FieldTypeArray:
-		log.Println("TODO support column element type")
+		EqualArrayColumn(t, columnA, columnB)
 	default:
 		log.Printf("The column type not in: [%v, %v, %v,  %v, %v,  %v, %v,  %v, %v,  %v, %v, %v]",
 			entity.FieldTypeBool, entity.FieldTypeInt8, entity.FieldTypeInt16, entity.FieldTypeInt32,
 			entity.FieldTypeInt64, entity.FieldTypeFloat, entity.FieldTypeDouble, entity.FieldTypeString,
 			entity.FieldTypeVarChar, entity.FieldTypeArray, entity.FieldTypeFloatVector, entity.FieldTypeBinaryVector)
+	}
+}
 
+// EqualColumn assert field data is equal of two columns
+func EqualArrayColumn(t *testing.T, columnA entity.Column, columnB entity.Column) {
+	require.Equal(t, columnA.Name(), columnB.Name())
+	require.IsType(t, columnA.Type(), entity.FieldTypeArray)
+	require.IsType(t, columnB.Type(), entity.FieldTypeArray)
+	switch columnA.(type) {
+	case *entity.ColumnBoolArray:
+		require.ElementsMatch(t, columnA.(*entity.ColumnBoolArray).Data(), columnB.(*entity.ColumnBoolArray).Data())
+	case *entity.ColumnInt8Array:
+		require.ElementsMatch(t, columnA.(*entity.ColumnInt8Array).Data(), columnB.(*entity.ColumnInt8Array).Data())
+	case *entity.ColumnInt16Array:
+		require.ElementsMatch(t, columnA.(*entity.ColumnInt16Array).Data(), columnB.(*entity.ColumnInt16Array).Data())
+	case *entity.ColumnInt32Array:
+		require.ElementsMatch(t, columnA.(*entity.ColumnInt32Array).Data(), columnB.(*entity.ColumnInt32Array).Data())
+	case *entity.ColumnInt64Array:
+		require.ElementsMatch(t, columnA.(*entity.ColumnInt64Array).Data(), columnB.(*entity.ColumnInt64Array).Data())
+	case *entity.ColumnFloatArray:
+		require.ElementsMatch(t, columnA.(*entity.ColumnFloatArray).Data(), columnB.(*entity.ColumnFloatArray).Data())
+	case *entity.ColumnDoubleArray:
+		require.ElementsMatch(t, columnA.(*entity.ColumnDoubleArray).Data(), columnB.(*entity.ColumnDoubleArray).Data())
+	case *entity.ColumnVarCharArray:
+		require.ElementsMatch(t, columnA.(*entity.ColumnVarCharArray).Data(), columnB.(*entity.ColumnVarCharArray).Data())
+	default:
+		log.Printf("Now support array type: [%v, %v, %v,  %v, %v,  %v, %v,  %v]",
+			entity.FieldTypeBool, entity.FieldTypeInt8, entity.FieldTypeInt16, entity.FieldTypeInt32,
+			entity.FieldTypeInt64, entity.FieldTypeFloat, entity.FieldTypeDouble, entity.FieldTypeVarChar)
 	}
 }
 
@@ -252,8 +286,8 @@ func CheckQueryIteratorResult(ctx context.Context, t *testing.T, itr *client.Que
 			}
 			log.Fatalf("QueryIterator next gets error: %v", err)
 		}
-		log.Printf("QueryIterator result len: %d", rs.Len())
-		log.Printf("QueryIterator result data: %d", rs.GetColumn("int64"))
+		//log.Printf("QueryIterator result len: %d", rs.Len())
+		//log.Printf("QueryIterator result data: %d", rs.GetColumn("int64"))
 
 		if opt.expBatchSize != nil {
 			actualBatchSize = append(actualBatchSize, rs.Len())

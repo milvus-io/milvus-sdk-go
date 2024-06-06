@@ -74,7 +74,7 @@ func TestCompactAfterDelete(t *testing.T) {
 	common.CheckErr(t, err, true)
 
 	// delete half ids
-	deleteIds := entity.NewColumnInt64(common.DefaultIntFieldName, ids.(*entity.ColumnInt64).Data()[:common.DefaultNb/2])
+	deleteIds := ids.Slice(0, common.DefaultNb/2)
 	errDelete := mc.DeleteByPks(ctx, collName, "", deleteIds)
 	common.CheckErr(t, errDelete, true)
 

@@ -843,7 +843,7 @@ func GenDefaultJSONRows(start int, nb int, dim int64, enableDynamicField bool) [
 	}
 
 	for i := start; i < start+nb; i++ {
-		// jsonStruct row and dynamic row
+		//jsonStruct row and dynamic row
 		var jsonStruct JSONStruct
 		if i%2 == 0 {
 			jsonStruct = JSONStruct{

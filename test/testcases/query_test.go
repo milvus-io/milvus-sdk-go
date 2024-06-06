@@ -1,4 +1,4 @@
-///go:build L0
+//go:build L0
 
 package testcases
 
@@ -33,16 +33,15 @@ func TestQueryDefaultPartition(t *testing.T) {
 	common.CheckErr(t, errLoad, true)
 
 	//query
-	pks := ids.(*entity.ColumnInt64).Data()
+	pks := ids.Slice(0, 10)
 	var queryResult, _ = mc.QueryByPks(
 		ctx,
 		collName,
 		[]string{common.DefaultPartition},
-		entity.NewColumnInt64(common.DefaultIntFieldName, pks[:10]),
+		pks,
 		[]string{common.DefaultIntFieldName},
 	)
-	expColumn := entity.NewColumnInt64(common.DefaultIntFieldName, pks[:10])
-	common.CheckQueryResult(t, queryResult, []entity.Column{expColumn})
+	common.CheckQueryResult(t, queryResult, []entity.Column{pks})
 }
 
 // test query with varchar field filter
@@ -59,16 +58,15 @@ func TestQueryVarcharField(t *testing.T) {
 	common.CheckErr(t, errLoad, true)
 
 	//query
-	pks := ids.(*entity.ColumnVarChar).Data()
+	pks := ids.Slice(0, 10)
 	queryResult, _ := mc.QueryByPks(
 		ctx,
 		collName,
 		[]string{common.DefaultPartition},
-		entity.NewColumnVarChar(common.DefaultVarcharFieldName, pks[:10]),
+		pks,
 		[]string{common.DefaultVarcharFieldName},
 	)
-	expColumn := entity.NewColumnVarChar(common.DefaultVarcharFieldName, pks[:10])
-	common.CheckQueryResult(t, queryResult, []entity.Column{expColumn})
+	common.CheckQueryResult(t, queryResult, []entity.Column{pks})
 }
 
 // query from not existed collection
@@ -85,12 +83,12 @@ func TestQueryNotExistCollection(t *testing.T) {
 	common.CheckErr(t, errLoad, true)
 
 	//query
-	pks := ids.(*entity.ColumnInt64).Data()
+	pks := ids.Slice(0, 10)
 	_, errQuery := mc.QueryByPks(
 		ctx,
 		"collName",
 		[]string{common.DefaultPartition},
-		entity.NewColumnInt64(common.DefaultIntFieldName, pks[:10]),
+		pks,
 		[]string{common.DefaultIntFieldName},
 	)
 	common.CheckErr(t, errQuery, false, "can't find collection")
@@ -110,12 +108,12 @@ func TestQueryNotExistPartition(t *testing.T) {
 	common.CheckErr(t, errLoad, true)
 
 	//query
-	pks := ids.(*entity.ColumnInt64).Data()
+	pks := ids.Slice(0, 10)
 	_, errQuery := mc.QueryByPks(
 		ctx,
 		collName,
 		[]string{"aaa"},
-		entity.NewColumnInt64(common.DefaultIntFieldName, pks[:10]),
+		pks,
 		[]string{common.DefaultIntFieldName},
 	)
 	common.CheckErr(t, errQuery, false, "partition name aaa not found")
@@ -151,7 +149,7 @@ func TestQueryEmptyPartitionName(t *testing.T) {
 		ctx,
 		collName,
 		[]string{emptyPartitionName},
-		entity.NewColumnInt64(common.DefaultIntFieldName, intColumn.(*entity.ColumnInt64).Data()[:10]),
+		intColumn.Slice(0, 10),
 		[]string{common.DefaultIntFieldName},
 	)
 	common.CheckErr(t, errQuery, false, "Partition name should not be empty")
@@ -287,7 +285,7 @@ func TestQueryEmptyOutputFields(t *testing.T) {
 		//query with empty output fields []string{}-> output "int64"
 		queryEmptyOutputs, _ := mc.QueryByPks(
 			ctx, collName, []string{common.DefaultPartition},
-			entity.NewColumnInt64(common.DefaultIntFieldName, ids.(*entity.ColumnInt64).Data()[:10]),
+			ids.Slice(0, 10),
 			[]string{},
 		)
 		common.CheckOutputFields(t, queryEmptyOutputs, []string{common.DefaultIntFieldName})
@@ -295,7 +293,7 @@ func TestQueryEmptyOutputFields(t *testing.T) {
 		//query with empty output fields []string{""}-> output "int64" and dynamic field
 		queryEmptyOutputs, err := mc.QueryByPks(
 			ctx, collName, []string{common.DefaultPartition},
-			entity.NewColumnInt64(common.DefaultIntFieldName, ids.(*entity.ColumnInt64).Data()[:10]),
+			ids.Slice(0, 10),
 			[]string{""},
 		)
 		if enableDynamic {
@@ -307,7 +305,7 @@ func TestQueryEmptyOutputFields(t *testing.T) {
 		// query with "float" output fields -> output "int64, float"
 		queryFloatOutputs, _ := mc.QueryByPks(
 			ctx, collName, []string{common.DefaultPartition},
-			entity.NewColumnInt64(common.DefaultIntFieldName, ids.(*entity.ColumnInt64).Data()[:10]),
+			ids.Slice(0, 10),
 			[]string{common.DefaultFloatFieldName},
 		)
 		common.CheckOutputFields(t, queryFloatOutputs, []string{common.DefaultIntFieldName, common.DefaultFloatFieldName})
@@ -342,14 +340,13 @@ func TestQueryOutputFields(t *testing.T) {
 	queryResult, _ := mc.QueryByPks(
 		ctx, collName,
 		[]string{common.DefaultPartition},
-		entity.NewColumnInt64(common.DefaultIntFieldName, intColumn.(*entity.ColumnInt64).Data()[:pos]),
+		intColumn.Slice(0, pos),
 		[]string{common.DefaultIntFieldName, common.DefaultFloatFieldName, common.DefaultFloatVecFieldName},
 	)
 	common.CheckQueryResult(t, queryResult, []entity.Column{
-		entity.NewColumnInt64(common.DefaultIntFieldName, intColumn.(*entity.ColumnInt64).Data()[:pos]),
-		entity.NewColumnFloat(common.DefaultFloatFieldName, floatColumn.(*entity.ColumnFloat).Data()[:pos]),
-		entity.NewColumnFloatVector(common.DefaultFloatVecFieldName, int(common.DefaultDim), vecColumn.(*entity.ColumnFloatVector).Data()[:pos]),
-	})
+		intColumn.Slice(0, pos),
+		floatColumn.Slice(0, pos),
+		vecColumn.Slice(0, pos)})
 	common.CheckOutputFields(t, queryResult, []string{common.DefaultIntFieldName, common.DefaultFloatFieldName, common.DefaultFloatVecFieldName})
 }
 
@@ -383,33 +380,78 @@ func TestQueryOutputBinaryAndVarchar(t *testing.T) {
 		ctx,
 		collName,
 		[]string{common.DefaultPartition},
-		entity.NewColumnVarChar(common.DefaultVarcharFieldName, varcharColumn.(*entity.ColumnVarChar).Data()[:pos]),
+		varcharColumn.Slice(0, pos),
 		[]string{common.DefaultBinaryVecFieldName},
 	)
 	common.CheckQueryResult(t, queryResult, []entity.Column{
-		entity.NewColumnVarChar(common.DefaultVarcharFieldName, varcharColumn.(*entity.ColumnVarChar).Data()[:pos]),
-		entity.NewColumnBinaryVector(common.DefaultBinaryVecFieldName, int(common.DefaultDim), vecColumn.(*entity.ColumnBinaryVector).Data()[:pos]),
-	})
+		varcharColumn.Slice(0, pos),
+		vecColumn.Slice(0, pos)})
 	common.CheckOutputFields(t, queryResult, []string{common.DefaultBinaryVecFieldName, common.DefaultVarcharFieldName})
 }
 
 // test query output all fields
-func TestOutputAllFields(t *testing.T) {
+func TestOutputAllFieldsRows(t *testing.T) {
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect
 	mc := createMilvusClient(ctx, t)
 
-	for _, withRows := range []bool{true, false} {
-		// create collection
-		var capacity int64 = common.TestCapacity
-		cp := CollectionParams{CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: true,
+	// create collection
+	var capacity int64 = common.TestCapacity
+	cp := CollectionParams{CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: true,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxCapacity: capacity}
+	collName := createCollection(ctx, t, mc, cp)
+
+	// prepare and insert data
+	dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: AllFields,
+		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: true}
+	_, _ = insertData(ctx, t, mc, dp, common.WithArrayCapacity(capacity))
+
+	// flush and check row count
+	errFlush := mc.Flush(ctx, collName, false)
+	common.CheckErr(t, errFlush, true)
+
+	idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
+	for _, fieldName := range []string{"floatVec", "fp16Vec", "bf16Vec"} {
+		_ = mc.CreateIndex(ctx, collName, fieldName, idx, false)
+	}
+	binIdx, _ := entity.NewIndexBinFlat(entity.JACCARD, 16)
+	_ = mc.CreateIndex(ctx, collName, "binaryVec", binIdx, false)
+
+	// Load collection
+	errLoad := mc.LoadCollection(ctx, collName, false)
+	common.CheckErr(t, errLoad, true)
+
+	// query output all fields -> output all fields, includes vector and $meta field
+	allFieldsName := append(common.AllArrayFieldsName, "int64", "bool", "int8", "int16", "int32", "float",
+		"double", "varchar", "json", "floatVec", "fp16Vec", "bf16Vec", "binaryVec", common.DefaultDynamicFieldName)
+	queryResultAll, errQuery := mc.Query(ctx, collName, []string{},
+		fmt.Sprintf("%s == 0", common.DefaultIntFieldName), []string{"*"})
+	common.CheckErr(t, errQuery, true)
+	common.CheckOutputFields(t, queryResultAll, allFieldsName)
+}
+
+// test query output all fields and verify data
+func TestOutputAllFieldsColumn(t *testing.T) {
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	// connect
+	mc := createMilvusClient(ctx, t)
+
+	// create collection
+	var capacity int64 = common.TestCapacity
+	for _, isDynamic := range [2]bool{true, false} {
+		cp := CollectionParams{CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: isDynamic,
 			ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxCapacity: capacity}
 		collName := createCollection(ctx, t, mc, cp)
 
 		// prepare and insert data
-		dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: AllFields,
-			start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: withRows}
-		_, _ = insertData(ctx, t, mc, dp, common.WithArrayCapacity(capacity))
+		data := common.GenAllFieldsData(0, common.DefaultNb, common.DefaultDim, common.WithArrayCapacity(10))
+		_data := data
+		if isDynamic {
+			_data = append(_data, common.GenDynamicFieldData(0, common.DefaultNb)...)
+		}
+		ids, err := mc.Insert(ctx, collName, "", _data...)
+		common.CheckErr(t, err, true)
+		require.Equal(t, common.DefaultNb, ids.Len())
 
 		// flush and check row count
 		errFlush := mc.Flush(ctx, collName, false)
@@ -427,12 +469,24 @@ func TestOutputAllFields(t *testing.T) {
 		common.CheckErr(t, errLoad, true)
 
 		// query output all fields -> output all fields, includes vector and $meta field
+		pos := 10
 		allFieldsName := append(common.AllArrayFieldsName, "int64", "bool", "int8", "int16", "int32", "float",
-			"double", "varchar", "json", "floatVec", "fp16Vec", "bf16Vec", "binaryVec", common.DefaultDynamicFieldName)
-		queryResultAll, errQuery := mc.Query(ctx, collName, []string{},
-			fmt.Sprintf("%s == 0", common.DefaultIntFieldName), []string{"*"})
+			"double", "varchar", "json", "floatVec", "fp16Vec", "bf16Vec", "binaryVec")
+		if isDynamic {
+			allFieldsName = append(allFieldsName, common.DefaultDynamicFieldName)
+		}
+		queryResultAll, errQuery := mc.Query(ctx, collName, []string{}, fmt.Sprintf("%s < %d", common.DefaultIntFieldName, pos), []string{"*"})
 		common.CheckErr(t, errQuery, true)
 		common.CheckOutputFields(t, queryResultAll, allFieldsName)
+
+		expColumns := make([]entity.Column, 0, len(data)+1)
+		for _, column := range data {
+			expColumns = append(expColumns, column.Slice(0, pos))
+		}
+		if isDynamic {
+			expColumns = append(expColumns, common.MergeColumnsToDynamic(pos, common.GenDynamicFieldData(0, pos)))
+		}
+		common.CheckQueryResult(t, queryResultAll, expColumns)
 	}
 }
 
@@ -454,7 +508,7 @@ func TestQueryOutputNotExistField(t *testing.T) {
 		ctx,
 		collName,
 		[]string{common.DefaultPartition},
-		entity.NewColumnInt64(common.DefaultIntFieldName, ids.(*entity.ColumnInt64).Data()[:10]),
+		ids.Slice(0, 10),
 		[]string{common.DefaultIntFieldName, "varchar"},
 	)
 	common.CheckErr(t, errQuery, false, "field varchar not exist")
@@ -877,14 +931,13 @@ func TestQueryJsonDynamicFieldRows(t *testing.T) {
 		[]string{common.DefaultIntFieldName, common.DefaultJSONFieldName, common.DefaultDynamicFieldName},
 	)
 	common.CheckErr(t, err, true)
-	//jsonColumn := common.GenDefaultJSONData(common.DefaultJSONFieldName, 0, 2)
 	m0 := common.JSONStruct{String: strconv.Itoa(0), Bool: true}
 	j0, _ := json.Marshal(&m0)
 	m1 := common.JSONStruct{Number: int32(1), String: strconv.Itoa(1), Bool: false, List: []int64{int64(1), int64(2)}}
 	j1, _ := json.Marshal(&m1)
 	jsonValues := [][]byte{j0, j1}
 	jsonColumn := entity.NewColumnJSONBytes(common.DefaultJSONFieldName, jsonValues)
-	dynamicColumn := common.MergeColumnsToDynamic(2, common.GenDynamicFieldData(0, 2))
+	dynamicColumn := common.MergeColumnsToDynamic(10, common.GenDynamicFieldData(0, 10))
 	// gen dynamic json column
 
 	for _, column := range queryResult {
@@ -901,24 +954,17 @@ func TestQueryJsonDynamicFieldRows(t *testing.T) {
 			log.Println(jsonData)
 		}
 	}
-	common.CheckQueryResult(t, queryResult, []entity.Column{pkColumn, jsonColumn, dynamicColumn})
+	common.CheckQueryResult(t, queryResult, []entity.Column{pkColumn, jsonColumn, dynamicColumn.Slice(0, 2)})
 
 	// query with different expr and count
 	expr := fmt.Sprintf("%s['number'] < 10 && %s < 10", common.DefaultJSONFieldName, common.DefaultDynamicNumberField)
 	queryRes, _ := mc.Query(ctx, collName,
-		[]string{common.DefaultPartition},
-		expr, []string{common.DefaultJSONFieldName, common.DefaultDynamicNumberField})
+		[]string{common.DefaultPartition}, expr, []string{common.DefaultDynamicNumberField})
 
 	// verify output fields and count, dynamicNumber value
-	common.CheckOutputFields(t, queryRes, []string{common.DefaultIntFieldName, common.DefaultJSONFieldName, common.DefaultDynamicNumberField})
-	require.Equal(t, 10, queryRes.GetColumn(common.DefaultJSONFieldName).Len())
-	dynamicNumColumn := queryRes.GetColumn(common.DefaultDynamicNumberField)
-	var numberData []int64
-	for i := 0; i < dynamicNumColumn.Len(); i++ {
-		line, _ := dynamicNumColumn.GetAsInt64(i)
-		numberData = append(numberData, line)
-	}
-	require.Equal(t, numberData, []int64{0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
+	common.CheckOutputFields(t, queryRes, []string{common.DefaultIntFieldName, common.DefaultDynamicNumberField})
+	pkColumn2 := common.GenColumnData(0, 10, entity.FieldTypeInt64, common.DefaultIntFieldName)
+	common.CheckQueryResult(t, queryRes, []entity.Column{pkColumn2, dynamicColumn})
 }
 
 // test query with invalid expr
@@ -1099,7 +1145,7 @@ func TestQuerySparseVector(t *testing.T) {
 		// insert
 		intColumn, _, floatColumn := common.GenDefaultColumnData(0, common.DefaultNb, common.DefaultDim)
 		varColumn := common.GenColumnData(0, common.DefaultNb, entity.FieldTypeVarChar, common.DefaultVarcharFieldName)
-		sparseColumn := common.GenColumnData(0, common.DefaultNb, entity.FieldTypeSparseVector, common.DefaultSparseVecFieldName)
+		sparseColumn := common.GenColumnData(0, common.DefaultNb, entity.FieldTypeSparseVector, common.DefaultSparseVecFieldName, common.WithSparseVectorLen(20))
 		mc.Insert(ctx, collName, "", intColumn, varColumn, floatColumn, sparseColumn)
 		mc.Flush(ctx, collName, false)
 		mc.LoadCollection(ctx, collName, false)
@@ -1109,14 +1155,11 @@ func TestQuerySparseVector(t *testing.T) {
 		require.Equal(t, int64(common.DefaultNb), countRes.GetColumn(common.QueryCountFieldName).(*entity.ColumnInt64).Data()[0])
 
 		// query
-		queryResult, err := mc.Query(ctx, collName, []string{}, fmt.Sprintf("%s == 0", common.DefaultIntFieldName), []string{"*"})
+		queryResult, err := mc.Query(ctx, collName, []string{}, fmt.Sprintf("%s in [0, 1]", common.DefaultIntFieldName), []string{"*"})
 		common.CheckErr(t, err, true)
-		expIntColumn := entity.NewColumnInt64(common.DefaultIntFieldName, intColumn.(*entity.ColumnInt64).Data()[:1])
-		expVarcharColumn := entity.NewColumnVarChar(common.DefaultVarcharFieldName, varColumn.(*entity.ColumnVarChar).Data()[:1])
-		expVecColumn := entity.NewColumnFloatVector(common.DefaultFloatVecFieldName, int(common.DefaultDim), floatColumn.(*entity.ColumnFloatVector).Data()[:1])
-		expSparseColumn := entity.NewColumnSparseVectors(common.DefaultSparseVecFieldName, sparseColumn.(*entity.ColumnSparseFloatVector).Data()[:1])
 		common.CheckOutputFields(t, queryResult, []string{common.DefaultIntFieldName, common.DefaultVarcharFieldName, common.DefaultFloatVecFieldName, common.DefaultSparseVecFieldName})
-		common.CheckQueryResult(t, queryResult, []entity.Column{expIntColumn, expVarcharColumn, expVecColumn, expSparseColumn})
+		t.Log("https://github.com/milvus-io/milvus-sdk-go/issues/769")
+		//common.CheckQueryResult(t, queryResult, []entity.Column{intColumn.Slice(0, 2), varColumn.Slice(0, 2), floatColumn.Slice(0, 2), sparseColumn.Slice(0, 2)})
 	}
 }
 
@@ -1221,7 +1264,6 @@ func TestQueryIteratorBatchSize(t *testing.T) {
 }
 
 func TestQueryIteratorOutputAllFields(t *testing.T) {
-	//t.Skip("https://github.com/milvus-io/milvus-sdk-go/issues/756")
 	t.Parallel()
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect

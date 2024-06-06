@@ -65,13 +65,13 @@ func TestNewCollection(t *testing.T) {
 	queryResult, err := mc.Get(
 		ctx,
 		collName,
-		entity.NewColumnInt64(DefaultPkFieldName, pkColumn.(*entity.ColumnInt64).Data()[:10]),
+		pkColumn.Slice(0, 10),
 	)
 	common.CheckErr(t, err, true)
 	common.CheckOutputFields(t, queryResult, []string{DefaultPkFieldName, DefaultVectorFieldName})
 	common.CheckQueryResult(t, queryResult, []entity.Column{
-		entity.NewColumnInt64(DefaultPkFieldName, pkColumn.(*entity.ColumnInt64).Data()[:10]),
-		entity.NewColumnFloatVector(DefaultVectorFieldName, int(common.DefaultDim), vecColumn.(*entity.ColumnFloatVector).Data()[:10]),
+		pkColumn.Slice(0, 10),
+		vecColumn.Slice(0, 10),
 	})
 
 	// search
@@ -142,13 +142,13 @@ func TestNewCollectionCustomize(t *testing.T) {
 	queryResult, err := mc.Get(
 		ctx,
 		collName,
-		entity.NewColumnVarChar(pkFieldName, pkColumn.(*entity.ColumnVarChar).Data()[:10]),
+		pkColumn.Slice(0, 10),
 	)
 	common.CheckErr(t, err, true)
 	common.CheckOutputFields(t, queryResult, []string{pkFieldName, vectorFieldName})
 	common.CheckQueryResult(t, queryResult, []entity.Column{
-		entity.NewColumnVarChar(pkFieldName, pkColumn.(*entity.ColumnVarChar).Data()[:10]),
-		entity.NewColumnFloatVector(vectorFieldName, int(common.DefaultDim), vecColumn.(*entity.ColumnFloatVector).Data()[:10]),
+		pkColumn.Slice(0, 10),
+		vecColumn.Slice(0, 10),
 	})
 
 	// search
