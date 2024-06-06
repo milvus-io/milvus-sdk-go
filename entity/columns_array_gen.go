@@ -34,11 +34,15 @@ func (c *ColumnBoolArray) Len() int {
 }
 
 func (c *ColumnBoolArray) Slice(start, end int) Column {
-	if start > c.Len() {
-		start = c.Len()
+	l := c.Len()
+	if start > l {
+		start = l
 	}
-	if end == -1 || end > c.Len() {
-		end = c.Len()
+	if end == -1 || end > l {
+		end = l
+	}
+	if end == -1 || end > l {
+		end = l
 	}
 	return &ColumnBoolArray{
 		ColumnBase: c.ColumnBase,
@@ -147,11 +151,12 @@ func (c *ColumnInt8Array) Len() int {
 }
 
 func (c *ColumnInt8Array) Slice(start, end int) Column {
-	if start > c.Len() {
-		start = c.Len()
+	l := c.Len()
+	if start > l {
+		start = l
 	}
-	if end == -1 || end > c.Len() {
-		end = c.Len()
+	if end == -1 || end > l {
+		end = l
 	}
 	return &ColumnInt8Array{
 		ColumnBase: c.ColumnBase,
@@ -260,11 +265,12 @@ func (c *ColumnInt16Array) Len() int {
 }
 
 func (c *ColumnInt16Array) Slice(start, end int) Column {
-	if start > c.Len() {
-		start = c.Len()
+	l := c.Len()
+	if start > l {
+		start = l
 	}
-	if end == -1 || end > c.Len() {
-		end = c.Len()
+	if end == -1 || end > l {
+		end = l
 	}
 	return &ColumnInt16Array{
 		ColumnBase: c.ColumnBase,
@@ -373,11 +379,12 @@ func (c *ColumnInt32Array) Len() int {
 }
 
 func (c *ColumnInt32Array) Slice(start, end int) Column {
-	if start > c.Len() {
-		start = c.Len()
+	l := c.Len()
+	if start > l {
+		start = l
 	}
-	if end == -1 || end > c.Len() {
-		end = c.Len()
+	if end == -1 || end > l {
+		end = l
 	}
 	return &ColumnInt32Array{
 		ColumnBase: c.ColumnBase,
@@ -486,11 +493,12 @@ func (c *ColumnInt64Array) Len() int {
 }
 
 func (c *ColumnInt64Array) Slice(start, end int) Column {
-	if start > c.Len() {
-		start = c.Len()
+	l := c.Len()
+	if start > l {
+		start = l
 	}
-	if end == -1 || end > c.Len() {
-		end = c.Len()
+	if end == -1 || end > l {
+		end = l
 	}
 	return &ColumnInt64Array{
 		ColumnBase: c.ColumnBase,
@@ -599,11 +607,12 @@ func (c *ColumnFloatArray) Len() int {
 }
 
 func (c *ColumnFloatArray) Slice(start, end int) Column {
-	if start > c.Len() {
-		start = c.Len()
+	l := c.Len()
+	if start > l {
+		start = l
 	}
-	if end == -1 || end > c.Len() {
-		end = c.Len()
+	if end == -1 || end > l {
+		end = l
 	}
 	return &ColumnFloatArray{
 		ColumnBase: c.ColumnBase,
@@ -712,11 +721,12 @@ func (c *ColumnDoubleArray) Len() int {
 }
 
 func (c *ColumnDoubleArray) Slice(start, end int) Column {
-	if start > c.Len() {
-		start = c.Len()
+	l := c.Len()
+	if start > l {
+		start = l
 	}
-	if end == -1 || end > c.Len() {
-		end = c.Len()
+	if end == -1 || end > l {
+		end = l
 	}
 	return &ColumnDoubleArray{
 		ColumnBase: c.ColumnBase,

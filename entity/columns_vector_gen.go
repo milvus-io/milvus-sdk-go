@@ -35,11 +35,15 @@ func (c * ColumnBinaryVector) Len() int {
 }
 
 func (c *ColumnBinaryVector) Slice(start, end int) Column {
-	if start > c.Len() {
-		start = c.Len()
+	l := c.Len()
+	if start > l {
+		start = l
 	}
-	if end == -1 || end > c.Len() {
-		end = c.Len()
+	if end == -1 || end > l {
+		end = l
+	}
+	if end == -1 || end > l {
+		end = l
 	}
 	return &ColumnBinaryVector{
 		ColumnBase: c.ColumnBase,
@@ -150,11 +154,15 @@ func (c *ColumnFloatVector) Get(idx int) (interface{}, error) {
 }
 
 func (c *ColumnFloatVector) Slice(start, end int) Column {
-	if start > c.Len() {
-		start = c.Len()
+	l := c.Len()
+	if start > l {
+		start = l
 	}
-	if end == -1 || end > c.Len() {
-		end = c.Len()
+	if end == -1 || end > l {
+		end = l
+	}
+	if end == -1 || end > l {
+		end = l
 	}
 	return &ColumnFloatVector{
 		ColumnBase: c.ColumnBase,
@@ -241,11 +249,15 @@ func (c * ColumnFloat16Vector) Len() int {
 }
 
 func (c *ColumnFloat16Vector) Slice(start, end int) Column {
-	if start > c.Len() {
-		start = c.Len()
+	l := c.Len()
+	if start > l {
+		start = l
 	}
-	if end == -1 || end > c.Len() {
-		end = c.Len()
+	if end == -1 || end > l {
+		end = l
+	}
+	if end == -1 || end > l {
+		end = l
 	}
 	return &ColumnFloat16Vector{
 		ColumnBase: c.ColumnBase,
@@ -291,7 +303,7 @@ func (c *ColumnFloat16Vector) FieldData() *schema.FieldData {
 		FieldName: c.name,
 	}
 
-	data := make([]byte, 0, len(c.values)* c.dim)
+	data := make([]byte, 0, len(c.values)* c.dim *2)
 
 	for _, vector := range c.values {
 		data = append(data, vector...)
@@ -343,11 +355,15 @@ func (c * ColumnBFloat16Vector) Len() int {
 }
 
 func (c *ColumnBFloat16Vector) Slice(start, end int) Column {
-	if start > c.Len() {
-		start = c.Len()
+	l := c.Len()
+	if start > l {
+		start = l
 	}
-	if end == -1 || end > c.Len() {
-		end = c.Len()
+	if end == -1 || end > l {
+		end = l
+	}
+	if end == -1 || end > l {
+		end = l
 	}
 	return &ColumnBFloat16Vector{
 		ColumnBase: c.ColumnBase,
@@ -393,7 +409,7 @@ func (c *ColumnBFloat16Vector) FieldData() *schema.FieldData {
 		FieldName: c.name,
 	}
 
-	data := make([]byte, 0, len(c.values)* c.dim)
+	data := make([]byte, 0, len(c.values)* c.dim*2)
 
 	for _, vector := range c.values {
 		data = append(data, vector...)
