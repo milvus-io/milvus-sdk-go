@@ -102,6 +102,10 @@ type QueryIterator struct {
 // init fetches the first batch of data and put it into cache.
 // this operation could be used to check all the parameters before returning the iterator.
 func (itr *QueryIterator) init(ctx context.Context) error {
+	if itr.batchSize <= 0 {
+		return errors.New("batch size cannot less than 1")
+	}
+
 	rs, err := itr.fetchNextBatch(ctx)
 	if err != nil {
 		return err
