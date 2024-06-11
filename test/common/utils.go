@@ -78,6 +78,7 @@ const (
 	DefaultPartitionNum     = 16   // default num_partitions
 	MaxTopK                 = 16384
 	MaxVectorFieldNum       = 4
+	DefaultBatchSize        = 1000
 )
 
 var IndexStateValue = map[string]int32{
@@ -842,7 +843,7 @@ func GenDefaultJSONRows(start int, nb int, dim int64, enableDynamicField bool) [
 	}
 
 	for i := start; i < start+nb; i++ {
-		// jsonStruct row and dynamic row
+		//jsonStruct row and dynamic row
 		var jsonStruct JSONStruct
 		if i%2 == 0 {
 			jsonStruct = JSONStruct{
@@ -1386,6 +1387,8 @@ type InvalidExprStruct struct {
 var InvalidExpressions = []InvalidExprStruct{
 	{Expr: "id in [0]", ErrNil: true, ErrMsg: "fieldName(id) not found"},                                          // not exist field but no error
 	{Expr: "int64 in not [0]", ErrNil: false, ErrMsg: "cannot parse expression"},                                  // wrong term expr keyword
+	{Expr: "int64 > 10 AND int64 < 100", ErrNil: false, ErrMsg: "cannot parse expression"},                        // AND isn't supported
+	{Expr: "int64 < 10 OR int64 > 100", ErrNil: false, ErrMsg: "cannot parse expression"},                         // OR isn't supported
 	{Expr: "int64 < floatVec", ErrNil: false, ErrMsg: "not supported"},                                            // unsupported compare field
 	{Expr: "floatVec in [0]", ErrNil: false, ErrMsg: "cannot be casted to FloatVector"},                           // value and field type mismatch
 	{Expr: fmt.Sprintf("%s == 1", DefaultJSONFieldName), ErrNil: true, ErrMsg: ""},                                // hist empty
@@ -1404,6 +1407,25 @@ var InvalidExpressions = []InvalidExprStruct{
 	{Expr: fmt.Sprintf("json_contains_aby (%s['list'], 2)", DefaultJSONFieldName), ErrNil: false, ErrMsg: "invalid expression: json_contains_aby"},
 	{Expr: fmt.Sprintf("%s[-1] > %d", DefaultInt8ArrayField, TestCapacity), ErrNil: false, ErrMsg: "cannot parse expression"}, //  array[-1] >
 	{Expr: fmt.Sprintf(fmt.Sprintf("%s[-1] > 1", DefaultJSONFieldName)), ErrNil: false, ErrMsg: "invalid expression"},         //  json[-1] >
+}
+
+func GenBatchSizes(limit int, batch int) []int {
+	if batch == 0 {
+		log.Fatal("Batch should be larger than 0")
+	}
+	if limit == 0 {
+		return []int{}
+	}
+	_loop := limit / batch
+	_last := limit % batch
+	batchSizes := make([]int, 0, _loop+1)
+	for i := 0; i < _loop; i++ {
+		batchSizes = append(batchSizes, batch)
+	}
+	if _last > 0 {
+		batchSizes = append(batchSizes, _last)
+	}
+	return batchSizes
 }
 
 // --- search utils ---

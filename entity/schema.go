@@ -419,6 +419,8 @@ func (t FieldType) String() string {
 		return "[]byte"
 	case FieldTypeBFloat16Vector:
 		return "[]byte"
+	case FieldTypeSparseVector:
+		return "[]SparseEmbedding"
 	default:
 		return "undefined"
 	}

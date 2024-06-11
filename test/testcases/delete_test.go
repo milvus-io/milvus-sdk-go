@@ -28,7 +28,7 @@ func TestDelete(t *testing.T) {
 	common.CheckErr(t, errLoad, true)
 
 	// delete
-	deleteIds := entity.NewColumnInt64(common.DefaultIntFieldName, ids.(*entity.ColumnInt64).Data()[:10])
+	deleteIds := ids.Slice(0, 10)
 	errDelete := mc.DeleteByPks(ctx, collName, common.DefaultPartition, deleteIds)
 	common.CheckErr(t, errDelete, true)
 
@@ -48,7 +48,7 @@ func TestDeleteStringPks(t *testing.T) {
 	collName, ids := createVarcharCollectionWithDataIndex(ctx, t, mc, true, client.WithConsistencyLevel(entity.ClStrong))
 
 	// delete
-	deleteIds := entity.NewColumnVarChar(common.DefaultVarcharFieldName, ids.(*entity.ColumnVarChar).Data()[:10])
+	deleteIds := ids.Slice(0, 10)
 	errDelete := mc.DeleteByPks(ctx, collName, common.DefaultPartition, deleteIds)
 	common.CheckErr(t, errDelete, true)
 
@@ -103,7 +103,7 @@ func TestDeleteNotExistPartition(t *testing.T) {
 	common.CheckErr(t, errLoad, true)
 
 	// delete
-	deleteIds := entity.NewColumnInt64(common.DefaultIntFieldName, ids.(*entity.ColumnInt64).Data()[:10])
+	deleteIds := ids.Slice(0, 10)
 	errDelete := mc.DeleteByPks(ctx, collName, "p1", deleteIds)
 	common.CheckErr(t, errDelete, false, fmt.Sprintf("partition p1 of collection %s does not exist", collName))
 }
@@ -125,7 +125,7 @@ func TestDeleteEmptyPartitionNames(t *testing.T) {
 	mc.Flush(ctx, collName, false)
 
 	// delete
-	deleteIds := entity.NewColumnInt64(common.DefaultIntFieldName, intColumn.(*entity.ColumnInt64).Data()[:10])
+	deleteIds := intColumn.Slice(0, 10)
 	errDelete := mc.DeleteByPks(ctx, collName, emptyPartitionName, deleteIds)
 	common.CheckErr(t, errDelete, true)
 
@@ -160,7 +160,7 @@ func TestDeleteEmptyPartition(t *testing.T) {
 	common.CheckErr(t, errLoad, true)
 
 	// delete from empty partition p1
-	deleteIds := entity.NewColumnInt64(common.DefaultIntFieldName, ids.(*entity.ColumnInt64).Data()[:10])
+	deleteIds := ids.Slice(0, 10)
 	errDelete := mc.DeleteByPks(ctx, collName, "p1", deleteIds)
 	common.CheckErr(t, errDelete, true)
 
@@ -186,7 +186,7 @@ func TestDeletePartitionIdsNotMatch(t *testing.T) {
 	partitionName, vecColumnDefault, _ := createInsertTwoPartitions(ctx, t, mc, collName, common.DefaultNb)
 
 	// delete [0:10) from new partition -> delete nothing
-	deleteIds := entity.NewColumnInt64(common.DefaultIntFieldName, vecColumnDefault.IdsColumn.(*entity.ColumnInt64).Data()[:10])
+	deleteIds := vecColumnDefault.IdsColumn.Slice(0, 10)
 	errDelete := mc.DeleteByPks(ctx, collName, partitionName, deleteIds)
 	common.CheckErr(t, errDelete, true)
 
