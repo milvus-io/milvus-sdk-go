@@ -289,6 +289,18 @@ func GetWithOutputFields(outputFields ...string) GetOption {
 	}
 }
 
+type listCollectionOpt struct {
+	showInMemory bool
+}
+
+type ListCollectionOption func(*listCollectionOpt)
+
+func WithShowInMemory(value bool) ListCollectionOption {
+	return func(opt *listCollectionOpt) {
+		opt.showInMemory = value
+	}
+}
+
 type DropCollectionOption func(*milvuspb.DropCollectionRequest)
 
 type ReleaseCollectionOption func(*milvuspb.ReleaseCollectionRequest)

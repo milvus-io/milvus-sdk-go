@@ -45,14 +45,25 @@ func handleRespStatus(status *commonpb.Status) error {
 
 // ListCollections list collections from connection
 // Note that schema info are not provided in collection list
-func (c *GrpcClient) ListCollections(ctx context.Context) ([]*entity.Collection, error) {
+func (c *GrpcClient) ListCollections(ctx context.Context, opts ...ListCollectionOption) ([]*entity.Collection, error) {
 	if c.Service == nil {
 		return []*entity.Collection{}, ErrClientNotReady
 	}
+
+	o := &listCollectionOpt{}
+	for _, opt := range opts {
+		opt(o)
+	}
+
 	req := &milvuspb.ShowCollectionsRequest{
 		DbName:    "",
 		TimeStamp: 0, // means now
 	}
+
+	if o.showInMemory {
+		req.Type = milvuspb.ShowType_InMemory
+	}
+
 	resp, err := c.Service.ShowCollections(ctx, req)
 	if err != nil {
 		return []*entity.Collection{}, err
