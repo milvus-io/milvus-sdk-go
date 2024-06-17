@@ -23,6 +23,7 @@ import (
 
 	"github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
 	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
+	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )
 
 type ResourceGroupSuite struct {
@@ -121,6 +122,68 @@ func (s *ResourceGroupSuite) TestCreateResourceGroup() {
 	})
 }
 
+func (s *ResourceGroupSuite) TestUpdateResourceGroups() {
+	c := s.client
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	s.Run("normal_run", func() {
+		defer s.resetMock()
+		rgName := randStr(10)
+
+		s.mock.EXPECT().UpdateResourceGroups(mock.Anything, mock.AnythingOfType("*milvuspb.UpdateResourceGroupsRequest")).
+			Run(func(_ context.Context, req *milvuspb.UpdateResourceGroupsRequest) {
+				s.Len(req.ResourceGroups, 1)
+				s.NotNil(req.ResourceGroups[rgName])
+				s.Equal(int32(1), req.ResourceGroups[rgName].Requests.NodeNum)
+			}).
+			Return(&commonpb.Status{}, nil)
+
+		err := c.UpdateResourceGroups(ctx, WithUpdateResourceGroupConfig(rgName, &entity.ResourceGroupConfig{
+			Requests: &entity.ResourceGroupLimit{NodeNum: 1},
+		}))
+		s.NoError(err)
+	})
+
+	s.Run("request_fails", func() {
+		defer s.resetMock()
+
+		rgName := randStr(10)
+
+		s.mock.EXPECT().UpdateResourceGroups(mock.Anything, mock.AnythingOfType("*milvuspb.UpdateResourceGroupsRequest")).
+			Run(func(_ context.Context, req *milvuspb.UpdateResourceGroupsRequest) {
+				s.Len(req.ResourceGroups, 1)
+				s.NotNil(req.ResourceGroups[rgName])
+				s.Equal(int32(1), req.ResourceGroups[rgName].Requests.NodeNum)
+			}).
+			Return(nil, errors.New("mocked grpc error"))
+
+		err := c.UpdateResourceGroups(ctx, WithUpdateResourceGroupConfig(rgName, &entity.ResourceGroupConfig{
+			Requests: &entity.ResourceGroupLimit{NodeNum: 1},
+		}))
+		s.Error(err)
+	})
+
+	s.Run("server_return_err", func() {
+		defer s.resetMock()
+
+		rgName := randStr(10)
+
+		s.mock.EXPECT().UpdateResourceGroups(mock.Anything, mock.AnythingOfType("*milvuspb.UpdateResourceGroupsRequest")).
+			Run(func(_ context.Context, req *milvuspb.UpdateResourceGroupsRequest) {
+				s.Len(req.ResourceGroups, 1)
+				s.NotNil(req.ResourceGroups[rgName])
+				s.Equal(int32(1), req.ResourceGroups[rgName].Requests.NodeNum)
+			}).
+			Return(&commonpb.Status{ErrorCode: commonpb.ErrorCode_UnexpectedError}, nil)
+
+		err := c.UpdateResourceGroups(ctx, WithUpdateResourceGroupConfig(rgName, &entity.ResourceGroupConfig{
+			Requests: &entity.ResourceGroupLimit{NodeNum: 1},
+		}))
+		s.Error(err)
+	})
+}
+
 func (s *ResourceGroupSuite) TestDescribeResourceGroup() {
 	c := s.client
 	ctx, cancel := context.WithCancel(context.Background())
@@ -153,7 +216,6 @@ func (s *ResourceGroupSuite) TestDescribeResourceGroup() {
 				s.Equal(rgName, req.GetResourceGroup())
 			}).
 			Call.Return(func(_ context.Context, req *milvuspb.DescribeResourceGroupRequest) *milvuspb.DescribeResourceGroupResponse {
-
 			return &milvuspb.DescribeResourceGroupResponse{
 				Status: &commonpb.Status{},
 				ResourceGroup: &milvuspb.ResourceGroup{

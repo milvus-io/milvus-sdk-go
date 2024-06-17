@@ -322,3 +322,26 @@ type DropPartitionOption func(*milvuspb.DropPartitionRequest)
 type LoadPartitionsOption func(*milvuspb.LoadPartitionsRequest)
 
 type ReleasePartitionsOption func(*milvuspb.ReleasePartitionsRequest)
+
+// CreateResourceGroupOption is an option that is used in CreateResourceGroup API.
+type CreateResourceGroupOption func(*milvuspb.CreateResourceGroupRequest)
+
+// WithCreateResourceGroupConfig returns a CreateResourceGroupOption that setup the config.
+func WithCreateResourceGroupConfig(config *entity.ResourceGroupConfig) CreateResourceGroupOption {
+	return func(req *milvuspb.CreateResourceGroupRequest) {
+		req.Config = config
+	}
+}
+
+// UpdateResourceGroupsOption is an option that is used in UpdateResourceGroups API.
+type UpdateResourceGroupsOption func(*milvuspb.UpdateResourceGroupsRequest)
+
+// WithUpdateResourceGroupConfig returns an UpdateResourceGroupsOption that sets the new config to the specified resource group.
+func WithUpdateResourceGroupConfig(resourceGroupName string, config *entity.ResourceGroupConfig) UpdateResourceGroupsOption {
+	return func(urgr *milvuspb.UpdateResourceGroupsRequest) {
+		if urgr.ResourceGroups == nil {
+			urgr.ResourceGroups = make(map[string]*entity.ResourceGroupConfig)
+		}
+		urgr.ResourceGroups[resourceGroupName] = config
+	}
+}

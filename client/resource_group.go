@@ -38,7 +38,7 @@ func (c *GrpcClient) ListResourceGroups(ctx context.Context) ([]string, error) {
 }
 
 // CreateResourceGroup creates a resource group with provided name.
-func (c *GrpcClient) CreateResourceGroup(ctx context.Context, rgName string) error {
+func (c *GrpcClient) CreateResourceGroup(ctx context.Context, rgName string, opts ...CreateResourceGroupOption) error {
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
@@ -46,8 +46,29 @@ func (c *GrpcClient) CreateResourceGroup(ctx context.Context, rgName string) err
 	req := &milvuspb.CreateResourceGroupRequest{
 		ResourceGroup: rgName,
 	}
+	for _, opt := range opts {
+		opt(req)
+	}
 
 	resp, err := c.Service.CreateResourceGroup(ctx, req)
+	if err != nil {
+		return err
+	}
+	return handleRespStatus(resp)
+}
+
+// UpdateResourceGroups updates resource groups with provided options.
+func (c *GrpcClient) UpdateResourceGroups(ctx context.Context, opts ...UpdateResourceGroupsOption) error {
+	if c.Service == nil {
+		return ErrClientNotReady
+	}
+
+	req := &milvuspb.UpdateResourceGroupsRequest{}
+	for _, opt := range opts {
+		opt(req)
+	}
+
+	resp, err := c.Service.UpdateResourceGroups(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -80,6 +101,8 @@ func (c *GrpcClient) DescribeResourceGroup(ctx context.Context, rgName string) (
 		LoadedReplica:        rg.GetNumLoadedReplica(),
 		OutgoingNodeNum:      rg.GetNumOutgoingNode(),
 		IncomingNodeNum:      rg.GetNumIncomingNode(),
+		Config:               rg.GetConfig(),
+		Nodes:                rg.GetNodes(),
 	}
 
 	return result, nil

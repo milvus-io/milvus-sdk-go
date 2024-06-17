@@ -177,3 +177,27 @@ func TestMakeSearchQueryOption(t *testing.T) {
 		assert.Error(t, err)
 	})
 }
+
+func TestWithUpdateResourceGroupConfig(t *testing.T) {
+	req := &milvuspb.UpdateResourceGroupsRequest{}
+
+	WithUpdateResourceGroupConfig("rg1", &entity.ResourceGroupConfig{
+		Requests: &entity.ResourceGroupLimit{NodeNum: 1},
+	})(req)
+	WithUpdateResourceGroupConfig("rg2", &entity.ResourceGroupConfig{
+		Requests: &entity.ResourceGroupLimit{NodeNum: 2},
+	})(req)
+
+	assert.Equal(t, 2, len(req.ResourceGroups))
+	assert.Equal(t, int32(1), req.ResourceGroups["rg1"].Requests.NodeNum)
+	assert.Equal(t, int32(2), req.ResourceGroups["rg2"].Requests.NodeNum)
+}
+
+func TestWithCreateResourceGroup(t *testing.T) {
+	req := &milvuspb.CreateResourceGroupRequest{}
+
+	WithCreateResourceGroupConfig(&entity.ResourceGroupConfig{
+		Requests: &entity.ResourceGroupLimit{NodeNum: 1},
+	})(req)
+	assert.Equal(t, int32(1), req.Config.Requests.NodeNum)
+}
