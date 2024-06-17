@@ -214,7 +214,9 @@ type Client interface {
 	// ListResourceGroups returns list of resource group names in current Milvus instance.
 	ListResourceGroups(ctx context.Context) ([]string, error)
 	// CreateResourceGroup creates a resource group with provided name.
-	CreateResourceGroup(ctx context.Context, rgName string) error
+	CreateResourceGroup(ctx context.Context, rgName string, opts ...CreateResourceGroupOption) error
+	// UpdateResourceGroups updates resource groups with provided options.
+	UpdateResourceGroups(ctx context.Context, opts ...UpdateResourceGroupsOption) error
 	// DescribeResourceGroup returns resource groups information.
 	DescribeResourceGroup(ctx context.Context, rgName string) (*entity.ResourceGroup, error)
 	// DropResourceGroup drops the resource group with provided name.

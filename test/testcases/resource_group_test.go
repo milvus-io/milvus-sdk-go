@@ -18,8 +18,10 @@ import (
 	"github.com/milvus-io/milvus-sdk-go/v2/test/common"
 )
 
-const configQnNodes = int32(4)
-const newRgNode = int32(2)
+const (
+	configQnNodes = int32(4)
+	newRgNode     = int32(2)
+)
 
 func resetRgs(t *testing.T, ctx context.Context, mc *base.MilvusClient) {
 	// release and drop all collections
@@ -371,7 +373,6 @@ func TestTransferReplicas(t *testing.T) {
 	// check search result contains search vector, which from all partitions
 	common.CheckErr(t, err, true)
 	common.CheckSearchResult(t, searchRes, common.DefaultNq, common.DefaultTopK)
-
 }
 
 // test transfer replica of not existed collection
