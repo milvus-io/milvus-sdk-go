@@ -27,6 +27,8 @@ import (
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )
 
+const MetaFieldName = "$meta"
+
 // Insert Index  into collection with column-based format
 // collName is the collection name
 // partitionName is the partition to insert, if not specified(empty), default partition will be used
@@ -154,6 +156,12 @@ func (c *GrpcClient) processInsertColumns(colSchema *entity.Schema, columns ...e
 }
 
 func (c *GrpcClient) mergeDynamicColumns(dynamicName string, rowSize int, columns []entity.Column) (*schemapb.FieldData, error) {
+	if len(columns) == 1 && columns[0].Name() == MetaFieldName {
+		data := columns[0].FieldData()
+		data.FieldName = dynamicName
+		return data, nil
+	}
+
 	values := make([][]byte, 0, rowSize)
 	for i := 0; i < rowSize; i++ {
 		m := make(map[string]interface{})
