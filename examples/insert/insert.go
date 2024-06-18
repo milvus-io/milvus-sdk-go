@@ -91,6 +91,16 @@ func main() {
 	}
 	log.Println("flush completed")
 
+	// Now add index
+	idx, err := entity.NewIndexIvfFlat(entity.L2, 2)
+	if err != nil {
+		log.Fatal("fail to create ivf flat index:", err.Error())
+	}
+	err = c.CreateIndex(ctx, collectionName, "Vector", idx, false)
+	if err != nil {
+		log.Fatal("fail to create index:", err.Error())
+	}
+
 	// load collection with async=false
 	err = c.LoadCollection(ctx, collectionName, false)
 	if err != nil {
