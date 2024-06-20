@@ -128,7 +128,7 @@ func main() {
 			}
 		}
 		if idColumn == nil {
-			log.Fatal("result field not math")
+			log.Fatal("result field not match")
 		}
 		for i := 0; i < result.ResultCount; i++ {
 			id, err := idColumn.ValueByIdx(i)
