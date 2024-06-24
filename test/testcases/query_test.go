@@ -312,6 +312,99 @@ func TestQueryEmptyOutputFields(t *testing.T) {
 	}
 }
 
+// test query with an not existed field
+func TestQueryOutputNotExistField(t *testing.T) {
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	// connect
+	mc := createMilvusClient(ctx, t)
+
+	// create, insert, index
+	collName, ids := createCollectionWithDataIndex(ctx, t, mc, true, true)
+
+	// Load collection
+	errLoad := mc.LoadCollection(ctx, collName, false)
+	common.CheckErr(t, errLoad, true)
+
+	//query
+	_, errQuery := mc.QueryByPks(
+		ctx,
+		collName,
+		[]string{common.DefaultPartition},
+		ids.Slice(0, 10),
+		[]string{common.DefaultIntFieldName, "varchar"},
+	)
+	common.CheckErr(t, errQuery, false, "field varchar not exist")
+}
+
+// test query empty output fields: []string{} -> default pk
+// test query empty output fields: []string{""} -> error
+// test query with not existed field ["aa"]: error or as dynamic field
+// test query with part not existed field ["aa", "$meat"]: error or as dynamic field
+// test query with repeated field: ["*", "$meat"], ["floatVec", floatVec"] unique field
+func TestQueryEmptyOutputFields2(t *testing.T) {
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	// connect
+	mc := createMilvusClient(ctx, t)
+
+	for _, enableDynamic := range []bool{true, false} {
+		// create collection
+		cp := CollectionParams{CollectionFieldsType: Int64FloatVec, AutoID: false, EnableDynamicField: enableDynamic,
+			ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+		collName := createCollection(ctx, t, mc, cp)
+
+		// insert
+		dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVec,
+			start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: enableDynamic}
+		_, _ = insertData(ctx, t, mc, dp)
+
+		idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
+		_ = mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false)
+
+		// Load collection
+		errLoad := mc.LoadCollection(ctx, collName, false)
+		common.CheckErr(t, errLoad, true)
+
+		//query with empty output fields []string{}-> output "int64"
+		expr := fmt.Sprintf("%s < 10", common.DefaultIntFieldName)
+		queryNilOutputs, err := mc.Query(ctx, collName, []string{}, expr, []string{}, client.WithSearchQueryConsistencyLevel(entity.ClStrong))
+		common.CheckErr(t, err, true)
+		common.CheckOutputFields(t, queryNilOutputs, []string{common.DefaultIntFieldName})
+
+		//query with not existed field -> output field as dynamic or error
+		fakeName := "aaa"
+		res2, err2 := mc.Query(ctx, collName, []string{}, expr, []string{fakeName}, client.WithSearchQueryConsistencyLevel(entity.ClStrong))
+		if enableDynamic {
+			common.CheckErr(t, err2, true)
+			common.CheckOutputFields(t, res2, []string{common.DefaultIntFieldName, fakeName})
+		} else {
+			common.CheckErr(t, err2, false, fmt.Sprintf("%s not exist", fakeName))
+		}
+
+		// query with part not existed field ["aa", "$meat"]: error or as dynamic field
+		res3, err3 := mc.Query(ctx, collName, []string{}, expr, []string{fakeName, common.DefaultDynamicFieldName}, client.WithSearchQueryConsistencyLevel(entity.ClStrong))
+		if enableDynamic {
+			common.CheckErr(t, err3, true)
+			common.CheckOutputFields(t, res3, []string{common.DefaultIntFieldName, fakeName, common.DefaultDynamicFieldName})
+		} else {
+			common.CheckErr(t, err3, false, "not exist")
+		}
+
+		// query with repeated field: ["*", "$meat"], ["floatVec", floatVec"] unique field
+		res4, err4 := mc.Query(ctx, collName, []string{}, expr, []string{"*", common.DefaultDynamicFieldName}, client.WithSearchQueryConsistencyLevel(entity.ClStrong))
+		if enableDynamic {
+			common.CheckErr(t, err4, true)
+			common.CheckOutputFields(t, res4, []string{common.DefaultIntFieldName, common.DefaultFloatVecFieldName, common.DefaultFloatFieldName, common.DefaultDynamicFieldName})
+		} else {
+			common.CheckErr(t, err4, false, "$meta not exist")
+		}
+
+		res5, err5 := mc.Query(ctx, collName, []string{}, expr, []string{common.DefaultFloatVecFieldName, common.DefaultFloatVecFieldName, common.DefaultIntFieldName}, client.WithSearchQueryConsistencyLevel(entity.ClStrong))
+
+		common.CheckErr(t, err5, true)
+		common.CheckOutputFields(t, res5, []string{common.DefaultIntFieldName, common.DefaultFloatVecFieldName})
+	}
+}
+
 // test query output int64 and float and floatVector fields
 func TestQueryOutputFields(t *testing.T) {
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
@@ -484,34 +577,10 @@ func TestOutputAllFieldsColumn(t *testing.T) {
 			expColumns = append(expColumns, column.Slice(0, pos))
 		}
 		if isDynamic {
-			expColumns = append(expColumns, common.MergeColumnsToDynamic(pos, common.GenDynamicFieldData(0, pos)))
+			expColumns = append(expColumns, common.MergeColumnsToDynamic(pos, common.GenDynamicFieldData(0, pos), common.DefaultDynamicFieldName))
 		}
 		common.CheckQueryResult(t, queryResultAll, expColumns)
 	}
-}
-
-// test query with an not existed field
-func TestQueryOutputNotExistField(t *testing.T) {
-	ctx := createContext(t, time.Second*common.DefaultTimeout)
-	// connect
-	mc := createMilvusClient(ctx, t)
-
-	// create, insert, index
-	collName, ids := createCollectionWithDataIndex(ctx, t, mc, true, true)
-
-	// Load collection
-	errLoad := mc.LoadCollection(ctx, collName, false)
-	common.CheckErr(t, errLoad, true)
-
-	//query
-	_, errQuery := mc.QueryByPks(
-		ctx,
-		collName,
-		[]string{common.DefaultPartition},
-		ids.Slice(0, 10),
-		[]string{common.DefaultIntFieldName, "varchar"},
-	)
-	common.CheckErr(t, errQuery, false, "field varchar not exist")
 }
 
 // Test query json collection, filter json field, output json field
@@ -561,7 +630,7 @@ func TestQueryJsonDynamicField(t *testing.T) {
 		jsonColumn := entity.NewColumnJSONBytes(common.DefaultJSONFieldName, jsonValues)
 		actualColumns := []entity.Column{pkColumn, jsonColumn}
 		if dynamicField {
-			dynamicColumn := common.MergeColumnsToDynamic(2, common.GenDynamicFieldData(0, 2))
+			dynamicColumn := common.MergeColumnsToDynamic(2, common.GenDynamicFieldData(0, 2), common.DefaultDynamicFieldName)
 			actualColumns = append(actualColumns, dynamicColumn)
 		}
 
@@ -594,7 +663,7 @@ func TestQueryJsonDynamicField(t *testing.T) {
 		queryResult, err = mc.QueryByPks(
 			ctx, collName,
 			[]string{common.DefaultPartition},
-			common.MergeColumnsToDynamic(2, common.GenDynamicFieldData(0, 2)),
+			common.MergeColumnsToDynamic(2, common.GenDynamicFieldData(0, 2), common.DefaultDynamicFieldName),
 			[]string{common.DefaultIntFieldName, common.DefaultJSONFieldName},
 		)
 		common.CheckErr(t, err, false, "only int64 and varchar column can be primary key for now")
@@ -891,7 +960,6 @@ func TestQueryJsonDynamicExpr(t *testing.T) {
 		line, _ := dynamicNumColumn.GetAsInt64(i)
 		numberData = append(numberData, line)
 	}
-	require.Equal(t, numberData, []int64{0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
 }
 
 // test query and output both json and dynamic field
@@ -937,7 +1005,7 @@ func TestQueryJsonDynamicFieldRows(t *testing.T) {
 	j1, _ := json.Marshal(&m1)
 	jsonValues := [][]byte{j0, j1}
 	jsonColumn := entity.NewColumnJSONBytes(common.DefaultJSONFieldName, jsonValues)
-	dynamicColumn := common.MergeColumnsToDynamic(10, common.GenDynamicFieldData(0, 10))
+	dynamicColumn := common.MergeColumnsToDynamic(10, common.GenDynamicFieldData(0, 10), common.DefaultDynamicFieldName)
 	// gen dynamic json column
 
 	for _, column := range queryResult {

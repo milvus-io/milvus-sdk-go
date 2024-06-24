@@ -547,7 +547,7 @@ func TestCreateBinaryIndexNotSupportedMetricsType(t *testing.T) {
 		// create BinFlat
 		idxBinFlat, _ := entity.NewIndexBinFlat(metricType, 128)
 		err := mc.CreateIndex(ctx, collName, common.DefaultBinaryVecFieldName, idxBinFlat, false, client.WithIndexName("my_index"))
-		common.CheckErr(t, err, false, "supported: [HAMMING JACCARD SUBSTRUCTURE SUPERSTRUCTURE]")
+		common.CheckErr(t, err, false, fmt.Sprintf("binary vector index does not support metric type: %v", metricType))
 	}
 
 	invalidMetricTypes2 := []entity.MetricType{
@@ -563,7 +563,8 @@ func TestCreateBinaryIndexNotSupportedMetricsType(t *testing.T) {
 		// create BinIvfFlat index
 		idxBinIvfFlat, _ := entity.NewIndexBinIvfFlat(metricType, 128)
 		errIvf := mc.CreateIndex(ctx, collName, common.DefaultBinaryVecFieldName, idxBinIvfFlat, false, client.WithIndexName("my_index2"))
-		common.CheckErr(t, errIvf, false, fmt.Sprintf("metric type %v not found or not supported", metricType))
+		common.CheckErr(t, errIvf, false, fmt.Sprintf("metric type %s not found or not supported, supported: [HAMMING JACCARD]", metricType),
+			"binary vector index does not support metric type")
 	}
 
 }
@@ -607,15 +608,18 @@ func TestCreateIndexWithoutIndexTypeParams(t *testing.T) {
 	common.CheckErr(t, err, true)
 
 	for _, fieldName := range common.AllVectorsFieldsName {
-		idx, _ := entity.NewIndexAUTOINDEX(entity.COSINE)
 		if fieldName == common.DefaultBinaryVecFieldName {
+			idx, _ := entity.NewIndexAUTOINDEX(entity.JACCARD)
 			err = mc.CreateIndex(ctx, collName, fieldName, idx, false)
-			common.CheckErr(t, err, false, "HNSW only support float vector data type")
-			// create binary index
-			idxBinary, _ := entity.NewIndexBinIvfFlat(entity.JACCARD, 64)
-			err = mc.CreateIndex(ctx, collName, fieldName, idxBinary, false)
 			common.CheckErr(t, err, true)
+
+			// describe and check index
+			indexes, _ := mc.DescribeIndex(ctx, collName, fieldName)
+			expIndex := entity.NewGenericIndex(fieldName, entity.AUTOINDEX, map[string]string{"metric_type": string(entity.JACCARD)})
+			common.CheckIndexResult(t, indexes, expIndex)
+
 		} else {
+			idx, _ := entity.NewIndexAUTOINDEX(entity.COSINE)
 			// create index
 			err = mc.CreateIndex(ctx, collName, fieldName, idx, false)
 			common.CheckErr(t, err, true)
@@ -843,25 +847,54 @@ func TestCreateSparseUnsupportedIndex(t *testing.T) {
 	mc.Flush(ctx, collName, false)
 
 	// create unsupported vector index on sparse field
-	autoIdx, _ := entity.NewIndexAUTOINDEX(entity.IP)
-	vectorIndex := append(common.GenAllFloatIndex(entity.IP), autoIdx)
+	vectorIndex := append(common.GenAllFloatIndex(entity.IP))
 	for _, idx := range vectorIndex {
 		err := mc.CreateIndex(ctx, collName, common.DefaultSparseVecFieldName, idx, false)
-		common.CheckErr(t, err, false, "data type should be FloatVector, Float16Vector or BFloat16Vector",
-			"HNSW only support float vector data type")
+		common.CheckErr(t, err, false, "data type 104 can't build with this index")
 	}
 
 	// create scalar index on sparse vector
 	for _, idx := range []entity.Index{
-		entity.NewScalarIndex(),
 		entity.NewScalarIndexWithType(entity.Trie),
 		entity.NewScalarIndexWithType(entity.Sorted),
 		entity.NewScalarIndexWithType(entity.Inverted),
 	} {
 		err := mc.CreateIndex(ctx, collName, common.DefaultSparseVecFieldName, idx, false)
-		common.CheckErr(t, err, false, "TRIE are only supported on varchar field",
-			"STL_SORT are only supported on numeric field", "HNSW only support float vector data type",
-			"INVERTED are not supported on SparseFloatVector field")
+		common.CheckErr(t, err, false, "metric type not set for vector index")
+	}
+}
+
+// create sparse auto / scalar index
+func TestCreateSparseAutoIndex(t *testing.T) {
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	//connect
+	mc := createMilvusClient(ctx, t)
+
+	// create collection with all datatype
+	cp := CollectionParams{CollectionFieldsType: Int64VarcharSparseVec, AutoID: false, EnableDynamicField: true,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxLength: 300}
+	collName := createCollection(ctx, t, mc, cp)
+
+	// insert
+	dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64VarcharSparseVec,
+		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
+	_, _ = insertData(ctx, t, mc, dp, common.WithSparseVectorLen(100))
+	mc.Flush(ctx, collName, false)
+
+	// create scalar index on sparse vector
+	autoIdx, _ := entity.NewIndexAUTOINDEX(entity.IP)
+	for _, idx := range []entity.Index{
+		entity.NewScalarIndex(),
+		autoIdx,
+	} {
+		err := mc.CreateIndex(ctx, collName, common.DefaultSparseVecFieldName, idx, false)
+		common.CheckErr(t, err, true)
+		idxes, err := mc.DescribeIndex(ctx, collName, common.DefaultSparseVecFieldName)
+		common.CheckErr(t, err, true)
+		expIndex := entity.NewGenericIndex(common.DefaultSparseVecFieldName, autoIdx.IndexType(), map[string]string{"index_type": "AUTOINDEX", "metric_type": "IP"})
+		common.CheckIndexResult(t, idxes, expIndex)
+		err = mc.DropIndex(ctx, collName, common.DefaultSparseVecFieldName)
+		common.CheckErr(t, err, true)
 	}
 }
 
@@ -924,7 +957,7 @@ func TestCreateIndexNotSupportedField(t *testing.T) {
 	// create index
 	idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
 	err := mc.CreateIndex(ctx, collName, common.DefaultFloatFieldName, idx, false)
-	common.CheckErr(t, err, false, "HNSW only support float vector data type")
+	common.CheckErr(t, err, false, "can't build hnsw in not vector type")
 
 	// create scann index
 	indexScann, _ := entity.NewIndexSCANN(entity.L2, 8, true)
@@ -989,14 +1022,14 @@ func TestCreateIndexInvalidParams(t *testing.T) {
 		common.CheckErr(t, errScann2, true)
 		err := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idxScann, false)
 		common.CheckErr(t, err, false,
-			fmt.Sprintf("metric type %s not found or not supported, supported: [L2 IP COSINE]", mt))
+			fmt.Sprintf("float vector index does not support metric type: %s", mt))
 	}
 
 	// invalid flat metric type jaccard for flat index
 	idx, _ := entity.NewIndexFlat(entity.JACCARD)
 	errMetricType := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false)
 	common.CheckErr(t, errMetricType, false,
-		"metric type JACCARD not found or not supported, supported: [L2 IP COSINE]")
+		"float vector index does not support metric type: JACCARD")
 }
 
 // test create index with nil index

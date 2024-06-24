@@ -189,7 +189,7 @@ func TestPartitionKeyInvalidNumPartition(t *testing.T) {
 		numPartitions int64
 		errMsg        string
 	}{
-		{common.MaxPartitionNum + 1, "exceeds max configuration (4096)"},
+		{common.MaxPartitionNum + 1, fmt.Sprintf("exceeds max configuration (%d)", common.MaxPartitionNum)},
 		{-1, "the specified partitions should be greater than 0 if partition key is used"},
 	}
 	for _, npStruct := range invalidNumPartitionStruct {
@@ -215,7 +215,7 @@ func TestPartitionKeyNumPartition(t *testing.T) {
 		1,
 		128,
 		64,
-		4096,
+		common.MaxPartitionNum,
 	}
 	for _, numPartitionsValue := range numPartitionsValues {
 		ctx := createContext(t, time.Second*common.DefaultTimeout)
