@@ -199,10 +199,16 @@ func (c *GrpcClient) DescribeIndex(ctx context.Context, collName string, fieldNa
 		}
 		params := entity.KvPairsMap(info.Params)
 		it := params["index_type"] // TODO change to const
+		progress := make(map[string]string)
+		progress["total_rows"] = strconv.FormatInt(info.GetTotalRows(), 10)
+		progress["indexed_rows"] = strconv.FormatInt(info.GetIndexedRows(), 10)
+		progress["pending_index_rows"] = strconv.FormatInt(info.GetPendingIndexRows(), 10)
+		progress["state"] = info.GetState().String()
 		idx := entity.NewGenericIndex(
 			info.IndexName,
 			entity.IndexType(it),
 			params,
+			entity.WithProgress(progress),
 		)
 		indexes = append(indexes, idx)
 	}

@@ -35,6 +35,10 @@ func (i *IndexSparseInverted) Params() map[string]string {
 	}
 }
 
+func (i *IndexSparseInverted) Progress() map[string]string {
+	return map[string]string{}
+}
+
 type IndexSparseInvertedSearchParam struct {
 	baseSearchParams
 }
@@ -85,6 +89,10 @@ func (i *IndexSparseWAND) Params() map[string]string {
 		tIndexType:  string(i.IndexType()),
 		tMetricType: string(i.metricType),
 	}
+}
+
+func (i *IndexSparseWAND) Progress() map[string]string {
+	return map[string]string{}
 }
 
 // IndexSparseWAND index type for SPARSE_WAND, weak-and

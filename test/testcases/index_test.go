@@ -995,7 +995,7 @@ func TestCreateIndexSparseVector2(t *testing.T) {
 		// describe index
 		idx2, err := mc.DescribeIndex(ctx, collName, common.DefaultSparseVecFieldName)
 		expIndex := entity.NewGenericIndex(common.DefaultSparseVecFieldName, idx.IndexType(), idx.Params())
-		require.EqualValues(t, expIndex, idx2[0])
+		require.EqualValues(t, expIndex.Params(), idx2[0].Params())
 		common.CheckErr(t, err, true)
 		common.CheckIndexResult(t, idx2, expIndex)
 	}
@@ -1448,7 +1448,7 @@ func TestDropIndexCreateIndex(t *testing.T) {
 
 	// describe index
 	ipIndexes, _ := mc.DescribeIndex(ctx, collName, common.DefaultFloatVecFieldName)
-	require.EqualValues(t, entity.NewGenericIndex(common.DefaultFloatVecFieldName, ipIdx.IndexType(), ipIdx.Params()), ipIndexes[0])
+	require.EqualValues(t, entity.NewGenericIndex(common.DefaultFloatVecFieldName, ipIdx.IndexType(), ipIdx.Params()).Params(), ipIndexes[0].Params())
 
 	// describe collection
 	t.Log("Issue: https://github.com/milvus-io/milvus-sdk-go/issues/385")
