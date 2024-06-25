@@ -117,6 +117,10 @@ func TestGrpcClientDescribeIndex(t *testing.T) {
 						"nlist":       "1024",
 						"metric_type": "IP",
 					}),
+					TotalRows:        10000,
+					IndexedRows:      4000,
+					PendingIndexRows: 10000,
+					State:            commonpb.IndexState_InProgress,
 				},
 			}
 			s, err := SuccessStatus()
@@ -127,6 +131,10 @@ func TestGrpcClientDescribeIndex(t *testing.T) {
 		idxes, err := c.DescribeIndex(ctx, testCollectionName, fieldName)
 		assert.Nil(t, err)
 		assert.NotNil(t, idxes)
+		assert.Equal(t, idxes[0].Progress()["total_rows"], "10000")
+		assert.Equal(t, idxes[0].Progress()["indexed_rows"], "4000")
+		assert.Equal(t, idxes[0].Progress()["pending_index_rows"], "10000")
+		assert.Equal(t, idxes[0].Progress()["state"], "InProgress")
 	})
 
 	t.Run("Service return errors", func(t *testing.T) {
