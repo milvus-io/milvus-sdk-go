@@ -247,16 +247,22 @@ func TestLoadMultiPartitions(t *testing.T) {
 	idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
 	mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false)
 
-	// load partition
-	errLoad := mc.LoadPartitions(ctx, collName, []string{partitionName, common.DefaultPartition}, false)
+	// load default partition
+	errLoad := mc.LoadPartitions(ctx, collName, []string{common.DefaultPartition}, false)
 	common.CheckErr(t, errLoad, true)
 
-	//query nb from partition
-	queryIds := entity.NewColumnInt64(common.DefaultIntFieldName, []int64{0, common.DefaultNb})
-	queryResultPartition, _ := mc.QueryByPks(ctx, collName, []string{}, queryIds, []string{common.DefaultIntFieldName})
-	common.CheckQueryResult(t, queryResultPartition, []entity.Column{
-		entity.NewColumnInt64(common.DefaultIntFieldName, []int64{0, common.DefaultNb}),
-	})
+	//query nb from default partition
+	resDef, _ := mc.Query(ctx, collName, []string{common.DefaultPartition}, "", []string{common.QueryCountFieldName})
+	require.EqualValues(t, common.DefaultNb, resDef.GetColumn(common.QueryCountFieldName).(*entity.ColumnInt64).Data()[0])
+
+	// load partition and query -> actually not loaded
+	errLoad = mc.LoadPartitions(ctx, collName, []string{partitionName}, false)
+	common.CheckErr(t, errLoad, true)
+	resPar, _ := mc.Query(ctx, collName, []string{partitionName}, "", []string{common.QueryCountFieldName})
+	require.EqualValues(t, common.DefaultNb, resPar.GetColumn(common.QueryCountFieldName).(*entity.ColumnInt64).Data()[0])
+
+	res, _ := mc.Query(ctx, collName, []string{}, "", []string{common.QueryCountFieldName})
+	require.EqualValues(t, common.DefaultNb*2, res.GetColumn(common.QueryCountFieldName).(*entity.ColumnInt64).Data()[0])
 }
 
 // test load partitions repeatedly

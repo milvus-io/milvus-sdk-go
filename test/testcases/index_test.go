@@ -79,6 +79,7 @@ func TestCreateIndexMultiVectors(t *testing.T) {
 	common.CheckErr(t, err, true)
 	for _, idx := range common.GenAllFloatIndex() {
 		for _, fieldName := range []string{common.DefaultFloat16VecFieldName, common.DefaultBFloat16VecFieldName} {
+			log.Printf("index name=%s, index type=%v, index params=%v", idx.Name(), idx.IndexType(), idx.Params())
 			err := mc.CreateIndex(ctx, collName, fieldName, idx, false, client.WithIndexName(fieldName))
 			common.CheckErr(t, err, true)
 
@@ -360,8 +361,7 @@ func TestCreateScalarIndexVectorField(t *testing.T) {
 		idx := entity.NewScalarIndexWithType(ip)
 		for _, fieldName := range common.AllVectorsFieldsName {
 			err := mc.CreateIndex(ctx, collName, fieldName, idx, false)
-			common.CheckErr(t, err, false, "STL_SORT are only supported on numeric field",
-				"TRIE are only supported on varchar field", "INVERTED are not supported on")
+			common.CheckErr(t, err, false, "metric type not set for vector index")
 		}
 	}
 	for _, fieldName := range common.AllFloatVectorsFieldNames {

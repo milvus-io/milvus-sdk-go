@@ -1320,7 +1320,6 @@ func GenAllFloatIndex(metricTypes ...entity.MetricType) []entity.Index {
 	nlist := 128
 	var allFloatIndex []entity.Index
 	var allMetricTypes []entity.MetricType
-	log.Println(metricTypes)
 	if len(metricTypes) == 0 {
 		allMetricTypes = SupportFloatMetricType
 	} else {
