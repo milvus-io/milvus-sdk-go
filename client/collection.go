@@ -431,7 +431,6 @@ func (c *GrpcClient) LoadCollection(ctx context.Context, collName string, async 
 
 	req := &milvuspb.LoadCollectionRequest{
 		CollectionName: collName,
-		ReplicaNumber:  1, // default replica number
 	}
 
 	for _, opt := range opts {
