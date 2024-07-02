@@ -50,8 +50,8 @@ func TestUpsert(t *testing.T) {
 
 		// delete some pk
 		mc.Delete(ctx, collName, "", "int64 < 10")
-		resSet, err = mc.Query(ctx, collName, []string{}, "int64 < 10", []string{})
-		require.Zero(t, resSet[0].Len())
+		resSet1, _ := mc.Query(ctx, collName, []string{}, "int64 < 10", []string{})
+		require.Zero(t, resSet1[0].Len())
 
 		// upsert part deleted(not exist) pk and part existed pk [5, 15)
 		data = common.GenAllFieldsData(5, upsertNb, common.DefaultDim)
@@ -219,12 +219,15 @@ func TestUpsertNotExistCollectionPartition(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create default collection with autoID true
-	collName := createDefaultCollection(ctx, t, mc, true, common.DefaultShards)
+	collName := createDefaultCollection(ctx, t, mc, false, common.DefaultShards)
 
 	// upsert not exist partition
-	_, floatColumn, vecColumn := common.GenDefaultColumnData(0, common.DefaultNb, common.DefaultDim)
+	pkColumn, floatColumn, vecColumn := common.GenDefaultColumnData(0, common.DefaultNb, common.DefaultDim)
 	_, errUpsert := mc.Upsert(ctx, collName, "aaa", floatColumn, vecColumn)
-	common.CheckErr(t, errUpsert, false, "can not assign primary field data when auto id enabled")
+	common.CheckErr(t, errUpsert, false, "field int64 not passed")
+
+	_, errUpsert = mc.Upsert(ctx, collName, "aaa", pkColumn, floatColumn, vecColumn)
+	common.CheckErr(t, errUpsert, false, "partition not found[partition=aaa]")
 
 	// upsert not exist collection
 	_, errUpsert = mc.Upsert(ctx, "aaa", "", floatColumn, vecColumn)
@@ -323,18 +326,18 @@ func TestUpsertDynamicField(t *testing.T) {
 
 	// verify that dynamic field exists
 	upsertNb := 10
-	resSet, err := mc.Query(ctx, collName, []string{}, fmt.Sprintf("%s < %d", common.DefaultDynamicNumberField, upsertNb),
+	resSet1, _ := mc.Query(ctx, collName, []string{}, fmt.Sprintf("%s < %d", common.DefaultDynamicNumberField, upsertNb),
 		[]string{common.DefaultDynamicNumberField})
-	require.Equal(t, upsertNb, resSet[0].Len())
+	require.Equal(t, upsertNb, resSet1[0].Len())
 
 	// 1. upsert exist pk without dynamic column
 	intColumn, floatColumn, vecColumn := common.GenDefaultColumnData(0, upsertNb, common.DefaultDim)
-	_, err = mc.Upsert(ctx, collName, "", intColumn, floatColumn, vecColumn)
+	_, err := mc.Upsert(ctx, collName, "", intColumn, floatColumn, vecColumn)
 	common.CheckErr(t, err, true)
 
 	// query and gets empty
-	resSet, err = mc.Query(ctx, collName, []string{}, fmt.Sprintf("%s < %d", common.DefaultDynamicNumberField, upsertNb), []string{common.DefaultDynamicNumberField})
-	require.Zero(t, resSet[0].Len())
+	resSet2, _ := mc.Query(ctx, collName, []string{}, fmt.Sprintf("%s < %d", common.DefaultDynamicNumberField, upsertNb), []string{common.DefaultDynamicNumberField})
+	require.Zero(t, resSet2[0].Len())
 
 	// 2. upsert not exist pk with dynamic column ->  field dynamicNumber does not exist in collection
 	intColumn2, floatColumn2, vecColumn2 := common.GenDefaultColumnData(common.DefaultNb, upsertNb, common.DefaultDim)
@@ -343,8 +346,8 @@ func TestUpsertDynamicField(t *testing.T) {
 	common.CheckErr(t, err, true)
 
 	// query and gets empty dynamic field
-	resSet, err = mc.Query(ctx, collName, []string{}, fmt.Sprintf("%s >= %d", common.DefaultDynamicNumberField, common.DefaultNb), []string{common.QueryCountFieldName})
-	require.Equal(t, int64(upsertNb), resSet.GetColumn(common.QueryCountFieldName).(*entity.ColumnInt64).Data()[0])
+	resSet3, _ := mc.Query(ctx, collName, []string{}, fmt.Sprintf("%s >= %d", common.DefaultDynamicNumberField, common.DefaultNb), []string{common.QueryCountFieldName})
+	require.Equal(t, int64(upsertNb), resSet3.GetColumn(common.QueryCountFieldName).(*entity.ColumnInt64).Data()[0])
 }
 
 func TestUpsertPartitionKeyCollection(t *testing.T) {
@@ -382,16 +385,22 @@ func TestUpsertPartitionKeyCollection(t *testing.T) {
 
 	// upsert data partition key field [nb, nb*2)
 	partitionKeyColumn2 := common.GenColumnData(common.DefaultNb, common.DefaultNb, entity.FieldTypeInt64, partitionKeyFieldName)
-	mc.Upsert(ctx, schema.CollectionName, "", pkColumn, floatColumn, vecColumn, partitionKeyColumn2)
+	_, _, vecColumn2 := common.GenDefaultColumnData(0, common.DefaultNb, common.DefaultDim)
+	_, err = mc.Upsert(ctx, schema.CollectionName, "", pkColumn, floatColumn, vecColumn2, partitionKeyColumn2)
+	common.CheckErr(t, err, true)
 
 	// verify upsert
-	resSet, err := mc.Query(ctx, schema.CollectionName, []string{}, fmt.Sprintf("%s >= %d", partitionKeyFieldName, common.DefaultNb),
+	resSet, _ := mc.Query(ctx, schema.CollectionName, []string{}, fmt.Sprintf("%s >= %d", partitionKeyFieldName, common.DefaultNb),
 		[]string{common.QueryCountFieldName})
 	require.Equal(t, int64(common.DefaultNb), resSet.GetColumn(common.QueryCountFieldName).(*entity.ColumnInt64).Data()[0])
 
-	resSet, err = mc.Query(ctx, schema.CollectionName, []string{}, fmt.Sprintf("%s < %d", partitionKeyFieldName, common.DefaultNb),
+	resSet1, _ := mc.Query(ctx, schema.CollectionName, []string{}, fmt.Sprintf("%s < %d", partitionKeyFieldName, common.DefaultNb),
 		[]string{common.QueryCountFieldName})
-	require.Equal(t, int64(0), resSet.GetColumn(common.QueryCountFieldName).(*entity.ColumnInt64).Data()[0])
+	require.Equal(t, int64(0), resSet1.GetColumn(common.QueryCountFieldName).(*entity.ColumnInt64).Data()[0])
+
+	resSet2, _ := mc.Query(ctx, schema.CollectionName, []string{}, fmt.Sprintf("%s < %d", common.DefaultIntFieldName, 10),
+		[]string{"*"})
+	common.CheckQueryResult(t, resSet2, []entity.Column{pkColumn.Slice(0, 10), floatColumn.Slice(0, 10), partitionKeyColumn2.Slice(0, 10), vecColumn2.Slice(0, 10)})
 }
 
 func TestUpsertWithoutLoading(t *testing.T) {
@@ -423,10 +432,11 @@ func TestUpsertWithoutLoading(t *testing.T) {
 	mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false)
 	mc.LoadCollection(ctx, collName, false)
 	err = mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false)
+	common.CheckErr(t, err, true)
 
 	// query and verify
-	resSet, err := mc.QueryByPks(ctx, collName, []string{}, intColumn,
+	resSet, err1 := mc.QueryByPks(ctx, collName, []string{}, intColumn,
 		[]string{common.DefaultFloatVecFieldName})
-	common.CheckErr(t, err, true)
+	common.CheckErr(t, err1, true)
 	require.ElementsMatch(t, vecColumn.(*entity.ColumnFloatVector).Data()[:upsertNb], resSet.GetColumn(common.DefaultFloatVecFieldName).(*entity.ColumnFloatVector).Data())
 }

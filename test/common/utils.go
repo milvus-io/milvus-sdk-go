@@ -60,7 +60,7 @@ const (
 
 // const default value from milvus
 const (
-	MaxPartitionNum         = 4096
+	MaxPartitionNum         = 1024
 	DefaultDynamicFieldName = "$meta"
 	QueryCountFieldName     = "count(*)"
 	DefaultPartition        = "_default"
@@ -1257,7 +1257,7 @@ func GenDynamicFieldData(start int, nb int) []entity.Column {
 	return data
 }
 
-func MergeColumnsToDynamic(nb int, columns []entity.Column) *entity.ColumnJSONBytes {
+func MergeColumnsToDynamic(nb int, columns []entity.Column, columnName string) *entity.ColumnJSONBytes {
 	values := make([][]byte, 0, nb)
 	for i := 0; i < nb; i++ {
 		m := make(map[string]interface{})
@@ -1271,7 +1271,7 @@ func MergeColumnsToDynamic(nb int, columns []entity.Column) *entity.ColumnJSONBy
 		}
 		values = append(values, bs)
 	}
-	jsonColumn := entity.NewColumnJSONBytes(DefaultDynamicFieldName, values)
+	jsonColumn := entity.NewColumnJSONBytes(columnName, values)
 
 	var jsonData []string
 	for i := 0; i < jsonColumn.Len(); i++ {
@@ -1320,7 +1320,6 @@ func GenAllFloatIndex(metricTypes ...entity.MetricType) []entity.Index {
 	nlist := 128
 	var allFloatIndex []entity.Index
 	var allMetricTypes []entity.MetricType
-	log.Println(metricTypes)
 	if len(metricTypes) == 0 {
 		allMetricTypes = SupportFloatMetricType
 	} else {
@@ -1385,6 +1384,7 @@ type InvalidExprStruct struct {
 }
 
 var InvalidExpressions = []InvalidExprStruct{
+	// https://github.com/milvus-io/milvus-sdk-go/issues/777
 	{Expr: "id in [0]", ErrNil: true, ErrMsg: "fieldName(id) not found"},                                          // not exist field but no error
 	{Expr: "int64 in not [0]", ErrNil: false, ErrMsg: "cannot parse expression"},                                  // wrong term expr keyword
 	{Expr: "int64 > 10 AND int64 < 100", ErrNil: false, ErrMsg: "cannot parse expression"},                        // AND isn't supported
