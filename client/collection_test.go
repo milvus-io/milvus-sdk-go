@@ -50,7 +50,6 @@ func (s *CollectionSuite) TestListCollections() {
 			tc.names = append(tc.names, fmt.Sprintf("coll_%d", base))
 			inMem := rand.Intn(100)
 			if inMem%2 == 0 {
-
 				tc.inMem = append(tc.inMem, 100)
 			} else {
 				tc.inMem = append(tc.inMem, 0)
@@ -148,7 +147,6 @@ func (s *CollectionSuite) TestCreateCollection() {
 				}
 				s.Equal(shardsNum, req.GetShardsNum())
 				s.Equal(commonpb.ConsistencyLevel_Eventually, req.GetConsistencyLevel())
-
 			}).
 			Return(&commonpb.Status{ErrorCode: commonpb.ErrorCode_Success}, nil)
 		s.mock.EXPECT().HasCollection(mock.Anything, &milvuspb.HasCollectionRequest{CollectionName: testCollectionName}).Return(&milvuspb.BoolResponse{Status: &commonpb.Status{}, Value: false}, nil)
@@ -158,7 +156,6 @@ func (s *CollectionSuite) TestCreateCollection() {
 	})
 
 	s.Run("invalid_schemas", func() {
-
 		type testCase struct {
 			name   string
 			schema *entity.Schema
@@ -533,7 +530,7 @@ func (s *CollectionSuite) TestLoadCollection() {
 			Return(&milvuspb.BoolResponse{Status: &commonpb.Status{}, Value: true}, nil)
 
 		s.mock.EXPECT().LoadCollection(mock.Anything, mock.Anything).Run(func(_ context.Context, req *milvuspb.LoadCollectionRequest) {
-			s.Equal(testDefaultReplicaNumber, req.GetReplicaNumber())
+			s.Equal(int32(0), req.GetReplicaNumber())
 			s.Equal(testCollectionName, req.GetCollectionName())
 		}).Return(&commonpb.Status{ErrorCode: commonpb.ErrorCode_Success}, nil)
 
