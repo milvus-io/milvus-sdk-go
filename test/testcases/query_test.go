@@ -769,6 +769,7 @@ func TestQueryCountJsonDynamicExpr(t *testing.T) {
 
 // test query with all kinds of array expr
 func TestQueryArrayFieldExpr(t *testing.T) {
+	t.Skip("https://github.com/milvus-io/milvus/issues/34404")
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect
 	mc := createMilvusClient(ctx, t)
@@ -827,6 +828,36 @@ func TestQueryArrayFieldExpr(t *testing.T) {
 			{expr: fmt.Sprintf("array_length(%s) == 10", common.DefaultVarcharArrayField), count: 0},                         //  array_length
 			{expr: fmt.Sprintf("array_length(%s) == %d", common.DefaultDoubleArrayField, capacity), count: common.DefaultNb}, //  array_length
 		}
+
+		for _, _exprCount := range exprCounts {
+			log.Println(_exprCount.expr)
+			countRes, err := mc.Query(ctx, collName,
+				[]string{}, _exprCount.expr, []string{common.QueryCountFieldName})
+			log.Println(countRes.GetColumn(common.QueryCountFieldName).FieldData())
+			common.CheckErr(t, err, true)
+			require.Equal(t, _exprCount.count, countRes.GetColumn(common.QueryCountFieldName).(*entity.ColumnInt64).Data()[0])
+		}
+
+		// build BITMAP scalar index and query
+		// release collection
+		errRelease := mc.ReleaseCollection(ctx, "collName")
+		common.CheckErr(t, errRelease, false, "not exist")
+
+		// need fixed `int16Array`, `int32Array`, `int64Array`, `varcharArray`
+		BitmapNotSupportFiledNames := []interface{}{common.DefaultFloatArrayField, common.DefaultDoubleArrayField, common.DefaultInt16ArrayField, common.DefaultInt32ArrayField, common.DefaultInt64ArrayField, common.DefaultVarcharArrayField}
+		scalarIdx := entity.NewScalarIndexWithType(entity.Bitmap)
+		collection, _ := mc.DescribeCollection(ctx, collName)
+		for _, field := range collection.Schema.Fields {
+			if field.DataType == entity.FieldTypeArray && !common.CheckContainsValue(BitmapNotSupportFiledNames, field.Name) {
+				// create BITMAP scalar index
+				err := mc.CreateIndex(ctx, collName, field.Name, scalarIdx, false, client.WithIndexName(field.Name+"scalar_index"))
+				common.CheckErr(t, err, true)
+			}
+		}
+
+		//load collection
+		errLoad = mc.LoadCollection(ctx, collName, true)
+		common.CheckErr(t, errLoad, true)
 
 		for _, _exprCount := range exprCounts {
 			log.Println(_exprCount.expr)

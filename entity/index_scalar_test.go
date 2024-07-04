@@ -22,4 +22,14 @@ func TestScalarIndex(t *testing.T) {
 
 	assert.EqualValues(t, Trie, idxWithType.IndexType())
 	assert.EqualValues(t, Trie, idxWithType.Params()[tIndexType])
+
+	idxWithType = NewScalarIndexWithType(Inverted)
+
+	assert.EqualValues(t, Inverted, idxWithType.IndexType())
+	assert.EqualValues(t, Inverted, idxWithType.Params()[tIndexType])
+
+	idxWithType = NewScalarIndexWithType(Bitmap)
+
+	assert.EqualValues(t, Bitmap, idxWithType.IndexType())
+	assert.EqualValues(t, Bitmap, idxWithType.Params()[tIndexType])
 }

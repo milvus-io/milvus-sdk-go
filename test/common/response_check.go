@@ -340,3 +340,13 @@ func CheckNotContainsDb(t *testing.T, dbs []entity.Database, dbName string) {
 	allDbNames := getDbNames(dbs)
 	require.NotContainsf(t, allDbNames, dbName, fmt.Sprintf("%s db should not be in dbs: %v", dbName, dbs))
 }
+
+// Checks whether the list contains the specified value
+func CheckContainsValue(fieldNames []interface{}, fieldName interface{}) bool {
+	for _, v := range fieldNames {
+		if v == fieldName {
+			return true
+		}
+	}
+	return false
+}

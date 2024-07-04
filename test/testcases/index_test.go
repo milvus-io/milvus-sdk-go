@@ -338,6 +338,62 @@ func TestCreateInvertedScalarIndex(t *testing.T) {
 	common.CheckOutputFields(t, searchRes[0].Fields, common.GetAllFieldsName(false, false))
 }
 
+// create Bitmap index for all scalar fields
+func TestCreateBitmapScalarIndex(t *testing.T) {
+	// t.Skip("https://github.com/milvus-io/milvus/issues/34314")
+	ctx := createContext(t, time.Second*common.DefaultTimeout*2)
+	// connect
+	mc := createMilvusClient(ctx, t)
+
+	// create -> insert [0, 3000) -> flush -> index -> load
+	cp := CollectionParams{CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: false,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+
+	dp := DataParams{DoInsert: true, CollectionFieldsType: AllFields, start: 0, nb: common.DefaultNb,
+		dim: common.DefaultDim, EnableDynamicField: false}
+
+	// index params
+	ips := GenDefaultIndexParamsForAllVectors()
+	lp := LoadParams{DoLoad: false}
+	collName := prepareCollection(ctx, t, mc, cp, WithDataParams(dp), WithIndexParams(ips), WithLoadParams(lp),
+		WithCreateOption(client.WithConsistencyLevel(entity.ClStrong)))
+
+	// create BITMAP scalar index
+	coll, _ := mc.DescribeCollection(ctx, collName)
+	idx := entity.NewScalarIndexWithType(entity.Bitmap)
+	// `bool` type needs fixed by: https://github.com/milvus-io/milvus/issues/34314
+	BitmapNotSupport := []interface{}{entity.FieldTypeBool, entity.FieldTypeJSON, entity.FieldTypeDouble, entity.FieldTypeFloat}
+	for _, field := range coll.Schema.Fields {
+		if supportScalarIndexFieldType(field.DataType) {
+			log.Println(field.Name, field.DataType)
+			if common.CheckContainsValue(BitmapNotSupport, field.DataType) {
+				err := mc.CreateIndex(ctx, collName, field.Name, idx, false, client.WithIndexName(field.Name))
+				// `float` and `double` types need fixed
+				common.CheckErr(t, err, !(field.DataType != entity.FieldTypeFloat && field.DataType != entity.FieldTypeDouble), "bitmap index are only supported")
+			} else {
+				err := mc.CreateIndex(ctx, collName, field.Name, idx, false, client.WithIndexName(field.Name))
+				common.CheckErr(t, err, true)
+
+				// describe index
+				indexes, _ := mc.DescribeIndex(ctx, collName, field.Name)
+				require.Len(t, indexes, 1)
+				log.Println(indexes[0].Name(), indexes[0].IndexType(), indexes[0].Params())
+				expIndex := entity.NewGenericIndex(field.Name, entity.Bitmap, idx.Params())
+				common.CheckIndexResult(t, indexes, expIndex)
+			}
+		}
+	}
+	// load -> search and output all fields
+	err := mc.LoadCollection(ctx, collName, false)
+	common.CheckErr(t, err, true)
+	queryVec := common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeFloatVector)
+	sp, _ := entity.NewIndexHNSWSearchParam(74)
+	expr := fmt.Sprintf("%s > 10 && %s >= 0 && %s <= 3000 || %s > 10 || %s == true", common.DefaultIntFieldName, common.DefaultInt8FieldName, common.DefaultInt16FieldName, common.DefaultInt32FieldName, common.DefaultBoolFieldName)
+	searchRes, _ := mc.Search(ctx, collName, []string{}, expr, []string{"*"}, queryVec, common.DefaultFloatVecFieldName,
+		entity.L2, common.DefaultTopK, sp)
+	common.CheckOutputFields(t, searchRes[0].Fields, common.GetAllFieldsName(false, false))
+}
+
 // test create index on vector field
 func TestCreateScalarIndexVectorField(t *testing.T) {
 	ctx := createContext(t, time.Second*common.DefaultTimeout*2)
@@ -357,7 +413,7 @@ func TestCreateScalarIndexVectorField(t *testing.T) {
 	collName := prepareCollection(ctx, t, mc, cp, WithDataParams(dp), WithIndexParams(ips), WithLoadParams(lp),
 		WithCreateOption(client.WithConsistencyLevel(entity.ClStrong)))
 
-	for _, ip := range []entity.IndexType{entity.Sorted, entity.Trie, entity.Inverted} {
+	for _, ip := range []entity.IndexType{entity.Sorted, entity.Trie, entity.Inverted, entity.Bitmap} {
 		idx := entity.NewScalarIndexWithType(ip)
 		for _, fieldName := range common.AllVectorsFieldsName {
 			err := mc.CreateIndex(ctx, collName, fieldName, idx, false)
@@ -423,6 +479,7 @@ func TestCreateIndexJsonField(t *testing.T) {
 		errMsg    string
 	}
 	inxError := []scalarIndexError{
+		{entity.Bitmap, "bitmap index are only supported"},
 		{entity.Inverted, "INVERTED are not supported on JSON field"},
 		{entity.Sorted, "STL_SORT are only supported on numeric field"},
 		{entity.Trie, "TRIE are only supported on varchar field"},
@@ -481,6 +538,59 @@ func TestCreateIndexArrayField(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestCreateBitmapIndexOnArrayField(t *testing.T) {
+	// t.Skip("https://github.com/milvus-io/milvus/issues/34314")
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	// connect
+	mc := createMilvusClient(ctx, t)
+
+	// create collection
+	cp := CollectionParams{CollectionFieldsType: Int64FloatVecArray, AutoID: false, EnableDynamicField: true,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxCapacity: common.TestCapacity}
+	collName := createCollection(ctx, t, mc, cp)
+
+	// prepare and insert data
+	dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVecArray,
+		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
+	_, _ = insertData(ctx, t, mc, dp, common.WithArrayCapacity(common.TestCapacity))
+
+	// flush and check row count
+	errFlush := mc.Flush(ctx, collName, false)
+	common.CheckErr(t, errFlush, true)
+
+	// create vector field index
+	idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
+	err := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false)
+	common.CheckErr(t, err, true)
+
+	// create BITMAP and SCANN index on array field
+	vectorIdx, _ := entity.NewIndexSCANN(entity.L2, 10, false)
+	// need fixed `int16Array`, `int32Array`, `int64Array`, `varcharArray`
+	BitmapNotSupportFiledNames := []interface{}{common.DefaultFloatArrayField, common.DefaultDoubleArrayField, common.DefaultInt16ArrayField, common.DefaultInt32ArrayField, common.DefaultInt64ArrayField, common.DefaultVarcharArrayField}
+	scalarIdx := entity.NewScalarIndexWithType(entity.Bitmap)
+	collection, _ := mc.DescribeCollection(ctx, collName)
+	for _, field := range collection.Schema.Fields {
+		if field.DataType == entity.FieldTypeArray {
+			// create scalar index
+			err := mc.CreateIndex(ctx, collName, field.Name, scalarIdx, false, client.WithIndexName(field.Name+"scalar_index"))
+			common.CheckErr(t, err, !common.CheckContainsValue(BitmapNotSupportFiledNames, field.Name), "bitmap index are only supported", "failed to create index")
+			// create vector index
+			err1 := mc.CreateIndex(ctx, collName, field.Name, vectorIdx, false, client.WithIndexName("vector_index"))
+			common.CheckErr(t, err1, false, "data type should be FloatVector, Float16Vector or BFloat16Vector")
+		}
+	}
+
+	// load -> search and output all fields
+	errLoad := mc.LoadCollection(ctx, collName, false)
+	common.CheckErr(t, errLoad, true)
+	queryVec := common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeFloatVector)
+	sp, _ := entity.NewIndexHNSWSearchParam(74)
+	expr := fmt.Sprintf("%s > 10 && array_length(%s) == 100", common.DefaultIntFieldName, common.DefaultInt8ArrayField)
+	searchRes, _ := mc.Search(ctx, collName, []string{}, expr, []string{"*"}, queryVec, common.DefaultFloatVecFieldName,
+		entity.L2, common.DefaultTopK, sp)
+	common.CheckOutputFields(t, searchRes[0].Fields, common.GetInt64FloatVecArrayFieldsName(true))
 }
 
 // test create index with supported binary vector index
@@ -858,6 +968,7 @@ func TestCreateSparseUnsupportedIndex(t *testing.T) {
 		entity.NewScalarIndexWithType(entity.Trie),
 		entity.NewScalarIndexWithType(entity.Sorted),
 		entity.NewScalarIndexWithType(entity.Inverted),
+		entity.NewScalarIndexWithType(entity.Bitmap),
 	} {
 		err := mc.CreateIndex(ctx, collName, common.DefaultSparseVecFieldName, idx, false)
 		common.CheckErr(t, err, false, "metric type not set for vector index")

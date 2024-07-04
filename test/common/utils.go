@@ -149,6 +149,20 @@ func GetAllFieldsName(enableDynamicField bool, onlyScalar bool) []string {
 	return allFieldName
 }
 
+func GetInt64FloatVecArrayFieldsName(enableDynamicField bool) []string {
+	allFieldName := []string{
+		DefaultIntFieldName,
+		DefaultFloatFieldName,
+		DefaultFloatVecFieldName,
+	}
+	allFieldName = append(allFieldName, AllArrayFieldsName...)
+
+	if enableDynamicField {
+		allFieldName = append(allFieldName, DefaultDynamicFieldName)
+	}
+	return allFieldName
+}
+
 var r *rand.Rand
 
 func init() {
