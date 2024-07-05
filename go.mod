@@ -7,7 +7,7 @@ require (
 	github.com/go-faker/faker/v4 v4.1.0
 	github.com/golang/protobuf v1.5.2
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
-	github.com/milvus-io/milvus-proto/go-api/v2 v2.4.3
+	github.com/milvus-io/milvus-proto/go-api/v2 v2.4.6
 	github.com/stretchr/testify v1.8.1
 	github.com/tidwall/gjson v1.14.4
 	github.com/x448/float16 v0.8.4
@@ -33,6 +33,6 @@ require (
 	golang.org/x/sys v0.13.0 // indirect
 	golang.org/x/text v0.13.0 // indirect
 	google.golang.org/genproto v0.0.0-20220503193339-ba3ae3f07e29 // indirect
-	google.golang.org/protobuf v1.30.0 // indirect
+	google.golang.org/protobuf v1.33.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

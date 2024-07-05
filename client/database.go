@@ -49,12 +49,17 @@ func (c *GrpcClient) CreateDatabase(ctx context.Context, dbName string, opts ...
 	if c.config.hasFlags(disableDatabase) {
 		return ErrFeatureNotSupported
 	}
+
+	opt := &createDatabaseOpt{}
+	for _, o := range opts {
+		o(opt)
+	}
+
 	req := &milvuspb.CreateDatabaseRequest{
-		DbName: dbName,
+		DbName:     dbName,
+		Properties: entity.MapKvPairs(opt.Properties),
 	}
-	for _, opt := range opts {
-		opt(req)
-	}
+
 	resp, err := c.Service.CreateDatabase(ctx, req)
 	if err != nil {
 		return err
