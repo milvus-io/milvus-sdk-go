@@ -217,6 +217,56 @@ func TestCreateScalarIndex(t *testing.T) {
 	common.CheckOutputFields(t, searchRes[0].Fields, common.GetAllFieldsName(true, false))
 }
 
+// test create scalar index on loaded collection
+func TestCreateIndexOnLoadedCollection(t *testing.T) {
+	t.Skip("https://github.com/milvus-io/milvus/issues/34314")
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	//connect
+	mc := createMilvusClient(ctx, t)
+
+	// create collection with all datatype
+	cp := CollectionParams{CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: true,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+	collName := createCollection(ctx, t, mc, cp)
+
+	// insert
+	dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: AllFields,
+		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
+	_, _ = insertData(ctx, t, mc, dp)
+	mc.Flush(ctx, collName, false)
+
+	// create index for all vector fields
+	indexHnsw, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
+	indexBinary, _ := entity.NewIndexBinIvfFlat(entity.JACCARD, 64)
+	var expIndex entity.Index
+	var err error
+	for _, fieldName := range common.AllVectorsFieldsName {
+		if fieldName == common.DefaultBinaryVecFieldName {
+			err = mc.CreateIndex(ctx, collName, fieldName, indexBinary, false)
+			expIndex = entity.NewGenericIndex(fieldName, entity.BinIvfFlat, indexBinary.Params())
+		} else {
+			err = mc.CreateIndex(ctx, collName, fieldName, indexHnsw, false)
+			expIndex = entity.NewGenericIndex(fieldName, entity.HNSW, indexHnsw.Params())
+		}
+		common.CheckErr(t, err, true)
+		indexes, _ := mc.DescribeIndex(ctx, collName, fieldName)
+		common.CheckIndexResult(t, indexes, expIndex)
+	}
+
+	err = mc.LoadCollection(ctx, collName, false)
+	common.CheckErr(t, err, true)
+
+	coll, _ := mc.DescribeCollection(ctx, collName)
+	idx := entity.NewScalarIndex()
+	for _, field := range coll.Schema.Fields {
+		if supportScalarIndexFieldType(field.DataType) {
+			err := mc.CreateIndex(ctx, collName, field.Name, idx, false, client.WithIndexName(field.Name))
+			// need check failed
+			common.CheckErr(t, err, false, "")
+		}
+	}
+}
+
 // Trie scalar index only supported on varchar
 func TestCreateTrieScalarIndexUnsupportedDataType(t *testing.T) {
 	ctx := createContext(t, time.Second*common.DefaultTimeout*2)
@@ -346,7 +396,6 @@ func TestCreateInvertedScalarIndex(t *testing.T) {
 
 // create Bitmap index for all scalar fields
 func TestCreateBitmapScalarIndex(t *testing.T) {
-	// t.Skip("https://github.com/milvus-io/milvus/issues/34314")
 	ctx := createContext(t, time.Second*common.DefaultTimeout*2)
 	// connect
 	mc := createMilvusClient(ctx, t)
@@ -367,15 +416,13 @@ func TestCreateBitmapScalarIndex(t *testing.T) {
 	// create BITMAP scalar index
 	coll, _ := mc.DescribeCollection(ctx, collName)
 	idx := entity.NewScalarIndexWithType(entity.Bitmap)
-	// `bool` type needs fixed by: https://github.com/milvus-io/milvus/issues/34314
-	BitmapNotSupport := []interface{}{entity.FieldTypeBool, entity.FieldTypeJSON, entity.FieldTypeDouble, entity.FieldTypeFloat}
+	BitmapNotSupport := []interface{}{entity.FieldTypeJSON, entity.FieldTypeDouble, entity.FieldTypeFloat}
 	for _, field := range coll.Schema.Fields {
 		if supportScalarIndexFieldType(field.DataType) {
 			log.Println(field.Name, field.DataType)
 			if common.CheckContainsValue(BitmapNotSupport, field.DataType) {
 				err := mc.CreateIndex(ctx, collName, field.Name, idx, false, client.WithIndexName(field.Name))
-				// `float` and `double` types need fixed
-				common.CheckErr(t, err, !(field.DataType != entity.FieldTypeFloat && field.DataType != entity.FieldTypeDouble), "bitmap index are only supported")
+				common.CheckErr(t, err, false, "bitmap index are only supported")
 			} else {
 				err := mc.CreateIndex(ctx, collName, field.Name, idx, false, client.WithIndexName(field.Name))
 				common.CheckErr(t, err, true)
@@ -589,7 +636,6 @@ func TestCreateInvertedIndexArrayField(t *testing.T) {
 }
 
 func TestCreateBitmapIndexOnArrayField(t *testing.T) {
-	// t.Skip("https://github.com/milvus-io/milvus/issues/34314")
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect
 	mc := createMilvusClient(ctx, t)
