@@ -456,6 +456,37 @@ func TestCreateCollectionDynamicSchema(t *testing.T) {
 	common.CheckContainsCollection(t, collections, collName)
 }
 
+// test create collection enable dynamic field
+func TestCreateCollectionDynamicSchemaOption(t *testing.T) {
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	mc := createMilvusClient(ctx, t)
+	for _, enableDynamic := range [2]bool{true, false} {
+		collName := common.GenRandomString(6)
+		schema := entity.NewSchema().WithName(collName).WithDynamicFieldEnabled(enableDynamic)
+		for _, f := range common.GenDefaultFields(false) {
+			schema.WithField(f)
+		}
+		err := mc.CreateCollection(ctx, schema, common.DefaultShards, client.WithEnableDynamicSchema(!enableDynamic))
+		common.CheckErr(t, err, true)
+
+		// check describe collection
+		collection, _ := mc.DescribeCollection(ctx, collName)
+		common.CheckCollection(t, collection, collName, common.DefaultShards, schema, common.DefaultConsistencyLevel)
+		require.Truef(t, collection.Schema.EnableDynamicField, "Expected collection.Schema.EnableDynamicField is True")
+
+		// check collName in ListCollections
+		collections, errListCollection := mc.ListCollections(ctx)
+		common.CheckErr(t, errListCollection, true)
+		common.CheckContainsCollection(t, collections, collName)
+
+		// insert data
+		dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVec,
+			start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
+		_, err = insertData(ctx, t, mc, dp)
+		common.CheckErr(t, err, true)
+	}
+}
+
 // test create collection enable dynamic field by collection opt
 func TestCreateCollectionDynamic(t *testing.T) {
 	t.Skip("Waiting for congqi to update schema.EnableDynamicField according to the CreateCollectionOption.EnableDynamicSchema")
