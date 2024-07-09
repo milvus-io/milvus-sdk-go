@@ -127,5 +127,5 @@ jobs:
       working-directory: test/
       run: |
         nc -vz 127.0.0.1 19530
-        curl -sSL "https://github.com/gotestyourself/gotestsum/releases/download/v1.12.0/gotestsum_1.12.0_linux_amd64.tar.gz" | sudo tar -xz -C /usr/local/bin gotestsum
-        gotestsum --format testname --hide-summary=output --rerun-fails=2 ./testcases/... --tags L0,L1,L2,L3 --addr=127.0.0.1:19530 -timeout=60m
+        curl -sSL "https://github.com/gotestyourself/gotestsum/releases/download/v1.8.2/gotestsum_1.8.2_linux_amd64.tar.gz" | sudo tar -xz -C /usr/local/bin gotestsum
+        gotestsum --format testname --hide-summary=output ./testcases/... --tags L0,L1,L2,L3 --addr=127.0.0.1:19530 -timeout=60m 

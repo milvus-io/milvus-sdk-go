@@ -36,7 +36,10 @@ jobs:
         shell: bash
         working-directory: ci/scripts
         run: |
-          echo "IMAGE_TAG=$(./docker_image_find_tag.sh -n ${IMAGE_REPO} -t ${TAG_PREFIX}latest -f ${TAG_PREFIX} -F -L -q)" >> $GITHUB_ENV
+          url="https://registry.hub.docker.com/v2/repositories/$IMAGE_REPO/tags?page=1&name=$TAG_PREFIX"
+          echo "IMAGE_TAG=$(curl -s $url | jq --arg TAG_PREFIX "$TAG_PREFIX" -r '."results"[] | select(.images[].architecture == "amd64" and (.name | contains("gpu") | not) and (.name | startswith($TAG_PREFIX))) | .name' | head -n 1)" >> $GITHUB_ENV
+#          echo "IMAGE_TAG=$(curl -s $url | jq -r '."results"[]["name"] | select(test("amd64$"))' | head -n 1)" >> $GITHUB_ENV
+#          echo "IMAGE_TAG=$(./docker_image_find_tag.sh -n ${IMAGE_REPO} -t ${TAG_PREFIX}latest -f ${TAG_PREFIX} -F -L -q)" >> $GITHUB_ENV
 #          export IMAGE_TAG=$IMAGE_TAG
 #          export IMAGE_REPO=$IMAGE_REPO
 #          export RELEASE_NAME=$RELEASE_NAME
