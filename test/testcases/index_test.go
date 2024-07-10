@@ -396,6 +396,7 @@ func TestCreateInvertedScalarIndex(t *testing.T) {
 
 // create Bitmap index for all scalar fields
 func TestCreateBitmapScalarIndex(t *testing.T) {
+	t.Skip("https://github.com/milvus-io/milvus/issues/34314")
 	ctx := createContext(t, time.Second*common.DefaultTimeout*2)
 	// connect
 	mc := createMilvusClient(ctx, t)
@@ -636,6 +637,7 @@ func TestCreateInvertedIndexArrayField(t *testing.T) {
 }
 
 func TestCreateBitmapIndexOnArrayField(t *testing.T) {
+	t.Skip("https://github.com/milvus-io/milvus/issues/34314")
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect
 	mc := createMilvusClient(ctx, t)
