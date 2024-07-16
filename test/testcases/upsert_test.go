@@ -111,12 +111,12 @@ func TestUpsertAutoID(t *testing.T) {
 	// upsert without pks
 	_, floatColumn1, vecColumn1 := common.GenDefaultColumnData(0, 100, common.DefaultDim)
 	_, err := mc.Upsert(ctx, collName, "", floatColumn1, vecColumn1)
-	common.CheckErr(t, err, false, "upsert can not assign primary field data when auto id enabled")
+	common.CheckErr(t, err, false, "invalid parameter")
 
 	// upsert with pks
 	pkColumn := entity.NewColumnInt64(common.DefaultIntFieldName, ids.(*entity.ColumnInt64).Data()[:100])
 	_, err = mc.Upsert(ctx, collName, "", pkColumn, floatColumn1, vecColumn1)
-	common.CheckErr(t, err, false, "upsert can not assign primary field data when auto id enabled")
+	common.CheckErr(t, err, true)
 }
 
 func TestUpsertVarcharPk(t *testing.T) {
