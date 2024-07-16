@@ -36,8 +36,8 @@ func WithFlushMsgBase(msgBase *commonpb.MsgBase) FlushOption {
 }
 
 func WithCreateDatabaseMsgBase(msgBase *commonpb.MsgBase) CreateDatabaseOption {
-	return func(req *milvuspb.CreateDatabaseRequest) {
-		req.Base = msgBase
+	return func(opt *createDatabaseOpt) {
+		opt.Base = msgBase
 	}
 }
 

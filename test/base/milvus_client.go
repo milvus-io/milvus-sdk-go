@@ -104,9 +104,9 @@ func (mc *MilvusClient) ListDatabases(ctx context.Context) ([]entity.Database, e
 }
 
 // CreateDatabase create database with the given name.
-func (mc *MilvusClient) CreateDatabase(ctx context.Context, dbName string) error {
+func (mc *MilvusClient) CreateDatabase(ctx context.Context, dbName string, opts ...client.CreateDatabaseOption) error {
 	preRequest("CreateDatabase", ctx, dbName)
-	err := mc.mClient.CreateDatabase(ctx, dbName)
+	err := mc.mClient.CreateDatabase(ctx, dbName, opts...)
 	postResponse("CreateDatabase", err)
 	return err
 }

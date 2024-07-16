@@ -20,7 +20,7 @@ func main() {
 	clientDefault := mustConnect(ctx, cfg)
 	defer clientDefault.Close()
 	createCollection(ctx, clientDefault, "col1")
-	if err := clientDefault.CreateDatabase(ctx, "db1"); err != nil {
+	if err := clientDefault.CreateDatabase(ctx, "db1", client.WithDatabaseProperty("key1", "value1")); err != nil {
 		log.Fatalf("create db1 failed, %+v", err)
 	}
 	dbs, err := clientDefault.ListDatabases(ctx)

@@ -307,7 +307,21 @@ type ReleaseCollectionOption func(*milvuspb.ReleaseCollectionRequest)
 
 type FlushOption func(*milvuspb.FlushRequest)
 
-type CreateDatabaseOption func(*milvuspb.CreateDatabaseRequest)
+type createDatabaseOpt struct {
+	Base       *commonpb.MsgBase
+	Properties map[string]string
+}
+
+type CreateDatabaseOption func(*createDatabaseOpt)
+
+func WithDatabaseProperty(key, value string) CreateDatabaseOption {
+	return func(opt *createDatabaseOpt) {
+		if opt.Properties == nil {
+			opt.Properties = make(map[string]string, 0)
+		}
+		opt.Properties[key] = value
+	}
+}
 
 type DropDatabaseOption func(*milvuspb.DropDatabaseRequest)
 
