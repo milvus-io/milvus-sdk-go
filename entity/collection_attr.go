@@ -22,10 +22,11 @@ const (
 	// cakTTL const for collection attribute key TTL in seconds.
 	cakTTL = `collection.ttl.seconds`
 	// cakAutoCompaction const for collection attribute key autom compaction enabled.
-	cakAutoCompaction      = `collection.autocompaction.enabled`
-	akMmap                 = "mmap.enabled"
-	databaseReplica        = "database.replica"
-	databaseResourceGroups = "database.resource_groups"
+	cakAutoCompaction       = `collection.autocompaction.enabled`
+	akMmap                  = "mmap.enabled"
+	databaseReplica         = "database.replica"
+	databaseResourceGroups  = "database.resource_groups"
+	caPartitionKeyIsolation = "partitionkey.isolation"
 )
 
 // CollectionAttribute is the interface for altering collection attributes.
@@ -45,6 +46,10 @@ func (ca collAttrBase) KeyValue() (string, string) {
 }
 
 type ttlCollAttr struct {
+	collAttrBase
+}
+
+type partitionKeyIsolationCollAttr struct {
 	collAttrBase
 }
 
@@ -111,6 +116,21 @@ func (ca mmapAttr) Valid() error {
 		return errors.Wrap(err, "mmap setting is not valid boolean")
 	}
 
+	return nil
+}
+
+func CollectionPartitionKeyIsolation(enabled bool) partitionKeyIsolationCollAttr {
+	ca := partitionKeyIsolationCollAttr{}
+	ca.key = caPartitionKeyIsolation
+	ca.value = strconv.FormatBool(enabled)
+	return ca
+}
+
+func (ca partitionKeyIsolationCollAttr) Valid() error {
+	_, err := strconv.ParseBool(ca.value)
+	if err != nil {
+		return errors.Wrap(err, "PartitionKeyIsolation setting is not a valid boolean")
+	}
 	return nil
 }
 

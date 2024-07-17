@@ -130,3 +130,52 @@ func (s *CollectionAutoCompactionSuite) TestCollectionAutoCompactionEnabled() {
 func TestCollectionAutoCompaction(t *testing.T) {
 	suite.Run(t, new(CollectionAutoCompactionSuite))
 }
+
+type CollectionPartitionKeyIsolationSuite struct {
+	suite.Suite
+}
+
+func (s *CollectionPartitionKeyIsolationSuite) TestValid() {
+	type testCase struct {
+		input     string
+		expectErr bool
+	}
+
+	cases := []testCase{
+		{input: "a", expectErr: true},
+		{input: "true", expectErr: false},
+		{input: "false", expectErr: false},
+		{input: "", expectErr: true},
+	}
+
+	for _, tc := range cases {
+		s.Run(tc.input, func() {
+			ca := partitionKeyIsolationCollAttr{}
+			ca.value = tc.input
+			err := ca.Valid()
+			if tc.expectErr {
+				s.Error(err)
+			} else {
+				s.NoError(err)
+			}
+		})
+	}
+}
+
+func (s *CollectionPartitionKeyIsolationSuite) TestCollectionAutoCompactionEnabled() {
+
+	cases := []bool{true, false}
+
+	for _, tc := range cases {
+		s.Run(fmt.Sprintf("%v", tc), func() {
+			ca := CollectionPartitionKeyIsolation(tc)
+			key, value := ca.KeyValue()
+			s.Equal(caPartitionKeyIsolation, key)
+			s.Equal(strconv.FormatBool(tc), value)
+		})
+	}
+}
+
+func TestCollectionPartitionKeyIsolationAttr(t *testing.T) {
+	suite.Run(t, new(CollectionPartitionKeyIsolationSuite))
+}

@@ -155,6 +155,43 @@ func (s *CollectionSuite) TestCreateCollection() {
 		s.NoError(err)
 	})
 
+	s.Run("create_with_partition_key_isolation", func() {
+		ds := defaultSchema()
+		partitionKeyFieldName := "partitionKeyField"
+		partitionKeyField := entity.NewField().WithName(partitionKeyFieldName).WithDataType(entity.FieldTypeInt64).WithIsPartitionKey(true)
+		ds.WithField(partitionKeyField)
+
+		shardsNum := int32(1)
+		expectedIsoStr := "true"
+		IsoKeystr := "partitionkey.isolation"
+		defer s.resetMock()
+		s.mock.EXPECT().CreateCollection(mock.Anything, mock.AnythingOfType("*milvuspb.CreateCollectionRequest")).
+			Run(func(ctx context.Context, req *milvuspb.CreateCollectionRequest) {
+				s.Equal(testCollectionName, req.GetCollectionName())
+				sschema := &schemapb.CollectionSchema{}
+				s.Require().NoError(proto.Unmarshal(req.GetSchema(), sschema))
+				s.Require().Equal(len(ds.Fields), len(sschema.Fields))
+				for idx, fieldSchema := range ds.Fields {
+					s.Equal(fieldSchema.Name, sschema.GetFields()[idx].GetName())
+					s.Equal(fieldSchema.PrimaryKey, sschema.GetFields()[idx].GetIsPrimaryKey())
+					s.Equal(fieldSchema.AutoID, sschema.GetFields()[idx].GetAutoID())
+					s.EqualValues(fieldSchema.DataType, sschema.GetFields()[idx].GetDataType())
+				}
+				s.Equal(shardsNum, req.GetShardsNum())
+				s.Equal(commonpb.ConsistencyLevel_Eventually, req.GetConsistencyLevel())
+				propsMp := make(map[string]string)
+				for _, prop := range req.GetProperties() {
+					propsMp[prop.Key] = prop.Value
+				}
+				s.Equal(expectedIsoStr, propsMp[IsoKeystr])
+			}).
+			Return(&commonpb.Status{ErrorCode: commonpb.ErrorCode_Success}, nil)
+		s.mock.EXPECT().HasCollection(mock.Anything, &milvuspb.HasCollectionRequest{CollectionName: testCollectionName}).Return(&milvuspb.BoolResponse{Status: &commonpb.Status{}, Value: false}, nil)
+
+		err := c.CreateCollection(ctx, ds, shardsNum, WithConsistencyLevel(entity.ClEventually), WithCollectionProperty(IsoKeystr, expectedIsoStr))
+		s.NoError(err)
+	})
+
 	s.Run("invalid_schemas", func() {
 		type testCase struct {
 			name   string
@@ -438,6 +475,9 @@ func (s *CollectionSuite) TestAlterCollection() {
 			Return(&commonpb.Status{}, nil)
 
 		err := c.AlterCollection(ctx, testCollectionName, entity.CollectionTTL(100000))
+		s.NoError(err)
+
+		err = c.AlterCollection(ctx, testCollectionName, entity.CollectionPartitionKeyIsolation(true))
 		s.NoError(err)
 	})
 
