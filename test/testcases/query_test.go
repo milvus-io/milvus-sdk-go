@@ -769,7 +769,7 @@ func TestQueryCountJsonDynamicExpr(t *testing.T) {
 
 // test query with all kinds of array expr
 func TestQueryArrayFieldExpr(t *testing.T) {
-	t.Skip("https://github.com/milvus-io/milvus/issues/34404")
+	t.Skip("https://github.com/milvus-io/milvus/issues/34797")
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect
 	mc := createMilvusClient(ctx, t)
@@ -840,13 +840,13 @@ func TestQueryArrayFieldExpr(t *testing.T) {
 
 		// build BITMAP scalar index and query
 		// release collection
-		errRelease := mc.ReleaseCollection(ctx, "collName")
-		common.CheckErr(t, errRelease, false, "not exist")
+		errRelease := mc.ReleaseCollection(ctx, collName)
+		common.CheckErr(t, errRelease, true)
 
-		// need fixed `int16Array`, `int32Array`, `int64Array`, `varcharArray`
-		BitmapNotSupportFiledNames := []interface{}{common.DefaultFloatArrayField, common.DefaultDoubleArrayField, common.DefaultInt16ArrayField, common.DefaultInt32ArrayField, common.DefaultInt64ArrayField, common.DefaultVarcharArrayField}
+		BitmapNotSupportFiledNames := []interface{}{common.DefaultFloatArrayField, common.DefaultDoubleArrayField}
 		scalarIdx := entity.NewScalarIndexWithType(entity.Bitmap)
 		collection, _ := mc.DescribeCollection(ctx, collName)
+		common.PrintAllFieldNames(collName, collection.Schema)
 		for _, field := range collection.Schema.Fields {
 			if field.DataType == entity.FieldTypeArray && !common.CheckContainsValue(BitmapNotSupportFiledNames, field.Name) {
 				// create BITMAP scalar index

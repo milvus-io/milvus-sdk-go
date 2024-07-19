@@ -1442,4 +1442,13 @@ func GenBatchSizes(limit int, batch int) []int {
 	return batchSizes
 }
 
+func PrintAllFieldNames(collName string, schemas *entity.Schema) {
+	var fieldNames []string
+	for _, f := range schemas.Fields {
+		fieldNames = append(fieldNames, f.Name)
+		// log.Printf("%+v\n", f)
+	}
+	log.Println("Collection ", collName, " all fileds: ", fieldNames)
+}
+
 // --- search utils ---

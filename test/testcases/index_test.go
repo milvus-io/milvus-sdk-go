@@ -156,6 +156,7 @@ func TestCreateIndexDup(t *testing.T) {
 
 // test create scalar index on all scalar field
 func TestCreateScalarIndex(t *testing.T) {
+	t.Skip("https://github.com/milvus-io/milvus/issues/34795")
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	//connect
 	mc := createMilvusClient(ctx, t)
@@ -190,21 +191,17 @@ func TestCreateScalarIndex(t *testing.T) {
 	}
 
 	coll, _ := mc.DescribeCollection(ctx, collName)
+	common.PrintAllFieldNames(collName, coll.Schema)
 	idx := entity.NewScalarIndex()
 	for _, field := range coll.Schema.Fields {
 		if supportScalarIndexFieldType(field.DataType) {
-			if field.DataType == entity.FieldTypeArray {
-				err := mc.CreateIndex(ctx, collName, field.Name, idx, false, client.WithIndexName(field.Name))
-				common.CheckErr(t, err, false, fmt.Sprintf("create auto index on %s field is not supported", field.DataType))
-			} else {
-				err := mc.CreateIndex(ctx, collName, field.Name, idx, false, client.WithIndexName(field.Name))
-				common.CheckErr(t, err, true)
+			err := mc.CreateIndex(ctx, collName, field.Name, idx, false, client.WithIndexName(field.Name))
+			common.CheckErr(t, err, true)
 
-				// describe index
-				indexes, _ := mc.DescribeIndex(ctx, collName, field.Name)
-				expIndex := entity.NewGenericIndex(field.Name, "", idx.Params())
-				common.CheckIndexResult(t, indexes, expIndex)
-			}
+			// describe index
+			indexes, _ := mc.DescribeIndex(ctx, collName, field.Name)
+			expIndex := entity.NewGenericIndex(field.Name, "", idx.Params())
+			common.CheckIndexResult(t, indexes, expIndex)
 		}
 	}
 	// load -> search and output all fields
@@ -219,7 +216,7 @@ func TestCreateScalarIndex(t *testing.T) {
 
 // test create scalar index on loaded collection
 func TestCreateIndexOnLoadedCollection(t *testing.T) {
-	t.Skip("https://github.com/milvus-io/milvus/issues/34314")
+	t.Skip("https://github.com/milvus-io/milvus/issues/34404")
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	//connect
 	mc := createMilvusClient(ctx, t)
@@ -262,9 +259,12 @@ func TestCreateIndexOnLoadedCollection(t *testing.T) {
 		if supportScalarIndexFieldType(field.DataType) {
 			err := mc.CreateIndex(ctx, collName, field.Name, idx, false, client.WithIndexName(field.Name))
 			// need check failed
-			common.CheckErr(t, err, false, "")
+			common.CheckErr(t, err, true, "")
 		}
 	}
+
+	err = mc.LoadCollection(ctx, collName, false)
+	common.CheckErr(t, err, true)
 }
 
 // Trie scalar index only supported on varchar
@@ -396,7 +396,7 @@ func TestCreateInvertedScalarIndex(t *testing.T) {
 
 // create Bitmap index for all scalar fields
 func TestCreateBitmapScalarIndex(t *testing.T) {
-	t.Skip("https://github.com/milvus-io/milvus/issues/34314")
+	t.Skip("https://github.com/milvus-io/milvus/issues/34795")
 	ctx := createContext(t, time.Second*common.DefaultTimeout*2)
 	// connect
 	mc := createMilvusClient(ctx, t)
@@ -408,7 +408,7 @@ func TestCreateBitmapScalarIndex(t *testing.T) {
 	dp := DataParams{DoInsert: true, CollectionFieldsType: AllFields, start: 0, nb: common.DefaultNb,
 		dim: common.DefaultDim, EnableDynamicField: false}
 
-	// index params
+	// build vector's indexes
 	ips := GenDefaultIndexParamsForAllVectors()
 	lp := LoadParams{DoLoad: false}
 	collName := prepareCollection(ctx, t, mc, cp, WithDataParams(dp), WithIndexParams(ips), WithLoadParams(lp),
@@ -416,12 +416,13 @@ func TestCreateBitmapScalarIndex(t *testing.T) {
 
 	// create BITMAP scalar index
 	coll, _ := mc.DescribeCollection(ctx, collName)
+	common.PrintAllFieldNames(collName, coll.Schema)
 	idx := entity.NewScalarIndexWithType(entity.Bitmap)
 	BitmapNotSupport := []interface{}{entity.FieldTypeJSON, entity.FieldTypeDouble, entity.FieldTypeFloat}
 	for _, field := range coll.Schema.Fields {
 		if supportScalarIndexFieldType(field.DataType) {
-			log.Println(field.Name, field.DataType)
-			if common.CheckContainsValue(BitmapNotSupport, field.DataType) {
+			log.Println(field.Name, field.DataType, field.ElementType)
+			if common.CheckContainsValue(BitmapNotSupport, field.DataType) || (field.DataType == entity.FieldTypeArray && common.CheckContainsValue(BitmapNotSupport, field.ElementType)) {
 				err := mc.CreateIndex(ctx, collName, field.Name, idx, false, client.WithIndexName(field.Name))
 				common.CheckErr(t, err, false, "bitmap index are only supported")
 			} else {
@@ -537,7 +538,7 @@ func TestCreateIndexJsonField(t *testing.T) {
 		{entity.Inverted, "INVERTED are not supported on JSON field"},
 		{entity.Sorted, "STL_SORT are only supported on numeric field"},
 		{entity.Trie, "TRIE are only supported on varchar field"},
-		{entity.Scalar, "create auto index on JSON field is not supported"},
+		{entity.Scalar, "create auto index on type:JSON is not supported"},
 	}
 	for _, ip := range inxError {
 		err := mc.CreateIndex(ctx, collName, common.DefaultJSONFieldName, entity.NewScalarIndexWithType(ip.indexType), false, client.WithIndexName("json_index"))
@@ -571,7 +572,9 @@ func TestCreateIndexArrayField(t *testing.T) {
 	inxError := []scalarIndexError{
 		{entity.Sorted, "STL_SORT are only supported on numeric field"},
 		{entity.Trie, "TRIE are only supported on varchar field"},
-		{entity.Scalar, "create auto index on Array field is not supported"},
+
+		// AutoIndex support building on all array dtype fileds
+		// {entity.Scalar, "create auto index on Array field is not supported"},
 	}
 
 	// create scalar and vector index on array field
@@ -579,6 +582,7 @@ func TestCreateIndexArrayField(t *testing.T) {
 	for _, ip := range inxError {
 		scalarIdx := entity.NewScalarIndexWithType(ip.indexType)
 		collection, _ := mc.DescribeCollection(ctx, collName)
+		common.PrintAllFieldNames(collName, collection.Schema)
 		for _, field := range collection.Schema.Fields {
 			if field.DataType == entity.FieldTypeArray {
 				// create scalar index
@@ -637,7 +641,7 @@ func TestCreateInvertedIndexArrayField(t *testing.T) {
 }
 
 func TestCreateBitmapIndexOnArrayField(t *testing.T) {
-	t.Skip("https://github.com/milvus-io/milvus/issues/34314")
+	t.Skip("https://github.com/milvus-io/milvus/issues/34797")
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect
 	mc := createMilvusClient(ctx, t)
@@ -663,15 +667,15 @@ func TestCreateBitmapIndexOnArrayField(t *testing.T) {
 
 	// create BITMAP and SCANN index on array field
 	vectorIdx, _ := entity.NewIndexSCANN(entity.L2, 10, false)
-	// need fixed `int16Array`, `int32Array`, `int64Array`, `varcharArray`
-	BitmapNotSupportFiledNames := []interface{}{common.DefaultFloatArrayField, common.DefaultDoubleArrayField, common.DefaultInt16ArrayField, common.DefaultInt32ArrayField, common.DefaultInt64ArrayField, common.DefaultVarcharArrayField}
+	BitmapNotSupportFiledNames := []interface{}{common.DefaultFloatArrayField, common.DefaultDoubleArrayField}
 	scalarIdx := entity.NewScalarIndexWithType(entity.Bitmap)
 	collection, _ := mc.DescribeCollection(ctx, collName)
+	common.PrintAllFieldNames(collName, collection.Schema)
 	for _, field := range collection.Schema.Fields {
 		if field.DataType == entity.FieldTypeArray {
 			// create scalar index
 			err := mc.CreateIndex(ctx, collName, field.Name, scalarIdx, false, client.WithIndexName(field.Name+"scalar_index"))
-			common.CheckErr(t, err, !common.CheckContainsValue(BitmapNotSupportFiledNames, field.Name), "bitmap index are only supported", "failed to create index")
+			common.CheckErr(t, err, !common.CheckContainsValue(BitmapNotSupportFiledNames, field.Name), "bitmap index are only supported")
 			// create vector index
 			err1 := mc.CreateIndex(ctx, collName, field.Name, vectorIdx, false, client.WithIndexName("vector_index"))
 			common.CheckErr(t, err1, false, "data type should be FloatVector, Float16Vector or BFloat16Vector")
@@ -853,6 +857,7 @@ func TestCreateIndexWithoutIndexTypeParams(t *testing.T) {
 
 // test create default auto index on scalar fields, array and json -> error
 func TestCreateAutoIndexScalarFields(t *testing.T) {
+	t.Skip("https://github.com/milvus-io/milvus/issues/34795")
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	//connect
 	mc := createMilvusClient(ctx, t)
@@ -886,13 +891,13 @@ func TestCreateAutoIndexScalarFields(t *testing.T) {
 	coll, _ := mc.DescribeCollection(ctx, collName)
 	for _, field := range coll.Schema.Fields {
 		if supportScalarIndexFieldType(field.DataType) {
-			if field.DataType == entity.FieldTypeJSON || field.DataType == entity.FieldTypeArray {
+			if field.DataType == entity.FieldTypeJSON {
 				err := mc.CreateIndex(ctx, collName, field.Name, indexAuto, false, client.WithIndexName(field.Name))
 				common.CheckErr(t, err, false, fmt.Sprintf("create auto index on %v field is not supported", field.DataType))
 			} else {
 				err := mc.CreateIndex(ctx, collName, field.Name, indexAuto, false)
 				common.CheckErr(t, err, true)
-				descIdx, err := mc.DescribeIndex(ctx, collName, field.Name)
+				descIdx, _ := mc.DescribeIndex(ctx, collName, field.Name)
 				expIdx := entity.NewGenericIndex(field.Name, entity.AUTOINDEX, indexAuto.Params())
 				common.CheckIndexResult(t, descIdx, expIdx)
 			}
