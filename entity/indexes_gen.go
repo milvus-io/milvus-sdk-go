@@ -45,6 +45,11 @@ func(i *IndexFlat) Params() map[string]string {
 	}
 }
 
+// Progress returns index progress information, only fill it after DescribeIndex for GenericIndex
+func(i *IndexFlat) Progress() map[string]string {
+	return map[string]string {}
+}
+
 // NewIndexFlat create index with construction parameters
 func NewIndexFlat(metricType MetricType, ) (*IndexFlat, error) {
 	// auto generate parameters validation code, if any
@@ -88,6 +93,11 @@ func(i *IndexBinFlat) Params() map[string]string {
 		"index_type": string(i.IndexType()),
 		"metric_type": string(i.metricType),
 	}
+}
+
+// Progress returns index progress information, only fill it after DescribeIndex for GenericIndex
+func(i *IndexBinFlat) Progress() map[string]string {
+	return map[string]string {}
 }
 
 // NewIndexBinFlat create index with construction parameters
@@ -146,6 +156,11 @@ func(i *IndexIvfFlat) Params() map[string]string {
 	}
 }
 
+// Progress returns index progress information, only fill it after DescribeIndex for GenericIndex
+func(i *IndexIvfFlat) Progress() map[string]string {
+	return map[string]string {}
+}
+
 // NewIndexIvfFlat create index with construction parameters
 func NewIndexIvfFlat(metricType MetricType, 
 	nlist int,
@@ -202,6 +217,11 @@ func(i *IndexBinIvfFlat) Params() map[string]string {
 	}
 }
 
+// Progress returns index progress information, only fill it after DescribeIndex for GenericIndex
+func(i *IndexBinIvfFlat) Progress() map[string]string {
+	return map[string]string {}
+}
+
 // NewIndexBinIvfFlat create index with construction parameters
 func NewIndexBinIvfFlat(metricType MetricType, 
 	nlist int,
@@ -256,6 +276,11 @@ func(i *IndexIvfSQ8) Params() map[string]string {
 		"index_type": string(i.IndexType()),
 		"metric_type": string(i.metricType),
 	}
+}
+
+// Progress returns index progress information, only fill it after DescribeIndex for GenericIndex
+func(i *IndexIvfSQ8) Progress() map[string]string {
+	return map[string]string {}
 }
 
 // NewIndexIvfSQ8 create index with construction parameters
@@ -316,6 +341,11 @@ func(i *IndexIvfPQ) Params() map[string]string {
 		"index_type": string(i.IndexType()),
 		"metric_type": string(i.metricType),
 	}
+}
+
+// Progress returns index progress information, only fill it after DescribeIndex for GenericIndex
+func(i *IndexIvfPQ) Progress() map[string]string {
+	return map[string]string {}
 }
 
 // NewIndexIvfPQ create index with construction parameters
@@ -393,6 +423,11 @@ func(i *IndexHNSW) Params() map[string]string {
 	}
 }
 
+// Progress returns index progress information, only fill it after DescribeIndex for GenericIndex
+func(i *IndexHNSW) Progress() map[string]string {
+	return map[string]string {}
+}
+
 // NewIndexHNSW create index with construction parameters
 func NewIndexHNSW(metricType MetricType, 
 	M int,
@@ -462,6 +497,11 @@ func(i *IndexIvfHNSW) Params() map[string]string {
 		"index_type": string(i.IndexType()),
 		"metric_type": string(i.metricType),
 	}
+}
+
+// Progress returns index progress information, only fill it after DescribeIndex for GenericIndex
+func(i *IndexIvfHNSW) Progress() map[string]string {
+	return map[string]string {}
 }
 
 // NewIndexIvfHNSW create index with construction parameters
@@ -540,6 +580,11 @@ func(i *IndexDISKANN) Params() map[string]string {
 	}
 }
 
+// Progress returns index progress information, only fill it after DescribeIndex for GenericIndex
+func(i *IndexDISKANN) Progress() map[string]string {
+	return map[string]string {}
+}
+
 // NewIndexDISKANN create index with construction parameters
 func NewIndexDISKANN(metricType MetricType, ) (*IndexDISKANN, error) {
 	// auto generate parameters validation code, if any
@@ -581,6 +626,11 @@ func(i *IndexAUTOINDEX) Params() map[string]string {
 		"index_type": string(i.IndexType()),
 		"metric_type": string(i.metricType),
 	}
+}
+
+// Progress returns index progress information, only fill it after DescribeIndex for GenericIndex
+func(i *IndexAUTOINDEX) Progress() map[string]string {
+	return map[string]string {}
 }
 
 // NewIndexAUTOINDEX create index with construction parameters
@@ -626,6 +676,11 @@ func(i *IndexGPUIvfFlat) Params() map[string]string {
 		"index_type": string(i.IndexType()),
 		"metric_type": string(i.metricType),
 	}
+}
+
+// Progress returns index progress information, only fill it after DescribeIndex for GenericIndex
+func(i *IndexGPUIvfFlat) Progress() map[string]string {
+	return map[string]string {}
 }
 
 // NewIndexGPUIvfFlat create index with construction parameters
@@ -686,6 +741,11 @@ func(i *IndexGPUIvfPQ) Params() map[string]string {
 		"index_type": string(i.IndexType()),
 		"metric_type": string(i.metricType),
 	}
+}
+
+// Progress returns index progress information, only fill it after DescribeIndex for GenericIndex
+func(i *IndexGPUIvfPQ) Progress() map[string]string {
+	return map[string]string {}
 }
 
 // NewIndexGPUIvfPQ create index with construction parameters
@@ -761,6 +821,11 @@ func(i *IndexSCANN) Params() map[string]string {
 		"index_type": string(i.IndexType()),
 		"metric_type": string(i.metricType),
 	}
+}
+
+// Progress returns index progress information, only fill it after DescribeIndex for GenericIndex
+func(i *IndexSCANN) Progress() map[string]string {
+	return map[string]string {}
 }
 
 // NewIndexSCANN create index with construction parameters

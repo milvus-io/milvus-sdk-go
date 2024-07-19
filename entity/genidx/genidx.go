@@ -73,6 +73,11 @@ func(i *Index{{.IdxName}}) Params() map[string]string {
 	}
 }
 
+// Progress returns index progress information, only fill it after DescribeIndex for GenericIndex
+func(i *Index{{.IdxName}}) Progress() map[string]string {
+	return map[string]string {}
+}
+
 // NewIndex{{.IdxName}} create index with construction parameters
 func NewIndex{{.IdxName}}(metricType MetricType, {{range .ConstructParams}}{{with .}}
 	{{.Name}} {{.ParamType}},

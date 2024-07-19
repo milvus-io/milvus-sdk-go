@@ -14,6 +14,10 @@ func (i *indexScalar) Params() map[string]string {
 	return result
 }
 
+func (i *indexScalar) Progress() map[string]string {
+	return map[string]string{}
+}
+
 func NewScalarIndex() Index {
 	return &indexScalar{
 		baseIndex: baseIndex{},

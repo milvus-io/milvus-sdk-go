@@ -62,6 +62,10 @@ func (i *IndexGPUCagra) Params() map[string]string {
 	}
 }
 
+func (i *IndexGPUCagra) Progress() map[string]string {
+	return map[string]string{}
+}
+
 type IndexGPUCagraSearchParam struct {
 	baseSearchParams
 }
@@ -129,6 +133,10 @@ func (i *IndexGPUBruteForce) Params() map[string]string {
 		"index_type":  string(i.IndexType()),
 		"metric_type": string(i.metricType),
 	}
+}
+
+func (i *IndexGPUBruteForce) Progress() map[string]string {
+	return map[string]string{}
 }
 
 type IndexGPUBruteForceSearchParam struct {
