@@ -28,6 +28,7 @@ func TestFieldSchema(t *testing.T) {
 		NewField().WithName("array_field").WithDataType(FieldTypeArray).WithElementType(FieldTypeBool).WithMaxCapacity(128),
 		NewField().WithName("fp16_field").WithDataType(FieldTypeFloat16Vector).WithDim(128),
 		NewField().WithName("bf16_field").WithDataType(FieldTypeBFloat16Vector).WithDim(128),
+		NewField().WithName("cluster_key").WithDataType(FieldTypeInt32).WithIsClusteringKey(true),
 		/*
 			NewField().WithName("default_value_bool").WithDataType(FieldTypeBool).WithDefaultValueBool(true),
 			NewField().WithName("default_value_int").WithDataType(FieldTypeInt32).WithDefaultValueInt(1),
@@ -45,6 +46,7 @@ func TestFieldSchema(t *testing.T) {
 		assert.Equal(t, field.AutoID, fieldSchema.GetAutoID())
 		assert.Equal(t, field.PrimaryKey, fieldSchema.GetIsPrimaryKey())
 		assert.Equal(t, field.IsPartitionKey, fieldSchema.GetIsPartitionKey())
+		assert.Equal(t, field.IsClusteringKey, fieldSchema.GetIsClusteringKey())
 		assert.Equal(t, field.IsDynamic, fieldSchema.GetIsDynamic())
 		assert.Equal(t, field.Description, fieldSchema.GetDescription())
 		assert.Equal(t, field.TypeParams, KvPairsMap(fieldSchema.GetTypeParams()))
@@ -60,6 +62,7 @@ func TestFieldSchema(t *testing.T) {
 		assert.Equal(t, field.Description, nf.Description)
 		assert.Equal(t, field.IsDynamic, nf.IsDynamic)
 		assert.Equal(t, field.IsPartitionKey, nf.IsPartitionKey)
+		assert.Equal(t, field.IsClusteringKey, nf.IsClusteringKey)
 		assert.EqualValues(t, field.TypeParams, nf.TypeParams)
 		assert.EqualValues(t, field.ElementType, nf.ElementType)
 	}
