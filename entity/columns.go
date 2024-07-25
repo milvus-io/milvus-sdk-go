@@ -36,6 +36,11 @@ type Column interface {
 	GetAsString(int) (string, error)
 	GetAsDouble(int) (float64, error)
 	GetAsBool(int) (bool, error)
+	GetAsBFloat16Vector(int) (BFloat16Vector, error)
+	GetAsFloatVector(int) (FloatVector, error)
+	GetAsFloat16Vector(int) (Float16Vector, error)
+	GetAsBinaryVector(int) (BinaryVector, error)
+	GetAsSparseFloatVector(int) (SparseEmbedding, error)
 }
 
 // ColumnBase adds conversion methods support for fixed-type columns.
@@ -55,6 +60,26 @@ func (b ColumnBase) GetAsDouble(_ int) (float64, error) {
 
 func (b ColumnBase) GetAsBool(_ int) (bool, error) {
 	return false, errors.New("conversion between fixed-type column not support")
+}
+
+func (b ColumnBase) GetAsBFloat16Vector(int) (BFloat16Vector, error) {
+	return nil, errors.New("conversion between fixed-type column not support")
+}
+
+func (b ColumnBase) GetAsFloatVector(int) (FloatVector, error) {
+	return nil, errors.New("conversion between fixed-type column not support")
+}
+
+func (b ColumnBase) GetAsFloat16Vector(int) (Float16Vector, error) {
+	return nil, errors.New("conversion between fixed-type column not support")
+}
+
+func (b ColumnBase) GetAsBinaryVector(int) (BinaryVector, error) {
+	return nil, errors.New("conversion between fixed-type column not support")
+}
+
+func (b ColumnBase) GetAsSparseFloatVector(int) (SparseEmbedding, error) {
+	return nil, errors.New("conversion between fixed-type column not support")
 }
 
 // Vector interface vector used int search
