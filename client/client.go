@@ -202,9 +202,9 @@ type Client interface {
 	// ListGrants lists all assigned privileges and objects for the role.
 	ListGrants(ctx context.Context, role string, dbName string) ([]entity.RoleGrants, error)
 	// Grant adds privilege for role.
-	Grant(ctx context.Context, role string, objectType entity.PriviledgeObjectType, object string) error
+	Grant(ctx context.Context, role string, objectType entity.PriviledgeObjectType, object string, privilege string, dbName string) error
 	// Revoke removes privilege from role.
-	Revoke(ctx context.Context, role string, objectType entity.PriviledgeObjectType, object string) error
+	Revoke(ctx context.Context, role string, objectType entity.PriviledgeObjectType, object string, privilege string, dbName string) error
 
 	// GetLoadingProgress get the collection or partitions loading progress
 	GetLoadingProgress(ctx context.Context, collectionName string, partitionNames []string) (int64, error)
