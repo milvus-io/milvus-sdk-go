@@ -320,12 +320,18 @@ func (c *GrpcClient) ListGrant(ctx context.Context, role string, object string, 
 }
 
 // Grant adds object privileged for role.
-func (c *GrpcClient) Grant(ctx context.Context, role string, objectType entity.PriviledgeObjectType, object string, privilege string) error {
+func (c *GrpcClient) Grant(ctx context.Context, role string, objectType entity.PriviledgeObjectType, object string, privilege string, options ...entity.OperatePrivilegeOption) error {
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
 
+	grantOpt := &entity.OperatePrivilegeOpt{}
+	for _, opt := range options {
+		opt(grantOpt)
+	}
+
 	req := &milvuspb.OperatePrivilegeRequest{
+		Base: grantOpt.Base,
 		Entity: &milvuspb.GrantEntity{
 			Role: &milvuspb.RoleEntity{
 				Name: role,
@@ -339,6 +345,7 @@ func (c *GrpcClient) Grant(ctx context.Context, role string, objectType entity.P
 				},
 			},
 			ObjectName: object,
+			DbName:     grantOpt.Database,
 		},
 		Type: milvuspb.OperatePrivilegeType_Grant,
 	}
@@ -352,12 +359,17 @@ func (c *GrpcClient) Grant(ctx context.Context, role string, objectType entity.P
 }
 
 // Revoke removes privilege from role.
-func (c *GrpcClient) Revoke(ctx context.Context, role string, objectType entity.PriviledgeObjectType, object string) error {
+func (c *GrpcClient) Revoke(ctx context.Context, role string, objectType entity.PriviledgeObjectType, object string, privilege string, options ...entity.OperatePrivilegeOption) error {
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
+	revokeOpt := &entity.OperatePrivilegeOpt{}
+	for _, opt := range options {
+		opt(revokeOpt)
+	}
 
 	req := &milvuspb.OperatePrivilegeRequest{
+		Base: revokeOpt.Base,
 		Entity: &milvuspb.GrantEntity{
 			Role: &milvuspb.RoleEntity{
 				Name: role,
@@ -366,6 +378,12 @@ func (c *GrpcClient) Revoke(ctx context.Context, role string, objectType entity.
 				Name: commonpb.ObjectType_name[int32(objectType)],
 			},
 			ObjectName: object,
+			Grantor: &milvuspb.GrantorEntity{
+				Privilege: &milvuspb.PrivilegeEntity{
+					Name: privilege,
+				},
+			},
+			DbName: revokeOpt.Database,
 		},
 		Type: milvuspb.OperatePrivilegeType_Revoke,
 	}
