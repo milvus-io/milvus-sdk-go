@@ -320,7 +320,7 @@ func (c *GrpcClient) ListGrant(ctx context.Context, role string, object string, 
 }
 
 // Grant adds object privileged for role.
-func (c *GrpcClient) Grant(ctx context.Context, role string, objectType entity.PriviledgeObjectType, object string) error {
+func (c *GrpcClient) Grant(ctx context.Context, role string, objectType entity.PriviledgeObjectType, object string, privilege string, dbName string) error {
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
@@ -334,6 +334,12 @@ func (c *GrpcClient) Grant(ctx context.Context, role string, objectType entity.P
 				Name: commonpb.ObjectType_name[int32(objectType)],
 			},
 			ObjectName: object,
+			Grantor: &milvuspb.GrantorEntity{
+				Privilege: &milvuspb.PrivilegeEntity{
+					Name: privilege,
+				},
+			},
+			DbName: dbName,
 		},
 		Type: milvuspb.OperatePrivilegeType_Grant,
 	}
@@ -347,7 +353,7 @@ func (c *GrpcClient) Grant(ctx context.Context, role string, objectType entity.P
 }
 
 // Revoke removes privilege from role.
-func (c *GrpcClient) Revoke(ctx context.Context, role string, objectType entity.PriviledgeObjectType, object string) error {
+func (c *GrpcClient) Revoke(ctx context.Context, role string, objectType entity.PriviledgeObjectType, object string, privilege string, dbName string) error {
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
@@ -361,6 +367,12 @@ func (c *GrpcClient) Revoke(ctx context.Context, role string, objectType entity.
 				Name: commonpb.ObjectType_name[int32(objectType)],
 			},
 			ObjectName: object,
+			Grantor: &milvuspb.GrantorEntity{
+				Privilege: &milvuspb.PrivilegeEntity{
+					Name: privilege,
+				},
+			},
+			DbName: dbName,
 		},
 		Type: milvuspb.OperatePrivilegeType_Revoke,
 	}
