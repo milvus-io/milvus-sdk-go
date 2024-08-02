@@ -42,3 +42,22 @@ const (
 	// PriviledegeObjectTypeGlobal const value for Global.
 	PriviledegeObjectTypeGlobal PriviledgeObjectType = PriviledgeObjectType(common.ObjectType_Global)
 )
+
+type OperatePrivilegeOpt struct {
+	Base     *common.MsgBase
+	Database string
+}
+
+type OperatePrivilegeOption func(o *OperatePrivilegeOpt)
+
+func WithOperatePrivilegeBase(base *common.MsgBase) OperatePrivilegeOption {
+	return func(o *OperatePrivilegeOpt) {
+		o.Base = base
+	}
+}
+
+func WithOperatePrivilegeDatabase(database string) OperatePrivilegeOption {
+	return func(o *OperatePrivilegeOpt) {
+		o.Database = database
+	}
+}

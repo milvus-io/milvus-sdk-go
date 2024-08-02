@@ -629,7 +629,8 @@ func (s *RBACSuite) TestGrant() {
 	roleName := "testRole"
 	objectName := testCollectionName
 	objectType := entity.PriviledegeObjectTypeCollection
-	privilegeName := "testPrivilege"
+	dbName := "testDB"
+	privilege := "testPrivilege"
 
 	s.Run("normal run", func() {
 		ctx, cancel := context.WithCancel(ctx)
@@ -640,9 +641,11 @@ func (s *RBACSuite) TestGrant() {
 			s.Equal(objectName, req.GetEntity().GetObjectName())
 			s.Equal(commonpb.ObjectType_name[int32(objectType)], req.GetEntity().GetObject().GetName())
 			s.Equal(milvuspb.OperatePrivilegeType_Grant, req.GetType())
+			s.Equal(privilege, req.GetEntity().GetGrantor().GetPrivilege().GetName())
+			s.Equal(dbName, req.GetEntity().GetDbName())
 		}).Return(&commonpb.Status{ErrorCode: commonpb.ErrorCode_Success}, nil)
 
-		err := s.client.Grant(ctx, roleName, objectType, objectName, privilegeName)
+		err := s.client.Grant(ctx, roleName, objectType, objectName, privilege, entity.WithOperatePrivilegeDatabase(dbName))
 
 		s.NoError(err)
 	})
@@ -653,7 +656,7 @@ func (s *RBACSuite) TestGrant() {
 		defer s.resetMock()
 		s.mock.EXPECT().OperatePrivilege(mock.Anything, mock.Anything).Return(nil, errors.New("mock error"))
 
-		err := s.client.Grant(ctx, roleName, objectType, objectName, privilegeName)
+		err := s.client.Grant(ctx, roleName, objectType, objectName, privilege, entity.WithOperatePrivilegeDatabase(dbName))
 		s.Error(err)
 	})
 
@@ -663,7 +666,7 @@ func (s *RBACSuite) TestGrant() {
 		defer s.resetMock()
 		s.mock.EXPECT().OperatePrivilege(mock.Anything, mock.Anything).Return(&commonpb.Status{ErrorCode: commonpb.ErrorCode_UnexpectedError}, nil)
 
-		err := s.client.Grant(ctx, roleName, objectType, objectName, privilegeName)
+		err := s.client.Grant(ctx, roleName, objectType, objectName, privilege, entity.WithOperatePrivilegeDatabase(dbName))
 		s.Error(err)
 	})
 
@@ -672,7 +675,7 @@ func (s *RBACSuite) TestGrant() {
 		defer cancel()
 
 		c := &GrpcClient{}
-		err := c.Grant(ctx, roleName, objectType, objectName, privilegeName)
+		err := c.Grant(ctx, roleName, objectType, objectName, privilege, entity.WithOperatePrivilegeDatabase(dbName))
 		s.Error(err)
 		s.ErrorIs(err, ErrClientNotReady)
 	})
@@ -684,6 +687,8 @@ func (s *RBACSuite) TestRevoke() {
 	roleName := "testRole"
 	objectName := testCollectionName
 	objectType := entity.PriviledegeObjectTypeCollection
+	dbName := "testDB"
+	privilege := "testPrivilege"
 
 	s.Run("normal run", func() {
 		ctx, cancel := context.WithCancel(ctx)
@@ -694,9 +699,11 @@ func (s *RBACSuite) TestRevoke() {
 			s.Equal(objectName, req.GetEntity().GetObjectName())
 			s.Equal(commonpb.ObjectType_name[int32(objectType)], req.GetEntity().GetObject().GetName())
 			s.Equal(milvuspb.OperatePrivilegeType_Revoke, req.GetType())
+			s.Equal(privilege, req.GetEntity().GetGrantor().GetPrivilege().GetName())
+			s.Equal(dbName, req.GetEntity().GetDbName())
 		}).Return(&commonpb.Status{ErrorCode: commonpb.ErrorCode_Success}, nil)
 
-		err := s.client.Revoke(ctx, roleName, objectType, objectName)
+		err := s.client.Revoke(ctx, roleName, objectType, objectName, privilege, entity.WithOperatePrivilegeDatabase(dbName))
 
 		s.NoError(err)
 	})
@@ -707,7 +714,7 @@ func (s *RBACSuite) TestRevoke() {
 		defer s.resetMock()
 		s.mock.EXPECT().OperatePrivilege(mock.Anything, mock.Anything).Return(nil, errors.New("mock error"))
 
-		err := s.client.Revoke(ctx, roleName, objectType, objectName)
+		err := s.client.Revoke(ctx, roleName, objectType, objectName, privilege, entity.WithOperatePrivilegeDatabase(dbName))
 		s.Error(err)
 	})
 
@@ -717,7 +724,7 @@ func (s *RBACSuite) TestRevoke() {
 		defer s.resetMock()
 		s.mock.EXPECT().OperatePrivilege(mock.Anything, mock.Anything).Return(&commonpb.Status{ErrorCode: commonpb.ErrorCode_UnexpectedError}, nil)
 
-		err := s.client.Revoke(ctx, roleName, objectType, objectName)
+		err := s.client.Revoke(ctx, roleName, objectType, objectName, privilege, entity.WithOperatePrivilegeDatabase(dbName))
 		s.Error(err)
 	})
 
@@ -727,7 +734,7 @@ func (s *RBACSuite) TestRevoke() {
 		defer s.resetMock()
 
 		c := &GrpcClient{}
-		err := c.Revoke(ctx, roleName, objectType, objectName)
+		err := c.Revoke(ctx, roleName, objectType, objectName, privilege, entity.WithOperatePrivilegeDatabase(dbName))
 		s.Error(err)
 		s.ErrorIs(err, ErrClientNotReady)
 	})
