@@ -320,7 +320,7 @@ func (c *GrpcClient) ListGrant(ctx context.Context, role string, object string, 
 }
 
 // Grant adds object privileged for role.
-func (c *GrpcClient) Grant(ctx context.Context, role string, objectType entity.PriviledgeObjectType, object string) error {
+func (c *GrpcClient) Grant(ctx context.Context, role string, objectType entity.PriviledgeObjectType, object string, privilege string) error {
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
@@ -332,6 +332,11 @@ func (c *GrpcClient) Grant(ctx context.Context, role string, objectType entity.P
 			},
 			Object: &milvuspb.ObjectEntity{
 				Name: commonpb.ObjectType_name[int32(objectType)],
+			},
+			Grantor: &milvuspb.GrantorEntity{
+				Privilege: &milvuspb.PrivilegeEntity{
+					Name: privilege,
+				},
 			},
 			ObjectName: object,
 		},
