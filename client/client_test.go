@@ -151,6 +151,7 @@ func TestGrpcClientNil(t *testing.T) {
 				m.Name == "UsingDatabase" || // skip use database
 				m.Name == "Search" || // type alias MetricType treated as string
 				m.Name == "QueryIterator" ||
+				m.Name == "SearchIterator" ||
 				m.Name == "HybridSearch" || // type alias MetricType treated as string
 				m.Name == "CalcDistance" ||
 				m.Name == "ManualCompaction" || // time.Duration hard to detect in reflect
