@@ -17,6 +17,33 @@ type SearchResult struct {
 	Err          error         // search error if any
 }
 
+func (sr *SearchResult) Slice(start, end int) *SearchResult {
+	id := end
+
+	result := &SearchResult{
+		IDs:    sr.IDs.Slice(start, end),
+		Fields: sr.Fields.Slice(start, end),
+
+		Err: sr.Err,
+	}
+	if sr.GroupByValue != nil {
+		result.GroupByValue = sr.GroupByValue.Slice(start, end)
+	}
+
+	result.ResultCount = result.IDs.Len()
+
+	l := len(sr.Scores)
+	if start > l {
+		start = l
+	}
+	if id > l || id < 0 {
+		id = l
+	}
+	result.Scores = sr.Scores[start:id]
+
+	return result
+}
+
 // ResultSet is an alias type for column slice.
 type ResultSet []entity.Column
 
