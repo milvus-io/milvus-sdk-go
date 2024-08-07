@@ -769,7 +769,6 @@ func TestQueryCountJsonDynamicExpr(t *testing.T) {
 
 // test query with all kinds of array expr
 func TestQueryArrayFieldExpr(t *testing.T) {
-	t.Skip("https://github.com/milvus-io/milvus/issues/34797")
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect
 	mc := createMilvusClient(ctx, t)

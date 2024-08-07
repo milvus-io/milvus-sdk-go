@@ -156,7 +156,6 @@ func TestCreateIndexDup(t *testing.T) {
 
 // test create scalar index on all scalar field
 func TestCreateScalarIndex(t *testing.T) {
-	t.Skip("https://github.com/milvus-io/milvus/issues/34795")
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	//connect
 	mc := createMilvusClient(ctx, t)
@@ -216,7 +215,6 @@ func TestCreateScalarIndex(t *testing.T) {
 
 // test create scalar index on loaded collection
 func TestCreateIndexOnLoadedCollection(t *testing.T) {
-	t.Skip("https://github.com/milvus-io/milvus/issues/34404")
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	//connect
 	mc := createMilvusClient(ctx, t)
@@ -265,6 +263,13 @@ func TestCreateIndexOnLoadedCollection(t *testing.T) {
 
 	err = mc.LoadCollection(ctx, collName, false)
 	common.CheckErr(t, err, true)
+
+	for _, field := range coll.Schema.Fields {
+		if supportScalarIndexFieldType(field.DataType) {
+			_, err := mc.DescribeIndex(ctx, collName, field.Name)
+			common.CheckErr(t, err, true, "")
+		}
+	}
 }
 
 // Trie scalar index only supported on varchar
@@ -396,7 +401,6 @@ func TestCreateInvertedScalarIndex(t *testing.T) {
 
 // create Bitmap index for all scalar fields
 func TestCreateBitmapScalarIndex(t *testing.T) {
-	t.Skip("https://github.com/milvus-io/milvus/issues/34795")
 	ctx := createContext(t, time.Second*common.DefaultTimeout*2)
 	// connect
 	mc := createMilvusClient(ctx, t)
@@ -641,7 +645,6 @@ func TestCreateInvertedIndexArrayField(t *testing.T) {
 }
 
 func TestCreateBitmapIndexOnArrayField(t *testing.T) {
-	t.Skip("https://github.com/milvus-io/milvus/issues/34797")
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect
 	mc := createMilvusClient(ctx, t)
@@ -857,7 +860,6 @@ func TestCreateIndexWithoutIndexTypeParams(t *testing.T) {
 
 // test create default auto index on scalar fields, array and json -> error
 func TestCreateAutoIndexScalarFields(t *testing.T) {
-	t.Skip("https://github.com/milvus-io/milvus/issues/34795")
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	//connect
 	mc := createMilvusClient(ctx, t)
