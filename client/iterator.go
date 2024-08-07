@@ -10,39 +10,194 @@ import (
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )
 
-func NewQueryIteratorOption(collectionName string) *QueryIteratorOption {
-	return &QueryIteratorOption{
-		collectionName: collectionName,
-		batchSize:      1000,
+func (c *GrpcClient) SearchIterator(ctx context.Context, opt *SearchIteratorOption) (*SearchIterator, error) {
+	collectionName := opt.collectionName
+	var sch *entity.Schema
+	collInfo, ok := MetaCache.getCollectionInfo(collectionName)
+	if !ok {
+		coll, err := c.DescribeCollection(ctx, collectionName)
+		if err != nil {
+			return nil, err
+		}
+		sch = coll.Schema
+	} else {
+		sch = collInfo.Schema
 	}
+
+	var vectorField *entity.Field
+	for _, field := range sch.Fields {
+		if field.Name == opt.vectorField {
+			vectorField = field
+		}
+	}
+	if vectorField == nil {
+		return nil, errors.Newf("vector field %s not found", opt.vectorField)
+	}
+
+	itr := &SearchIterator{
+		client: c,
+
+		collectionName: opt.collectionName,
+		partitionNames: opt.partitionNames,
+		outputFields:   opt.outputFields,
+		sch:            sch,
+		pkField:        sch.PKField(),
+		vectorField:    vectorField,
+
+		searchParam: opt.searchParam,
+		vector:      opt.vector,
+		metricType:  opt.metricType,
+
+		batchSize: opt.batchSize,
+		expr:      opt.expr,
+	}
+
+	err := itr.init(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return itr, nil
 }
 
-type QueryIteratorOption struct {
+type SearchIterator struct {
+	// user provided expression
+	expr string
+
+	batchSize int
+
+	cached *SearchResult
+
 	collectionName string
 	partitionNames []string
-	expr           string
 	outputFields   []string
-	batchSize      int
+	sch            *entity.Schema
+	pkField        *entity.Field
+	vectorField    *entity.Field
+
+	searchParam entity.SearchParam
+	vector      entity.Vector
+	metricType  entity.MetricType
+
+	lastPKs      []interface{}
+	lastDistance float32
+
+	// internal grpc client
+	client *GrpcClient
 }
 
-func (opt *QueryIteratorOption) WithPartitions(partitionNames ...string) *QueryIteratorOption {
-	opt.partitionNames = partitionNames
-	return opt
+func (itr SearchIterator) init(ctx context.Context) error {
+	if itr.batchSize <= 0 {
+		return errors.New("batch size cannot less than 1")
+	}
+
+	rs, err := itr.fetchNextBatch(ctx)
+	if err != nil {
+		return err
+	}
+	itr.cached = rs
+	return nil
 }
 
-func (opt *QueryIteratorOption) WithExpr(expr string) *QueryIteratorOption {
-	opt.expr = expr
-	return opt
+func (itr *SearchIterator) composeIteratorExpr() string {
+	if len(itr.lastPKs) == 0 {
+		return itr.expr
+	}
+
+	expr := strings.TrimSpace(itr.expr)
+
+	switch itr.pkField.DataType {
+	case entity.FieldTypeInt64:
+		values := make([]string, 0, len(itr.lastPKs))
+		for _, pk := range itr.lastPKs {
+			values = append(values, fmt.Sprintf("%v", pk))
+		}
+		if len(expr) == 0 {
+			expr = fmt.Sprintf("%s not in [%s]", itr.pkField.Name, strings.Join(values, ","))
+		} else {
+			expr = fmt.Sprintf("(%s) and %s not in [%s]", expr, itr.pkField.Name, strings.Join(values, ","))
+		}
+	case entity.FieldTypeVarChar:
+		values := make([]string, 0, len(itr.lastPKs))
+		for _, pk := range itr.lastPKs {
+			values = append(values, fmt.Sprintf("\"%v\"", pk))
+		}
+		if len(expr) == 0 {
+			expr = fmt.Sprintf("%s not in [%s]", itr.pkField.Name, strings.Join(values, ","))
+		} else {
+			expr = fmt.Sprintf("(%s) and %s not in [%s]", expr, itr.pkField.Name, strings.Join(values, ","))
+		}
+	default:
+		return itr.expr
+	}
+	return expr
 }
 
-func (opt *QueryIteratorOption) WithOutputFields(outputFields ...string) *QueryIteratorOption {
-	opt.outputFields = outputFields
-	return opt
+func (itr *SearchIterator) fetchNextBatch(ctx context.Context) (*SearchResult, error) {
+	rss, err := itr.client.Search(ctx, itr.collectionName, itr.partitionNames, itr.composeIteratorExpr(), itr.outputFields, []entity.Vector{itr.vector}, itr.vectorField.Name, itr.metricType, itr.batchSize, itr.searchParam)
+	if err != nil {
+		return nil, err
+	}
+	return &rss[0], nil
 }
 
-func (opt *QueryIteratorOption) WithBatchSize(batchSize int) *QueryIteratorOption {
-	opt.batchSize = batchSize
-	return opt
+func (itr *SearchIterator) cachedSufficient() bool {
+	return itr.cached != nil && itr.cached.IDs.Len() >= itr.batchSize
+}
+
+func (itr *SearchIterator) cacheNextBatch(rs *SearchResult) (*SearchResult, error) {
+	result := rs.Slice(0, itr.batchSize)
+	itr.cached = rs.Slice(itr.batchSize, -1)
+
+	if result.IDs.Len() == 0 {
+		return nil, io.EOF
+	}
+	nextRangeFilter := result.Scores[len(result.Scores)-1]
+	// setup last score
+	itr.lastDistance = nextRangeFilter
+	if nextRangeFilter != itr.lastDistance {
+		itr.lastPKs = nil
+	}
+	pk, err := result.IDs.Get(len(result.Scores) - 1)
+	if err != nil {
+		return nil, err
+	}
+	itr.lastPKs = append(itr.lastPKs, pk)
+	for i := len(result.Scores) - 2; i >= 0; i-- {
+		if result.Scores[i] != nextRangeFilter {
+			break
+		}
+		pk, err := result.IDs.Get(i)
+		if err != nil {
+			return nil, err
+		}
+		itr.lastPKs = append(itr.lastPKs, pk)
+	}
+
+	itr.searchParam.AddRangeFilter(float64(itr.lastDistance))
+
+	return result, nil
+}
+
+func (itr *SearchIterator) Next(ctx context.Context) (*SearchResult, error) {
+	var rs *SearchResult
+	var err error
+
+	// check cache sufficient for next batch
+	if !itr.cachedSufficient() {
+		rs, err = itr.fetchNextBatch(ctx)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		rs = itr.cached
+	}
+
+	// if resultset is empty, return EOF
+	if rs.IDs.Len() == 0 {
+		return nil, io.EOF
+	}
+
+	return itr.cacheNextBatch(rs)
 }
 
 func (c *GrpcClient) QueryIterator(ctx context.Context, opt *QueryIteratorOption) (*QueryIterator, error) {
