@@ -25,6 +25,7 @@ type SparseEmbedding interface {
 	Dim() int // the dimension
 	Len() int // the actual items in this vector
 	Get(idx int) (pos uint32, value float32, ok bool)
+	Map() map[uint32]float32
 	Serialize() []byte
 	FieldType() FieldType
 }
@@ -66,6 +67,15 @@ func (e sliceSparseEmbedding) Serialize() []byte {
 		binary.LittleEndian.PutUint32(row[idx*8+4:], math.Float32bits(value))
 	}
 	return row
+}
+
+// Return sparse embedding as map
+func (e sliceSparseEmbedding) Map() map[uint32]float32 {
+	result := make(map[uint32]float32, 0)
+	for i := 0; i < e.len; i++ {
+		result[e.positions[i]] = e.values[i]
+	}
+	return result
 }
 
 // Less implements sort.Interce
@@ -164,6 +174,10 @@ func (c *ColumnSparseFloatVector) Get(idx int) (interface{}, error) {
 		return nil, errors.New("index out of range")
 	}
 	return c.vectors[idx], nil
+}
+
+func (c *ColumnSparseFloatVector) GetAsSparseFloatVector(idx int) (SparseEmbedding, error) {
+	return c.ValueByIdx(idx)
 }
 
 // ValueByIdx returns value of the provided index
