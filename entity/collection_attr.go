@@ -24,7 +24,7 @@ const (
 	// cakAutoCompaction const for collection attribute key autom compaction enabled.
 	cakAutoCompaction       = `collection.autocompaction.enabled`
 	akMmap                  = "mmap.enabled"
-	databaseReplica         = "database.replica"
+	databaseReplica         = "database.replica.number"
 	databaseResourceGroups  = "database.resource_groups"
 	caPartitionKeyIsolation = "partitionkey.isolation"
 )
