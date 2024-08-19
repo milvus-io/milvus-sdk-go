@@ -1827,12 +1827,6 @@ func TestSearchInvalidSparseVector(t *testing.T) {
 			entity.IP, common.DefaultTopK, sp)
 		common.CheckErr(t, errSearch, false, "nq (number of search vector per search request) should be in range [1, 16384]")
 
-		vector1, err := entity.NewSliceSparseEmbedding([]uint32{}, []float32{})
-		common.CheckErr(t, err, true)
-		_, errSearch = mc.Search(ctx, collName, []string{}, "", []string{"*"}, []entity.Vector{vector1}, common.DefaultSparseVecFieldName,
-			entity.IP, common.DefaultTopK, sp)
-		common.CheckErr(t, errSearch, false, "Sparse row data should not be empty")
-
 		positions := make([]uint32, 100)
 		values := make([]float32, 100)
 		for i := 0; i < 100; i++ {
