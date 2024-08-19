@@ -134,6 +134,10 @@ func (c *ColumnJSONBytes) WithIsDynamic(isDynamic bool) *ColumnJSONBytes {
 	return c
 }
 
+func (c *ColumnJSONBytes) IsDynamic() bool {
+	return c.isDynamic
+}
+
 // NewColumnJSONBytes composes a Column with json bytes.
 func NewColumnJSONBytes(name string, values [][]byte) *ColumnJSONBytes {
 	return &ColumnJSONBytes{
