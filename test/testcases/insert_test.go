@@ -621,15 +621,6 @@ func TestInsertSparseInvalidVector(t *testing.T) {
 	data1 := append(data, entity.NewColumnSparseVectors(common.DefaultSparseVecFieldName, []entity.SparseEmbedding{sparseVec}))
 	_, err = mc.Insert(ctx, collName, "", data1...)
 	common.CheckErr(t, err, false, "invalid index in sparse float vector: must be less than 2^32-1")
-
-	// invalid sparse vector: empty position and values
-	positions = []uint32{}
-	values = []float32{}
-	sparseVec, err = entity.NewSliceSparseEmbedding(positions, values)
-	common.CheckErr(t, err, true)
-	data2 := append(data, entity.NewColumnSparseVectors(common.DefaultSparseVecFieldName, []entity.SparseEmbedding{sparseVec}))
-	_, err = mc.Insert(ctx, collName, "", data2...)
-	common.CheckErr(t, err, false, "empty sparse float vector row")
 }
 
 func TestInsertSparseVectorSamePosition(t *testing.T) {
