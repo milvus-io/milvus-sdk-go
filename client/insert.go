@@ -103,17 +103,17 @@ func (c *GrpcClient) processInsertColumns(colSchema *entity.Schema, columns ...e
 			}
 		}
 
-		// check if explictly passing dynamic json column
+		// check if explicitly passing dynamic json column
 		if column.Type() == entity.FieldTypeJSON {
 			jsonColumn, ok := column.(*entity.ColumnJSONBytes)
 			if ok && jsonColumn.IsDynamic() {
 				// schema not match
 				if !isDynamic {
-					return nil, 0, fmt.Errorf("collection %s is not dynamic but insert data contains explict dynamic json field %s", colSchema.CollectionName, column.Name())
+					return nil, 0, fmt.Errorf("collection %s is not dynamic but insert data contains explicit dynamic json field %s", colSchema.CollectionName, column.Name())
 				}
 				// multiple dynamic column
 				if hasExplictDynamicColumn {
-					return nil, 0, fmt.Errorf("multiple explict dynamic json column found")
+					return nil, 0, fmt.Errorf("multiple explicit dynamic json column found")
 				}
 				hasExplictDynamicColumn = true
 				expDynColumn = column
@@ -164,7 +164,7 @@ func (c *GrpcClient) processInsertColumns(colSchema *entity.Schema, columns ...e
 	}
 	if len(dynamicColumns) > 0 {
 		if hasExplictDynamicColumn {
-			return nil, 0, fmt.Errorf("dynamic fields & explict dynamic column cannot be inserted at same time")
+			return nil, 0, fmt.Errorf("dynamic fields & explicit dynamic column cannot be inserted at same time")
 		}
 		// use empty column name here
 		col, err := c.mergeDynamicColumns("", rowSize, dynamicColumns)
