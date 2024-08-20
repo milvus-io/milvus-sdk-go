@@ -13,6 +13,7 @@ package client
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/cockroachdb/errors"
 
@@ -266,6 +267,24 @@ func IsBackup() BulkInsertOption {
 	return func(req *milvuspb.ImportRequest) {
 		optionMap := entity.KvPairsMap(req.GetOptions())
 		optionMap["backup"] = "true"
+		req.Options = entity.MapKvPairs(optionMap)
+	}
+}
+
+// IsL0 specifies it is to import L0 segment binlog
+func IsL0(isL0 bool) BulkInsertOption {
+	return func(req *milvuspb.ImportRequest) {
+		optionMap := entity.KvPairsMap(req.GetOptions())
+		optionMap["l0_import"] = strconv.FormatBool(isL0)
+		req.Options = entity.MapKvPairs(optionMap)
+	}
+}
+
+// SkipDiskQuotaCheck https://github.com/milvus-io/milvus/pull/35274
+func SkipDiskQuotaCheck(skipDiskQuotaCheck bool) BulkInsertOption {
+	return func(req *milvuspb.ImportRequest) {
+		optionMap := entity.KvPairsMap(req.GetOptions())
+		optionMap["skip_disk_quota_check"] = strconv.FormatBool(skipDiskQuotaCheck)
 		req.Options = entity.MapKvPairs(optionMap)
 	}
 }
