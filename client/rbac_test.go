@@ -7,6 +7,7 @@ import (
 	"github.com/cockroachdb/errors"
 
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
+	"github.com/milvus-io/milvus-sdk-go/v2/merr"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/stretchr/testify/mock"
@@ -735,6 +736,166 @@ func (s *RBACSuite) TestRevoke() {
 
 		c := &GrpcClient{}
 		err := c.Revoke(ctx, roleName, objectType, objectName, privilege, entity.WithOperatePrivilegeDatabase(dbName))
+		s.Error(err)
+		s.ErrorIs(err, ErrClientNotReady)
+	})
+}
+
+func (s *RBACSuite) TestBackup() {
+	ctx := context.Background()
+
+	s.Run("normal run", func() {
+		ctx, cancel := context.WithCancel(ctx)
+		defer cancel()
+		defer s.resetMock()
+		s.mock.EXPECT().BackupRBAC(mock.Anything, mock.Anything).Run(func(_ context.Context, _ *milvuspb.BackupRBACMetaRequest) {
+		}).Return(&milvuspb.BackupRBACMetaResponse{
+			Status: merr.Success(),
+			RBACMeta: &milvuspb.RBACMeta{
+				Users: []*milvuspb.UserInfo{
+					{
+						User:     "user1",
+						Password: "passwd",
+						Roles: []*milvuspb.RoleEntity{
+							{Name: "role1"},
+						},
+					},
+				},
+				Roles: []*milvuspb.RoleEntity{
+					{Name: "role1"},
+				},
+				Grants: []*milvuspb.GrantEntity{
+					{
+						Object: &milvuspb.ObjectEntity{
+							Name: "testObject",
+						},
+						ObjectName: "testObjectName",
+						Role: &milvuspb.RoleEntity{
+							Name: "testRole",
+						},
+						Grantor: &milvuspb.GrantorEntity{
+							User: &milvuspb.UserEntity{
+								Name: "grantorUser",
+							},
+							Privilege: &milvuspb.PrivilegeEntity{
+								Name: "testPrivilege",
+							},
+						},
+						DbName: "testDB",
+					},
+				},
+			},
+		}, nil)
+
+		meta, err := s.client.BackupRBAC(ctx)
+		s.NoError(err)
+		s.Len(meta.Users, 1)
+		s.Len(meta.Roles, 1)
+		s.Len(meta.RoleGrants, 1)
+	})
+
+	s.Run("rpc error", func() {
+		ctx, cancel := context.WithCancel(ctx)
+		defer cancel()
+		defer s.resetMock()
+		s.mock.EXPECT().BackupRBAC(mock.Anything, mock.Anything).Return(nil, errors.New("mock error"))
+
+		_, err := s.client.BackupRBAC(ctx)
+		s.Error(err)
+	})
+
+	s.Run("status error", func() {
+		ctx, cancel := context.WithCancel(ctx)
+		defer cancel()
+		defer s.resetMock()
+		s.mock.EXPECT().BackupRBAC(mock.Anything, mock.Anything).Return(&milvuspb.BackupRBACMetaResponse{
+			Status: &commonpb.Status{ErrorCode: commonpb.ErrorCode_UnexpectedError},
+		}, nil)
+
+		_, err := s.client.BackupRBAC(ctx)
+		s.Error(err)
+	})
+
+	s.Run("service not ready", func() {
+		ctx, cancel := context.WithCancel(ctx)
+		defer cancel()
+		defer s.resetMock()
+
+		c := &GrpcClient{}
+		_, err := c.BackupRBAC(ctx)
+		s.Error(err)
+		s.ErrorIs(err, ErrClientNotReady)
+	})
+}
+
+func (s *RBACSuite) TestRestore() {
+	ctx := context.Background()
+
+	s.Run("normal run", func() {
+		ctx, cancel := context.WithCancel(ctx)
+		defer cancel()
+		defer s.resetMock()
+
+		s.mock.EXPECT().RestoreRBAC(mock.Anything, mock.Anything).Run(func(_ context.Context, req *milvuspb.RestoreRBACMetaRequest) {
+			s.Len(req.RBACMeta.Users, 1)
+			s.Len(req.RBACMeta.Roles, 1)
+			s.Len(req.RBACMeta.Grants, 1)
+		}).Return(merr.Success(), nil)
+
+		err := s.client.RestoreRBAC(ctx, &entity.RBACMeta{
+			Users: []*entity.UserInfo{
+				{
+					UserDescription: entity.UserDescription{
+						Name:  "user1",
+						Roles: []string{"role1"},
+					},
+					Password: "passwd",
+				},
+			},
+			Roles: []*entity.Role{
+				{Name: "role1"},
+			},
+			RoleGrants: []*entity.RoleGrants{
+				{
+					Object:        "testObject",
+					ObjectName:    "testObjectName",
+					RoleName:      "testRole",
+					GrantorName:   "grantorUser",
+					PrivilegeName: "testPrivilege",
+					DbName:        "testDB",
+				},
+			},
+		})
+		s.NoError(err)
+	})
+
+	s.Run("rpc error", func() {
+		ctx, cancel := context.WithCancel(ctx)
+		defer cancel()
+		defer s.resetMock()
+		s.mock.EXPECT().RestoreRBAC(mock.Anything, mock.Anything).Return(nil, errors.New("mock error"))
+
+		err := s.client.RestoreRBAC(ctx, &entity.RBACMeta{})
+		s.Error(err)
+	})
+
+	s.Run("status error", func() {
+		ctx, cancel := context.WithCancel(ctx)
+		defer cancel()
+		defer s.resetMock()
+		s.mock.EXPECT().RestoreRBAC(mock.Anything, mock.Anything).Return(&commonpb.Status{ErrorCode: commonpb.ErrorCode_UnexpectedError}, nil)
+
+		err := s.client.RestoreRBAC(ctx, &entity.RBACMeta{})
+		s.Error(err)
+	})
+
+	s.Run("service not ready", func() {
+		ctx, cancel := context.WithCancel(ctx)
+		defer cancel()
+		defer s.resetMock()
+
+		c := &GrpcClient{}
+		err := c.RestoreRBAC(ctx, &entity.RBACMeta{})
 		s.Error(err)
 		s.ErrorIs(err, ErrClientNotReady)
 	})

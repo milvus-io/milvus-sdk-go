@@ -82,6 +82,10 @@ type Client interface {
 	// GetReplicas gets the replica groups as well as their querynodes and shards information
 	GetReplicas(ctx context.Context, collName string) ([]*entity.ReplicaGroup, error)
 
+	// BackupRBAC back up rbac meta info, include user/role/grants
+	BackupRBAC(ctx context.Context) (*entity.RBACMeta, error)
+	RestoreRBAC(ctx context.Context, meta *entity.RBACMeta) error
+
 	// -- authentication --
 
 	// CreateCredential create new user and password
