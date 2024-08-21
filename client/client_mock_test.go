@@ -307,6 +307,8 @@ const (
 	MDescribeDatabase ServiceMethod = 1004
 
 	MReplicateMessage ServiceMethod = 1100
+	MBackupRBAC       ServiceMethod = 1101
+	MRestoreRBAC      ServiceMethod = 1102
 )
 
 // injection function definition
@@ -1054,4 +1056,23 @@ func (m *MockServer) HybridSearch(ctx context.Context, req *milvuspb.HybridSearc
 
 func (m *MockServer) UpdateResourceGroups(_ context.Context, _ *milvuspb.UpdateResourceGroupsRequest) (*commonpb.Status, error) {
 	return nil, errors.New("not implemented")
+}
+
+func (m *MockServer) BackupRBAC(ctx context.Context, req *milvuspb.BackupRBACMetaRequest) (*milvuspb.BackupRBACMetaResponse, error) {
+	f := m.GetInjection(MBackupRBAC)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*milvuspb.BackupRBACMetaResponse), err
+	}
+	s, err := SuccessStatus()
+	return &milvuspb.BackupRBACMetaResponse{Status: s}, err
+}
+
+func (m *MockServer) RestoreRBAC(ctx context.Context, req *milvuspb.RestoreRBACMetaRequest) (*commonpb.Status, error) {
+	f := m.GetInjection(MRestoreRBAC)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*commonpb.Status), err
+	}
+	return SuccessStatus()
 }

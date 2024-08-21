@@ -61,3 +61,14 @@ func WithOperatePrivilegeDatabase(database string) OperatePrivilegeOption {
 		o.Database = database
 	}
 }
+
+type UserInfo struct {
+	UserDescription
+	Password string
+}
+
+type RBACMeta struct {
+	Users      []*UserInfo
+	Roles      []*Role
+	RoleGrants []*RoleGrants
+}

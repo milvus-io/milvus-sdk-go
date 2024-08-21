@@ -18,6 +18,7 @@ package client
 
 import (
 	"context"
+	"errors"
 
 	"github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
 	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
@@ -163,7 +164,6 @@ func (c *GrpcClient) DescribeUser(ctx context.Context, username string) (entity.
 	}
 
 	resp, err := c.Service.SelectUser(ctx, req)
-
 	if err != nil {
 		return entity.UserDescription{}, err
 	}
@@ -198,7 +198,6 @@ func (c *GrpcClient) DescribeUsers(ctx context.Context) ([]entity.UserDescriptio
 	}
 
 	resp, err := c.Service.SelectUser(ctx, req)
-
 	if err != nil {
 		return nil, err
 	}
@@ -240,7 +239,6 @@ func (c *GrpcClient) ListGrants(ctx context.Context, role string, dbName string)
 	}
 
 	resp, err := c.Service.SelectGrant(ctx, req)
-
 	if err != nil {
 		return RoleGrantsList, err
 	}
@@ -290,7 +288,6 @@ func (c *GrpcClient) ListGrant(ctx context.Context, role string, object string, 
 	}
 
 	resp, err := c.Service.SelectGrant(ctx, req)
-
 	if err != nil {
 		return RoleGrantsList, err
 	}
@@ -389,6 +386,135 @@ func (c *GrpcClient) Revoke(ctx context.Context, role string, objectType entity.
 	}
 
 	resp, err := c.Service.OperatePrivilege(ctx, req)
+	if err != nil {
+		return err
+	}
+
+	return handleRespStatus(resp)
+}
+
+func (c *GrpcClient) BackupRBAC(ctx context.Context) (*entity.RBACMeta, error) {
+	if c.Service == nil {
+		return nil, ErrClientNotReady
+	}
+
+	req := &milvuspb.BackupRBACMetaRequest{}
+
+	resp, err := c.Service.BackupRBAC(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	if err = handleRespStatus(resp.GetStatus()); err != nil {
+		return nil, err
+	}
+
+	meta := resp.GetRBACMeta()
+	users := make([]*entity.UserInfo, 0, len(meta.GetUsers()))
+	for _, user := range meta.GetUsers() {
+		roles := make([]string, 0, len(user.GetRoles()))
+		for _, role := range user.GetRoles() {
+			roles = append(roles, role.GetName())
+		}
+
+		users = append(users, &entity.UserInfo{
+			UserDescription: entity.UserDescription{
+				Name:  user.GetUser(),
+				Roles: roles,
+			},
+			Password: user.GetPassword(),
+		})
+	}
+
+	roles := []*entity.Role{}
+	for _, role := range meta.GetRoles() {
+		roles = append(roles, &entity.Role{
+			Name: role.GetName(),
+		})
+	}
+
+	roleGrants := []*entity.RoleGrants{}
+	for _, grant := range meta.GetGrants() {
+		roleGrant := &entity.RoleGrants{
+			Object:        grant.GetObject().GetName(),
+			ObjectName:    grant.GetObjectName(),
+			RoleName:      grant.GetRole().GetName(),
+			GrantorName:   grant.GetGrantor().GetUser().GetName(),
+			PrivilegeName: grant.GetGrantor().GetPrivilege().GetName(),
+			DbName:        grant.GetDbName(),
+		}
+
+		roleGrants = append(roleGrants, roleGrant)
+	}
+
+	return &entity.RBACMeta{
+		Users:      users,
+		Roles:      roles,
+		RoleGrants: roleGrants,
+	}, nil
+}
+
+func (c *GrpcClient) RestoreRBAC(ctx context.Context, meta *entity.RBACMeta) error {
+	if c.Service == nil {
+		return ErrClientNotReady
+	}
+
+	if meta == nil {
+		return errors.New("failed to restore rbac meta, meta is nil")
+	}
+
+	users := make([]*milvuspb.UserInfo, 0, len(meta.Users))
+	for _, user := range meta.Users {
+		roles := make([]*milvuspb.RoleEntity, 0, len(user.Roles))
+		for _, role := range meta.Roles {
+			roles = append(roles, &milvuspb.RoleEntity{
+				Name: role.Name,
+			})
+		}
+		users = append(users, &milvuspb.UserInfo{
+			User:     user.Name,
+			Password: user.Password,
+			Roles:    roles,
+		})
+	}
+
+	roles := make([]*milvuspb.RoleEntity, 0, len(meta.Roles))
+	for _, role := range meta.Roles {
+		roles = append(roles, &milvuspb.RoleEntity{
+			Name: role.Name,
+		})
+	}
+
+	grants := make([]*milvuspb.GrantEntity, 0, len(meta.RoleGrants))
+	for _, grant := range meta.RoleGrants {
+		grants = append(grants, &milvuspb.GrantEntity{
+			Role: &milvuspb.RoleEntity{
+				Name: grant.RoleName,
+			},
+			Object: &milvuspb.ObjectEntity{
+				Name: grant.Object,
+			},
+			ObjectName: grant.ObjectName,
+			Grantor: &milvuspb.GrantorEntity{
+				User: &milvuspb.UserEntity{
+					Name: grant.GrantorName,
+				},
+				Privilege: &milvuspb.PrivilegeEntity{
+					Name: grant.PrivilegeName,
+				},
+			},
+			DbName: grant.DbName,
+		})
+	}
+
+	req := &milvuspb.RestoreRBACMetaRequest{
+		RBACMeta: &milvuspb.RBACMeta{
+			Users:  users,
+			Roles:  roles,
+			Grants: grants,
+		},
+	}
+
+	resp, err := c.Service.RestoreRBAC(ctx, req)
 	if err != nil {
 		return err
 	}
