@@ -58,6 +58,9 @@ func TestLoadCollectionWithReplicaNumber(t *testing.T) {
 }
 
 func TestMakeSearchQueryOption(t *testing.T) {
+	cli := &GrpcClient{
+		cache: newMetaCache(),
+	}
 	c := &entity.Collection{
 		Name:             "999",
 		ConsistencyLevel: entity.ClStrong,
@@ -67,10 +70,10 @@ func TestMakeSearchQueryOption(t *testing.T) {
 		Name:             c.Name,
 		ConsistencyLevel: c.ConsistencyLevel,
 	}
-	MetaCache.setCollectionInfo(c.Name, &cInfo)
+	cli.cache.setCollectionInfo(c.Name, &cInfo)
 
 	t.Run("strong consistency", func(t *testing.T) {
-		opt, err := makeSearchQueryOption(c.Name)
+		opt, err := cli.makeSearchQueryOption(c.Name)
 		assert.Nil(t, err)
 		assert.NotNil(t, opt)
 		expected := &SearchQueryOption{
@@ -83,7 +86,7 @@ func TestMakeSearchQueryOption(t *testing.T) {
 	})
 
 	t.Run("ignore growing", func(t *testing.T) {
-		opt, err := makeSearchQueryOption(c.Name, WithIgnoreGrowing())
+		opt, err := cli.makeSearchQueryOption(c.Name, WithIgnoreGrowing())
 		assert.Nil(t, err)
 		assert.NotNil(t, opt)
 		expected := &SearchQueryOption{
@@ -96,7 +99,7 @@ func TestMakeSearchQueryOption(t *testing.T) {
 	})
 
 	t.Run("for tuning", func(t *testing.T) {
-		opt, err := makeSearchQueryOption(c.Name, WithForTuning())
+		opt, err := cli.makeSearchQueryOption(c.Name, WithForTuning())
 		assert.Nil(t, err)
 		assert.NotNil(t, opt)
 		expected := &SearchQueryOption{
@@ -109,7 +112,7 @@ func TestMakeSearchQueryOption(t *testing.T) {
 	})
 
 	t.Run("session consistency", func(t *testing.T) {
-		opt, err := makeSearchQueryOption(c.Name, WithSearchQueryConsistencyLevel(entity.ClSession))
+		opt, err := cli.makeSearchQueryOption(c.Name, WithSearchQueryConsistencyLevel(entity.ClSession))
 		assert.Nil(t, err)
 		assert.NotNil(t, opt)
 		expected := &SearchQueryOption{
@@ -120,8 +123,8 @@ func TestMakeSearchQueryOption(t *testing.T) {
 		}
 		assert.Equal(t, expected, opt)
 
-		MetaCache.setSessionTs(c.Name, 99)
-		opt, err = makeSearchQueryOption(c.Name, WithSearchQueryConsistencyLevel(entity.ClSession))
+		cli.cache.setSessionTs(c.Name, 99)
+		opt, err = cli.makeSearchQueryOption(c.Name, WithSearchQueryConsistencyLevel(entity.ClSession))
 		assert.Nil(t, err)
 		assert.NotNil(t, opt)
 		expected = &SearchQueryOption{
@@ -134,7 +137,7 @@ func TestMakeSearchQueryOption(t *testing.T) {
 	})
 
 	t.Run("bounded consistency", func(t *testing.T) {
-		opt, err := makeSearchQueryOption(c.Name, WithSearchQueryConsistencyLevel(entity.ClBounded))
+		opt, err := cli.makeSearchQueryOption(c.Name, WithSearchQueryConsistencyLevel(entity.ClBounded))
 		assert.Nil(t, err)
 		assert.NotNil(t, opt)
 		expected := &SearchQueryOption{
@@ -147,7 +150,7 @@ func TestMakeSearchQueryOption(t *testing.T) {
 	})
 
 	t.Run("eventually consistency", func(t *testing.T) {
-		opt, err := makeSearchQueryOption(c.Name, WithSearchQueryConsistencyLevel(entity.ClEventually))
+		opt, err := cli.makeSearchQueryOption(c.Name, WithSearchQueryConsistencyLevel(entity.ClEventually))
 		assert.Nil(t, err)
 		assert.NotNil(t, opt)
 		expected := &SearchQueryOption{
@@ -160,7 +163,7 @@ func TestMakeSearchQueryOption(t *testing.T) {
 	})
 
 	t.Run("customized consistency", func(t *testing.T) {
-		opt, err := makeSearchQueryOption(c.Name, WithSearchQueryConsistencyLevel(entity.ClCustomized), WithGuaranteeTimestamp(100))
+		opt, err := cli.makeSearchQueryOption(c.Name, WithSearchQueryConsistencyLevel(entity.ClCustomized), WithGuaranteeTimestamp(100))
 		assert.Nil(t, err)
 		assert.NotNil(t, opt)
 		expected := &SearchQueryOption{
@@ -173,7 +176,7 @@ func TestMakeSearchQueryOption(t *testing.T) {
 	})
 
 	t.Run("guarantee timestamp sanity check", func(t *testing.T) {
-		_, err := makeSearchQueryOption(c.Name, WithSearchQueryConsistencyLevel(entity.ClStrong), WithGuaranteeTimestamp(100))
+		_, err := cli.makeSearchQueryOption(c.Name, WithSearchQueryConsistencyLevel(entity.ClStrong), WithGuaranteeTimestamp(100))
 		assert.Error(t, err)
 	})
 }

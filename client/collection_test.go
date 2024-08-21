@@ -276,10 +276,8 @@ func (s *CollectionSuite) TestCreateCollection() {
 			WithField(entity.NewField().WithName("dynamic").WithDataType(entity.FieldTypeJSON).WithIsDynamic(true))
 		for _, tc := range cases {
 			s.Run(tc.tag, func() {
-				grpcClient, ok := c.(*GrpcClient)
-				s.Require().True(ok)
-				grpcClient.config.addFlags(tc.flag)
-				defer grpcClient.config.resetFlags(tc.flag)
+				c.config.addFlags(tc.flag)
+				defer c.config.resetFlags(tc.flag)
 
 				err := c.CreateCollection(ctx, sch, 1)
 				s.Error(err)

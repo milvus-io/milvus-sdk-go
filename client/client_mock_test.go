@@ -29,7 +29,7 @@ type MockSuiteBase struct {
 	svr  *grpc.Server
 	mock *mocks.MilvusServiceServer
 
-	client Client
+	client *GrpcClient
 }
 
 func (s *MockSuiteBase) SetupSuite() {
@@ -71,7 +71,9 @@ func (s *MockSuiteBase) SetupTest() {
 	s.Require().NoError(err)
 	s.setupConnect()
 
-	s.client = c
+	grpcClient, ok := c.(*GrpcClient)
+	s.Require().True(ok)
+	s.client = grpcClient
 }
 
 func (s *MockSuiteBase) TearDownTest() {
@@ -80,8 +82,9 @@ func (s *MockSuiteBase) TearDownTest() {
 }
 
 func (s *MockSuiteBase) resetMock() {
-	MetaCache.reset()
+	// MetaCache.reset()
 	if s.mock != nil {
+		s.client.cache.reset()
 		s.mock.Calls = nil
 		s.mock.ExpectedCalls = nil
 		s.setupConnect()

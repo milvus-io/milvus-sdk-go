@@ -43,18 +43,11 @@ func (c *GrpcClient) HybridSearch(ctx context.Context, collName string, partitio
 		return nil, ErrClientNotReady
 	}
 
-	var schema *entity.Schema
-	collInfo, ok := MetaCache.getCollectionInfo(collName)
-	if !ok {
-		coll, err := c.DescribeCollection(ctx, collName)
-		if err != nil {
-			return nil, err
-		}
-		schema = coll.Schema
-		collInfo, _ = MetaCache.getCollectionInfo(collName)
-	} else {
-		schema = collInfo.Schema
+	collInfo, err := c.getCollectionInfo(ctx, collName)
+	if err != nil {
+		return nil, err
 	}
+	schema := collInfo.Schema
 
 	sReqs := make([]*milvuspb.SearchRequest, 0, len(subRequests))
 	nq := 0
@@ -103,19 +96,13 @@ func (c *GrpcClient) Search(ctx context.Context, collName string, partitions []s
 	if c.Service == nil {
 		return []SearchResult{}, ErrClientNotReady
 	}
-	var schema *entity.Schema
-	collInfo, ok := MetaCache.getCollectionInfo(collName)
-	if !ok {
-		coll, err := c.DescribeCollection(ctx, collName)
-		if err != nil {
-			return nil, err
-		}
-		schema = coll.Schema
-	} else {
-		schema = collInfo.Schema
+	collInfo, err := c.getCollectionInfo(ctx, collName)
+	if err != nil {
+		return nil, err
 	}
+	schema := collInfo.Schema
 
-	option, err := makeSearchQueryOption(collName, opts...)
+	option, err := c.makeSearchQueryOption(collName, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -320,19 +307,13 @@ func (c *GrpcClient) Query(ctx context.Context, collectionName string, partition
 		return nil, ErrClientNotReady
 	}
 
-	var sch *entity.Schema
-	collInfo, ok := MetaCache.getCollectionInfo(collectionName)
-	if !ok {
-		coll, err := c.DescribeCollection(ctx, collectionName)
-		if err != nil {
-			return nil, err
-		}
-		sch = coll.Schema
-	} else {
-		sch = collInfo.Schema
+	collInfo, err := c.getCollectionInfo(ctx, collectionName)
+	if err != nil {
+		return nil, err
 	}
+	sch := collInfo.Schema
 
-	option, err := makeSearchQueryOption(collectionName, opts...)
+	option, err := c.makeSearchQueryOption(collectionName, opts...)
 	if err != nil {
 		return nil, err
 	}

@@ -122,6 +122,18 @@ func WithResourceGroups(rgs []string) LoadCollectionOption {
 	}
 }
 
+func WithLoadFields(fields ...string) LoadCollectionOption {
+	return func(req *milvuspb.LoadCollectionRequest) {
+		req.LoadFields = fields
+	}
+}
+
+func WithSkipDynamicFields(skip bool) LoadCollectionOption {
+	return func(req *milvuspb.LoadCollectionRequest) {
+		req.SkipLoadDynamicField = skip
+	}
+}
+
 // SearchQueryOption is an option of search/query request
 type SearchQueryOption struct {
 	// Consistency Level
@@ -206,11 +218,11 @@ func WithTravelTimestamp(_ uint64) SearchQueryOptionFunc {
 	return func(option *SearchQueryOption) {}
 }
 
-func makeSearchQueryOption(collName string, opts ...SearchQueryOptionFunc) (*SearchQueryOption, error) {
+func (c *GrpcClient) makeSearchQueryOption(collName string, opts ...SearchQueryOptionFunc) (*SearchQueryOption, error) {
 	opt := &SearchQueryOption{
 		ConsistencyLevel: entity.ClBounded, // default
 	}
-	info, ok := MetaCache.getCollectionInfo(collName)
+	info, ok := c.cache.getCollectionInfo(collName)
 	if ok {
 		opt.ConsistencyLevel = info.ConsistencyLevel
 	}
@@ -226,7 +238,7 @@ func makeSearchQueryOption(collName string, opts ...SearchQueryOptionFunc) (*Sea
 	case entity.ClStrong:
 		opt.GuaranteeTimestamp = StrongTimestamp
 	case entity.ClSession:
-		ts, ok := MetaCache.getSessionTs(collName)
+		ts, ok := c.cache.getSessionTs(collName)
 		if !ok {
 			ts = EventuallyTimestamp
 		}

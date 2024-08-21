@@ -36,6 +36,7 @@ func (c *GrpcClient) UsingDatabase(ctx context.Context, dbName string) error {
 	if err != nil {
 		return err
 	}
+	c.cache.reset()
 
 	return nil
 }
