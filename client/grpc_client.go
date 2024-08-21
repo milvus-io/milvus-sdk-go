@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"time"
 
+	"golang.org/x/sync/singleflight"
+
 	"github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
 	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
 	"github.com/milvus-io/milvus-sdk-go/v2/common"
@@ -24,6 +26,9 @@ type GrpcClient struct {
 	Conn    *grpc.ClientConn             // grpc connection instance
 	Service milvuspb.MilvusServiceClient // Service client stub
 
+	cache *metaCache
+	sf    singleflight.Group
+
 	config *Config // No thread safety
 }
 
@@ -32,6 +37,8 @@ func (c *GrpcClient) connect(ctx context.Context, addr string, opts ...grpc.Dial
 	if addr == "" {
 		return fmt.Errorf("address is empty")
 	}
+
+	c.cache = newMetaCache()
 	conn, err := grpc.DialContext(ctx, addr, opts...)
 	if err != nil {
 		return err
@@ -90,6 +97,32 @@ func (c *GrpcClient) connectInternal(ctx context.Context) error {
 	c.config.Identifier = strconv.FormatInt(resp.GetIdentifier(), 10)
 	c.config.ServerVersion = resp.GetServerInfo().GetBuildTags()
 	return nil
+}
+
+func (c *GrpcClient) getCollectionInfo(ctx context.Context, collectionName string) (*collInfo, error) {
+	// try cache first
+	info, ok := c.cache.getCollectionInfo(collectionName)
+	if ok {
+		return info, nil
+	}
+
+	// use singleflight to fetch collection info
+	v, err, _ := c.sf.Do(collectionName, func() (interface{}, error) {
+		coll, err := c.DescribeCollection(ctx, collectionName)
+		if err != nil {
+			return nil, err
+		}
+		return &collInfo{
+			ID:               coll.ID,
+			Name:             coll.Name,
+			Schema:           coll.Schema,
+			ConsistencyLevel: coll.ConsistencyLevel,
+		}, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return v.(*collInfo), nil
 }
 
 // Close close the connection

@@ -292,7 +292,7 @@ func (c *GrpcClient) DescribeCollection(ctx context.Context, collName string) (*
 		Schema:           collection.Schema,
 		ConsistencyLevel: collection.ConsistencyLevel,
 	}
-	MetaCache.setCollectionInfo(collName, &colInfo)
+	c.cache.setCollectionInfo(collName, &colInfo)
 	return collection, nil
 }
 
@@ -317,7 +317,7 @@ func (c *GrpcClient) DropCollection(ctx context.Context, collName string, opts .
 	}
 	err = handleRespStatus(resp)
 	if err == nil {
-		MetaCache.setCollectionInfo(collName, nil)
+		c.cache.setCollectionInfo(collName, nil)
 	}
 	return err
 }

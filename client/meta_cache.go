@@ -20,9 +20,11 @@ type collInfo struct {
 	ConsistencyLevel entity.ConsistencyLevel
 }
 
-var MetaCache = metaCache{
-	sessionTsMap: make(map[string]uint64),
-	collInfoMap:  make(map[string]collInfo),
+func newMetaCache() *metaCache {
+	return &metaCache{
+		sessionTsMap: make(map[string]uint64),
+		collInfoMap:  make(map[string]collInfo),
+	}
 }
 
 // timestampMap collects the last-write-timestamp of every collection, which is required by session consistency level.

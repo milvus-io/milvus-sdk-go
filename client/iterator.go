@@ -12,17 +12,11 @@ import (
 
 func (c *GrpcClient) SearchIterator(ctx context.Context, opt *SearchIteratorOption) (*SearchIterator, error) {
 	collectionName := opt.collectionName
-	var sch *entity.Schema
-	collInfo, ok := MetaCache.getCollectionInfo(collectionName)
-	if !ok {
-		coll, err := c.DescribeCollection(ctx, collectionName)
-		if err != nil {
-			return nil, err
-		}
-		sch = coll.Schema
-	} else {
-		sch = collInfo.Schema
+	collInfo, err := c.getCollectionInfo(ctx, collectionName)
+	if err != nil {
+		return nil, err
 	}
+	sch := collInfo.Schema
 
 	var vectorField *entity.Field
 	for _, field := range sch.Fields {
@@ -52,7 +46,7 @@ func (c *GrpcClient) SearchIterator(ctx context.Context, opt *SearchIteratorOpti
 		expr:      opt.expr,
 	}
 
-	err := itr.init(ctx)
+	err = itr.init(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -202,17 +196,11 @@ func (itr *SearchIterator) Next(ctx context.Context) (*SearchResult, error) {
 
 func (c *GrpcClient) QueryIterator(ctx context.Context, opt *QueryIteratorOption) (*QueryIterator, error) {
 	collectionName := opt.collectionName
-	var sch *entity.Schema
-	collInfo, ok := MetaCache.getCollectionInfo(collectionName)
-	if !ok {
-		coll, err := c.DescribeCollection(ctx, collectionName)
-		if err != nil {
-			return nil, err
-		}
-		sch = coll.Schema
-	} else {
-		sch = collInfo.Schema
+	collInfo, err := c.getCollectionInfo(ctx, collectionName)
+	if err != nil {
+		return nil, err
 	}
+	sch := collInfo.Schema
 
 	itr := &QueryIterator{
 		client: c,
@@ -227,7 +215,7 @@ func (c *GrpcClient) QueryIterator(ctx context.Context, opt *QueryIteratorOption
 		expr:      opt.expr,
 	}
 
-	err := itr.init(ctx)
+	err = itr.init(ctx)
 	if err != nil {
 		return nil, err
 	}
