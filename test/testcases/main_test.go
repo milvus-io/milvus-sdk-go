@@ -537,6 +537,21 @@ func GenDefaultIndexParamsForAllVectors() []IndexParams {
 	return ips
 }
 
+// inverted or scalar index not supported json
+func SupportScalarIndexFieldType(field entity.FieldType) bool {
+	vectorFieldTypes := []entity.FieldType{
+		entity.FieldTypeBinaryVector, entity.FieldTypeFloatVector,
+		entity.FieldTypeFloat16Vector, entity.FieldTypeBFloat16Vector, entity.FieldTypeSparseVector,
+		entity.FieldTypeJSON,
+	}
+	for _, vectorFieldType := range vectorFieldTypes {
+		if field == vectorFieldType {
+			return false
+		}
+	}
+	return true
+}
+
 func TestMain(m *testing.M) {
 	flag.Parse()
 	log.Printf("parse addr=%s", *addr)
