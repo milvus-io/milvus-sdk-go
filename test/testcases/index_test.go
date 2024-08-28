@@ -16,19 +16,16 @@ import (
 	"github.com/milvus-io/milvus-sdk-go/v2/test/common"
 )
 
-func supportScalarIndexFieldType(field entity.FieldType) bool {
-	vectorFieldTypes := []entity.FieldType{
-		entity.FieldTypeBinaryVector, entity.FieldTypeFloatVector,
-		entity.FieldTypeFloat16Vector, entity.FieldTypeBFloat16Vector, entity.FieldTypeSparseVector,
-		entity.FieldTypeJSON,
-	}
-	for _, vectorFieldType := range vectorFieldTypes {
-		if field == vectorFieldType {
-			return false
-		}
-	}
-	return true
-}
+/*
+Info about scalar index
+TRIE: only support varchar
+STL_SORT: only support numeric (not include Array field)
+INVERTED: all supported except Json
+Bitmap: all supported except Json, float, double. (If Array field, according to its ElementType)
+ScalarAutoIndex: {"int_*": "HYBRID","varchar": "HYBRID","bool": "BITMAP", "float/double": "INVERTED"}
+	- except Json
+	- if Array field, according to its ElementType
+*/
 
 // test create index with supported float vector index, L2 metric type
 func TestCreateIndex(t *testing.T) {
@@ -193,7 +190,7 @@ func TestCreateScalarIndex(t *testing.T) {
 	common.PrintAllFieldNames(collName, coll.Schema)
 	idx := entity.NewScalarIndex()
 	for _, field := range coll.Schema.Fields {
-		if supportScalarIndexFieldType(field.DataType) {
+		if SupportScalarIndexFieldType(field.DataType) {
 			err := mc.CreateIndex(ctx, collName, field.Name, idx, false, client.WithIndexName(field.Name))
 			common.CheckErr(t, err, true)
 
@@ -254,7 +251,7 @@ func TestCreateIndexOnLoadedCollection(t *testing.T) {
 	coll, _ := mc.DescribeCollection(ctx, collName)
 	idx := entity.NewScalarIndex()
 	for _, field := range coll.Schema.Fields {
-		if supportScalarIndexFieldType(field.DataType) {
+		if SupportScalarIndexFieldType(field.DataType) {
 			err := mc.CreateIndex(ctx, collName, field.Name, idx, false, client.WithIndexName(field.Name))
 			// need check failed
 			common.CheckErr(t, err, true, "")
@@ -265,7 +262,7 @@ func TestCreateIndexOnLoadedCollection(t *testing.T) {
 	common.CheckErr(t, err, true)
 
 	for _, field := range coll.Schema.Fields {
-		if supportScalarIndexFieldType(field.DataType) {
+		if SupportScalarIndexFieldType(field.DataType) {
 			_, err := mc.DescribeIndex(ctx, collName, field.Name)
 			common.CheckErr(t, err, true, "")
 		}
@@ -295,7 +292,7 @@ func TestCreateTrieScalarIndexUnsupportedDataType(t *testing.T) {
 	coll, _ := mc.DescribeCollection(ctx, collName)
 	idx := entity.NewScalarIndexWithType(entity.Trie)
 	for _, field := range coll.Schema.Fields {
-		if supportScalarIndexFieldType(field.DataType) {
+		if SupportScalarIndexFieldType(field.DataType) {
 			if field.DataType == entity.FieldTypeVarChar {
 				err := mc.CreateIndex(ctx, collName, field.Name, idx, false, client.WithIndexName(field.Name))
 				common.CheckErr(t, err, true)
@@ -335,7 +332,7 @@ func TestCreateSortScalarIndexUnsupportedDataType(t *testing.T) {
 	coll, _ := mc.DescribeCollection(ctx, collName)
 	idx := entity.NewScalarIndexWithType(entity.Sorted)
 	for _, field := range coll.Schema.Fields {
-		if supportScalarIndexFieldType(field.DataType) {
+		if SupportScalarIndexFieldType(field.DataType) {
 			if field.DataType == entity.FieldTypeVarChar || field.DataType == entity.FieldTypeBool ||
 				field.DataType == entity.FieldTypeArray {
 				err := mc.CreateIndex(ctx, collName, field.Name, idx, false, client.WithIndexName(field.Name))
@@ -376,7 +373,7 @@ func TestCreateInvertedScalarIndex(t *testing.T) {
 	coll, _ := mc.DescribeCollection(ctx, collName)
 	idx := entity.NewScalarIndexWithType(entity.Inverted)
 	for _, field := range coll.Schema.Fields {
-		if supportScalarIndexFieldType(field.DataType) {
+		if SupportScalarIndexFieldType(field.DataType) {
 			err := mc.CreateIndex(ctx, collName, field.Name, idx, false, client.WithIndexName(field.Name))
 			common.CheckErr(t, err, true)
 
@@ -424,7 +421,7 @@ func TestCreateBitmapScalarIndex(t *testing.T) {
 	idx := entity.NewScalarIndexWithType(entity.Bitmap)
 	BitmapNotSupport := []interface{}{entity.FieldTypeJSON, entity.FieldTypeDouble, entity.FieldTypeFloat}
 	for _, field := range coll.Schema.Fields {
-		if supportScalarIndexFieldType(field.DataType) {
+		if SupportScalarIndexFieldType(field.DataType) {
 			log.Println(field.Name, field.DataType, field.ElementType)
 			if common.CheckContainsValue(BitmapNotSupport, field.DataType) || (field.DataType == entity.FieldTypeArray && common.CheckContainsValue(BitmapNotSupport, field.ElementType)) {
 				err := mc.CreateIndex(ctx, collName, field.Name, idx, false, client.WithIndexName(field.Name))
@@ -548,6 +545,10 @@ func TestCreateIndexJsonField(t *testing.T) {
 		err := mc.CreateIndex(ctx, collName, common.DefaultJSONFieldName, entity.NewScalarIndexWithType(ip.indexType), false, client.WithIndexName("json_index"))
 		common.CheckErr(t, err, false, ip.errMsg)
 	}
+
+	autoIndex, _ := entity.NewIndexAUTOINDEX(entity.COSINE)
+	err = mc.CreateIndex(ctx, collName, common.DefaultJSONFieldName, autoIndex, false, client.WithIndexName("json_index"))
+	common.CheckErr(t, err, false, "create auto index on type:JSON is not supported")
 }
 
 func TestCreateIndexArrayField(t *testing.T) {
@@ -576,9 +577,6 @@ func TestCreateIndexArrayField(t *testing.T) {
 	inxError := []scalarIndexError{
 		{entity.Sorted, "STL_SORT are only supported on numeric field"},
 		{entity.Trie, "TRIE are only supported on varchar field"},
-
-		// AutoIndex support building on all array dtype fileds
-		// {entity.Scalar, "create auto index on Array field is not supported"},
 	}
 
 	// create scalar and vector index on array field
@@ -892,7 +890,7 @@ func TestCreateAutoIndexScalarFields(t *testing.T) {
 	indexAuto, _ := entity.NewIndexAUTOINDEX(entity.L2)
 	coll, _ := mc.DescribeCollection(ctx, collName)
 	for _, field := range coll.Schema.Fields {
-		if supportScalarIndexFieldType(field.DataType) {
+		if SupportScalarIndexFieldType(field.DataType) {
 			if field.DataType == entity.FieldTypeJSON {
 				err := mc.CreateIndex(ctx, collName, field.Name, indexAuto, false, client.WithIndexName(field.Name))
 				common.CheckErr(t, err, false, fmt.Sprintf("create auto index on %v field is not supported", field.DataType))

@@ -240,7 +240,7 @@ func TestLoadMultiPartitions(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create collection and insert [0, nb) into default partition, [nb, nb*2) into new partition
-	collName := createDefaultCollection(ctx, t, mc, false, common.DefaultShards)
+	collName := createDefaultCollection(ctx, t, mc, false, common.DefaultShards, client.WithConsistencyLevel(entity.ClStrong))
 	partitionName, _, _ := createInsertTwoPartitions(ctx, t, mc, collName, common.DefaultNb)
 
 	// create index
@@ -540,7 +540,6 @@ func TestMmapCollectionIndexDefault(t *testing.T) {
 	_ = mc.Flush(ctx, collName, false)
 
 	// create vector index with mmap
-	GenDefaultIndexParamsForAllVectors()
 	indexHnsw, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
 	indexBinary, _ := entity.NewIndexBinIvfFlat(entity.JACCARD, 64)
 	for _, fieldName := range common.AllVectorsFieldsName {
@@ -713,12 +712,11 @@ func TestMmapCollectionScalarIndexed(t *testing.T) {
 
 	dp := DataParams{DoInsert: true, CollectionFieldsType: Int64FloatVec, start: 0, nb: common.DefaultNb,
 		dim: common.DefaultDim, EnableDynamicField: false}
-
 	collName := prepareCollection(ctx, t, mc, cp, WithDataParams(dp), WithCreateOption(client.WithConsistencyLevel(entity.ClStrong)))
 
 	// create scalar index
 	for _, fName := range []string{common.DefaultIntFieldName, common.DefaultFloatFieldName} {
-		err := mc.CreateIndex(ctx, collName, fName, entity.NewScalarIndexWithType(entity.Inverted), false)
+		err := mc.CreateIndex(ctx, collName, fName, entity.NewScalarIndex(), false)
 		common.CheckErr(t, err, true)
 	}
 
@@ -728,35 +726,124 @@ func TestMmapCollectionScalarIndexed(t *testing.T) {
 	common.CheckErr(t, err, true)
 	err = mc.LoadCollection(ctx, collName, false)
 	common.CheckErr(t, err, true)
+
+	sp, _ := entity.NewIndexHNSWSearchParam(32)
+	queryVec := common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeFloatVector)
+	resSearch, errSearch := mc.Search(ctx, collName, []string{}, "", []string{"*"}, queryVec, common.DefaultFloatVecFieldName,
+		entity.L2, common.DefaultTopK, sp)
+	common.CheckErr(t, errSearch, true)
+	common.CheckSearchResult(t, resSearch, common.DefaultNq, common.DefaultTopK)
+	common.CheckOutputFields(t, resSearch[0].Fields, []string{common.DefaultIntFieldName, common.DefaultFloatFieldName, common.DefaultFloatVecFieldName})
 }
 
-// test mmap unsupported index: DiskANN, GPU-class
+// test mmap scalar index: inverted
+func TestMmapScalarInvertedIndex(t *testing.T) {
+	// vector index
+	ctx := createContext(t, time.Second*common.DefaultTimeout*2)
+	// connect
+	mc := createMilvusClient(ctx, t)
+
+	// create -> insert [0, 3000) -> flush -> index -> load
+	cp := CollectionParams{CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: true,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+
+	dp := DataParams{DoInsert: true, CollectionFieldsType: AllFields, start: 0, nb: common.DefaultNb,
+		dim: common.DefaultDim, EnableDynamicField: true}
+
+	// build vector's indexes
+	ips := GenDefaultIndexParamsForAllVectors()
+	lp := LoadParams{DoLoad: false}
+	collName := prepareCollection(ctx, t, mc, cp, WithDataParams(dp), WithIndexParams(ips), WithLoadParams(lp),
+		WithCreateOption(client.WithConsistencyLevel(entity.ClStrong)))
+
+	//create scalar index with mmap
+	collection, _ := mc.DescribeCollection(ctx, collName)
+	for _, field := range collection.Schema.Fields {
+		if SupportScalarIndexFieldType(field.DataType) {
+			err := mc.CreateIndex(ctx, collName, field.Name, entity.NewScalarIndexWithType(entity.Inverted), false, client.WithMmap(true))
+			common.CheckErr(t, err, true)
+		}
+	}
+
+	// load and search
+	mc.LoadCollection(ctx, collName, false)
+	// query
+	queryRes, err := mc.Query(ctx, collName, []string{}, fmt.Sprintf("%s < 10", common.DefaultIntFieldName), []string{"*"})
+	common.CheckErr(t, err, true)
+	require.Equal(t, queryRes.GetColumn(common.DefaultIntFieldName).Len(), 10)
+	common.CheckOutputFields(t, queryRes, common.GetAllFieldsName(true, false))
+
+	// search
+	queryVec1 := common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeFloatVector)
+	sp, _ := entity.NewIndexHNSWSearchParam(74)
+	expr := fmt.Sprintf("%s > 10", common.DefaultIntFieldName)
+	searchRes, _ := mc.Search(ctx, collName, []string{}, expr, []string{"*"}, queryVec1, common.DefaultFloatVecFieldName,
+		entity.L2, common.DefaultTopK, sp)
+	common.CheckOutputFields(t, searchRes[0].Fields, common.GetAllFieldsName(true, false))
+
+	// hybrid search
+	queryVec2 := common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeBinaryVector)
+	sReqs := []*client.ANNSearchRequest{
+		client.NewANNSearchRequest(common.DefaultFloatVecFieldName, entity.L2, "", queryVec1, sp, common.DefaultTopK, client.WithOffset(3)),
+		client.NewANNSearchRequest(common.DefaultBinaryVecFieldName, entity.JACCARD, "", queryVec2, sp, common.DefaultTopK),
+	}
+	_, errSearch := mc.HybridSearch(ctx, collName, []string{}, common.DefaultTopK, []string{}, client.NewRRFReranker(), sReqs)
+	common.CheckErr(t, errSearch, true)
+}
+
+// test mmap unsupported index: DiskANN, GPU-class, scalar index except inverted
 func TestMmapIndexUnsupported(t *testing.T) {
-	t.Skip("https://github.com/milvus-io/milvus-sdk-go/issues/714")
 	ctx := createContext(t, time.Second*common.DefaultTimeout*2)
 	// connect
 	mc := createMilvusClient(ctx, t)
 
 	// create -> insert -> flush -> index -> load
-	cp := CollectionParams{CollectionFieldsType: Int64FloatVec, AutoID: false, EnableDynamicField: false,
+	cp := CollectionParams{CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: false,
 		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
 	collName := createCollection(ctx, t, mc, cp)
-
-	dp := DataParams{DoInsert: true, CollectionName: collName, CollectionFieldsType: Int64FloatVec, start: 0,
-		nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: false}
-	insertData(ctx, t, mc, dp)
-	mc.Flush(ctx, collName, false)
 
 	//create index with mmap
 	idx, _ := entity.NewIndexDISKANN(entity.COSINE)
 	err := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false, client.WithMmap(true))
 	common.CheckErr(t, err, false, "index type DISKANN does not support mmap")
 
-	//create scalar index with mmap
-	for _, idx := range []entity.Index{entity.NewScalarIndex(), entity.NewScalarIndexWithType(entity.Inverted)} {
-		err := mc.CreateIndex(ctx, collName, common.DefaultFloatFieldName, idx, false, client.WithMmap(true))
-		common.CheckErr(t, err, false, "does not support mmap")
-	}
+	// bitmap index with mmap
+	err1 := mc.CreateIndex(ctx, collName, common.DefaultIntFieldName, entity.NewScalarIndexWithType(entity.Bitmap), false, client.WithMmap(true))
+	common.CheckErr(t, err1, false, "index type BITMAP does not support mmap")
+
+	err1 = mc.CreateIndex(ctx, collName, common.DefaultIntFieldName, entity.NewScalarIndex(), false, client.WithMmap(true))
+	common.CheckErr(t, err1, false, "index type HYBRID does not support mmap")
+
+	err1 = mc.CreateIndex(ctx, collName, common.DefaultVarcharFieldName, entity.NewScalarIndexWithType(entity.Trie), false, client.WithMmap(true))
+	common.CheckErr(t, err1, false, "index type Trie does not support mmap")
+
+	err1 = mc.CreateIndex(ctx, collName, common.DefaultFloatFieldName, entity.NewScalarIndexWithType(entity.Sorted), false, client.WithMmap(true))
+	common.CheckErr(t, err1, false, "index type STL_SORT does not support mmap")
+}
+
+// test mmap unsupported index: DiskANN, GPU-class， HYBRID， BITMAP
+func TestMmapScalarAutoIndex(t *testing.T) {
+	ctx := createContext(t, time.Second*common.DefaultTimeout*2)
+	// connect
+	mc := createMilvusClient(ctx, t)
+
+	// create -> insert -> flush -> index -> load
+	cp := CollectionParams{CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: false,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+	collName := createCollection(ctx, t, mc, cp)
+
+	dp := DataParams{DoInsert: true, CollectionName: collName, CollectionFieldsType: AllFields, start: 0,
+		nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: false}
+	insertData(ctx, t, mc, dp)
+	mc.Flush(ctx, collName, false)
+
+	// mmap not supported HYBRID index
+	err1 := mc.CreateIndex(ctx, collName, common.DefaultVarcharFieldName, entity.NewScalarIndex(), false, client.WithMmap(true))
+	common.CheckErr(t, err1, false, "index type HYBRID does not support mmap")
+
+	// mmap not supported HYBRID index
+	err1 = mc.CreateIndex(ctx, collName, common.DefaultBoolFieldName, entity.NewScalarIndexWithType(entity.Bitmap), false, client.WithMmap(true))
+	common.CheckErr(t, err1, false, "index type BITMAP does not support mmap")
 }
 
 func TestAlterIndexMmapUnsupportedIndex(t *testing.T) {
@@ -765,22 +852,40 @@ func TestAlterIndexMmapUnsupportedIndex(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create -> insert -> flush -> index -> load
-	cp := CollectionParams{CollectionFieldsType: Int64FloatVec, AutoID: false, EnableDynamicField: false,
+	cp := CollectionParams{CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: false,
 		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
 	collName := createCollection(ctx, t, mc, cp)
 
-	dp := DataParams{DoInsert: true, CollectionName: collName, CollectionFieldsType: Int64FloatVec, start: 0,
-		nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: false}
-	insertData(ctx, t, mc, dp)
-	mc.Flush(ctx, collName, false)
-
-	idxHnsw, _ := entity.NewIndexDISKANN(entity.IP)
-	err := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idxHnsw, false)
+	// diskAnn
+	idxDiskAnn, _ := entity.NewIndexDISKANN(entity.IP)
+	err := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idxDiskAnn, false)
 	common.CheckErr(t, err, true)
-	for _, mmap := range []bool{true, false} {
-		err = mc.AlterIndex(ctx, collName, common.DefaultFloatVecFieldName, client.WithMmap(mmap))
-		common.CheckErr(t, err, false, "index type DISKANN does not support mmap: invalid parameter")
-	}
+	err = mc.AlterIndex(ctx, collName, common.DefaultFloatVecFieldName, client.WithMmap(true))
+	common.CheckErr(t, err, false, "index type DISKANN does not support mmap")
+
+	// bitmap index with mmap
+	err = mc.CreateIndex(ctx, collName, common.DefaultIntFieldName, entity.NewScalarIndexWithType(entity.Bitmap), false)
+	common.CheckErr(t, err, true)
+	errAlert := mc.AlterIndex(ctx, collName, common.DefaultIntFieldName, client.WithMmap(true))
+	common.CheckErr(t, errAlert, false, "index type BITMAP does not support mmap")
+
+	// HYBRID index
+	err = mc.CreateIndex(ctx, collName, common.DefaultInt32FieldName, entity.NewScalarIndex(), false)
+	common.CheckErr(t, err, true)
+	errAlert = mc.AlterIndex(ctx, collName, common.DefaultInt32FieldName, client.WithMmap(true))
+	common.CheckErr(t, errAlert, false, "index type HYBRID does not support mmap")
+
+	// Trie index
+	err = mc.CreateIndex(ctx, collName, common.DefaultVarcharFieldName, entity.NewScalarIndexWithType(entity.Trie), false)
+	common.CheckErr(t, err, true)
+	errAlert = mc.AlterIndex(ctx, collName, common.DefaultVarcharFieldName, client.WithMmap(true))
+	common.CheckErr(t, errAlert, false, "index type Trie does not support mmap")
+
+	// STL_SORT
+	err = mc.CreateIndex(ctx, collName, common.DefaultFloatFieldName, entity.NewScalarIndexWithType(entity.Sorted), false)
+	common.CheckErr(t, err, true)
+	errAlert = mc.AlterIndex(ctx, collName, common.DefaultFloatFieldName, client.WithMmap(true))
+	common.CheckErr(t, errAlert, false, "index type STL_SORT does not support mmap")
 }
 
 func TestMmapAlterIndex(t *testing.T) {

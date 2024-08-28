@@ -132,23 +132,23 @@ jobs:
       run: |
         nc -vz 127.0.0.1 19530
         curl -sSL "https://github.com/gotestyourself/gotestsum/releases/download/v1.8.2/gotestsum_1.8.2_linux_amd64.tar.gz" | sudo tar -xz -C /usr/local/bin gotestsum
-        gotestsum --format testname --hide-summary=output ./testcases/... --tags L0,L1,L2,L3 --addr=127.0.0.1:19530 -timeout=60m 
+        gotestsum --format testname --hide-summary=output ./testcases/... --tags L0,L1,L2,L3 --addr=127.0.0.1:19530 -timeout=60m
 
-  nightly-v2_2_x:
-    name: Run Nightly CI(v2.2.x)
+  nightly-v2_4_x:
+    name: Run Nightly CI(v2.4.x)
     runs-on: ubuntu-latest
     timeout-minutes: 90
     env:
       IMAGE_REPO: "milvusdb/milvus"
-      TAG_PREFIX: "2.2.0-"
+      TAG_PREFIX: "2.4-"
       RELEASE_NAME: "go-test"
-      IMAGE_TAG: "2.2.0-latest"
+      IMAGE_TAG: "2.4-latest"
       QA_NAMESPACE: "qa"
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
       with:
-        ref: "v2.2.x"
+        ref: "master"
         fetch-depth: '0'
 
     - name: Get the latest of Milvus dev image tag
