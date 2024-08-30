@@ -47,12 +47,12 @@ func genGroupByBinaryIndex(metricType entity.MetricType) []entity.Index {
 }
 
 func genUnsupportedFloatGroupByIndex() []entity.Index {
-	idxIvfSq8, _ := entity.NewIndexIvfSQ8(entity.L2, 128)
+	// idxIvfSq8, _ := entity.NewIndexIvfSQ8(entity.L2, 128)
 	idxIvfPq, _ := entity.NewIndexIvfPQ(entity.L2, 128, 16, 8)
 	idxScann, _ := entity.NewIndexSCANN(entity.L2, 16, false)
 	idxDiskAnn, _ := entity.NewIndexDISKANN(entity.L2)
 	return []entity.Index{
-		idxIvfSq8,
+		// idxIvfSq8,
 		idxIvfPq,
 		idxScann,
 		idxDiskAnn,
