@@ -30,15 +30,6 @@ func TestCompact(t *testing.T) {
 		mc.Flush(ctx, collName, false)
 	}
 
-	// get persisted segments
-	segments, _ := mc.GetPersistentSegmentInfo(ctx, collName)
-	require.Len(t, segments, 4)
-	segIds := make([]int64, 0, 4)
-	for _, seg := range segments {
-		require.Equal(t, seg.NumRows, int64(common.DefaultNb))
-		segIds = append(segIds, seg.ID)
-	}
-
 	indexHnsw, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
 	indexBinary, _ := entity.NewIndexBinIvfFlat(entity.JACCARD, 64)
 	for _, field := range common.AllFloatVectorsFieldNames {
@@ -47,6 +38,15 @@ func TestCompact(t *testing.T) {
 	}
 	err := mc.CreateIndex(ctx, collName, common.DefaultBinaryVecFieldName, indexBinary, false)
 	common.CheckErr(t, err, true)
+
+	// get persisted segments
+	segments, _ := mc.GetPersistentSegmentInfo(ctx, collName)
+	require.Len(t, segments, 4)
+	segIds := make([]int64, 0, 4)
+	for _, seg := range segments {
+		require.Equal(t, seg.NumRows, int64(common.DefaultNb))
+		segIds = append(segIds, seg.ID)
+	}
 
 	// compact
 	compactionID, errCompact := mc.Compact(ctx, collName, 100)
