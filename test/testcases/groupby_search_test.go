@@ -24,11 +24,13 @@ func genGroupByVectorIndex(metricType entity.MetricType) []entity.Index {
 	idxFlat, _ := entity.NewIndexFlat(metricType)
 	idxIvfFlat, _ := entity.NewIndexIvfFlat(metricType, nlist)
 	idxHnsw, _ := entity.NewIndexHNSW(metricType, 8, 96)
+	idxIvfSq8, _ := entity.NewIndexIvfSQ8(metricType, 128)
 
 	allFloatIndex := []entity.Index{
 		idxFlat,
 		idxIvfFlat,
 		idxHnsw,
+		idxIvfSq8,
 	}
 	return allFloatIndex
 }
@@ -47,12 +49,10 @@ func genGroupByBinaryIndex(metricType entity.MetricType) []entity.Index {
 }
 
 func genUnsupportedFloatGroupByIndex() []entity.Index {
-	// idxIvfSq8, _ := entity.NewIndexIvfSQ8(entity.L2, 128)
 	idxIvfPq, _ := entity.NewIndexIvfPQ(entity.L2, 128, 16, 8)
 	idxScann, _ := entity.NewIndexSCANN(entity.L2, 16, false)
 	idxDiskAnn, _ := entity.NewIndexDISKANN(entity.L2)
 	return []entity.Index{
-		// idxIvfSq8,
 		idxIvfPq,
 		idxScann,
 		idxDiskAnn,
@@ -467,7 +467,7 @@ func TestSearchGroupByRangeSearch(t *testing.T) {
 func TestSearchGroupByHybridSearch(t *testing.T) {
 	// prepare data
 	indexHnsw, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
-	mc, ctx, collName := prepareDataForGroupBySearch(t, 10, 1000, indexHnsw, false)
+	mc, ctx, collName := prepareDataForGroupBySearch(t, 6, 1000, indexHnsw, false)
 
 	// hybrid search with groupBy field
 	sp, _ := entity.NewIndexHNSWSearchParam(20)

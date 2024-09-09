@@ -2,7 +2,7 @@ name: Test CI
 on:
   push:
     branches:
-      - master
+      - v2.4.x
   pull_request:
     paths:
       - 'common/**'
@@ -22,9 +22,9 @@ jobs:
         mode: [standalone, cluster]
     env:
       IMAGE_REPO: "milvusdb/milvus"
-      TAG_PREFIX: "master-"
+      TAG_PREFIX: "2.4-"
       RELEASE_NAME: "go-test"
-      IMAGE_TAG: "master-latest"
+      IMAGE_TAG: "2.4-latest"
       QA_NAMESPACE: "qa"
     steps:
       - name: Checkout code

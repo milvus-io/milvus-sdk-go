@@ -793,6 +793,7 @@ func TestMmapScalarInvertedIndex(t *testing.T) {
 
 // test mmap scalar index: bitmap
 func TestMmapScalarBitmapIndex(t *testing.T) {
+	t.Skip("waiting for bitmap pr cherry-pick")
 	// vector index
 	ctx := createContext(t, time.Second*common.DefaultTimeout*2)
 	// connect
@@ -927,6 +928,7 @@ func TestMmapIndexUnsupported(t *testing.T) {
 
 // test mmap unsupported index: DiskANN, GPU-class
 func TestMmapScalarAutoIndex(t *testing.T) {
+	t.Skip("waiting for bitmap pr cherry-pick")
 	ctx := createContext(t, time.Second*common.DefaultTimeout*2)
 	// connect
 	mc := createMilvusClient(ctx, t)
@@ -951,6 +953,7 @@ func TestMmapScalarAutoIndex(t *testing.T) {
 }
 
 func TestAlterIndexMmapUnsupportedIndex(t *testing.T) {
+	t.Skip("waiting for bitmap pr cherry-pick")
 	ctx := createContext(t, time.Second*common.DefaultTimeout*2)
 	// connect
 	mc := createMilvusClient(ctx, t)

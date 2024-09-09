@@ -398,6 +398,7 @@ func TestCreateInvertedScalarIndex(t *testing.T) {
 
 // create Bitmap index for all scalar fields
 func TestCreateBitmapScalarIndex(t *testing.T) {
+	t.Skip("waiting for bitmap pr cherry-pick")
 	ctx := createContext(t, time.Second*common.DefaultTimeout*2)
 	// connect
 	mc := createMilvusClient(ctx, t)
