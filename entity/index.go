@@ -89,6 +89,7 @@ type SearchParam interface {
 	Params() map[string]interface{}
 	AddRadius(radius float64)
 	AddRangeFilter(rangeFilter float64)
+	AddPageRetainOrder(pageRetainOrder bool)
 }
 
 type baseSearchParams struct {
@@ -109,6 +110,10 @@ func (sp *baseSearchParams) AddRadius(radius float64) {
 
 func (sp *baseSearchParams) AddRangeFilter(rangeFilter float64) {
 	sp.params["range_filter"] = rangeFilter
+}
+
+func (sp *baseSearchParams) AddPageRetainOrder(pageRetainOrder bool) {
+	sp.params["page_retain_order"] = pageRetainOrder
 }
 
 func newBaseSearchParams() baseSearchParams {

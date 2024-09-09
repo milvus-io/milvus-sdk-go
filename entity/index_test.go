@@ -41,6 +41,12 @@ func TestAddRangeFilter(t *testing.T) {
 	assert.Equal(t, params.Params()["range_filter"], float64(20))
 }
 
+func TestPageRetainOrder(t *testing.T) {
+	params := newBaseSearchParams()
+	params.AddPageRetainOrder(true)
+	assert.Equal(t, params.Params()["page_retain_order"], true)
+}
+
 func TestIndexGPUCagra(t *testing.T) {
 	t.Run("index", func(t *testing.T) {
 		index, err := NewIndexGPUCagra(L2, 64, 64)
