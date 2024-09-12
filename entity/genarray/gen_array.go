@@ -26,6 +26,8 @@ type Column{{.TypeName}}Array struct {
 	ColumnBase
 	name   string
 	values [][]{{.TypeDef}}
+	validValues []bool
+	nullable    bool
 }
 
 // Name returns column name
@@ -43,11 +45,46 @@ func (c *Column{{.TypeName}}Array) Len() int {
 	return len(c.values)
 }
 
+// Nullable returns column values nullable
+func (c *Column{{.TypeName}}Array) Nullable() bool {
+	return c.nullable
+}
+
+// Slice returns column slice
+func (c *Column{{.TypeName}}Array) Slice(start, end int) Column {
+	l := c.Len()
+	if start > l {
+		start = l
+	}
+	if end == -1 || end > l {
+		end = l
+	}
+	sliceValidValues := make([]bool, 0)
+	if c.nullable {
+		sliceValidValues = c.validValues[start:end]
+	}
+	return &Column{{.TypeName}}Array{
+		ColumnBase:  c.ColumnBase,
+		name:        c.name,
+		values:      c.values[start:end],
+		validValues: sliceValidValues,
+		nullable:    c.nullable,
+	}
+}
+
 // Get returns value at index as interface{}.
 func (c *Column{{.TypeName}}Array) Get(idx int) (interface{}, error) {
 	var r []{{.TypeDef}} // use default value
 	if idx < 0 || idx >= c.Len() {
 		return r, errors.New("index out of range")
+	}
+	if c.nullable {
+		if idx < 0 || idx >= len(c.validValues) {
+			return nil, errors.New("index out of validValues range")
+		}
+		if !c.validValues[idx] {
+			return nil, nil
+		}
 	}
 	return c.values[idx], nil
 }
@@ -57,22 +94,36 @@ func (c *Column{{.TypeName}}Array) FieldData() *schemapb.FieldData {
 	fd := &schemapb.FieldData{
 		Type:      schemapb.DataType_Array,
 		FieldName: c.name,
+		ValidData: c.validValues,
 	}
 
-	data := make([]*schemapb.ScalarField, 0, c.Len())
-	for _, arr := range c.values {
+	convertTo := func(arr []{{.PbType}}) *schemapb.ScalarField {
 		converted := make([]{{.PbType}}, 0, c.Len())
 		for i := 0; i < len(arr); i++ {
 			converted = append(converted, {{.PbType}}(arr[i]))
 		}
-		data = append(data, &schemapb.ScalarField{
+		return &schemapb.ScalarField{
 			Data: &schemapb.ScalarField_{{.PbName}}Data{
 				{{.PbName}}Data: &schemapb.{{.PbName}}Array{
 					Data: converted,
 				},
 			},
-		})
+		}
 	}
+
+	data := make([]*schemapb.ScalarField, 0, c.Len())
+	if c.nullable {
+		for i, v := range c.validValues {
+			if v {
+				data = append(data, convertTo(c.values[i]))
+			}
+		}
+	} else {
+		for _, arr := range c.values {
+			data = append(data, convertTo(arr))
+		}
+	}
+
 	fd.Field = &schemapb.FieldData_Scalars{
 		Scalars: &schemapb.ScalarField{
 			Data: &schemapb.ScalarField_ArrayData{
@@ -93,16 +144,33 @@ func (c *Column{{.TypeName}}Array) ValueByIdx(idx int) ([]{{.TypeDef}}, error) {
 	if idx < 0 || idx >= c.Len() {
 		return r, errors.New("index out of range")
 	}
+	if c.nullable {
+		if idx < 0 || idx >= len(c.validValues) {
+			return r, errors.New("index out of validValues range")
+		}
+		if !c.validValues[idx] {
+			return nil, nil
+		}
+	}
 	return c.values[idx], nil
 }
 
 // AppendValue append value into column
 func(c *Column{{.TypeName}}Array) AppendValue(i interface{}) error {
+	var v []{{.TypeDef}}
+	if i == nil && c.nullable {
+		c.values = append(c.values, v)
+		c.validValues = append(c.validValues, false)
+		return nil
+	}
 	v, ok := i.([]{{.TypeDef}})
 	if !ok {
 		return fmt.Errorf("invalid type, expected []{{.TypeDef}}, got %T", i)
 	}
 	c.values = append(c.values, v)
+	if c.nullable {
+		c.validValues = append(c.validValues, true)
+	}
 
 	return nil
 }
@@ -112,11 +180,36 @@ func (c *Column{{.TypeName}}Array) Data() [][]{{.TypeDef}} {
 	return c.values
 }
 
+// ValidData returns column ValidData
+func (c *Column{{.TypeName}}Array) ValidData() []bool {
+	return c.validValues
+}
+
 // NewColumn{{.TypeName}} auto generated constructor
 func NewColumn{{.TypeName}}Array(name string, values [][]{{.TypeDef}}) *Column{{.TypeName}}Array {
 	return &Column{{.TypeName}}Array {
 		name: name,
 		values: values,
+	}
+}
+
+// NewColumn{{.TypeName}} auto generated constructor
+func NewNullableColumn{{.TypeName}}Array(name string, values [][]{{.TypeDef}}, validValues []bool) *Column{{.TypeName}}Array {
+	return &Column{{.TypeName}}Array {
+		name: name,
+		values: values,
+		nullable:    true,
+		validValues: validValues,
+	}
+}
+
+// NewAllNullColumn{{.TypeName}} auto generated constructor
+func NewAllNullColumn{{.TypeName}}Array(name string, rowSize int) *Column{{.TypeName}}Array {
+	return &Column{{.TypeName}}Array {
+		name: name,
+		values: make([][]{{.TypeDef}},rowSize),
+		nullable:    true,
+		validValues: make([]bool,rowSize),
 	}
 }
 {{end}}{{end}}

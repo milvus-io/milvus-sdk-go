@@ -260,14 +260,53 @@ func (s *InsertSuite) TestInsertSuccess() {
 	})
 
 	s.Run("missing_field_with_default_value", func() {
-		s.T().Skip("skip for default value test")
 		defer s.resetMock()
 		s.setupHasCollection(testCollectionName)
 		s.setupHasPartition(testCollectionName, "partition_1")
 
 		s.setupDescribeCollection(testCollectionName, entity.NewSchema().
 			WithField(entity.NewField().WithIsPrimaryKey(true).WithIsAutoID(true).WithName("ID").WithDataType(entity.FieldTypeInt64)).
-			WithField(entity.NewField().WithName("default_value").WithDataType(entity.FieldTypeInt64)).
+			WithField(entity.NewField().WithName("default_value").WithDataType(entity.FieldTypeInt64).WithDefaultValueLong(1)).
+			WithField(entity.NewField().WithName("vector").WithDataType(entity.FieldTypeFloatVector).WithTypeParams(entity.TypeParamDim, "128")),
+		)
+
+		s.mock.EXPECT().Insert(mock.Anything, mock.AnythingOfType("*milvuspb.InsertRequest")).
+			Run(func(ctx context.Context, req *milvuspb.InsertRequest) {
+				var data *schemapb.FieldData
+				for _, d := range req.GetFieldsData() {
+					if d.FieldName == "default_value" {
+						data = d
+					}
+				}
+				s.Equal([]bool{false}, data.ValidData)
+				s.Equal(0, len(data.GetScalars().GetLongData().Data))
+				s.Equal(2, len(req.GetFieldsData()))
+			}).Return(&milvuspb.MutationResult{
+			Status: &commonpb.Status{},
+			IDs: &schemapb.IDs{
+				IdField: &schemapb.IDs_IntId{
+					IntId: &schemapb.LongArray{
+						Data: []int64{1},
+					},
+				},
+			},
+		}, nil)
+
+		r, err := c.Insert(ctx, testCollectionName, "partition_1",
+			entity.NewColumnFloatVector("vector", 128, generateFloatVector(1, 128)),
+		)
+		s.NoError(err)
+		s.Equal(1, r.Len())
+	})
+
+	s.Run("missing_field_with_nullable", func() {
+		defer s.resetMock()
+		s.setupHasCollection(testCollectionName)
+		s.setupHasPartition(testCollectionName, "partition_1")
+
+		s.setupDescribeCollection(testCollectionName, entity.NewSchema().
+			WithField(entity.NewField().WithIsPrimaryKey(true).WithIsAutoID(true).WithName("ID").WithDataType(entity.FieldTypeInt64)).
+			WithField(entity.NewField().WithName("nullable_fid").WithDataType(entity.FieldTypeInt64).WithNullable(true)).
 			WithField(entity.NewField().WithName("vector").WithDataType(entity.FieldTypeFloatVector).WithTypeParams(entity.TypeParamDim, "128")),
 		)
 
@@ -290,6 +329,86 @@ func (s *InsertSuite) TestInsertSuccess() {
 		)
 		s.NoError(err)
 		s.Equal(1, r.Len())
+	})
+
+	s.Run("insert_with_nullable_column", func() {
+		defer s.resetMock()
+		s.setupHasCollection(testCollectionName)
+		s.setupHasPartition(testCollectionName, "partition_1")
+
+		s.setupDescribeCollection(testCollectionName, entity.NewSchema().
+			WithField(entity.NewField().WithIsPrimaryKey(true).WithIsAutoID(true).WithName("ID").WithDataType(entity.FieldTypeInt64)).
+			WithField(entity.NewField().WithName("nullable_fid").WithDataType(entity.FieldTypeInt64).WithNullable(true)).
+			WithField(entity.NewField().WithName("vector").WithDataType(entity.FieldTypeFloatVector).WithTypeParams(entity.TypeParamDim, "128")),
+		)
+
+		s.mock.EXPECT().Insert(mock.Anything, mock.AnythingOfType("*milvuspb.InsertRequest")).
+			Run(func(ctx context.Context, req *milvuspb.InsertRequest) {
+				var data *schemapb.FieldData
+				for _, d := range req.GetFieldsData() {
+					if d.FieldName == "nullable_fid" {
+						data = d
+					}
+				}
+				s.Equal([]bool{false, true}, data.ValidData)
+				s.Equal([]int64{1}, data.GetScalars().GetLongData().Data)
+				s.Equal(2, len(req.GetFieldsData()))
+			}).Return(&milvuspb.MutationResult{
+			Status: &commonpb.Status{},
+			IDs: &schemapb.IDs{
+				IdField: &schemapb.IDs_IntId{
+					IntId: &schemapb.LongArray{
+						Data: []int64{1, 2},
+					},
+				},
+			},
+		}, nil)
+		value := make([]int64, 2)
+		value[1] = 1
+		validValue := make([]bool, 2)
+		validValue[1] = true
+		r, err := c.Insert(ctx, testCollectionName, "partition_1",
+			entity.NewNullableColumnInt64("nullable_fid", value, validValue),
+			entity.NewColumnFloatVector("vector", 128, generateFloatVector(2, 128)),
+		)
+		s.NoError(err)
+		s.Equal(2, r.Len())
+	})
+
+	s.Run("insert_with_nullable_column_with_default_value", func() {
+		defer s.resetMock()
+		s.setupHasCollection(testCollectionName)
+		s.setupHasPartition(testCollectionName, "partition_1")
+
+		s.setupDescribeCollection(testCollectionName, entity.NewSchema().
+			WithField(entity.NewField().WithIsPrimaryKey(true).WithIsAutoID(true).WithName("ID").WithDataType(entity.FieldTypeInt64)).
+			WithField(entity.NewField().WithName("nullable_fid").WithDataType(entity.FieldTypeInt64).WithNullable(true).WithDefaultValueLong(10)).
+			WithField(entity.NewField().WithName("vector").WithDataType(entity.FieldTypeFloatVector).WithTypeParams(entity.TypeParamDim, "128")),
+		)
+
+		s.mock.EXPECT().Insert(mock.Anything, mock.AnythingOfType("*milvuspb.InsertRequest")).
+			Run(func(ctx context.Context, req *milvuspb.InsertRequest) {
+				s.Equal(2, len(req.GetFieldsData()))
+			}).Return(&milvuspb.MutationResult{
+			Status: &commonpb.Status{},
+			IDs: &schemapb.IDs{
+				IdField: &schemapb.IDs_IntId{
+					IntId: &schemapb.LongArray{
+						Data: []int64{1, 2},
+					},
+				},
+			},
+		}, nil)
+		value := make([]int64, 2)
+		value[1] = 1
+		validValue := make([]bool, 2)
+		validValue[1] = true
+		r, err := c.Insert(ctx, testCollectionName, "partition_1",
+			entity.NewNullableColumnInt64("nullable_fid", value, validValue),
+			entity.NewColumnFloatVector("vector", 128, generateFloatVector(2, 128)),
+		)
+		s.NoError(err)
+		s.Equal(2, r.Len())
 	})
 }
 
@@ -529,14 +648,53 @@ func (s *UpsertSuite) TestUpsertSuccess() {
 	})
 
 	s.Run("missing_field_with_default_value", func() {
-		s.T().Skip("skip for default value test")
 		defer s.resetMock()
 		s.setupHasCollection(testCollectionName)
 		s.setupHasPartition(testCollectionName, "partition_1")
 
 		s.setupDescribeCollection(testCollectionName, entity.NewSchema().
 			WithField(entity.NewField().WithIsPrimaryKey(true).WithIsAutoID(true).WithName("ID").WithDataType(entity.FieldTypeInt64)).
-			WithField(entity.NewField().WithName("default_value").WithDataType(entity.FieldTypeInt64)).
+			WithField(entity.NewField().WithName("default_value").WithDataType(entity.FieldTypeInt64).WithDefaultValueLong(1)).
+			WithField(entity.NewField().WithName("vector").WithDataType(entity.FieldTypeFloatVector).WithTypeParams(entity.TypeParamDim, "128")),
+		)
+
+		s.mock.EXPECT().Upsert(mock.Anything, mock.AnythingOfType("*milvuspb.UpsertRequest")).
+			Run(func(ctx context.Context, req *milvuspb.UpsertRequest) {
+				var data *schemapb.FieldData
+				for _, d := range req.GetFieldsData() {
+					if d.FieldName == "default_value" {
+						data = d
+					}
+				}
+				s.Equal([]bool{false}, data.ValidData)
+				s.Equal(0, len(data.GetScalars().GetLongData().Data))
+				s.Equal(2, len(req.GetFieldsData()))
+			}).Return(&milvuspb.MutationResult{
+			Status: &commonpb.Status{},
+			IDs: &schemapb.IDs{
+				IdField: &schemapb.IDs_IntId{
+					IntId: &schemapb.LongArray{
+						Data: []int64{1},
+					},
+				},
+			},
+		}, nil)
+
+		r, err := c.Upsert(ctx, testCollectionName, "partition_1",
+			entity.NewColumnFloatVector("vector", 128, generateFloatVector(1, 128)),
+		)
+		s.NoError(err)
+		s.Equal(1, r.Len())
+	})
+
+	s.Run("missing_field_with_nullable", func() {
+		defer s.resetMock()
+		s.setupHasCollection(testCollectionName)
+		s.setupHasPartition(testCollectionName, "partition_1")
+
+		s.setupDescribeCollection(testCollectionName, entity.NewSchema().
+			WithField(entity.NewField().WithIsPrimaryKey(true).WithIsAutoID(true).WithName("ID").WithDataType(entity.FieldTypeInt64)).
+			WithField(entity.NewField().WithName("nullable_fid").WithDataType(entity.FieldTypeInt64).WithNullable(true)).
 			WithField(entity.NewField().WithName("vector").WithDataType(entity.FieldTypeFloatVector).WithTypeParams(entity.TypeParamDim, "128")),
 		)
 
@@ -559,6 +717,86 @@ func (s *UpsertSuite) TestUpsertSuccess() {
 		)
 		s.NoError(err)
 		s.Equal(1, r.Len())
+	})
+
+	s.Run("insert_with_nullable_column", func() {
+		defer s.resetMock()
+		s.setupHasCollection(testCollectionName)
+		s.setupHasPartition(testCollectionName, "partition_1")
+
+		s.setupDescribeCollection(testCollectionName, entity.NewSchema().
+			WithField(entity.NewField().WithIsPrimaryKey(true).WithIsAutoID(true).WithName("ID").WithDataType(entity.FieldTypeInt64)).
+			WithField(entity.NewField().WithName("nullable_fid").WithDataType(entity.FieldTypeInt64).WithNullable(true)).
+			WithField(entity.NewField().WithName("vector").WithDataType(entity.FieldTypeFloatVector).WithTypeParams(entity.TypeParamDim, "128")),
+		)
+
+		s.mock.EXPECT().Upsert(mock.Anything, mock.AnythingOfType("*milvuspb.UpsertRequest")).
+			Run(func(ctx context.Context, req *milvuspb.UpsertRequest) {
+				var data *schemapb.FieldData
+				for _, d := range req.GetFieldsData() {
+					if d.FieldName == "nullable_fid" {
+						data = d
+					}
+				}
+				s.Equal([]bool{false, true}, data.ValidData)
+				s.Equal([]int64{1}, data.GetScalars().GetLongData().Data)
+				s.Equal(2, len(req.GetFieldsData()))
+			}).Return(&milvuspb.MutationResult{
+			Status: &commonpb.Status{},
+			IDs: &schemapb.IDs{
+				IdField: &schemapb.IDs_IntId{
+					IntId: &schemapb.LongArray{
+						Data: []int64{1, 2},
+					},
+				},
+			},
+		}, nil)
+		value := make([]int64, 2)
+		value[1] = 1
+		validValue := make([]bool, 2)
+		validValue[1] = true
+		r, err := c.Upsert(ctx, testCollectionName, "partition_1",
+			entity.NewNullableColumnInt64("nullable_fid", value, validValue),
+			entity.NewColumnFloatVector("vector", 128, generateFloatVector(2, 128)),
+		)
+		s.NoError(err)
+		s.Equal(2, r.Len())
+	})
+
+	s.Run("insert_with_nullable_column_with_default_value", func() {
+		defer s.resetMock()
+		s.setupHasCollection(testCollectionName)
+		s.setupHasPartition(testCollectionName, "partition_1")
+
+		s.setupDescribeCollection(testCollectionName, entity.NewSchema().
+			WithField(entity.NewField().WithIsPrimaryKey(true).WithIsAutoID(true).WithName("ID").WithDataType(entity.FieldTypeInt64)).
+			WithField(entity.NewField().WithName("nullable_fid").WithDataType(entity.FieldTypeInt64).WithNullable(true).WithDefaultValueLong(10)).
+			WithField(entity.NewField().WithName("vector").WithDataType(entity.FieldTypeFloatVector).WithTypeParams(entity.TypeParamDim, "128")),
+		)
+
+		s.mock.EXPECT().Upsert(mock.Anything, mock.AnythingOfType("*milvuspb.UpsertRequest")).
+			Run(func(ctx context.Context, req *milvuspb.UpsertRequest) {
+				s.Equal(2, len(req.GetFieldsData()))
+			}).Return(&milvuspb.MutationResult{
+			Status: &commonpb.Status{},
+			IDs: &schemapb.IDs{
+				IdField: &schemapb.IDs_IntId{
+					IntId: &schemapb.LongArray{
+						Data: []int64{1, 2},
+					},
+				},
+			},
+		}, nil)
+		value := make([]int64, 2)
+		value[1] = 1
+		validValue := make([]bool, 2)
+		validValue[1] = true
+		r, err := c.Upsert(ctx, testCollectionName, "partition_1",
+			entity.NewNullableColumnInt64("nullable_fid", value, validValue),
+			entity.NewColumnFloatVector("vector", 128, generateFloatVector(2, 128)),
+		)
+		s.NoError(err)
+		s.Equal(2, r.Len())
 	})
 }
 

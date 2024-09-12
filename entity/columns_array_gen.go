@@ -16,6 +16,8 @@ type ColumnBoolArray struct {
 	ColumnBase
 	name   string
 	values [][]bool
+	validValues []bool
+	nullable    bool
 }
 
 // Name returns column name
@@ -33,6 +35,12 @@ func (c *ColumnBoolArray) Len() int {
 	return len(c.values)
 }
 
+// Nullable returns column values nullable
+func (c *ColumnBoolArray) Nullable() bool {
+	return c.nullable
+}
+
+// Slice returns column slice
 func (c *ColumnBoolArray) Slice(start, end int) Column {
 	l := c.Len()
 	if start > l {
@@ -41,13 +49,16 @@ func (c *ColumnBoolArray) Slice(start, end int) Column {
 	if end == -1 || end > l {
 		end = l
 	}
-	if end == -1 || end > l {
-		end = l
+	sliceValidValues := make([]bool, 0)
+	if c.nullable {
+		sliceValidValues = c.validValues[start:end]
 	}
 	return &ColumnBoolArray{
-		ColumnBase: c.ColumnBase,
-		name:       c.name,
-		values:     c.values[start:end],
+		ColumnBase:  c.ColumnBase,
+		name:        c.name,
+		values:      c.values[start:end],
+		validValues: sliceValidValues,
+		nullable:    c.nullable,
 	}
 }
 
@@ -57,6 +68,14 @@ func (c *ColumnBoolArray) Get(idx int) (interface{}, error) {
 	if idx < 0 || idx >= c.Len() {
 		return r, errors.New("index out of range")
 	}
+	if c.nullable {
+		if idx < 0 || idx >= len(c.validValues) {
+			return nil, errors.New("index out of validValues range")
+		}
+		if !c.validValues[idx] {
+			return nil, nil
+		}
+	}
 	return c.values[idx], nil
 }
 
@@ -65,22 +84,36 @@ func (c *ColumnBoolArray) FieldData() *schemapb.FieldData {
 	fd := &schemapb.FieldData{
 		Type:      schemapb.DataType_Array,
 		FieldName: c.name,
+		ValidData: c.validValues,
 	}
 
-	data := make([]*schemapb.ScalarField, 0, c.Len())
-	for _, arr := range c.values {
+	convertTo := func(arr []bool) *schemapb.ScalarField {
 		converted := make([]bool, 0, c.Len())
 		for i := 0; i < len(arr); i++ {
 			converted = append(converted, bool(arr[i]))
 		}
-		data = append(data, &schemapb.ScalarField{
+		return &schemapb.ScalarField{
 			Data: &schemapb.ScalarField_BoolData{
 				BoolData: &schemapb.BoolArray{
 					Data: converted,
 				},
 			},
-		})
+		}
 	}
+
+	data := make([]*schemapb.ScalarField, 0, c.Len())
+	if c.nullable {
+		for i, v := range c.validValues {
+			if v {
+				data = append(data, convertTo(c.values[i]))
+			}
+		}
+	} else {
+		for _, arr := range c.values {
+			data = append(data, convertTo(arr))
+		}
+	}
+
 	fd.Field = &schemapb.FieldData_Scalars{
 		Scalars: &schemapb.ScalarField{
 			Data: &schemapb.ScalarField_ArrayData{
@@ -101,16 +134,33 @@ func (c *ColumnBoolArray) ValueByIdx(idx int) ([]bool, error) {
 	if idx < 0 || idx >= c.Len() {
 		return r, errors.New("index out of range")
 	}
+	if c.nullable {
+		if idx < 0 || idx >= len(c.validValues) {
+			return r, errors.New("index out of validValues range")
+		}
+		if !c.validValues[idx] {
+			return nil, nil
+		}
+	}
 	return c.values[idx], nil
 }
 
 // AppendValue append value into column
 func(c *ColumnBoolArray) AppendValue(i interface{}) error {
+	var v []bool
+	if i == nil && c.nullable {
+		c.values = append(c.values, v)
+		c.validValues = append(c.validValues, false)
+		return nil
+	}
 	v, ok := i.([]bool)
 	if !ok {
 		return fmt.Errorf("invalid type, expected []bool, got %T", i)
 	}
 	c.values = append(c.values, v)
+	if c.nullable {
+		c.validValues = append(c.validValues, true)
+	}
 
 	return nil
 }
@@ -118,6 +168,11 @@ func(c *ColumnBoolArray) AppendValue(i interface{}) error {
 // Data returns column data
 func (c *ColumnBoolArray) Data() [][]bool {
 	return c.values
+}
+
+// ValidData returns column ValidData
+func (c *ColumnBoolArray) ValidData() []bool {
+	return c.validValues
 }
 
 // NewColumnBool auto generated constructor
@@ -128,11 +183,33 @@ func NewColumnBoolArray(name string, values [][]bool) *ColumnBoolArray {
 	}
 }
 
+// NewColumnBool auto generated constructor
+func NewNullableColumnBoolArray(name string, values [][]bool, validValues []bool) *ColumnBoolArray {
+	return &ColumnBoolArray {
+		name: name,
+		values: values,
+		nullable:    true,
+		validValues: validValues,
+	}
+}
+
+// NewAllNullColumnBool auto generated constructor
+func NewAllNullColumnBoolArray(name string, rowSize int) *ColumnBoolArray {
+	return &ColumnBoolArray {
+		name: name,
+		values: make([][]bool,rowSize),
+		nullable:    true,
+		validValues: make([]bool,rowSize),
+	}
+}
+
 // ColumnInt8Array generated columns type for Int8
 type ColumnInt8Array struct {
 	ColumnBase
 	name   string
 	values [][]int8
+	validValues []bool
+	nullable    bool
 }
 
 // Name returns column name
@@ -150,6 +227,12 @@ func (c *ColumnInt8Array) Len() int {
 	return len(c.values)
 }
 
+// Nullable returns column values nullable
+func (c *ColumnInt8Array) Nullable() bool {
+	return c.nullable
+}
+
+// Slice returns column slice
 func (c *ColumnInt8Array) Slice(start, end int) Column {
 	l := c.Len()
 	if start > l {
@@ -158,10 +241,16 @@ func (c *ColumnInt8Array) Slice(start, end int) Column {
 	if end == -1 || end > l {
 		end = l
 	}
+	sliceValidValues := make([]bool, 0)
+	if c.nullable {
+		sliceValidValues = c.validValues[start:end]
+	}
 	return &ColumnInt8Array{
-		ColumnBase: c.ColumnBase,
-		name:       c.name,
-		values:     c.values[start:end],
+		ColumnBase:  c.ColumnBase,
+		name:        c.name,
+		values:      c.values[start:end],
+		validValues: sliceValidValues,
+		nullable:    c.nullable,
 	}
 }
 
@@ -171,6 +260,14 @@ func (c *ColumnInt8Array) Get(idx int) (interface{}, error) {
 	if idx < 0 || idx >= c.Len() {
 		return r, errors.New("index out of range")
 	}
+	if c.nullable {
+		if idx < 0 || idx >= len(c.validValues) {
+			return nil, errors.New("index out of validValues range")
+		}
+		if !c.validValues[idx] {
+			return nil, nil
+		}
+	}
 	return c.values[idx], nil
 }
 
@@ -179,22 +276,36 @@ func (c *ColumnInt8Array) FieldData() *schemapb.FieldData {
 	fd := &schemapb.FieldData{
 		Type:      schemapb.DataType_Array,
 		FieldName: c.name,
+		ValidData: c.validValues,
 	}
 
-	data := make([]*schemapb.ScalarField, 0, c.Len())
-	for _, arr := range c.values {
+	convertTo := func(arr []int8) *schemapb.ScalarField {
 		converted := make([]int32, 0, c.Len())
 		for i := 0; i < len(arr); i++ {
 			converted = append(converted, int32(arr[i]))
 		}
-		data = append(data, &schemapb.ScalarField{
+		return &schemapb.ScalarField{
 			Data: &schemapb.ScalarField_IntData{
 				IntData: &schemapb.IntArray{
 					Data: converted,
 				},
 			},
-		})
+		}
 	}
+
+	data := make([]*schemapb.ScalarField, 0, c.Len())
+	if c.nullable {
+		for i, v := range c.validValues {
+			if v {
+				data = append(data, convertTo(c.values[i]))
+			}
+		}
+	} else {
+		for _, arr := range c.values {
+			data = append(data, convertTo(arr))
+		}
+	}
+
 	fd.Field = &schemapb.FieldData_Scalars{
 		Scalars: &schemapb.ScalarField{
 			Data: &schemapb.ScalarField_ArrayData{
@@ -215,16 +326,33 @@ func (c *ColumnInt8Array) ValueByIdx(idx int) ([]int8, error) {
 	if idx < 0 || idx >= c.Len() {
 		return r, errors.New("index out of range")
 	}
+	if c.nullable {
+		if idx < 0 || idx >= len(c.validValues) {
+			return r, errors.New("index out of validValues range")
+		}
+		if !c.validValues[idx] {
+			return nil, nil
+		}
+	}
 	return c.values[idx], nil
 }
 
 // AppendValue append value into column
 func(c *ColumnInt8Array) AppendValue(i interface{}) error {
+	var v []int8
+	if i == nil && c.nullable {
+		c.values = append(c.values, v)
+		c.validValues = append(c.validValues, false)
+		return nil
+	}
 	v, ok := i.([]int8)
 	if !ok {
 		return fmt.Errorf("invalid type, expected []int8, got %T", i)
 	}
 	c.values = append(c.values, v)
+	if c.nullable {
+		c.validValues = append(c.validValues, true)
+	}
 
 	return nil
 }
@@ -232,6 +360,11 @@ func(c *ColumnInt8Array) AppendValue(i interface{}) error {
 // Data returns column data
 func (c *ColumnInt8Array) Data() [][]int8 {
 	return c.values
+}
+
+// ValidData returns column ValidData
+func (c *ColumnInt8Array) ValidData() []bool {
+	return c.validValues
 }
 
 // NewColumnInt8 auto generated constructor
@@ -242,11 +375,33 @@ func NewColumnInt8Array(name string, values [][]int8) *ColumnInt8Array {
 	}
 }
 
+// NewColumnInt8 auto generated constructor
+func NewNullableColumnInt8Array(name string, values [][]int8, validValues []bool) *ColumnInt8Array {
+	return &ColumnInt8Array {
+		name: name,
+		values: values,
+		nullable:    true,
+		validValues: validValues,
+	}
+}
+
+// NewAllNullColumnInt8 auto generated constructor
+func NewAllNullColumnInt8Array(name string, rowSize int) *ColumnInt8Array {
+	return &ColumnInt8Array {
+		name: name,
+		values: make([][]int8,rowSize),
+		nullable:    true,
+		validValues: make([]bool,rowSize),
+	}
+}
+
 // ColumnInt16Array generated columns type for Int16
 type ColumnInt16Array struct {
 	ColumnBase
 	name   string
 	values [][]int16
+	validValues []bool
+	nullable    bool
 }
 
 // Name returns column name
@@ -264,6 +419,12 @@ func (c *ColumnInt16Array) Len() int {
 	return len(c.values)
 }
 
+// Nullable returns column values nullable
+func (c *ColumnInt16Array) Nullable() bool {
+	return c.nullable
+}
+
+// Slice returns column slice
 func (c *ColumnInt16Array) Slice(start, end int) Column {
 	l := c.Len()
 	if start > l {
@@ -272,10 +433,16 @@ func (c *ColumnInt16Array) Slice(start, end int) Column {
 	if end == -1 || end > l {
 		end = l
 	}
+	sliceValidValues := make([]bool, 0)
+	if c.nullable {
+		sliceValidValues = c.validValues[start:end]
+	}
 	return &ColumnInt16Array{
-		ColumnBase: c.ColumnBase,
-		name:       c.name,
-		values:     c.values[start:end],
+		ColumnBase:  c.ColumnBase,
+		name:        c.name,
+		values:      c.values[start:end],
+		validValues: sliceValidValues,
+		nullable:    c.nullable,
 	}
 }
 
@@ -285,6 +452,14 @@ func (c *ColumnInt16Array) Get(idx int) (interface{}, error) {
 	if idx < 0 || idx >= c.Len() {
 		return r, errors.New("index out of range")
 	}
+	if c.nullable {
+		if idx < 0 || idx >= len(c.validValues) {
+			return nil, errors.New("index out of validValues range")
+		}
+		if !c.validValues[idx] {
+			return nil, nil
+		}
+	}
 	return c.values[idx], nil
 }
 
@@ -293,22 +468,36 @@ func (c *ColumnInt16Array) FieldData() *schemapb.FieldData {
 	fd := &schemapb.FieldData{
 		Type:      schemapb.DataType_Array,
 		FieldName: c.name,
+		ValidData: c.validValues,
 	}
 
-	data := make([]*schemapb.ScalarField, 0, c.Len())
-	for _, arr := range c.values {
+	convertTo := func(arr []int16) *schemapb.ScalarField {
 		converted := make([]int32, 0, c.Len())
 		for i := 0; i < len(arr); i++ {
 			converted = append(converted, int32(arr[i]))
 		}
-		data = append(data, &schemapb.ScalarField{
+		return &schemapb.ScalarField{
 			Data: &schemapb.ScalarField_IntData{
 				IntData: &schemapb.IntArray{
 					Data: converted,
 				},
 			},
-		})
+		}
 	}
+
+	data := make([]*schemapb.ScalarField, 0, c.Len())
+	if c.nullable {
+		for i, v := range c.validValues {
+			if v {
+				data = append(data, convertTo(c.values[i]))
+			}
+		}
+	} else {
+		for _, arr := range c.values {
+			data = append(data, convertTo(arr))
+		}
+	}
+
 	fd.Field = &schemapb.FieldData_Scalars{
 		Scalars: &schemapb.ScalarField{
 			Data: &schemapb.ScalarField_ArrayData{
@@ -329,16 +518,33 @@ func (c *ColumnInt16Array) ValueByIdx(idx int) ([]int16, error) {
 	if idx < 0 || idx >= c.Len() {
 		return r, errors.New("index out of range")
 	}
+	if c.nullable {
+		if idx < 0 || idx >= len(c.validValues) {
+			return r, errors.New("index out of validValues range")
+		}
+		if !c.validValues[idx] {
+			return nil, nil
+		}
+	}
 	return c.values[idx], nil
 }
 
 // AppendValue append value into column
 func(c *ColumnInt16Array) AppendValue(i interface{}) error {
+	var v []int16
+	if i == nil && c.nullable {
+		c.values = append(c.values, v)
+		c.validValues = append(c.validValues, false)
+		return nil
+	}
 	v, ok := i.([]int16)
 	if !ok {
 		return fmt.Errorf("invalid type, expected []int16, got %T", i)
 	}
 	c.values = append(c.values, v)
+	if c.nullable {
+		c.validValues = append(c.validValues, true)
+	}
 
 	return nil
 }
@@ -346,6 +552,11 @@ func(c *ColumnInt16Array) AppendValue(i interface{}) error {
 // Data returns column data
 func (c *ColumnInt16Array) Data() [][]int16 {
 	return c.values
+}
+
+// ValidData returns column ValidData
+func (c *ColumnInt16Array) ValidData() []bool {
+	return c.validValues
 }
 
 // NewColumnInt16 auto generated constructor
@@ -356,11 +567,33 @@ func NewColumnInt16Array(name string, values [][]int16) *ColumnInt16Array {
 	}
 }
 
+// NewColumnInt16 auto generated constructor
+func NewNullableColumnInt16Array(name string, values [][]int16, validValues []bool) *ColumnInt16Array {
+	return &ColumnInt16Array {
+		name: name,
+		values: values,
+		nullable:    true,
+		validValues: validValues,
+	}
+}
+
+// NewAllNullColumnInt16 auto generated constructor
+func NewAllNullColumnInt16Array(name string, rowSize int) *ColumnInt16Array {
+	return &ColumnInt16Array {
+		name: name,
+		values: make([][]int16,rowSize),
+		nullable:    true,
+		validValues: make([]bool,rowSize),
+	}
+}
+
 // ColumnInt32Array generated columns type for Int32
 type ColumnInt32Array struct {
 	ColumnBase
 	name   string
 	values [][]int32
+	validValues []bool
+	nullable    bool
 }
 
 // Name returns column name
@@ -378,6 +611,12 @@ func (c *ColumnInt32Array) Len() int {
 	return len(c.values)
 }
 
+// Nullable returns column values nullable
+func (c *ColumnInt32Array) Nullable() bool {
+	return c.nullable
+}
+
+// Slice returns column slice
 func (c *ColumnInt32Array) Slice(start, end int) Column {
 	l := c.Len()
 	if start > l {
@@ -386,10 +625,16 @@ func (c *ColumnInt32Array) Slice(start, end int) Column {
 	if end == -1 || end > l {
 		end = l
 	}
+	sliceValidValues := make([]bool, 0)
+	if c.nullable {
+		sliceValidValues = c.validValues[start:end]
+	}
 	return &ColumnInt32Array{
-		ColumnBase: c.ColumnBase,
-		name:       c.name,
-		values:     c.values[start:end],
+		ColumnBase:  c.ColumnBase,
+		name:        c.name,
+		values:      c.values[start:end],
+		validValues: sliceValidValues,
+		nullable:    c.nullable,
 	}
 }
 
@@ -399,6 +644,14 @@ func (c *ColumnInt32Array) Get(idx int) (interface{}, error) {
 	if idx < 0 || idx >= c.Len() {
 		return r, errors.New("index out of range")
 	}
+	if c.nullable {
+		if idx < 0 || idx >= len(c.validValues) {
+			return nil, errors.New("index out of validValues range")
+		}
+		if !c.validValues[idx] {
+			return nil, nil
+		}
+	}
 	return c.values[idx], nil
 }
 
@@ -407,22 +660,36 @@ func (c *ColumnInt32Array) FieldData() *schemapb.FieldData {
 	fd := &schemapb.FieldData{
 		Type:      schemapb.DataType_Array,
 		FieldName: c.name,
+		ValidData: c.validValues,
 	}
 
-	data := make([]*schemapb.ScalarField, 0, c.Len())
-	for _, arr := range c.values {
+	convertTo := func(arr []int32) *schemapb.ScalarField {
 		converted := make([]int32, 0, c.Len())
 		for i := 0; i < len(arr); i++ {
 			converted = append(converted, int32(arr[i]))
 		}
-		data = append(data, &schemapb.ScalarField{
+		return &schemapb.ScalarField{
 			Data: &schemapb.ScalarField_IntData{
 				IntData: &schemapb.IntArray{
 					Data: converted,
 				},
 			},
-		})
+		}
 	}
+
+	data := make([]*schemapb.ScalarField, 0, c.Len())
+	if c.nullable {
+		for i, v := range c.validValues {
+			if v {
+				data = append(data, convertTo(c.values[i]))
+			}
+		}
+	} else {
+		for _, arr := range c.values {
+			data = append(data, convertTo(arr))
+		}
+	}
+
 	fd.Field = &schemapb.FieldData_Scalars{
 		Scalars: &schemapb.ScalarField{
 			Data: &schemapb.ScalarField_ArrayData{
@@ -443,16 +710,33 @@ func (c *ColumnInt32Array) ValueByIdx(idx int) ([]int32, error) {
 	if idx < 0 || idx >= c.Len() {
 		return r, errors.New("index out of range")
 	}
+	if c.nullable {
+		if idx < 0 || idx >= len(c.validValues) {
+			return r, errors.New("index out of validValues range")
+		}
+		if !c.validValues[idx] {
+			return nil, nil
+		}
+	}
 	return c.values[idx], nil
 }
 
 // AppendValue append value into column
 func(c *ColumnInt32Array) AppendValue(i interface{}) error {
+	var v []int32
+	if i == nil && c.nullable {
+		c.values = append(c.values, v)
+		c.validValues = append(c.validValues, false)
+		return nil
+	}
 	v, ok := i.([]int32)
 	if !ok {
 		return fmt.Errorf("invalid type, expected []int32, got %T", i)
 	}
 	c.values = append(c.values, v)
+	if c.nullable {
+		c.validValues = append(c.validValues, true)
+	}
 
 	return nil
 }
@@ -460,6 +744,11 @@ func(c *ColumnInt32Array) AppendValue(i interface{}) error {
 // Data returns column data
 func (c *ColumnInt32Array) Data() [][]int32 {
 	return c.values
+}
+
+// ValidData returns column ValidData
+func (c *ColumnInt32Array) ValidData() []bool {
+	return c.validValues
 }
 
 // NewColumnInt32 auto generated constructor
@@ -470,11 +759,33 @@ func NewColumnInt32Array(name string, values [][]int32) *ColumnInt32Array {
 	}
 }
 
+// NewColumnInt32 auto generated constructor
+func NewNullableColumnInt32Array(name string, values [][]int32, validValues []bool) *ColumnInt32Array {
+	return &ColumnInt32Array {
+		name: name,
+		values: values,
+		nullable:    true,
+		validValues: validValues,
+	}
+}
+
+// NewAllNullColumnInt32 auto generated constructor
+func NewAllNullColumnInt32Array(name string, rowSize int) *ColumnInt32Array {
+	return &ColumnInt32Array {
+		name: name,
+		values: make([][]int32,rowSize),
+		nullable:    true,
+		validValues: make([]bool,rowSize),
+	}
+}
+
 // ColumnInt64Array generated columns type for Int64
 type ColumnInt64Array struct {
 	ColumnBase
 	name   string
 	values [][]int64
+	validValues []bool
+	nullable    bool
 }
 
 // Name returns column name
@@ -492,6 +803,12 @@ func (c *ColumnInt64Array) Len() int {
 	return len(c.values)
 }
 
+// Nullable returns column values nullable
+func (c *ColumnInt64Array) Nullable() bool {
+	return c.nullable
+}
+
+// Slice returns column slice
 func (c *ColumnInt64Array) Slice(start, end int) Column {
 	l := c.Len()
 	if start > l {
@@ -500,10 +817,16 @@ func (c *ColumnInt64Array) Slice(start, end int) Column {
 	if end == -1 || end > l {
 		end = l
 	}
+	sliceValidValues := make([]bool, 0)
+	if c.nullable {
+		sliceValidValues = c.validValues[start:end]
+	}
 	return &ColumnInt64Array{
-		ColumnBase: c.ColumnBase,
-		name:       c.name,
-		values:     c.values[start:end],
+		ColumnBase:  c.ColumnBase,
+		name:        c.name,
+		values:      c.values[start:end],
+		validValues: sliceValidValues,
+		nullable:    c.nullable,
 	}
 }
 
@@ -513,6 +836,14 @@ func (c *ColumnInt64Array) Get(idx int) (interface{}, error) {
 	if idx < 0 || idx >= c.Len() {
 		return r, errors.New("index out of range")
 	}
+	if c.nullable {
+		if idx < 0 || idx >= len(c.validValues) {
+			return nil, errors.New("index out of validValues range")
+		}
+		if !c.validValues[idx] {
+			return nil, nil
+		}
+	}
 	return c.values[idx], nil
 }
 
@@ -521,22 +852,36 @@ func (c *ColumnInt64Array) FieldData() *schemapb.FieldData {
 	fd := &schemapb.FieldData{
 		Type:      schemapb.DataType_Array,
 		FieldName: c.name,
+		ValidData: c.validValues,
 	}
 
-	data := make([]*schemapb.ScalarField, 0, c.Len())
-	for _, arr := range c.values {
+	convertTo := func(arr []int64) *schemapb.ScalarField {
 		converted := make([]int64, 0, c.Len())
 		for i := 0; i < len(arr); i++ {
 			converted = append(converted, int64(arr[i]))
 		}
-		data = append(data, &schemapb.ScalarField{
+		return &schemapb.ScalarField{
 			Data: &schemapb.ScalarField_LongData{
 				LongData: &schemapb.LongArray{
 					Data: converted,
 				},
 			},
-		})
+		}
 	}
+
+	data := make([]*schemapb.ScalarField, 0, c.Len())
+	if c.nullable {
+		for i, v := range c.validValues {
+			if v {
+				data = append(data, convertTo(c.values[i]))
+			}
+		}
+	} else {
+		for _, arr := range c.values {
+			data = append(data, convertTo(arr))
+		}
+	}
+
 	fd.Field = &schemapb.FieldData_Scalars{
 		Scalars: &schemapb.ScalarField{
 			Data: &schemapb.ScalarField_ArrayData{
@@ -557,16 +902,33 @@ func (c *ColumnInt64Array) ValueByIdx(idx int) ([]int64, error) {
 	if idx < 0 || idx >= c.Len() {
 		return r, errors.New("index out of range")
 	}
+	if c.nullable {
+		if idx < 0 || idx >= len(c.validValues) {
+			return r, errors.New("index out of validValues range")
+		}
+		if !c.validValues[idx] {
+			return nil, nil
+		}
+	}
 	return c.values[idx], nil
 }
 
 // AppendValue append value into column
 func(c *ColumnInt64Array) AppendValue(i interface{}) error {
+	var v []int64
+	if i == nil && c.nullable {
+		c.values = append(c.values, v)
+		c.validValues = append(c.validValues, false)
+		return nil
+	}
 	v, ok := i.([]int64)
 	if !ok {
 		return fmt.Errorf("invalid type, expected []int64, got %T", i)
 	}
 	c.values = append(c.values, v)
+	if c.nullable {
+		c.validValues = append(c.validValues, true)
+	}
 
 	return nil
 }
@@ -574,6 +936,11 @@ func(c *ColumnInt64Array) AppendValue(i interface{}) error {
 // Data returns column data
 func (c *ColumnInt64Array) Data() [][]int64 {
 	return c.values
+}
+
+// ValidData returns column ValidData
+func (c *ColumnInt64Array) ValidData() []bool {
+	return c.validValues
 }
 
 // NewColumnInt64 auto generated constructor
@@ -584,11 +951,33 @@ func NewColumnInt64Array(name string, values [][]int64) *ColumnInt64Array {
 	}
 }
 
+// NewColumnInt64 auto generated constructor
+func NewNullableColumnInt64Array(name string, values [][]int64, validValues []bool) *ColumnInt64Array {
+	return &ColumnInt64Array {
+		name: name,
+		values: values,
+		nullable:    true,
+		validValues: validValues,
+	}
+}
+
+// NewAllNullColumnInt64 auto generated constructor
+func NewAllNullColumnInt64Array(name string, rowSize int) *ColumnInt64Array {
+	return &ColumnInt64Array {
+		name: name,
+		values: make([][]int64,rowSize),
+		nullable:    true,
+		validValues: make([]bool,rowSize),
+	}
+}
+
 // ColumnFloatArray generated columns type for Float
 type ColumnFloatArray struct {
 	ColumnBase
 	name   string
 	values [][]float32
+	validValues []bool
+	nullable    bool
 }
 
 // Name returns column name
@@ -606,6 +995,12 @@ func (c *ColumnFloatArray) Len() int {
 	return len(c.values)
 }
 
+// Nullable returns column values nullable
+func (c *ColumnFloatArray) Nullable() bool {
+	return c.nullable
+}
+
+// Slice returns column slice
 func (c *ColumnFloatArray) Slice(start, end int) Column {
 	l := c.Len()
 	if start > l {
@@ -614,10 +1009,16 @@ func (c *ColumnFloatArray) Slice(start, end int) Column {
 	if end == -1 || end > l {
 		end = l
 	}
+	sliceValidValues := make([]bool, 0)
+	if c.nullable {
+		sliceValidValues = c.validValues[start:end]
+	}
 	return &ColumnFloatArray{
-		ColumnBase: c.ColumnBase,
-		name:       c.name,
-		values:     c.values[start:end],
+		ColumnBase:  c.ColumnBase,
+		name:        c.name,
+		values:      c.values[start:end],
+		validValues: sliceValidValues,
+		nullable:    c.nullable,
 	}
 }
 
@@ -627,6 +1028,14 @@ func (c *ColumnFloatArray) Get(idx int) (interface{}, error) {
 	if idx < 0 || idx >= c.Len() {
 		return r, errors.New("index out of range")
 	}
+	if c.nullable {
+		if idx < 0 || idx >= len(c.validValues) {
+			return nil, errors.New("index out of validValues range")
+		}
+		if !c.validValues[idx] {
+			return nil, nil
+		}
+	}
 	return c.values[idx], nil
 }
 
@@ -635,22 +1044,36 @@ func (c *ColumnFloatArray) FieldData() *schemapb.FieldData {
 	fd := &schemapb.FieldData{
 		Type:      schemapb.DataType_Array,
 		FieldName: c.name,
+		ValidData: c.validValues,
 	}
 
-	data := make([]*schemapb.ScalarField, 0, c.Len())
-	for _, arr := range c.values {
+	convertTo := func(arr []float32) *schemapb.ScalarField {
 		converted := make([]float32, 0, c.Len())
 		for i := 0; i < len(arr); i++ {
 			converted = append(converted, float32(arr[i]))
 		}
-		data = append(data, &schemapb.ScalarField{
+		return &schemapb.ScalarField{
 			Data: &schemapb.ScalarField_FloatData{
 				FloatData: &schemapb.FloatArray{
 					Data: converted,
 				},
 			},
-		})
+		}
 	}
+
+	data := make([]*schemapb.ScalarField, 0, c.Len())
+	if c.nullable {
+		for i, v := range c.validValues {
+			if v {
+				data = append(data, convertTo(c.values[i]))
+			}
+		}
+	} else {
+		for _, arr := range c.values {
+			data = append(data, convertTo(arr))
+		}
+	}
+
 	fd.Field = &schemapb.FieldData_Scalars{
 		Scalars: &schemapb.ScalarField{
 			Data: &schemapb.ScalarField_ArrayData{
@@ -671,16 +1094,33 @@ func (c *ColumnFloatArray) ValueByIdx(idx int) ([]float32, error) {
 	if idx < 0 || idx >= c.Len() {
 		return r, errors.New("index out of range")
 	}
+	if c.nullable {
+		if idx < 0 || idx >= len(c.validValues) {
+			return r, errors.New("index out of validValues range")
+		}
+		if !c.validValues[idx] {
+			return nil, nil
+		}
+	}
 	return c.values[idx], nil
 }
 
 // AppendValue append value into column
 func(c *ColumnFloatArray) AppendValue(i interface{}) error {
+	var v []float32
+	if i == nil && c.nullable {
+		c.values = append(c.values, v)
+		c.validValues = append(c.validValues, false)
+		return nil
+	}
 	v, ok := i.([]float32)
 	if !ok {
 		return fmt.Errorf("invalid type, expected []float32, got %T", i)
 	}
 	c.values = append(c.values, v)
+	if c.nullable {
+		c.validValues = append(c.validValues, true)
+	}
 
 	return nil
 }
@@ -688,6 +1128,11 @@ func(c *ColumnFloatArray) AppendValue(i interface{}) error {
 // Data returns column data
 func (c *ColumnFloatArray) Data() [][]float32 {
 	return c.values
+}
+
+// ValidData returns column ValidData
+func (c *ColumnFloatArray) ValidData() []bool {
+	return c.validValues
 }
 
 // NewColumnFloat auto generated constructor
@@ -698,11 +1143,33 @@ func NewColumnFloatArray(name string, values [][]float32) *ColumnFloatArray {
 	}
 }
 
+// NewColumnFloat auto generated constructor
+func NewNullableColumnFloatArray(name string, values [][]float32, validValues []bool) *ColumnFloatArray {
+	return &ColumnFloatArray {
+		name: name,
+		values: values,
+		nullable:    true,
+		validValues: validValues,
+	}
+}
+
+// NewAllNullColumnFloat auto generated constructor
+func NewAllNullColumnFloatArray(name string, rowSize int) *ColumnFloatArray {
+	return &ColumnFloatArray {
+		name: name,
+		values: make([][]float32,rowSize),
+		nullable:    true,
+		validValues: make([]bool,rowSize),
+	}
+}
+
 // ColumnDoubleArray generated columns type for Double
 type ColumnDoubleArray struct {
 	ColumnBase
 	name   string
 	values [][]float64
+	validValues []bool
+	nullable    bool
 }
 
 // Name returns column name
@@ -720,6 +1187,12 @@ func (c *ColumnDoubleArray) Len() int {
 	return len(c.values)
 }
 
+// Nullable returns column values nullable
+func (c *ColumnDoubleArray) Nullable() bool {
+	return c.nullable
+}
+
+// Slice returns column slice
 func (c *ColumnDoubleArray) Slice(start, end int) Column {
 	l := c.Len()
 	if start > l {
@@ -728,10 +1201,16 @@ func (c *ColumnDoubleArray) Slice(start, end int) Column {
 	if end == -1 || end > l {
 		end = l
 	}
+	sliceValidValues := make([]bool, 0)
+	if c.nullable {
+		sliceValidValues = c.validValues[start:end]
+	}
 	return &ColumnDoubleArray{
-		ColumnBase: c.ColumnBase,
-		name:       c.name,
-		values:     c.values[start:end],
+		ColumnBase:  c.ColumnBase,
+		name:        c.name,
+		values:      c.values[start:end],
+		validValues: sliceValidValues,
+		nullable:    c.nullable,
 	}
 }
 
@@ -741,6 +1220,14 @@ func (c *ColumnDoubleArray) Get(idx int) (interface{}, error) {
 	if idx < 0 || idx >= c.Len() {
 		return r, errors.New("index out of range")
 	}
+	if c.nullable {
+		if idx < 0 || idx >= len(c.validValues) {
+			return nil, errors.New("index out of validValues range")
+		}
+		if !c.validValues[idx] {
+			return nil, nil
+		}
+	}
 	return c.values[idx], nil
 }
 
@@ -749,22 +1236,36 @@ func (c *ColumnDoubleArray) FieldData() *schemapb.FieldData {
 	fd := &schemapb.FieldData{
 		Type:      schemapb.DataType_Array,
 		FieldName: c.name,
+		ValidData: c.validValues,
 	}
 
-	data := make([]*schemapb.ScalarField, 0, c.Len())
-	for _, arr := range c.values {
+	convertTo := func(arr []float64) *schemapb.ScalarField {
 		converted := make([]float64, 0, c.Len())
 		for i := 0; i < len(arr); i++ {
 			converted = append(converted, float64(arr[i]))
 		}
-		data = append(data, &schemapb.ScalarField{
+		return &schemapb.ScalarField{
 			Data: &schemapb.ScalarField_DoubleData{
 				DoubleData: &schemapb.DoubleArray{
 					Data: converted,
 				},
 			},
-		})
+		}
 	}
+
+	data := make([]*schemapb.ScalarField, 0, c.Len())
+	if c.nullable {
+		for i, v := range c.validValues {
+			if v {
+				data = append(data, convertTo(c.values[i]))
+			}
+		}
+	} else {
+		for _, arr := range c.values {
+			data = append(data, convertTo(arr))
+		}
+	}
+
 	fd.Field = &schemapb.FieldData_Scalars{
 		Scalars: &schemapb.ScalarField{
 			Data: &schemapb.ScalarField_ArrayData{
@@ -785,16 +1286,33 @@ func (c *ColumnDoubleArray) ValueByIdx(idx int) ([]float64, error) {
 	if idx < 0 || idx >= c.Len() {
 		return r, errors.New("index out of range")
 	}
+	if c.nullable {
+		if idx < 0 || idx >= len(c.validValues) {
+			return r, errors.New("index out of validValues range")
+		}
+		if !c.validValues[idx] {
+			return nil, nil
+		}
+	}
 	return c.values[idx], nil
 }
 
 // AppendValue append value into column
 func(c *ColumnDoubleArray) AppendValue(i interface{}) error {
+	var v []float64
+	if i == nil && c.nullable {
+		c.values = append(c.values, v)
+		c.validValues = append(c.validValues, false)
+		return nil
+	}
 	v, ok := i.([]float64)
 	if !ok {
 		return fmt.Errorf("invalid type, expected []float64, got %T", i)
 	}
 	c.values = append(c.values, v)
+	if c.nullable {
+		c.validValues = append(c.validValues, true)
+	}
 
 	return nil
 }
@@ -802,6 +1320,11 @@ func(c *ColumnDoubleArray) AppendValue(i interface{}) error {
 // Data returns column data
 func (c *ColumnDoubleArray) Data() [][]float64 {
 	return c.values
+}
+
+// ValidData returns column ValidData
+func (c *ColumnDoubleArray) ValidData() []bool {
+	return c.validValues
 }
 
 // NewColumnDouble auto generated constructor
@@ -812,4 +1335,23 @@ func NewColumnDoubleArray(name string, values [][]float64) *ColumnDoubleArray {
 	}
 }
 
+// NewColumnDouble auto generated constructor
+func NewNullableColumnDoubleArray(name string, values [][]float64, validValues []bool) *ColumnDoubleArray {
+	return &ColumnDoubleArray {
+		name: name,
+		values: values,
+		nullable:    true,
+		validValues: validValues,
+	}
+}
+
+// NewAllNullColumnDouble auto generated constructor
+func NewAllNullColumnDoubleArray(name string, rowSize int) *ColumnDoubleArray {
+	return &ColumnDoubleArray {
+		name: name,
+		values: make([][]float64,rowSize),
+		nullable:    true,
+		validValues: make([]bool,rowSize),
+	}
+}
 

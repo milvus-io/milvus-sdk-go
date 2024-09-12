@@ -300,32 +300,74 @@ func AnyToColumns(rows []interface{}, schemas ...*Schema) ([]Column, error) {
 		}
 		switch field.DataType {
 		case FieldTypeBool:
+			var col *ColumnBool
 			data := make([]bool, 0, rowsLen)
-			col := NewColumnBool(field.Name, data)
+			if field.Nullable {
+				validData := make([]bool, 0, rowsLen)
+				col = NewNullableColumnBool(field.Name, data, validData)
+			} else {
+				col = NewColumnBool(field.Name, data)
+			}
 			nameColumns[field.Name] = col
 		case FieldTypeInt8:
+			var col *ColumnInt8
 			data := make([]int8, 0, rowsLen)
-			col := NewColumnInt8(field.Name, data)
+			if field.Nullable {
+				validData := make([]bool, 0, rowsLen)
+				col = NewNullableColumnInt8(field.Name, data, validData)
+			} else {
+				col = NewColumnInt8(field.Name, data)
+			}
 			nameColumns[field.Name] = col
 		case FieldTypeInt16:
+			var col *ColumnInt16
 			data := make([]int16, 0, rowsLen)
-			col := NewColumnInt16(field.Name, data)
+			if field.Nullable {
+				validData := make([]bool, 0, rowsLen)
+				col = NewNullableColumnInt16(field.Name, data, validData)
+			} else {
+				col = NewColumnInt16(field.Name, data)
+			}
 			nameColumns[field.Name] = col
 		case FieldTypeInt32:
+			var col *ColumnInt32
 			data := make([]int32, 0, rowsLen)
-			col := NewColumnInt32(field.Name, data)
+			if field.Nullable {
+				validData := make([]bool, 0, rowsLen)
+				col = NewNullableColumnInt32(field.Name, data, validData)
+			} else {
+				col = NewColumnInt32(field.Name, data)
+			}
 			nameColumns[field.Name] = col
 		case FieldTypeInt64:
+			var col *ColumnInt64
 			data := make([]int64, 0, rowsLen)
-			col := NewColumnInt64(field.Name, data)
+			if field.Nullable {
+				validData := make([]bool, 0, rowsLen)
+				col = NewNullableColumnInt64(field.Name, data, validData)
+			} else {
+				col = NewColumnInt64(field.Name, data)
+			}
 			nameColumns[field.Name] = col
 		case FieldTypeFloat:
+			var col *ColumnFloat
 			data := make([]float32, 0, rowsLen)
-			col := NewColumnFloat(field.Name, data)
+			if field.Nullable {
+				validData := make([]bool, 0, rowsLen)
+				col = NewNullableColumnFloat(field.Name, data, validData)
+			} else {
+				col = NewColumnFloat(field.Name, data)
+			}
 			nameColumns[field.Name] = col
 		case FieldTypeDouble:
+			var col *ColumnDouble
 			data := make([]float64, 0, rowsLen)
-			col := NewColumnDouble(field.Name, data)
+			if field.Nullable {
+				validData := make([]bool, 0, rowsLen)
+				col = NewNullableColumnDouble(field.Name, data, validData)
+			} else {
+				col = NewColumnDouble(field.Name, data)
+			}
 			nameColumns[field.Name] = col
 		case FieldTypeString, FieldTypeVarChar:
 			data := make([]string, 0, rowsLen)
@@ -463,27 +505,51 @@ func AnyToColumns(rows []interface{}, schemas ...*Schema) ([]Column, error) {
 func NewArrayColumn(f *Field) Column {
 	switch f.ElementType {
 	case FieldTypeBool:
+		if f.Nullable {
+			return NewNullableColumnBoolArray(f.Name, nil, nil)
+		}
 		return NewColumnBoolArray(f.Name, nil)
 
 	case FieldTypeInt8:
+		if f.Nullable {
+			return NewNullableColumnInt8Array(f.Name, nil, nil)
+		}
 		return NewColumnInt8Array(f.Name, nil)
 
 	case FieldTypeInt16:
+		if f.Nullable {
+			return NewNullableColumnInt16Array(f.Name, nil, nil)
+		}
 		return NewColumnInt16Array(f.Name, nil)
 
 	case FieldTypeInt32:
+		if f.Nullable {
+			return NewNullableColumnInt32Array(f.Name, nil, nil)
+		}
 		return NewColumnInt32Array(f.Name, nil)
 
 	case FieldTypeInt64:
+		if f.Nullable {
+			return NewNullableColumnInt64Array(f.Name, nil, nil)
+		}
 		return NewColumnInt64Array(f.Name, nil)
 
 	case FieldTypeFloat:
+		if f.Nullable {
+			return NewNullableColumnFloatArray(f.Name, nil, nil)
+		}
 		return NewColumnFloatArray(f.Name, nil)
 
 	case FieldTypeDouble:
+		if f.Nullable {
+			return NewNullableColumnDoubleArray(f.Name, nil, nil)
+		}
 		return NewColumnDoubleArray(f.Name, nil)
 
 	case FieldTypeVarChar:
+		if f.Nullable {
+			return NewNullableColumnVarCharArray(f.Name, nil, nil)
+		}
 		return NewColumnVarCharArray(f.Name, nil)
 
 	default:

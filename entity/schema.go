@@ -153,6 +153,8 @@ type Field struct {
 	IsPartitionKey  bool
 	IsClusteringKey bool
 	ElementType     FieldType
+	DefaultValue    *schema.ValueField
+	Nullable        bool
 }
 
 // ProtoMessage generates corresponding FieldSchema
@@ -170,6 +172,8 @@ func (f *Field) ProtoMessage() *schema.FieldSchema {
 		IsPartitionKey:  f.IsPartitionKey,
 		IsClusteringKey: f.IsClusteringKey,
 		ElementType:     schema.DataType(f.ElementType),
+		DefaultValue:    f.DefaultValue,
+		Nullable:        f.Nullable,
 	}
 }
 
@@ -221,7 +225,11 @@ func (f *Field) WithIsClusteringKey(isClusteringKey bool) *Field {
 	return f
 }
 
-/*
+func (f *Field) WithNullable(nullable bool) *Field {
+	f.Nullable = nullable
+	return f
+}
+
 func (f *Field) WithDefaultValueBool(defaultValue bool) *Field {
 	f.DefaultValue = &schema.ValueField{
 		Data: &schema.ValueField_BoolData{
@@ -274,7 +282,7 @@ func (f *Field) WithDefaultValueString(defaultValue string) *Field {
 		},
 	}
 	return f
-}*/
+}
 
 func (f *Field) WithTypeParams(key string, value string) *Field {
 	if f.TypeParams == nil {
@@ -327,6 +335,8 @@ func (f *Field) ReadProto(p *schema.FieldSchema) *Field {
 	f.IsPartitionKey = p.GetIsPartitionKey()
 	f.IsClusteringKey = p.GetIsClusteringKey()
 	f.ElementType = FieldType(p.GetElementType())
+	f.DefaultValue = p.GetDefaultValue()
+	f.Nullable = p.GetNullable()
 
 	return f
 }
