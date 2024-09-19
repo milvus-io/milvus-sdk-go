@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -155,9 +156,15 @@ func EqualColumn(t *testing.T, columnA entity.Column, columnB entity.Column) {
 	case entity.FieldTypeVarChar:
 		require.ElementsMatch(t, columnA.(*entity.ColumnVarChar).Data(), columnB.(*entity.ColumnVarChar).Data())
 	case entity.FieldTypeJSON:
-		log.Printf("columnA: %s", columnA.(*entity.ColumnJSONBytes).Data())
-		log.Printf("columnB: %s", columnB.(*entity.ColumnJSONBytes).Data())
-		require.ElementsMatch(t, columnA.(*entity.ColumnJSONBytes).Data(), columnB.(*entity.ColumnJSONBytes).Data())
+		log.Printf("columnA: %s", columnA.FieldData())
+		log.Printf("columnB: %s", columnB.FieldData())
+		require.Equal(t, reflect.TypeOf(columnA), reflect.TypeOf(columnB))
+		switch columnA.(type) {
+		case *entity.ColumnDynamic:
+			require.ElementsMatch(t, columnA.(*entity.ColumnDynamic).Data(), columnB.(*entity.ColumnDynamic).Data())
+		case *entity.ColumnJSONBytes:
+			require.ElementsMatch(t, columnA.(*entity.ColumnJSONBytes).Data(), columnB.(*entity.ColumnJSONBytes).Data())
+		}
 	case entity.FieldTypeFloatVector:
 		require.ElementsMatch(t, columnA.(*entity.ColumnFloatVector).Data(), columnB.(*entity.ColumnFloatVector).Data())
 	case entity.FieldTypeBinaryVector:
