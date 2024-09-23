@@ -417,7 +417,6 @@ func TestInsertDynamicFieldData(t *testing.T) {
 
 // dynamic field name is same as other field name
 func TestInsertRepeatedDynamicField(t *testing.T) {
-	t.Skip("https://github.com/milvus-io/milvus-sdk-go/issues/818")
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 
 	// connect
@@ -435,32 +434,31 @@ func TestInsertRepeatedDynamicField(t *testing.T) {
 	common.CheckErr(t, errInsert, false, "duplicated column float found")
 
 	// insert rows with repeated dynamic field name
-	type dynamicRows struct {
+	type DynamicRows struct {
 		Float float32 `json:"float" milvus:"name:float"`
 	}
 
 	type dataRows struct {
-		Int64    int64       `json:"int64" milvus:"name:int64"`
-		Float    float32     `json:"float" milvus:"name:float"`
-		FloatVec []float32   `json:"floatVec" milvus:"name:floatVec"`
-		Dynamic  dynamicRows `json:"dynamic" milvus:"name:dynamic"`
+		Int64    int64     `json:"int64" milvus:"name:int64"`
+		Float    float32   `json:"float" milvus:"name:float"`
+		FloatVec []float32 `json:"floatVec" milvus:"name:floatVec"`
+		DynamicRows
 	}
 	rows := make([]interface{}, 0, 100)
 	for i := 0; i < 100; i++ {
-		dynamic := dynamicRows{
-			Float: 0.0,
-		}
 		row := dataRows{
 			Int64:    int64(i),
 			Float:    float32(i),
 			FloatVec: common.GenFloatVector(common.DefaultDim),
-			Dynamic:  dynamic,
+			DynamicRows: DynamicRows{
+				Float: 0.0,
+			},
 		}
 		rows = append(rows, row)
 	}
 
 	_, err := mc.InsertRows(context.Background(), schema.CollectionName, "", rows)
-	common.CheckErr(t, err, false, "some error message")
+	common.CheckErr(t, err, false, "column has duplicated name: float when parsing field: DynamicRows")
 }
 
 // test insert array column with empty data
