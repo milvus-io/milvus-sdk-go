@@ -32,7 +32,7 @@ const (
 	// MilvusTagSep struct tag const for attribute separator
 	MilvusTagSep = `;`
 
-	//MilvusTagName struct tag const for field name
+	// MilvusTagName struct tag const for field name
 	MilvusTagName = `NAME`
 
 	// VectorDimTag struct tag const for vector dimension
@@ -171,7 +171,7 @@ func ParseSchemaAny(r interface{}) (*Schema, error) {
 			switch elemType.Kind() {
 			case reflect.Uint8:
 				field.DataType = FieldTypeBinaryVector
-				//TODO maybe override by tag settings, when dim is not multiplier of 8
+				// TODO maybe override by tag settings, when dim is not multiplier of 8
 				field.TypeParams = map[string]string{
 					TypeParamDim: strconv.FormatInt(int64(arrayLen*8), 10),
 				}
@@ -526,6 +526,22 @@ func reflectValueCandi(v reflect.Value) (map[string]fieldCandi, error) {
 	case reflect.Struct:
 		for i := 0; i < v.NumField(); i++ {
 			ft := v.Type().Field(i)
+			// embedded struct
+			if ft.Anonymous && ft.Type.Kind() == reflect.Struct {
+				embedCandidate, err := reflectValueCandi(v.Field(i))
+				if err != nil {
+					return nil, err
+				}
+				for key, candi := range embedCandidate {
+					_, ok := result[key]
+					if ok {
+						return nil, fmt.Errorf("column has duplicated name: %s when parsing field: %s", key, ft.Name)
+					}
+					result[key] = candi
+				}
+				continue
+			}
+
 			name := ft.Name
 			tag, ok := ft.Tag.Lookup(MilvusTag)
 

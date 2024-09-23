@@ -57,7 +57,6 @@ type SliceBadDimStruct2 struct {
 }
 
 func TestParseSchema(t *testing.T) {
-
 	t.Run("invalid cases", func(t *testing.T) {
 		// anonymous struct with default collection name ("") will cause error
 		anonymusStruct := struct {
@@ -108,11 +107,9 @@ func TestParseSchema(t *testing.T) {
 		sch, err = ParseSchema(&SliceBadDimStruct2{})
 		assert.Nil(t, sch)
 		assert.NotNil(t, err)
-
 	})
 
 	t.Run("valid cases", func(t *testing.T) {
-
 		sch, err := ParseSchema(RowBase{})
 		assert.Nil(t, err)
 		assert.Equal(t, "RowBase", sch.CollectionName)
@@ -268,7 +265,6 @@ type RowsSuite struct {
 
 func (s *RowsSuite) TestRowsToColumns() {
 	s.Run("valid_cases", func() {
-
 		columns, err := RowsToColumns([]Row{&ValidStruct{}})
 		s.Nil(err)
 		s.Equal(10, len(columns))
@@ -358,6 +354,10 @@ func (s *RowsSuite) TestDynamicSchema() {
 }
 
 func (s *RowsSuite) TestReflectValueCandi() {
+	type DynamicRows struct {
+		Float float32 `json:"float" milvus:"name:float"`
+	}
+
 	cases := []struct {
 		tag       string
 		v         reflect.Value
@@ -380,6 +380,42 @@ func (s *RowsSuite) TestReflectValueCandi() {
 				},
 			},
 			expectErr: false,
+		},
+		{
+			tag: "StructRow",
+			v: reflect.ValueOf(struct {
+				A string
+				B int64
+			}{A: "abc", B: 16}),
+			expect: map[string]fieldCandi{
+				"A": {
+					name: "A",
+					v:    reflect.ValueOf("abc"),
+				},
+				"B": {
+					name: "B",
+					v:    reflect.ValueOf(int64(16)),
+				},
+			},
+			expectErr: false,
+		},
+		{
+			tag: "StructRow_DuplicateName",
+			v: reflect.ValueOf(struct {
+				A string `milvus:"name:a"`
+				B int64  `milvus:"name:a"`
+			}{A: "abc", B: 16}),
+			expectErr: true,
+		},
+		{
+			tag: "StructRow_EmbedDuplicateName",
+			v: reflect.ValueOf(struct {
+				Int64    int64     `json:"int64" milvus:"name:int64"`
+				Float    float32   `json:"float" milvus:"name:float"`
+				FloatVec []float32 `json:"floatVec" milvus:"name:floatVec"`
+				DynamicRows
+			}{}),
+			expectErr: true,
 		},
 	}
 
