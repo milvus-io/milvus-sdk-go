@@ -984,12 +984,16 @@ func TestQueryJsonDynamicExpr(t *testing.T) {
 	// verify output fields and count, dynamicNumber value
 	common.CheckOutputFields(t, queryRes, []string{common.DefaultIntFieldName, common.DefaultJSONFieldName, common.DefaultDynamicNumberField})
 	require.Equal(t, 10, queryRes.GetColumn(common.DefaultJSONFieldName).Len())
+
+	// verify only output dynamic part key: common.DefaultDynamicNumberField
 	dynamicNumColumn := queryRes.GetColumn(common.DefaultDynamicNumberField)
-	var numberData []int64
-	for i := 0; i < dynamicNumColumn.Len(); i++ {
-		line, _ := dynamicNumColumn.GetAsInt64(i)
-		numberData = append(numberData, line)
+	numberValues := make([]int32, 0, 10)
+	for i := 0; i < 10; i++ {
+		numberValues = append(numberValues, int32(i))
 	}
+	_expColumn := common.MergeColumnsToDynamic(10, common.GenDynamicFieldData(0, 10)[:1], common.DefaultDynamicFieldName)
+	expColumn := entity.NewColumnDynamic(_expColumn, common.DefaultDynamicNumberField)
+	common.EqualColumn(t, dynamicNumColumn, expColumn)
 }
 
 // test query and output both json and dynamic field
