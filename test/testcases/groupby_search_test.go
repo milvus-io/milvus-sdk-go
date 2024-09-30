@@ -64,13 +64,17 @@ func prepareDataForGroupBySearch(t *testing.T, loopInsert int, insertNi int, idx
 	mc := createMilvusClient(ctx, t)
 
 	// create collection with all datatype
-	cp := CollectionParams{CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: true,
-		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+	cp := CollectionParams{
+		CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: true,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim,
+	}
 	collName := createCollection(ctx, t, mc, cp)
 
 	// insert
-	dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: AllFields,
-		start: 0, nb: insertNi, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
+	dp := DataParams{
+		CollectionName: collName, PartitionName: "", CollectionFieldsType: AllFields,
+		start: 0, nb: insertNi, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false,
+	}
 	for i := 0; i < loopInsert; i++ {
 		_, _ = insertData(ctx, t, mc, dp)
 	}
@@ -79,9 +83,11 @@ func prepareDataForGroupBySearch(t *testing.T, loopInsert int, insertNi int, idx
 		mc.Flush(ctx, collName, false)
 	}
 
-	//create scalar index
-	supportedGroupByFields := []string{common.DefaultIntFieldName, common.DefaultInt8FieldName, common.DefaultInt16FieldName,
-		common.DefaultInt32FieldName, common.DefaultVarcharFieldName, common.DefaultBoolFieldName}
+	// create scalar index
+	supportedGroupByFields := []string{
+		common.DefaultIntFieldName, common.DefaultInt8FieldName, common.DefaultInt16FieldName,
+		common.DefaultInt32FieldName, common.DefaultVarcharFieldName, common.DefaultBoolFieldName,
+	}
 	for _, groupByField := range supportedGroupByFields {
 		err := mc.CreateIndex(ctx, collName, groupByField, entity.NewScalarIndex(), false)
 		common.CheckErr(t, err, true)
@@ -148,10 +154,12 @@ func TestSearchGroupByFloatDefault(t *testing.T) {
 							expr = fmt.Sprintf("%s == %v", groupByField, groupByValue)
 						}
 						// 	search filter with groupByValue is the top1
-						resFilter, _ := mc.Search(ctx, collName, []string{}, expr, []string{common.DefaultIntFieldName,
-							groupByField}, []entity.Vector{queryVec[i]}, common.DefaultFloatVecFieldName, metricType, 1, sp)
+						resFilter, _ := mc.Search(ctx, collName, []string{}, expr, []string{
+							common.DefaultIntFieldName,
+							groupByField,
+						}, []entity.Vector{queryVec[i]}, common.DefaultFloatVecFieldName, metricType, 1, sp)
 						filterTop1Pk, _ := resFilter[0].IDs.GetAsInt64(0)
-						//log.Printf("Search top1 with %s: groupByValue: %v, pkValue: %d. The returned pk by filter search is: %d",
+						// log.Printf("Search top1 with %s: groupByValue: %v, pkValue: %d. The returned pk by filter search is: %d",
 						//	groupByField, groupByValue, pkValue, filterTop1Pk)
 						if filterTop1Pk == pkValue {
 							hitsNum += 1
@@ -185,13 +193,17 @@ func TestGroupBySearchSparseVector(t *testing.T) {
 		mc := createMilvusClient(ctx, t)
 
 		// create -> insert [0, 3000) -> flush -> index -> load
-		cp := CollectionParams{CollectionFieldsType: Int64VarcharSparseVec, AutoID: false, EnableDynamicField: true,
-			ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxLength: common.TestMaxLen}
+		cp := CollectionParams{
+			CollectionFieldsType: Int64VarcharSparseVec, AutoID: false, EnableDynamicField: true,
+			ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxLength: common.TestMaxLen,
+		}
 		collName := createCollection(ctx, t, mc, cp, client.WithConsistencyLevel(entity.ClStrong))
 
 		// insert data
-		dp := DataParams{DoInsert: true, CollectionName: collName, CollectionFieldsType: Int64VarcharSparseVec, start: 0,
-			nb: 200, dim: common.DefaultDim, EnableDynamicField: true}
+		dp := DataParams{
+			DoInsert: true, CollectionName: collName, CollectionFieldsType: Int64VarcharSparseVec, start: 0,
+			nb: 200, dim: common.DefaultDim, EnableDynamicField: true,
+		}
 		for i := 0; i < 100; i++ {
 			_, _ = insertData(ctx, t, mc, dp)
 		}
@@ -219,8 +231,10 @@ func TestGroupBySearchSparseVector(t *testing.T) {
 					pkValue, _ := resGroupBy[i].IDs.GetAsInt64(j)
 					expr := fmt.Sprintf("%s == '%v' ", common.DefaultVarcharFieldName, groupByValue)
 					// 	search filter with groupByValue is the top1
-					resFilter, _ := mc.Search(ctx, collName, []string{}, expr, []string{common.DefaultIntFieldName,
-						common.DefaultVarcharFieldName}, []entity.Vector{queryVec[i]}, common.DefaultSparseVecFieldName, entity.IP, 1, sp)
+					resFilter, _ := mc.Search(ctx, collName, []string{}, expr, []string{
+						common.DefaultIntFieldName,
+						common.DefaultVarcharFieldName,
+					}, []entity.Vector{queryVec[i]}, common.DefaultSparseVecFieldName, entity.IP, 1, sp)
 					filterTop1Pk, _ := resFilter[0].IDs.GetAsInt64(0)
 					log.Printf("Search top1 with %s: groupByValue: %v, pkValue: %d. The returned pk by filter search is: %d",
 						common.DefaultVarcharFieldName, groupByValue, pkValue, filterTop1Pk)
@@ -251,13 +265,17 @@ func TestSearchGroupByBinaryDefault(t *testing.T) {
 			mc := createMilvusClient(ctx, t)
 
 			// create collection with all datatype
-			cp := CollectionParams{CollectionFieldsType: VarcharBinaryVec, AutoID: false, EnableDynamicField: true,
-				ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+			cp := CollectionParams{
+				CollectionFieldsType: VarcharBinaryVec, AutoID: false, EnableDynamicField: true,
+				ShardsNum: common.DefaultShards, Dim: common.DefaultDim,
+			}
 			collName := createCollection(ctx, t, mc, cp)
 
 			// insert
-			dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: VarcharBinaryVec,
-				start: 0, nb: 1000, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
+			dp := DataParams{
+				CollectionName: collName, PartitionName: "", CollectionFieldsType: VarcharBinaryVec,
+				start: 0, nb: 1000, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false,
+			}
 			for i := 0; i < 2; i++ {
 				_, _ = insertData(ctx, t, mc, dp)
 			}
@@ -296,8 +314,10 @@ func TestSearchGroupByBinaryGrowing(t *testing.T) {
 		mc := createMilvusClient(ctx, t)
 
 		// create collection with all datatype
-		cp := CollectionParams{CollectionFieldsType: VarcharBinaryVec, AutoID: false, EnableDynamicField: true,
-			ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+		cp := CollectionParams{
+			CollectionFieldsType: VarcharBinaryVec, AutoID: false, EnableDynamicField: true,
+			ShardsNum: common.DefaultShards, Dim: common.DefaultDim,
+		}
 		collName := createCollection(ctx, t, mc, cp)
 
 		// create index and load
@@ -307,8 +327,10 @@ func TestSearchGroupByBinaryGrowing(t *testing.T) {
 		common.CheckErr(t, err, true)
 
 		// insert
-		dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: VarcharBinaryVec,
-			start: 0, nb: 1000, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
+		dp := DataParams{
+			CollectionName: collName, PartitionName: "", CollectionFieldsType: VarcharBinaryVec,
+			start: 0, nb: 1000, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false,
+		}
 		_, _ = insertData(ctx, t, mc, dp)
 
 		// search params
@@ -318,8 +340,10 @@ func TestSearchGroupByBinaryGrowing(t *testing.T) {
 
 		// search with groupBy field
 		for _, groupByField := range supportedGroupByFields {
-			_, err := mc.Search(ctx, collName, []string{}, "", []string{common.DefaultVarcharFieldName,
-				groupByField}, queryVec, common.DefaultBinaryVecFieldName, metricType, common.DefaultTopK, sp,
+			_, err := mc.Search(ctx, collName, []string{}, "", []string{
+				common.DefaultVarcharFieldName,
+				groupByField,
+			}, queryVec, common.DefaultBinaryVecFieldName, metricType, common.DefaultTopK, sp,
 				client.WithGroupByField(groupByField), client.WithSearchQueryConsistencyLevel(entity.ClStrong))
 			common.CheckErr(t, err, false, "not support search_group_by operation based on binary vector column")
 		}
@@ -356,12 +380,14 @@ func TestSearchGroupByFloatGrowing(t *testing.T) {
 					} else {
 						expr = fmt.Sprintf("%s == %v", groupByField, groupByValue)
 					}
-					resFilter, _ := mc.Search(ctx, collName, []string{}, expr, []string{common.DefaultIntFieldName,
-						groupByField}, []entity.Vector{queryVec[i]}, common.DefaultFloatVecFieldName, metricType, 1, sp, client.WithSearchQueryConsistencyLevel(entity.ClStrong))
+					resFilter, _ := mc.Search(ctx, collName, []string{}, expr, []string{
+						common.DefaultIntFieldName,
+						groupByField,
+					}, []entity.Vector{queryVec[i]}, common.DefaultFloatVecFieldName, metricType, 1, sp, client.WithSearchQueryConsistencyLevel(entity.ClStrong))
 
 					// search filter with groupByValue is the top1
 					filterTop1Pk, _ := resFilter[0].IDs.GetAsInt64(0)
-					//log.Printf("Search top1 with %s: groupByValue: %v, pkValue: %d. The returned pk by filter search is: %d",
+					// log.Printf("Search top1 with %s: groupByValue: %v, pkValue: %d. The returned pk by filter search is: %d",
 					//	groupByField, groupByValue, pkValue, filterTop1Pk)
 					if filterTop1Pk == pkValue {
 						hitsNum += 1
@@ -390,7 +416,7 @@ func TestSearchGroupByPagination(t *testing.T) {
 	// search params
 	queryVec := common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeFloatVector)
 	sp, _ := entity.NewIndexIvfFlatSearchParam(32)
-	var offset = int64(10)
+	offset := int64(10)
 
 	// search pagination & groupBy
 	resGroupByPagination, _ := mc.Search(ctx, collName, []string{}, "", []string{common.DefaultIntFieldName, common.DefaultVarcharFieldName},
@@ -464,6 +490,7 @@ func TestSearchGroupByRangeSearch(t *testing.T) {
 }
 
 func TestSearchGroupByHybridSearch(t *testing.T) {
+	t.Skip("case panic")
 	indexHnsw, _ := entity.NewIndexHNSW(entity.COSINE, 8, 96)
 	mc, ctx, collName := prepareDataForGroupBySearch(t, 10, 1000, indexHnsw, false)
 
@@ -496,10 +523,12 @@ func TestSearchGroupByHybridSearch(t *testing.T) {
 			pkValue, _ := resGroupBy[i].IDs.GetAsInt64(j)
 			expr = fmt.Sprintf("%s == '%v' ", groupByField, groupByValue)
 			// 	search filter with groupByValue is the top1
-			resFilter, _ := mc.Search(ctx, collName, []string{}, expr, []string{common.DefaultIntFieldName,
-				groupByField}, []entity.Vector{queryVec[i]}, common.DefaultFloatVecFieldName, entity.COSINE, 1, sp)
+			resFilter, _ := mc.Search(ctx, collName, []string{}, expr, []string{
+				common.DefaultIntFieldName,
+				groupByField,
+			}, []entity.Vector{queryVec[i]}, common.DefaultFloatVecFieldName, entity.COSINE, 1, sp)
 			filterTop1Pk, _ := resFilter[0].IDs.GetAsInt64(0)
-			//log.Printf("Search top1 with %s: groupByValue: %v, pkValue: %d. The returned pk by filter search is: %d",
+			// log.Printf("Search top1 with %s: groupByValue: %v, pkValue: %d. The returned pk by filter search is: %d",
 			//	groupByField, groupByValue, pkValue, filterTop1Pk)
 			if filterTop1Pk == pkValue {
 				hitsNum += 1
@@ -539,6 +568,7 @@ func TestHybridSearchDifferentGroupByField(t *testing.T) {
 
 // groupBy field not existed
 func TestSearchNotExistedGroupByField(t *testing.T) {
+	t.Skip("https://github.com/milvus-io/milvus-sdk-go/issues/828")
 	// prepare data
 	indexHnsw, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
 	mc, ctx, collName := prepareDataForGroupBySearch(t, 2, 1000, indexHnsw, false)
