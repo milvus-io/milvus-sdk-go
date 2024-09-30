@@ -134,6 +134,7 @@ func (c *GrpcClient) handleSearchResult(schema *entity.Schema, outputFields []st
 	for i := 0; i < int(results.GetNumQueries()); i++ {
 		rc := int(results.GetTopks()[i]) // result entry count for current query
 		entry := SearchResult{
+			sch:         schema,
 			ResultCount: rc,
 			Scores:      results.GetScores()[offset : offset+rc],
 		}
