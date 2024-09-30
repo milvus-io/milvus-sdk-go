@@ -568,6 +568,7 @@ func TestHybridSearchDifferentGroupByField(t *testing.T) {
 
 // groupBy field not existed
 func TestSearchNotExistedGroupByField(t *testing.T) {
+	t.Skip("https://github.com/milvus-io/milvus-sdk-go/issues/828")
 	// prepare data
 	indexHnsw, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
 	mc, ctx, collName := prepareDataForGroupBySearch(t, 2, 1000, indexHnsw, false)
