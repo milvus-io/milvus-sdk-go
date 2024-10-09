@@ -117,6 +117,26 @@ func TestFieldDataBoolColumn(t *testing.T) {
 		assert.Equal(t, len, column.Len())
 		assert.Equal(t, FieldTypeBool, column.Type())
 	})
+
+	t.Run("get null data", func(t *testing.T) {
+		fd.Field = &schema.FieldData_Scalars{
+			Scalars: &schema.ScalarField{
+				Data: &schema.ScalarField_BoolData{
+					BoolData: &schema.BoolArray{
+						Data: make([]bool, len),
+					},
+				},
+			},
+		}
+		fd.ValidData = make([]bool, len)
+		column, err := FieldDataColumn(fd, 0, -1)
+		assert.Nil(t, err)
+		assert.NotNil(t, column)
+		
+		assert.Equal(t, name, column.Name())
+		assert.Equal(t, len, column.Len())
+		assert.Equal(t, FieldTypeBool, column.Type())
+	})
 }
 
 func TestColumnInt8(t *testing.T) {
@@ -215,6 +235,26 @@ func TestFieldDataInt8Column(t *testing.T) {
 				},
 			},
 		}
+		column, err := FieldDataColumn(fd, 0, -1)
+		assert.Nil(t, err)
+		assert.NotNil(t, column)
+		
+		assert.Equal(t, name, column.Name())
+		assert.Equal(t, len, column.Len())
+		assert.Equal(t, FieldTypeInt8, column.Type())
+	})
+
+	t.Run("get null data", func(t *testing.T) {
+		fd.Field = &schema.FieldData_Scalars{
+			Scalars: &schema.ScalarField{
+				Data: &schema.ScalarField_IntData{
+					IntData: &schema.IntArray{
+						Data: make([]int32, len),
+					},
+				},
+			},
+		}
+		fd.ValidData = make([]bool, len)
 		column, err := FieldDataColumn(fd, 0, -1)
 		assert.Nil(t, err)
 		assert.NotNil(t, column)
@@ -329,6 +369,26 @@ func TestFieldDataInt16Column(t *testing.T) {
 		assert.Equal(t, len, column.Len())
 		assert.Equal(t, FieldTypeInt16, column.Type())
 	})
+
+	t.Run("get null data", func(t *testing.T) {
+		fd.Field = &schema.FieldData_Scalars{
+			Scalars: &schema.ScalarField{
+				Data: &schema.ScalarField_IntData{
+					IntData: &schema.IntArray{
+						Data: make([]int32, len),
+					},
+				},
+			},
+		}
+		fd.ValidData = make([]bool, len)
+		column, err := FieldDataColumn(fd, 0, -1)
+		assert.Nil(t, err)
+		assert.NotNil(t, column)
+		
+		assert.Equal(t, name, column.Name())
+		assert.Equal(t, len, column.Len())
+		assert.Equal(t, FieldTypeInt16, column.Type())
+	})
 }
 
 func TestColumnInt32(t *testing.T) {
@@ -427,6 +487,26 @@ func TestFieldDataInt32Column(t *testing.T) {
 				},
 			},
 		}
+		column, err := FieldDataColumn(fd, 0, -1)
+		assert.Nil(t, err)
+		assert.NotNil(t, column)
+		
+		assert.Equal(t, name, column.Name())
+		assert.Equal(t, len, column.Len())
+		assert.Equal(t, FieldTypeInt32, column.Type())
+	})
+
+	t.Run("get null data", func(t *testing.T) {
+		fd.Field = &schema.FieldData_Scalars{
+			Scalars: &schema.ScalarField{
+				Data: &schema.ScalarField_IntData{
+					IntData: &schema.IntArray{
+						Data: make([]int32, len),
+					},
+				},
+			},
+		}
+		fd.ValidData = make([]bool, len)
 		column, err := FieldDataColumn(fd, 0, -1)
 		assert.Nil(t, err)
 		assert.NotNil(t, column)
@@ -541,6 +621,26 @@ func TestFieldDataInt64Column(t *testing.T) {
 		assert.Equal(t, len, column.Len())
 		assert.Equal(t, FieldTypeInt64, column.Type())
 	})
+
+	t.Run("get null data", func(t *testing.T) {
+		fd.Field = &schema.FieldData_Scalars{
+			Scalars: &schema.ScalarField{
+				Data: &schema.ScalarField_LongData{
+					LongData: &schema.LongArray{
+						Data: make([]int64, len),
+					},
+				},
+			},
+		}
+		fd.ValidData = make([]bool, len)
+		column, err := FieldDataColumn(fd, 0, -1)
+		assert.Nil(t, err)
+		assert.NotNil(t, column)
+		
+		assert.Equal(t, name, column.Name())
+		assert.Equal(t, len, column.Len())
+		assert.Equal(t, FieldTypeInt64, column.Type())
+	})
 }
 
 func TestColumnFloat(t *testing.T) {
@@ -639,6 +739,26 @@ func TestFieldDataFloatColumn(t *testing.T) {
 				},
 			},
 		}
+		column, err := FieldDataColumn(fd, 0, -1)
+		assert.Nil(t, err)
+		assert.NotNil(t, column)
+		
+		assert.Equal(t, name, column.Name())
+		assert.Equal(t, len, column.Len())
+		assert.Equal(t, FieldTypeFloat, column.Type())
+	})
+
+	t.Run("get null data", func(t *testing.T) {
+		fd.Field = &schema.FieldData_Scalars{
+			Scalars: &schema.ScalarField{
+				Data: &schema.ScalarField_FloatData{
+					FloatData: &schema.FloatArray{
+						Data: make([]float32, len),
+					},
+				},
+			},
+		}
+		fd.ValidData = make([]bool, len)
 		column, err := FieldDataColumn(fd, 0, -1)
 		assert.Nil(t, err)
 		assert.NotNil(t, column)
@@ -753,6 +873,26 @@ func TestFieldDataDoubleColumn(t *testing.T) {
 		assert.Equal(t, len, column.Len())
 		assert.Equal(t, FieldTypeDouble, column.Type())
 	})
+
+	t.Run("get null data", func(t *testing.T) {
+		fd.Field = &schema.FieldData_Scalars{
+			Scalars: &schema.ScalarField{
+				Data: &schema.ScalarField_DoubleData{
+					DoubleData: &schema.DoubleArray{
+						Data: make([]float64, len),
+					},
+				},
+			},
+		}
+		fd.ValidData = make([]bool, len)
+		column, err := FieldDataColumn(fd, 0, -1)
+		assert.Nil(t, err)
+		assert.NotNil(t, column)
+		
+		assert.Equal(t, name, column.Name())
+		assert.Equal(t, len, column.Len())
+		assert.Equal(t, FieldTypeDouble, column.Type())
+	})
 }
 
 func TestColumnString(t *testing.T) {
@@ -851,6 +991,26 @@ func TestFieldDataStringColumn(t *testing.T) {
 				},
 			},
 		}
+		column, err := FieldDataColumn(fd, 0, -1)
+		assert.Nil(t, err)
+		assert.NotNil(t, column)
+		
+		assert.Equal(t, name, column.Name())
+		assert.Equal(t, len, column.Len())
+		assert.Equal(t, FieldTypeString, column.Type())
+	})
+
+	t.Run("get null data", func(t *testing.T) {
+		fd.Field = &schema.FieldData_Scalars{
+			Scalars: &schema.ScalarField{
+				Data: &schema.ScalarField_StringData{
+					StringData: &schema.StringArray{
+						Data: make([]string, len),
+					},
+				},
+			},
+		}
+		fd.ValidData = make([]bool, len)
 		column, err := FieldDataColumn(fd, 0, -1)
 		assert.Nil(t, err)
 		assert.NotNil(t, column)

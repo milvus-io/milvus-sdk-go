@@ -148,6 +148,16 @@ func (c *GrpcClient) processInsertColumns(colSchema *entity.Schema, columns ...e
 		_, has := mNameColumn[field.Name]
 		if !has &&
 			!field.AutoID && !field.IsDynamic {
+			// add a column which set nullable == true and fill it with all null value
+			if field.DefaultValue != nil || field.Nullable {
+				emptyColumn, err := entity.NewAllNullValueColumn(field.Name, field.DataType, rowSize)
+				// no err will be throw
+				if err != nil {
+					return nil, 0, fmt.Errorf("empty column fail to create, field name:%s ", field.Name)
+				}
+				mNameColumn[field.Name] = emptyColumn
+				continue
+			}
 			return nil, 0, fmt.Errorf("field %s not passed", field.Name)
 		}
 	}

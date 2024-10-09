@@ -15,6 +15,8 @@ type ColumnBool struct {
 	ColumnBase
 	name   string
 	values []bool
+	validValues []bool
+	nullable    bool
 }
 
 // Name returns column name
@@ -32,6 +34,28 @@ func (c *ColumnBool) Len() int {
 	return len(c.values)
 }
 
+// Nullable returns column nullable
+func (c *ColumnBool) Nullable() bool {
+	return c.nullable
+}
+
+// Get returns value at index as interface{}.
+func (c *ColumnBool) Get(idx int) (interface{}, error) {
+	var r bool // use default value
+	if c.nullable {
+		if idx < 0 || idx >= len(c.validValues) {
+			return nil, errors.New("index out of validValues range")
+		}
+		if !c.validValues[idx] {
+			return nil, nil
+		}
+	}
+	if idx < 0 || idx >= c.Len() {
+		return r, errors.New("index out of range")
+	}
+	return c.values[idx], nil
+}
+
 func (c *ColumnBool) Slice(start, end int) Column {
 	l := c.Len()
 	if start > l {
@@ -40,20 +64,17 @@ func (c *ColumnBool) Slice(start, end int) Column {
 	if end == -1 || end > l {
 		end = l
 	}
+	sliceValidValues := make([]bool, 0)
+	if c.nullable {
+		sliceValidValues = c.validValues[start:end]
+	}
 	return &ColumnBool{
 		ColumnBase: c.ColumnBase,
 		name:       c.name,
 		values:     c.values[start:end],
+		validValues: sliceValidValues,
+		nullable:    c.nullable,
 	}
-}
-
-// Get returns value at index as interface{}.
-func (c *ColumnBool) Get(idx int) (interface{}, error) {
-	var r bool // use default value
-	if idx < 0 || idx >= c.Len() {
-		return r, errors.New("index out of range")
-	}
-	return c.values[idx], nil
 }
 
 // FieldData return column data mapped to schema.FieldData
@@ -61,11 +82,21 @@ func (c *ColumnBool) FieldData() *schema.FieldData {
 	fd := &schema.FieldData{
 		Type: schema.DataType_Bool,
 		FieldName: c.name,
+		ValidData: c.validValues,
 	}
 	data := make([]bool, 0, c.Len())
-	for i := 0; i < c.Len(); i++ {
-		data = append(data, bool(c.values[i]))
+	if c.nullable {
+		for i, v := range c.validValues {
+			if v {
+				data = append(data, c.values[i])
+			}
+		}
+	} else {
+		for i := 0; i < c.Len(); i++ {
+			data = append(data, c.values[i])
+		}
 	}
+	
 	fd.Field = &schema.FieldData_Scalars{
 		Scalars: &schema.ScalarField{
 			Data: &schema.ScalarField_BoolData{
@@ -82,6 +113,14 @@ func (c *ColumnBool) FieldData() *schema.FieldData {
 // error occurs when index out of range
 func (c *ColumnBool) ValueByIdx(idx int) (bool, error) {
 	var r bool // use default value
+	if c.nullable {
+		if idx < 0 || idx >= len(c.validValues) {
+			return r, errors.New("index out of validValues range")
+		}
+		if !c.validValues[idx] {
+			return r, nil
+		}
+	}
 	if idx < 0 || idx >= c.Len() {
 		return r, errors.New("index out of range")
 	}
@@ -90,11 +129,21 @@ func (c *ColumnBool) ValueByIdx(idx int) (bool, error) {
 
 // AppendValue append value into column
 func(c *ColumnBool) AppendValue(i interface{}) error {
+	var v bool
+	if i == nil && c.nullable {
+		c.values = append(c.values, v)
+		c.validValues = append(c.validValues, false)
+		return nil
+	}
+
 	v, ok := i.(bool)
 	if !ok {
 		return fmt.Errorf("invalid type, expected bool, got %T", i)
 	}
 	c.values = append(c.values, v)
+	if c.nullable {
+		c.validValues = append(c.validValues, true)
+	}
 
 	return nil
 }
@@ -102,6 +151,11 @@ func(c *ColumnBool) AppendValue(i interface{}) error {
 // Data returns column data
 func (c *ColumnBool) Data() []bool {
 	return c.values
+}
+
+// ValidData returns column validValues
+func (c *ColumnBool) ValidData() []bool {
+	return c.validValues
 }
 
 // NewColumnBool auto generated constructor
@@ -112,11 +166,34 @@ func NewColumnBool(name string, values []bool) *ColumnBool {
 	}
 }
 
+// NewNullableColumnBool auto generated constructor
+func NewNullableColumnBool(name string, values []bool, validValues []bool) *ColumnBool {
+	return &ColumnBool {
+		name: name,
+		values: values,
+		nullable:    true,
+		validValues: validValues,
+	}
+}
+
+// NewAllNullColumnBool auto generated constructor
+func NewAllNullColumnBool(name string, rowSize int) *ColumnBool {
+	return &ColumnBool {
+		name: name,
+		values: make([]bool,rowSize),
+		nullable:    true,
+		validValues: make([]bool,rowSize),
+	}
+}
+
+
 // ColumnInt8 generated columns type for Int8
 type ColumnInt8 struct {
 	ColumnBase
 	name   string
 	values []int8
+	validValues []bool
+	nullable    bool
 }
 
 // Name returns column name
@@ -134,6 +211,28 @@ func (c *ColumnInt8) Len() int {
 	return len(c.values)
 }
 
+// Nullable returns column nullable
+func (c *ColumnInt8) Nullable() bool {
+	return c.nullable
+}
+
+// Get returns value at index as interface{}.
+func (c *ColumnInt8) Get(idx int) (interface{}, error) {
+	var r int8 // use default value
+	if c.nullable {
+		if idx < 0 || idx >= len(c.validValues) {
+			return nil, errors.New("index out of validValues range")
+		}
+		if !c.validValues[idx] {
+			return nil, nil
+		}
+	}
+	if idx < 0 || idx >= c.Len() {
+		return r, errors.New("index out of range")
+	}
+	return c.values[idx], nil
+}
+
 func (c *ColumnInt8) Slice(start, end int) Column {
 	l := c.Len()
 	if start > l {
@@ -142,20 +241,17 @@ func (c *ColumnInt8) Slice(start, end int) Column {
 	if end == -1 || end > l {
 		end = l
 	}
+	sliceValidValues := make([]bool, 0)
+	if c.nullable {
+		sliceValidValues = c.validValues[start:end]
+	}
 	return &ColumnInt8{
 		ColumnBase: c.ColumnBase,
 		name:       c.name,
 		values:     c.values[start:end],
+		validValues: sliceValidValues,
+		nullable:    c.nullable,
 	}
-}
-
-// Get returns value at index as interface{}.
-func (c *ColumnInt8) Get(idx int) (interface{}, error) {
-	var r int8 // use default value
-	if idx < 0 || idx >= c.Len() {
-		return r, errors.New("index out of range")
-	}
-	return c.values[idx], nil
 }
 
 // FieldData return column data mapped to schema.FieldData
@@ -163,11 +259,21 @@ func (c *ColumnInt8) FieldData() *schema.FieldData {
 	fd := &schema.FieldData{
 		Type: schema.DataType_Int8,
 		FieldName: c.name,
+		ValidData: c.validValues,
 	}
 	data := make([]int32, 0, c.Len())
-	for i := 0; i < c.Len(); i++ {
-		data = append(data, int32(c.values[i]))
+	if c.nullable {
+		for i, v := range c.validValues {
+			if v {
+				data = append(data, int32(c.values[i]))
+			}
+		}
+	} else {
+		for i := 0; i < c.Len(); i++ {
+			data = append(data, int32(c.values[i]))
+		}
 	}
+	
 	fd.Field = &schema.FieldData_Scalars{
 		Scalars: &schema.ScalarField{
 			Data: &schema.ScalarField_IntData{
@@ -184,6 +290,14 @@ func (c *ColumnInt8) FieldData() *schema.FieldData {
 // error occurs when index out of range
 func (c *ColumnInt8) ValueByIdx(idx int) (int8, error) {
 	var r int8 // use default value
+	if c.nullable {
+		if idx < 0 || idx >= len(c.validValues) {
+			return r, errors.New("index out of validValues range")
+		}
+		if !c.validValues[idx] {
+			return r, nil
+		}
+	}
 	if idx < 0 || idx >= c.Len() {
 		return r, errors.New("index out of range")
 	}
@@ -192,11 +306,21 @@ func (c *ColumnInt8) ValueByIdx(idx int) (int8, error) {
 
 // AppendValue append value into column
 func(c *ColumnInt8) AppendValue(i interface{}) error {
+	var v int8
+	if i == nil && c.nullable {
+		c.values = append(c.values, v)
+		c.validValues = append(c.validValues, false)
+		return nil
+	}
+
 	v, ok := i.(int8)
 	if !ok {
 		return fmt.Errorf("invalid type, expected int8, got %T", i)
 	}
 	c.values = append(c.values, v)
+	if c.nullable {
+		c.validValues = append(c.validValues, true)
+	}
 
 	return nil
 }
@@ -204,6 +328,11 @@ func(c *ColumnInt8) AppendValue(i interface{}) error {
 // Data returns column data
 func (c *ColumnInt8) Data() []int8 {
 	return c.values
+}
+
+// ValidData returns column validValues
+func (c *ColumnInt8) ValidData() []bool {
+	return c.validValues
 }
 
 // NewColumnInt8 auto generated constructor
@@ -214,11 +343,34 @@ func NewColumnInt8(name string, values []int8) *ColumnInt8 {
 	}
 }
 
+// NewNullableColumnInt8 auto generated constructor
+func NewNullableColumnInt8(name string, values []int8, validValues []bool) *ColumnInt8 {
+	return &ColumnInt8 {
+		name: name,
+		values: values,
+		nullable:    true,
+		validValues: validValues,
+	}
+}
+
+// NewAllNullColumnInt8 auto generated constructor
+func NewAllNullColumnInt8(name string, rowSize int) *ColumnInt8 {
+	return &ColumnInt8 {
+		name: name,
+		values: make([]int8,rowSize),
+		nullable:    true,
+		validValues: make([]bool,rowSize),
+	}
+}
+
+
 // ColumnInt16 generated columns type for Int16
 type ColumnInt16 struct {
 	ColumnBase
 	name   string
 	values []int16
+	validValues []bool
+	nullable    bool
 }
 
 // Name returns column name
@@ -236,6 +388,28 @@ func (c *ColumnInt16) Len() int {
 	return len(c.values)
 }
 
+// Nullable returns column nullable
+func (c *ColumnInt16) Nullable() bool {
+	return c.nullable
+}
+
+// Get returns value at index as interface{}.
+func (c *ColumnInt16) Get(idx int) (interface{}, error) {
+	var r int16 // use default value
+	if c.nullable {
+		if idx < 0 || idx >= len(c.validValues) {
+			return nil, errors.New("index out of validValues range")
+		}
+		if !c.validValues[idx] {
+			return nil, nil
+		}
+	}
+	if idx < 0 || idx >= c.Len() {
+		return r, errors.New("index out of range")
+	}
+	return c.values[idx], nil
+}
+
 func (c *ColumnInt16) Slice(start, end int) Column {
 	l := c.Len()
 	if start > l {
@@ -244,20 +418,17 @@ func (c *ColumnInt16) Slice(start, end int) Column {
 	if end == -1 || end > l {
 		end = l
 	}
+	sliceValidValues := make([]bool, 0)
+	if c.nullable {
+		sliceValidValues = c.validValues[start:end]
+	}
 	return &ColumnInt16{
 		ColumnBase: c.ColumnBase,
 		name:       c.name,
 		values:     c.values[start:end],
+		validValues: sliceValidValues,
+		nullable:    c.nullable,
 	}
-}
-
-// Get returns value at index as interface{}.
-func (c *ColumnInt16) Get(idx int) (interface{}, error) {
-	var r int16 // use default value
-	if idx < 0 || idx >= c.Len() {
-		return r, errors.New("index out of range")
-	}
-	return c.values[idx], nil
 }
 
 // FieldData return column data mapped to schema.FieldData
@@ -265,11 +436,21 @@ func (c *ColumnInt16) FieldData() *schema.FieldData {
 	fd := &schema.FieldData{
 		Type: schema.DataType_Int16,
 		FieldName: c.name,
+		ValidData: c.validValues,
 	}
 	data := make([]int32, 0, c.Len())
-	for i := 0; i < c.Len(); i++ {
-		data = append(data, int32(c.values[i]))
+	if c.nullable {
+		for i, v := range c.validValues {
+			if v {
+				data = append(data, int32(c.values[i]))
+			}
+		}
+	} else {
+		for i := 0; i < c.Len(); i++ {
+			data = append(data, int32(c.values[i]))
+		}
 	}
+	
 	fd.Field = &schema.FieldData_Scalars{
 		Scalars: &schema.ScalarField{
 			Data: &schema.ScalarField_IntData{
@@ -286,6 +467,14 @@ func (c *ColumnInt16) FieldData() *schema.FieldData {
 // error occurs when index out of range
 func (c *ColumnInt16) ValueByIdx(idx int) (int16, error) {
 	var r int16 // use default value
+	if c.nullable {
+		if idx < 0 || idx >= len(c.validValues) {
+			return r, errors.New("index out of validValues range")
+		}
+		if !c.validValues[idx] {
+			return r, nil
+		}
+	}
 	if idx < 0 || idx >= c.Len() {
 		return r, errors.New("index out of range")
 	}
@@ -294,11 +483,21 @@ func (c *ColumnInt16) ValueByIdx(idx int) (int16, error) {
 
 // AppendValue append value into column
 func(c *ColumnInt16) AppendValue(i interface{}) error {
+	var v int16
+	if i == nil && c.nullable {
+		c.values = append(c.values, v)
+		c.validValues = append(c.validValues, false)
+		return nil
+	}
+
 	v, ok := i.(int16)
 	if !ok {
 		return fmt.Errorf("invalid type, expected int16, got %T", i)
 	}
 	c.values = append(c.values, v)
+	if c.nullable {
+		c.validValues = append(c.validValues, true)
+	}
 
 	return nil
 }
@@ -306,6 +505,11 @@ func(c *ColumnInt16) AppendValue(i interface{}) error {
 // Data returns column data
 func (c *ColumnInt16) Data() []int16 {
 	return c.values
+}
+
+// ValidData returns column validValues
+func (c *ColumnInt16) ValidData() []bool {
+	return c.validValues
 }
 
 // NewColumnInt16 auto generated constructor
@@ -316,11 +520,34 @@ func NewColumnInt16(name string, values []int16) *ColumnInt16 {
 	}
 }
 
+// NewNullableColumnInt16 auto generated constructor
+func NewNullableColumnInt16(name string, values []int16, validValues []bool) *ColumnInt16 {
+	return &ColumnInt16 {
+		name: name,
+		values: values,
+		nullable:    true,
+		validValues: validValues,
+	}
+}
+
+// NewAllNullColumnInt16 auto generated constructor
+func NewAllNullColumnInt16(name string, rowSize int) *ColumnInt16 {
+	return &ColumnInt16 {
+		name: name,
+		values: make([]int16,rowSize),
+		nullable:    true,
+		validValues: make([]bool,rowSize),
+	}
+}
+
+
 // ColumnInt32 generated columns type for Int32
 type ColumnInt32 struct {
 	ColumnBase
 	name   string
 	values []int32
+	validValues []bool
+	nullable    bool
 }
 
 // Name returns column name
@@ -338,6 +565,28 @@ func (c *ColumnInt32) Len() int {
 	return len(c.values)
 }
 
+// Nullable returns column nullable
+func (c *ColumnInt32) Nullable() bool {
+	return c.nullable
+}
+
+// Get returns value at index as interface{}.
+func (c *ColumnInt32) Get(idx int) (interface{}, error) {
+	var r int32 // use default value
+	if c.nullable {
+		if idx < 0 || idx >= len(c.validValues) {
+			return nil, errors.New("index out of validValues range")
+		}
+		if !c.validValues[idx] {
+			return nil, nil
+		}
+	}
+	if idx < 0 || idx >= c.Len() {
+		return r, errors.New("index out of range")
+	}
+	return c.values[idx], nil
+}
+
 func (c *ColumnInt32) Slice(start, end int) Column {
 	l := c.Len()
 	if start > l {
@@ -346,20 +595,17 @@ func (c *ColumnInt32) Slice(start, end int) Column {
 	if end == -1 || end > l {
 		end = l
 	}
+	sliceValidValues := make([]bool, 0)
+	if c.nullable {
+		sliceValidValues = c.validValues[start:end]
+	}
 	return &ColumnInt32{
 		ColumnBase: c.ColumnBase,
 		name:       c.name,
 		values:     c.values[start:end],
+		validValues: sliceValidValues,
+		nullable:    c.nullable,
 	}
-}
-
-// Get returns value at index as interface{}.
-func (c *ColumnInt32) Get(idx int) (interface{}, error) {
-	var r int32 // use default value
-	if idx < 0 || idx >= c.Len() {
-		return r, errors.New("index out of range")
-	}
-	return c.values[idx], nil
 }
 
 // FieldData return column data mapped to schema.FieldData
@@ -367,11 +613,21 @@ func (c *ColumnInt32) FieldData() *schema.FieldData {
 	fd := &schema.FieldData{
 		Type: schema.DataType_Int32,
 		FieldName: c.name,
+		ValidData: c.validValues,
 	}
 	data := make([]int32, 0, c.Len())
-	for i := 0; i < c.Len(); i++ {
-		data = append(data, int32(c.values[i]))
+	if c.nullable {
+		for i, v := range c.validValues {
+			if v {
+				data = append(data, c.values[i])
+			}
+		}
+	} else {
+		for i := 0; i < c.Len(); i++ {
+			data = append(data, c.values[i])
+		}
 	}
+	
 	fd.Field = &schema.FieldData_Scalars{
 		Scalars: &schema.ScalarField{
 			Data: &schema.ScalarField_IntData{
@@ -388,6 +644,14 @@ func (c *ColumnInt32) FieldData() *schema.FieldData {
 // error occurs when index out of range
 func (c *ColumnInt32) ValueByIdx(idx int) (int32, error) {
 	var r int32 // use default value
+	if c.nullable {
+		if idx < 0 || idx >= len(c.validValues) {
+			return r, errors.New("index out of validValues range")
+		}
+		if !c.validValues[idx] {
+			return r, nil
+		}
+	}
 	if idx < 0 || idx >= c.Len() {
 		return r, errors.New("index out of range")
 	}
@@ -396,11 +660,21 @@ func (c *ColumnInt32) ValueByIdx(idx int) (int32, error) {
 
 // AppendValue append value into column
 func(c *ColumnInt32) AppendValue(i interface{}) error {
+	var v int32
+	if i == nil && c.nullable {
+		c.values = append(c.values, v)
+		c.validValues = append(c.validValues, false)
+		return nil
+	}
+
 	v, ok := i.(int32)
 	if !ok {
 		return fmt.Errorf("invalid type, expected int32, got %T", i)
 	}
 	c.values = append(c.values, v)
+	if c.nullable {
+		c.validValues = append(c.validValues, true)
+	}
 
 	return nil
 }
@@ -408,6 +682,11 @@ func(c *ColumnInt32) AppendValue(i interface{}) error {
 // Data returns column data
 func (c *ColumnInt32) Data() []int32 {
 	return c.values
+}
+
+// ValidData returns column validValues
+func (c *ColumnInt32) ValidData() []bool {
+	return c.validValues
 }
 
 // NewColumnInt32 auto generated constructor
@@ -418,11 +697,34 @@ func NewColumnInt32(name string, values []int32) *ColumnInt32 {
 	}
 }
 
+// NewNullableColumnInt32 auto generated constructor
+func NewNullableColumnInt32(name string, values []int32, validValues []bool) *ColumnInt32 {
+	return &ColumnInt32 {
+		name: name,
+		values: values,
+		nullable:    true,
+		validValues: validValues,
+	}
+}
+
+// NewAllNullColumnInt32 auto generated constructor
+func NewAllNullColumnInt32(name string, rowSize int) *ColumnInt32 {
+	return &ColumnInt32 {
+		name: name,
+		values: make([]int32,rowSize),
+		nullable:    true,
+		validValues: make([]bool,rowSize),
+	}
+}
+
+
 // ColumnInt64 generated columns type for Int64
 type ColumnInt64 struct {
 	ColumnBase
 	name   string
 	values []int64
+	validValues []bool
+	nullable    bool
 }
 
 // Name returns column name
@@ -440,6 +742,28 @@ func (c *ColumnInt64) Len() int {
 	return len(c.values)
 }
 
+// Nullable returns column nullable
+func (c *ColumnInt64) Nullable() bool {
+	return c.nullable
+}
+
+// Get returns value at index as interface{}.
+func (c *ColumnInt64) Get(idx int) (interface{}, error) {
+	var r int64 // use default value
+	if c.nullable {
+		if idx < 0 || idx >= len(c.validValues) {
+			return nil, errors.New("index out of validValues range")
+		}
+		if !c.validValues[idx] {
+			return nil, nil
+		}
+	}
+	if idx < 0 || idx >= c.Len() {
+		return r, errors.New("index out of range")
+	}
+	return c.values[idx], nil
+}
+
 func (c *ColumnInt64) Slice(start, end int) Column {
 	l := c.Len()
 	if start > l {
@@ -448,20 +772,17 @@ func (c *ColumnInt64) Slice(start, end int) Column {
 	if end == -1 || end > l {
 		end = l
 	}
+	sliceValidValues := make([]bool, 0)
+	if c.nullable {
+		sliceValidValues = c.validValues[start:end]
+	}
 	return &ColumnInt64{
 		ColumnBase: c.ColumnBase,
-		name: c.name,
-		values: c.values[start: end],
+		name:       c.name,
+		values:     c.values[start:end],
+		validValues: sliceValidValues,
+		nullable:    c.nullable,
 	}
-}
-
-// Get returns value at index as interface{}.
-func (c *ColumnInt64) Get(idx int) (interface{}, error) {
-	var r int64 // use default value
-	if idx < 0 || idx >= c.Len() {
-		return r, errors.New("index out of range")
-	}
-	return c.values[idx], nil
 }
 
 // FieldData return column data mapped to schema.FieldData
@@ -469,11 +790,21 @@ func (c *ColumnInt64) FieldData() *schema.FieldData {
 	fd := &schema.FieldData{
 		Type: schema.DataType_Int64,
 		FieldName: c.name,
+		ValidData: c.validValues,
 	}
 	data := make([]int64, 0, c.Len())
-	for i := 0; i < c.Len(); i++ {
-		data = append(data, int64(c.values[i]))
+	if c.nullable {
+		for i, v := range c.validValues {
+			if v {
+				data = append(data, c.values[i])
+			}
+		}
+	} else {
+		for i := 0; i < c.Len(); i++ {
+			data = append(data, c.values[i])
+		}
 	}
+	
 	fd.Field = &schema.FieldData_Scalars{
 		Scalars: &schema.ScalarField{
 			Data: &schema.ScalarField_LongData{
@@ -490,6 +821,14 @@ func (c *ColumnInt64) FieldData() *schema.FieldData {
 // error occurs when index out of range
 func (c *ColumnInt64) ValueByIdx(idx int) (int64, error) {
 	var r int64 // use default value
+	if c.nullable {
+		if idx < 0 || idx >= len(c.validValues) {
+			return r, errors.New("index out of validValues range")
+		}
+		if !c.validValues[idx] {
+			return r, nil
+		}
+	}
 	if idx < 0 || idx >= c.Len() {
 		return r, errors.New("index out of range")
 	}
@@ -498,11 +837,21 @@ func (c *ColumnInt64) ValueByIdx(idx int) (int64, error) {
 
 // AppendValue append value into column
 func(c *ColumnInt64) AppendValue(i interface{}) error {
+	var v int64
+	if i == nil && c.nullable {
+		c.values = append(c.values, v)
+		c.validValues = append(c.validValues, false)
+		return nil
+	}
+
 	v, ok := i.(int64)
 	if !ok {
 		return fmt.Errorf("invalid type, expected int64, got %T", i)
 	}
 	c.values = append(c.values, v)
+	if c.nullable {
+		c.validValues = append(c.validValues, true)
+	}
 
 	return nil
 }
@@ -510,6 +859,11 @@ func(c *ColumnInt64) AppendValue(i interface{}) error {
 // Data returns column data
 func (c *ColumnInt64) Data() []int64 {
 	return c.values
+}
+
+// ValidData returns column validValues
+func (c *ColumnInt64) ValidData() []bool {
+	return c.validValues
 }
 
 // NewColumnInt64 auto generated constructor
@@ -520,11 +874,34 @@ func NewColumnInt64(name string, values []int64) *ColumnInt64 {
 	}
 }
 
+// NewNullableColumnInt64 auto generated constructor
+func NewNullableColumnInt64(name string, values []int64, validValues []bool) *ColumnInt64 {
+	return &ColumnInt64 {
+		name: name,
+		values: values,
+		nullable:    true,
+		validValues: validValues,
+	}
+}
+
+// NewAllNullColumnInt64 auto generated constructor
+func NewAllNullColumnInt64(name string, rowSize int) *ColumnInt64 {
+	return &ColumnInt64 {
+		name: name,
+		values: make([]int64,rowSize),
+		nullable:    true,
+		validValues: make([]bool,rowSize),
+	}
+}
+
+
 // ColumnFloat generated columns type for Float
 type ColumnFloat struct {
 	ColumnBase
 	name   string
 	values []float32
+	validValues []bool
+	nullable    bool
 }
 
 // Name returns column name
@@ -542,6 +919,28 @@ func (c *ColumnFloat) Len() int {
 	return len(c.values)
 }
 
+// Nullable returns column nullable
+func (c *ColumnFloat) Nullable() bool {
+	return c.nullable
+}
+
+// Get returns value at index as interface{}.
+func (c *ColumnFloat) Get(idx int) (interface{}, error) {
+	var r float32 // use default value
+	if c.nullable {
+		if idx < 0 || idx >= len(c.validValues) {
+			return nil, errors.New("index out of validValues range")
+		}
+		if !c.validValues[idx] {
+			return nil, nil
+		}
+	}
+	if idx < 0 || idx >= c.Len() {
+		return r, errors.New("index out of range")
+	}
+	return c.values[idx], nil
+}
+
 func (c *ColumnFloat) Slice(start, end int) Column {
 	l := c.Len()
 	if start > l {
@@ -550,20 +949,17 @@ func (c *ColumnFloat) Slice(start, end int) Column {
 	if end == -1 || end > l {
 		end = l
 	}
+	sliceValidValues := make([]bool, 0)
+	if c.nullable {
+		sliceValidValues = c.validValues[start:end]
+	}
 	return &ColumnFloat{
 		ColumnBase: c.ColumnBase,
 		name:       c.name,
 		values:     c.values[start:end],
+		validValues: sliceValidValues,
+		nullable:    c.nullable,
 	}
-}
-
-// Get returns value at index as interface{}.
-func (c *ColumnFloat) Get(idx int) (interface{}, error) {
-	var r float32 // use default value
-	if idx < 0 || idx >= c.Len() {
-		return r, errors.New("index out of range")
-	}
-	return c.values[idx], nil
 }
 
 // FieldData return column data mapped to schema.FieldData
@@ -571,11 +967,21 @@ func (c *ColumnFloat) FieldData() *schema.FieldData {
 	fd := &schema.FieldData{
 		Type: schema.DataType_Float,
 		FieldName: c.name,
+		ValidData: c.validValues,
 	}
 	data := make([]float32, 0, c.Len())
-	for i := 0; i < c.Len(); i++ {
-		data = append(data, float32(c.values[i]))
+	if c.nullable {
+		for i, v := range c.validValues {
+			if v {
+				data = append(data, c.values[i])
+			}
+		}
+	} else {
+		for i := 0; i < c.Len(); i++ {
+			data = append(data, c.values[i])
+		}
 	}
+	
 	fd.Field = &schema.FieldData_Scalars{
 		Scalars: &schema.ScalarField{
 			Data: &schema.ScalarField_FloatData{
@@ -592,6 +998,14 @@ func (c *ColumnFloat) FieldData() *schema.FieldData {
 // error occurs when index out of range
 func (c *ColumnFloat) ValueByIdx(idx int) (float32, error) {
 	var r float32 // use default value
+	if c.nullable {
+		if idx < 0 || idx >= len(c.validValues) {
+			return r, errors.New("index out of validValues range")
+		}
+		if !c.validValues[idx] {
+			return r, nil
+		}
+	}
 	if idx < 0 || idx >= c.Len() {
 		return r, errors.New("index out of range")
 	}
@@ -600,11 +1014,21 @@ func (c *ColumnFloat) ValueByIdx(idx int) (float32, error) {
 
 // AppendValue append value into column
 func(c *ColumnFloat) AppendValue(i interface{}) error {
+	var v float32
+	if i == nil && c.nullable {
+		c.values = append(c.values, v)
+		c.validValues = append(c.validValues, false)
+		return nil
+	}
+
 	v, ok := i.(float32)
 	if !ok {
 		return fmt.Errorf("invalid type, expected float32, got %T", i)
 	}
 	c.values = append(c.values, v)
+	if c.nullable {
+		c.validValues = append(c.validValues, true)
+	}
 
 	return nil
 }
@@ -612,6 +1036,11 @@ func(c *ColumnFloat) AppendValue(i interface{}) error {
 // Data returns column data
 func (c *ColumnFloat) Data() []float32 {
 	return c.values
+}
+
+// ValidData returns column validValues
+func (c *ColumnFloat) ValidData() []bool {
+	return c.validValues
 }
 
 // NewColumnFloat auto generated constructor
@@ -622,11 +1051,34 @@ func NewColumnFloat(name string, values []float32) *ColumnFloat {
 	}
 }
 
+// NewNullableColumnFloat auto generated constructor
+func NewNullableColumnFloat(name string, values []float32, validValues []bool) *ColumnFloat {
+	return &ColumnFloat {
+		name: name,
+		values: values,
+		nullable:    true,
+		validValues: validValues,
+	}
+}
+
+// NewAllNullColumnFloat auto generated constructor
+func NewAllNullColumnFloat(name string, rowSize int) *ColumnFloat {
+	return &ColumnFloat {
+		name: name,
+		values: make([]float32,rowSize),
+		nullable:    true,
+		validValues: make([]bool,rowSize),
+	}
+}
+
+
 // ColumnDouble generated columns type for Double
 type ColumnDouble struct {
 	ColumnBase
 	name   string
 	values []float64
+	validValues []bool
+	nullable    bool
 }
 
 // Name returns column name
@@ -644,6 +1096,28 @@ func (c *ColumnDouble) Len() int {
 	return len(c.values)
 }
 
+// Nullable returns column nullable
+func (c *ColumnDouble) Nullable() bool {
+	return c.nullable
+}
+
+// Get returns value at index as interface{}.
+func (c *ColumnDouble) Get(idx int) (interface{}, error) {
+	var r float64 // use default value
+	if c.nullable {
+		if idx < 0 || idx >= len(c.validValues) {
+			return nil, errors.New("index out of validValues range")
+		}
+		if !c.validValues[idx] {
+			return nil, nil
+		}
+	}
+	if idx < 0 || idx >= c.Len() {
+		return r, errors.New("index out of range")
+	}
+	return c.values[idx], nil
+}
+
 func (c *ColumnDouble) Slice(start, end int) Column {
 	l := c.Len()
 	if start > l {
@@ -652,20 +1126,17 @@ func (c *ColumnDouble) Slice(start, end int) Column {
 	if end == -1 || end > l {
 		end = l
 	}
+	sliceValidValues := make([]bool, 0)
+	if c.nullable {
+		sliceValidValues = c.validValues[start:end]
+	}
 	return &ColumnDouble{
 		ColumnBase: c.ColumnBase,
 		name:       c.name,
 		values:     c.values[start:end],
+		validValues: sliceValidValues,
+		nullable:    c.nullable,
 	}
-}
-
-// Get returns value at index as interface{}.
-func (c *ColumnDouble) Get(idx int) (interface{}, error) {
-	var r float64 // use default value
-	if idx < 0 || idx >= c.Len() {
-		return r, errors.New("index out of range")
-	}
-	return c.values[idx], nil
 }
 
 // FieldData return column data mapped to schema.FieldData
@@ -673,11 +1144,21 @@ func (c *ColumnDouble) FieldData() *schema.FieldData {
 	fd := &schema.FieldData{
 		Type: schema.DataType_Double,
 		FieldName: c.name,
+		ValidData: c.validValues,
 	}
 	data := make([]float64, 0, c.Len())
-	for i := 0; i < c.Len(); i++ {
-		data = append(data, float64(c.values[i]))
+	if c.nullable {
+		for i, v := range c.validValues {
+			if v {
+				data = append(data, c.values[i])
+			}
+		}
+	} else {
+		for i := 0; i < c.Len(); i++ {
+			data = append(data, c.values[i])
+		}
 	}
+	
 	fd.Field = &schema.FieldData_Scalars{
 		Scalars: &schema.ScalarField{
 			Data: &schema.ScalarField_DoubleData{
@@ -694,6 +1175,14 @@ func (c *ColumnDouble) FieldData() *schema.FieldData {
 // error occurs when index out of range
 func (c *ColumnDouble) ValueByIdx(idx int) (float64, error) {
 	var r float64 // use default value
+	if c.nullable {
+		if idx < 0 || idx >= len(c.validValues) {
+			return r, errors.New("index out of validValues range")
+		}
+		if !c.validValues[idx] {
+			return r, nil
+		}
+	}
 	if idx < 0 || idx >= c.Len() {
 		return r, errors.New("index out of range")
 	}
@@ -702,11 +1191,21 @@ func (c *ColumnDouble) ValueByIdx(idx int) (float64, error) {
 
 // AppendValue append value into column
 func(c *ColumnDouble) AppendValue(i interface{}) error {
+	var v float64
+	if i == nil && c.nullable {
+		c.values = append(c.values, v)
+		c.validValues = append(c.validValues, false)
+		return nil
+	}
+
 	v, ok := i.(float64)
 	if !ok {
 		return fmt.Errorf("invalid type, expected float64, got %T", i)
 	}
 	c.values = append(c.values, v)
+	if c.nullable {
+		c.validValues = append(c.validValues, true)
+	}
 
 	return nil
 }
@@ -714,6 +1213,11 @@ func(c *ColumnDouble) AppendValue(i interface{}) error {
 // Data returns column data
 func (c *ColumnDouble) Data() []float64 {
 	return c.values
+}
+
+// ValidData returns column validValues
+func (c *ColumnDouble) ValidData() []bool {
+	return c.validValues
 }
 
 // NewColumnDouble auto generated constructor
@@ -724,11 +1228,34 @@ func NewColumnDouble(name string, values []float64) *ColumnDouble {
 	}
 }
 
+// NewNullableColumnDouble auto generated constructor
+func NewNullableColumnDouble(name string, values []float64, validValues []bool) *ColumnDouble {
+	return &ColumnDouble {
+		name: name,
+		values: values,
+		nullable:    true,
+		validValues: validValues,
+	}
+}
+
+// NewAllNullColumnDouble auto generated constructor
+func NewAllNullColumnDouble(name string, rowSize int) *ColumnDouble {
+	return &ColumnDouble {
+		name: name,
+		values: make([]float64,rowSize),
+		nullable:    true,
+		validValues: make([]bool,rowSize),
+	}
+}
+
+
 // ColumnString generated columns type for String
 type ColumnString struct {
 	ColumnBase
 	name   string
 	values []string
+	validValues []bool
+	nullable    bool
 }
 
 // Name returns column name
@@ -746,6 +1273,28 @@ func (c *ColumnString) Len() int {
 	return len(c.values)
 }
 
+// Nullable returns column nullable
+func (c *ColumnString) Nullable() bool {
+	return c.nullable
+}
+
+// Get returns value at index as interface{}.
+func (c *ColumnString) Get(idx int) (interface{}, error) {
+	var r string // use default value
+	if c.nullable {
+		if idx < 0 || idx >= len(c.validValues) {
+			return nil, errors.New("index out of validValues range")
+		}
+		if !c.validValues[idx] {
+			return nil, nil
+		}
+	}
+	if idx < 0 || idx >= c.Len() {
+		return r, errors.New("index out of range")
+	}
+	return c.values[idx], nil
+}
+
 func (c *ColumnString) Slice(start, end int) Column {
 	l := c.Len()
 	if start > l {
@@ -754,20 +1303,17 @@ func (c *ColumnString) Slice(start, end int) Column {
 	if end == -1 || end > l {
 		end = l
 	}
+	sliceValidValues := make([]bool, 0)
+	if c.nullable {
+		sliceValidValues = c.validValues[start:end]
+	}
 	return &ColumnString{
 		ColumnBase: c.ColumnBase,
 		name:       c.name,
 		values:     c.values[start:end],
+		validValues: sliceValidValues,
+		nullable:    c.nullable,
 	}
-}
-
-// Get returns value at index as interface{}.
-func (c *ColumnString) Get(idx int) (interface{}, error) {
-	var r string // use default value
-	if idx < 0 || idx >= c.Len() {
-		return r, errors.New("index out of range")
-	}
-	return c.values[idx], nil
 }
 
 // FieldData return column data mapped to schema.FieldData
@@ -775,11 +1321,21 @@ func (c *ColumnString) FieldData() *schema.FieldData {
 	fd := &schema.FieldData{
 		Type: schema.DataType_String,
 		FieldName: c.name,
+		ValidData: c.validValues,
 	}
 	data := make([]string, 0, c.Len())
-	for i := 0; i < c.Len(); i++ {
-		data = append(data, string(c.values[i]))
+	if c.nullable {
+		for i, v := range c.validValues {
+			if v {
+				data = append(data, c.values[i])
+			}
+		}
+	} else {
+		for i := 0; i < c.Len(); i++ {
+			data = append(data, c.values[i])
+		}
 	}
+	
 	fd.Field = &schema.FieldData_Scalars{
 		Scalars: &schema.ScalarField{
 			Data: &schema.ScalarField_StringData{
@@ -796,6 +1352,14 @@ func (c *ColumnString) FieldData() *schema.FieldData {
 // error occurs when index out of range
 func (c *ColumnString) ValueByIdx(idx int) (string, error) {
 	var r string // use default value
+	if c.nullable {
+		if idx < 0 || idx >= len(c.validValues) {
+			return r, errors.New("index out of validValues range")
+		}
+		if !c.validValues[idx] {
+			return r, nil
+		}
+	}
 	if idx < 0 || idx >= c.Len() {
 		return r, errors.New("index out of range")
 	}
@@ -804,11 +1368,21 @@ func (c *ColumnString) ValueByIdx(idx int) (string, error) {
 
 // AppendValue append value into column
 func(c *ColumnString) AppendValue(i interface{}) error {
+	var v string
+	if i == nil && c.nullable {
+		c.values = append(c.values, v)
+		c.validValues = append(c.validValues, false)
+		return nil
+	}
+
 	v, ok := i.(string)
 	if !ok {
 		return fmt.Errorf("invalid type, expected string, got %T", i)
 	}
 	c.values = append(c.values, v)
+	if c.nullable {
+		c.validValues = append(c.validValues, true)
+	}
 
 	return nil
 }
@@ -818,6 +1392,11 @@ func (c *ColumnString) Data() []string {
 	return c.values
 }
 
+// ValidData returns column validValues
+func (c *ColumnString) ValidData() []bool {
+	return c.validValues
+}
+
 // NewColumnString auto generated constructor
 func NewColumnString(name string, values []string) *ColumnString {
 	return &ColumnString {
@@ -825,4 +1404,25 @@ func NewColumnString(name string, values []string) *ColumnString {
 		values: values,
 	}
 }
+
+// NewNullableColumnString auto generated constructor
+func NewNullableColumnString(name string, values []string, validValues []bool) *ColumnString {
+	return &ColumnString {
+		name: name,
+		values: values,
+		nullable:    true,
+		validValues: validValues,
+	}
+}
+
+// NewAllNullColumnString auto generated constructor
+func NewAllNullColumnString(name string, rowSize int) *ColumnString {
+	return &ColumnString {
+		name: name,
+		values: make([]string,rowSize),
+		nullable:    true,
+		validValues: make([]bool,rowSize),
+	}
+}
+
 

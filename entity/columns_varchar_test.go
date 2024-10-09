@@ -113,4 +113,24 @@ func TestFieldDataVarCharColumn(t *testing.T) {
 		assert.Equal(t, colLen, column.Len())
 		assert.Equal(t, FieldTypeVarChar, column.Type())
 	})
+
+	t.Run("get null data", func(t *testing.T) {
+		fd.Field = &schema.FieldData_Scalars{
+			Scalars: &schema.ScalarField{
+				Data: &schema.ScalarField_StringData{
+					StringData: &schema.StringArray{
+						Data: make([]string, colLen),
+					},
+				},
+			},
+		}
+		fd.ValidData = make([]bool, colLen)
+		column, err := FieldDataColumn(fd, 0, -1)
+		assert.Nil(t, err)
+		assert.NotNil(t, column)
+
+		assert.Equal(t, name, column.Name())
+		assert.Equal(t, colLen, column.Len())
+		assert.Equal(t, FieldTypeVarChar, column.Type())
+	})
 }

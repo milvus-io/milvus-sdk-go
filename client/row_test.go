@@ -248,6 +248,46 @@ func (s *InsertByRowsSuite) TestSuccess() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	s.Run("null value", func() {
+		defer s.resetMock()
+		s.setupHasCollection(testCollectionName)
+		s.setupHasPartition(testCollectionName, partName)
+		s.setupDescribeCollection(testCollectionName, entity.NewSchema().WithName(testCollectionName).
+			WithField(entity.NewField().WithName("ID").WithDataType(entity.FieldTypeInt64).WithIsPrimaryKey(true)).
+			WithField(entity.NewField().WithName("NullableFid").WithDataType(entity.FieldTypeInt64).WithNullable(true)).
+			WithField(entity.NewField().WithName("Vector").WithDataType(entity.FieldTypeFloatVector).WithTypeParams(entity.TypeParamDim, "128")),
+		)
+
+		s.mock.EXPECT().Insert(mock.Anything, mock.AnythingOfType("*milvuspb.InsertRequest")).
+			Run(func(_ context.Context, req *milvuspb.InsertRequest) {
+				s.Equal(testCollectionName, req.GetCollectionName())
+				s.Equal(partName, req.GetPartitionName())
+				s.Equal(3, len(req.GetFieldsData()))
+				var data *schemapb.FieldData
+				for _, d := range req.GetFieldsData() {
+					if d.FieldName == "NullableFid" {
+						data = d
+					}
+				}
+				s.Equal(1, len(data.ValidData))
+				s.Equal(0, len(data.GetScalars().GetLongData().Data))
+			}).Return(&milvuspb.MutationResult{
+			Status: &commonpb.Status{ErrorCode: commonpb.ErrorCode_Success},
+			IDs:    &schemapb.IDs{IdField: &schemapb.IDs_IntId{IntId: &schemapb.LongArray{Data: []int64{100}}}},
+		}, nil)
+		type row struct {
+			entity.RowBase
+			ID          int64
+			NullableFid interface{}
+			Vector      []float32
+		}
+		columns, err := c.InsertByRows(ctx, testCollectionName, partName, []entity.Row{
+			row{ID: 100, NullableFid: nil, Vector: make([]float32, 128)},
+		})
+		s.NoError(err)
+		s.Equal(1, columns.Len())
+	})
+
 	s.Run("non_dynamic", func() {
 		defer s.resetMock()
 		s.setupHasCollection(testCollectionName)

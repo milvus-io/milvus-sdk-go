@@ -29,13 +29,14 @@ func TestFieldSchema(t *testing.T) {
 		NewField().WithName("fp16_field").WithDataType(FieldTypeFloat16Vector).WithDim(128),
 		NewField().WithName("bf16_field").WithDataType(FieldTypeBFloat16Vector).WithDim(128),
 		NewField().WithName("cluster_key").WithDataType(FieldTypeInt32).WithIsClusteringKey(true),
-		/*
-			NewField().WithName("default_value_bool").WithDataType(FieldTypeBool).WithDefaultValueBool(true),
-			NewField().WithName("default_value_int").WithDataType(FieldTypeInt32).WithDefaultValueInt(1),
-			NewField().WithName("default_value_long").WithDataType(FieldTypeInt64).WithDefaultValueLong(1),
-			NewField().WithName("default_value_float").WithDataType(FieldTypeFloat).WithDefaultValueFloat(1),
-			NewField().WithName("default_value_double").WithDataType(FieldTypeDouble).WithDefaultValueDouble(1),
-			NewField().WithName("default_value_string").WithDataType(FieldTypeString).WithDefaultValueString("a"),*/
+		NewField().WithName("nullable_field").WithDataType(FieldTypeString).WithNullable(true),
+
+		NewField().WithName("default_value_bool").WithDataType(FieldTypeBool).WithDefaultValueBool(true),
+		NewField().WithName("default_value_int").WithDataType(FieldTypeInt32).WithDefaultValueInt(1),
+		NewField().WithName("default_value_long").WithDataType(FieldTypeInt64).WithDefaultValueLong(1),
+		NewField().WithName("default_value_float").WithDataType(FieldTypeFloat).WithDefaultValueFloat(1),
+		NewField().WithName("default_value_double").WithDataType(FieldTypeDouble).WithDefaultValueDouble(1),
+		NewField().WithName("default_value_string").WithDataType(FieldTypeString).WithDefaultValueString("a"),
 	}
 
 	for _, field := range fields {
@@ -51,6 +52,8 @@ func TestFieldSchema(t *testing.T) {
 		assert.Equal(t, field.Description, fieldSchema.GetDescription())
 		assert.Equal(t, field.TypeParams, KvPairsMap(fieldSchema.GetTypeParams()))
 		assert.EqualValues(t, field.ElementType, fieldSchema.GetElementType())
+		assert.Equal(t, field.DefaultValue, fieldSchema.DefaultValue)
+		assert.Equal(t, field.Nullable, fieldSchema.Nullable)
 		// marshal & unmarshal, still equals
 		nf := &Field{}
 		nf = nf.ReadProto(fieldSchema)
@@ -65,6 +68,8 @@ func TestFieldSchema(t *testing.T) {
 		assert.Equal(t, field.IsClusteringKey, nf.IsClusteringKey)
 		assert.EqualValues(t, field.TypeParams, nf.TypeParams)
 		assert.EqualValues(t, field.ElementType, nf.ElementType)
+		assert.Equal(t, field.DefaultValue, nf.DefaultValue)
+		assert.Equal(t, field.Nullable, nf.Nullable)
 	}
 
 	assert.NotPanics(t, func() {

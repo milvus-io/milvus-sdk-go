@@ -143,6 +143,10 @@ func (c *ColumnSparseFloatVector) Len() int {
 	return len(c.vectors)
 }
 
+func (c *ColumnSparseFloatVector) Nullable() bool {
+	return false
+}
+
 func (c *ColumnSparseFloatVector) Slice(start, end int) Column {
 	l := c.Len()
 	if start > l {

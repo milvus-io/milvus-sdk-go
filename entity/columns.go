@@ -28,6 +28,7 @@ type Column interface {
 	Name() string
 	Type() FieldType
 	Len() int
+	Nullable() bool
 	Slice(int, int) Column
 	FieldData() *schemapb.FieldData
 	AppendValue(interface{}) error
@@ -191,6 +192,13 @@ func FieldDataColumn(fd *schemapb.FieldData, begin, end int) (Column, error) {
 		if !ok {
 			return nil, errFieldDataTypeNotMatch
 		}
+		if len(fd.GetValidData()) != 0 {
+			if end < 0 {
+				return NewNullableColumnBool(fd.GetFieldName(), data.BoolData.GetData()[begin:], fd.GetValidData()[begin:]), nil
+			}
+			return NewNullableColumnBool(fd.GetFieldName(), data.BoolData.GetData()[begin:end], fd.GetValidData()[begin:end]), nil
+		}
+
 		if end < 0 {
 			return NewColumnBool(fd.GetFieldName(), data.BoolData.GetData()[begin:]), nil
 		}
@@ -204,6 +212,13 @@ func FieldDataColumn(fd *schemapb.FieldData, begin, end int) (Column, error) {
 		values := make([]int8, 0, len(data.IntData.GetData()))
 		for _, v := range data.IntData.GetData() {
 			values = append(values, int8(v))
+		}
+
+		if len(fd.GetValidData()) != 0 {
+			if end < 0 {
+				return NewNullableColumnInt8(fd.GetFieldName(), values[begin:], fd.GetValidData()[begin:]), nil
+			}
+			return NewNullableColumnInt8(fd.GetFieldName(), values[begin:end], fd.GetValidData()[begin:end]), nil
 		}
 
 		if end < 0 {
@@ -221,16 +236,28 @@ func FieldDataColumn(fd *schemapb.FieldData, begin, end int) (Column, error) {
 		for _, v := range data.IntData.GetData() {
 			values = append(values, int16(v))
 		}
+		if len(fd.GetValidData()) != 0 {
+			if end < 0 {
+				return NewNullableColumnInt16(fd.GetFieldName(), values[begin:], fd.GetValidData()[begin:]), nil
+			}
+			return NewNullableColumnInt16(fd.GetFieldName(), values[begin:end], fd.GetValidData()[begin:end]), nil
+		}
+
 		if end < 0 {
 			return NewColumnInt16(fd.GetFieldName(), values[begin:]), nil
 		}
-
 		return NewColumnInt16(fd.GetFieldName(), values[begin:end]), nil
 
 	case schemapb.DataType_Int32:
 		data, ok := getIntData(fd)
 		if !ok {
 			return nil, errFieldDataTypeNotMatch
+		}
+		if len(fd.GetValidData()) != 0 {
+			if end < 0 {
+				return NewNullableColumnInt32(fd.GetFieldName(), data.IntData.GetData()[begin:], fd.GetValidData()[begin:]), nil
+			}
+			return NewNullableColumnInt32(fd.GetFieldName(), data.IntData.GetData()[begin:end], fd.GetValidData()[begin:end]), nil
 		}
 		if end < 0 {
 			return NewColumnInt32(fd.GetFieldName(), data.IntData.GetData()[begin:]), nil
@@ -242,6 +269,12 @@ func FieldDataColumn(fd *schemapb.FieldData, begin, end int) (Column, error) {
 		if !ok {
 			return nil, errFieldDataTypeNotMatch
 		}
+		if len(fd.GetValidData()) != 0 {
+			if end < 0 {
+				return NewNullableColumnInt64(fd.GetFieldName(), data.LongData.GetData()[begin:], fd.GetValidData()[begin:]), nil
+			}
+			return NewNullableColumnInt64(fd.GetFieldName(), data.LongData.GetData()[begin:end], fd.GetValidData()[begin:end]), nil
+		}
 		if end < 0 {
 			return NewColumnInt64(fd.GetFieldName(), data.LongData.GetData()[begin:]), nil
 		}
@@ -251,6 +284,12 @@ func FieldDataColumn(fd *schemapb.FieldData, begin, end int) (Column, error) {
 		data, ok := fd.GetScalars().GetData().(*schemapb.ScalarField_FloatData)
 		if !ok {
 			return nil, errFieldDataTypeNotMatch
+		}
+		if len(fd.GetValidData()) != 0 {
+			if end < 0 {
+				return NewNullableColumnFloat(fd.GetFieldName(), data.FloatData.GetData()[begin:], fd.GetValidData()[begin:]), nil
+			}
+			return NewNullableColumnFloat(fd.GetFieldName(), data.FloatData.GetData()[begin:end], fd.GetValidData()[begin:end]), nil
 		}
 		if end < 0 {
 			return NewColumnFloat(fd.GetFieldName(), data.FloatData.GetData()[begin:]), nil
@@ -262,6 +301,12 @@ func FieldDataColumn(fd *schemapb.FieldData, begin, end int) (Column, error) {
 		if !ok {
 			return nil, errFieldDataTypeNotMatch
 		}
+		if len(fd.GetValidData()) != 0 {
+			if end < 0 {
+				return NewNullableColumnDouble(fd.GetFieldName(), data.DoubleData.GetData()[begin:], fd.GetValidData()[begin:]), nil
+			}
+			return NewNullableColumnDouble(fd.GetFieldName(), data.DoubleData.GetData()[begin:end], fd.GetValidData()[begin:end]), nil
+		}
 		if end < 0 {
 			return NewColumnDouble(fd.GetFieldName(), data.DoubleData.GetData()[begin:]), nil
 		}
@@ -272,6 +317,12 @@ func FieldDataColumn(fd *schemapb.FieldData, begin, end int) (Column, error) {
 		if !ok {
 			return nil, errFieldDataTypeNotMatch
 		}
+		if len(fd.GetValidData()) != 0 {
+			if end < 0 {
+				return NewNullableColumnString(fd.GetFieldName(), data.StringData.GetData()[begin:], fd.GetValidData()[begin:]), nil
+			}
+			return NewNullableColumnString(fd.GetFieldName(), data.StringData.GetData()[begin:end], fd.GetValidData()[begin:end]), nil
+		}
 		if end < 0 {
 			return NewColumnString(fd.GetFieldName(), data.StringData.GetData()[begin:]), nil
 		}
@@ -281,6 +332,12 @@ func FieldDataColumn(fd *schemapb.FieldData, begin, end int) (Column, error) {
 		data, ok := fd.GetScalars().GetData().(*schemapb.ScalarField_StringData)
 		if !ok {
 			return nil, errFieldDataTypeNotMatch
+		}
+		if len(fd.GetValidData()) != 0 {
+			if end < 0 {
+				return NewNullableColumnVarChar(fd.GetFieldName(), data.StringData.GetData()[begin:], fd.GetValidData()[begin:]), nil
+			}
+			return NewNullableColumnVarChar(fd.GetFieldName(), data.StringData.GetData()[begin:end], fd.GetValidData()[begin:end]), nil
 		}
 		if end < 0 {
 			return NewColumnVarChar(fd.GetFieldName(), data.StringData.GetData()[begin:]), nil
@@ -299,6 +356,13 @@ func FieldDataColumn(fd *schemapb.FieldData, begin, end int) (Column, error) {
 			arrayData = data.GetData()[begin:end]
 		}
 
+		if len(fd.GetValidData()) != 0 {
+			if end < 0 {
+				return parseNullableArrayData(fd.GetFieldName(), data.GetElementType(), arrayData, fd.GetValidData()[begin:])
+			}
+			return parseNullableArrayData(fd.GetFieldName(), data.GetElementType(), arrayData, fd.GetValidData()[begin:end])
+		}
+
 		return parseArrayData(fd.GetFieldName(), data.GetElementType(), arrayData)
 
 	case schemapb.DataType_JSON:
@@ -306,6 +370,12 @@ func FieldDataColumn(fd *schemapb.FieldData, begin, end int) (Column, error) {
 		isDynamic := fd.GetIsDynamic()
 		if !ok {
 			return nil, errFieldDataTypeNotMatch
+		}
+		if len(fd.GetValidData()) != 0 {
+			if end < 0 {
+				return NewNullableColumnJSONBytes(fd.GetFieldName(), data.JsonData.GetData()[begin:], fd.GetValidData()[begin:]).WithIsDynamic(isDynamic), nil
+			}
+			return NewNullableColumnJSONBytes(fd.GetFieldName(), data.JsonData.GetData()[begin:end], fd.GetValidData()[begin:end]).WithIsDynamic(isDynamic), nil
 		}
 		if end < 0 {
 			return NewColumnJSONBytes(fd.GetFieldName(), data.JsonData.GetData()[begin:]).WithIsDynamic(isDynamic), nil
@@ -413,6 +483,85 @@ func FieldDataColumn(fd *schemapb.FieldData, begin, end int) (Column, error) {
 		return NewColumnSparseVectors(fd.GetFieldName(), vectors), nil
 	default:
 		return nil, fmt.Errorf("unsupported data type %s", fd.GetType())
+	}
+}
+
+func parseNullableArrayData(fieldName string, elementType schemapb.DataType, fieldDataList []*schemapb.ScalarField, validData []bool) (Column, error) {
+	switch elementType {
+	case schemapb.DataType_Bool:
+		var data [][]bool
+		for _, fd := range fieldDataList {
+			data = append(data, fd.GetBoolData().GetData())
+		}
+		return NewNullableColumnBoolArray(fieldName, data, validData), nil
+
+	case schemapb.DataType_Int8:
+		var data [][]int8
+		for _, fd := range fieldDataList {
+			raw := fd.GetIntData().GetData()
+			row := make([]int8, 0, len(raw))
+			for _, item := range raw {
+				row = append(row, int8(item))
+			}
+			data = append(data, row)
+		}
+		return NewNullableColumnInt8Array(fieldName, data, validData), nil
+
+	case schemapb.DataType_Int16:
+		var data [][]int16
+		for _, fd := range fieldDataList {
+			raw := fd.GetIntData().GetData()
+			row := make([]int16, 0, len(raw))
+			for _, item := range raw {
+				row = append(row, int16(item))
+			}
+			data = append(data, row)
+		}
+		return NewNullableColumnInt16Array(fieldName, data, validData), nil
+
+	case schemapb.DataType_Int32:
+		var data [][]int32
+		for _, fd := range fieldDataList {
+			data = append(data, fd.GetIntData().GetData())
+		}
+		return NewNullableColumnInt32Array(fieldName, data, validData), nil
+
+	case schemapb.DataType_Int64:
+		var data [][]int64
+		for _, fd := range fieldDataList {
+			data = append(data, fd.GetLongData().GetData())
+		}
+		return NewNullableColumnInt64Array(fieldName, data, validData), nil
+
+	case schemapb.DataType_Float:
+		var data [][]float32
+		for _, fd := range fieldDataList {
+			data = append(data, fd.GetFloatData().GetData())
+		}
+		return NewNullableColumnFloatArray(fieldName, data, validData), nil
+
+	case schemapb.DataType_Double:
+		var data [][]float64
+		for _, fd := range fieldDataList {
+			data = append(data, fd.GetDoubleData().GetData())
+		}
+		return NewNullableColumnDoubleArray(fieldName, data, validData), nil
+
+	case schemapb.DataType_VarChar, schemapb.DataType_String:
+		var data [][][]byte
+		for _, fd := range fieldDataList {
+			strs := fd.GetStringData().GetData()
+			bytesData := make([][]byte, 0, len(strs))
+			for _, str := range strs {
+				bytesData = append(bytesData, []byte(str))
+			}
+			data = append(data, bytesData)
+		}
+
+		return NewNullableColumnVarCharArray(fieldName, data, validData), nil
+
+	default:
+		return nil, fmt.Errorf("unsupported element type %s", elementType)
 	}
 }
 
@@ -610,6 +759,35 @@ func DefaultValueColumn(name string, dataType FieldType) (Column, error) {
 		return NewColumnVarChar(name, nil), nil
 	case FieldTypeJSON:
 		return NewColumnJSONBytes(name, nil), nil
+
+	default:
+		return nil, fmt.Errorf("default value unsupported data type %s", dataType)
+	}
+}
+
+// NewAllNullValueColumn will return the empty scalars with nullable==true, and fill it with null
+func NewAllNullValueColumn(name string, dataType FieldType, rowSize int) (Column, error) {
+	switch dataType {
+	case FieldTypeBool:
+		return NewAllNullColumnBool(name, rowSize), nil
+	case FieldTypeInt8:
+		return NewAllNullColumnInt8(name, rowSize), nil
+	case FieldTypeInt16:
+		return NewAllNullColumnInt16(name, rowSize), nil
+	case FieldTypeInt32:
+		return NewAllNullColumnInt32(name, rowSize), nil
+	case FieldTypeInt64:
+		return NewAllNullColumnInt64(name, rowSize), nil
+	case FieldTypeFloat:
+		return NewAllNullColumnFloat(name, rowSize), nil
+	case FieldTypeDouble:
+		return NewAllNullColumnDouble(name, rowSize), nil
+	case FieldTypeString:
+		return NewAllNullColumnString(name, rowSize), nil
+	case FieldTypeVarChar:
+		return NewAllNullColumnVarChar(name, rowSize), nil
+	case FieldTypeJSON:
+		return NewAllNullColumnJSONBytes(name, rowSize), nil
 
 	default:
 		return nil, fmt.Errorf("default value unsupported data type %s", dataType)

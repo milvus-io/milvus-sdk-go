@@ -34,6 +34,10 @@ func (c * ColumnBinaryVector) Len() int {
 	return len(c.values)
 }
 
+func (c * ColumnBinaryVector) Nullable() bool {
+	return false
+}
+
 func (c *ColumnBinaryVector) Slice(start, end int) Column {
 	l := c.Len()
 	if start > l {
@@ -138,6 +142,10 @@ func (c *ColumnFloatVector) Type() FieldType {
 // Len returns column data length
 func (c * ColumnFloatVector) Len() int {
 	return len(c.values)
+}
+
+func (c * ColumnFloatVector) Nullable() bool {
+	return false
 }
 
 // Dim returns vector dimension
@@ -248,6 +256,10 @@ func (c * ColumnFloat16Vector) Len() int {
 	return len(c.values)
 }
 
+func (c * ColumnFloat16Vector) Nullable() bool {
+	return false
+}
+
 func (c *ColumnFloat16Vector) Slice(start, end int) Column {
 	l := c.Len()
 	if start > l {
@@ -352,6 +364,10 @@ func (c *ColumnBFloat16Vector) Type() FieldType {
 // Len returns column data length
 func (c * ColumnBFloat16Vector) Len() int {
 	return len(c.values)
+}
+
+func (c * ColumnBFloat16Vector) Nullable() bool {
+	return false
 }
 
 func (c *ColumnBFloat16Vector) Slice(start, end int) Column {
