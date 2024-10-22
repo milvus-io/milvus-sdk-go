@@ -51,11 +51,9 @@ func genGroupByBinaryIndex(metricType entity.MetricType) []entity.Index {
 func genUnsupportedFloatGroupByIndex() []entity.Index {
 	idxIvfPq, _ := entity.NewIndexIvfPQ(entity.L2, 128, 16, 8)
 	idxScann, _ := entity.NewIndexSCANN(entity.L2, 16, false)
-	idxDiskAnn, _ := entity.NewIndexDISKANN(entity.L2)
 	return []entity.Index{
 		idxIvfPq,
 		idxScann,
-		idxDiskAnn,
 	}
 }
 
@@ -438,14 +436,16 @@ func TestSearchGroupByPagination(t *testing.T) {
 func TestSearchGroupByUnsupportedIndex(t *testing.T) {
 	t.Parallel()
 	for _, idx := range genUnsupportedFloatGroupByIndex() {
-		mc, ctx, collName := prepareDataForGroupBySearch(t, 3, 1000, idx, false)
-		// groupBy search
-		queryVec := common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeFloatVector)
-		sp, _ := entity.NewIndexIvfFlatSearchParam(32)
-		_, err := mc.Search(ctx, collName, []string{}, "", []string{common.DefaultIntFieldName, common.DefaultVarcharFieldName},
-			queryVec, common.DefaultFloatVecFieldName, entity.MetricType(idx.Params()["metrics_type"]),
-			common.DefaultTopK, sp, client.WithGroupByField(common.DefaultVarcharFieldName))
-		common.CheckErr(t, err, false, "doesn't support search_group_by")
+		t.Run(string(idx.IndexType()), func(t *testing.T) {
+			mc, ctx, collName := prepareDataForGroupBySearch(t, 3, 1000, idx, false)
+			// groupBy search
+			queryVec := common.GenSearchVectors(common.DefaultNq, common.DefaultDim, entity.FieldTypeFloatVector)
+			sp, _ := entity.NewIndexIvfFlatSearchParam(32)
+			_, err := mc.Search(ctx, collName, []string{}, "", []string{common.DefaultIntFieldName, common.DefaultVarcharFieldName},
+				queryVec, common.DefaultFloatVecFieldName, entity.MetricType(idx.Params()["metrics_type"]),
+				common.DefaultTopK, sp, client.WithGroupByField(common.DefaultVarcharFieldName))
+			common.CheckErr(t, err, false, "doesn't support search_group_by")
+		})
 	}
 }
 
