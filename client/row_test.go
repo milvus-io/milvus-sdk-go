@@ -53,7 +53,7 @@ func TestCreateCollectionByRow(t *testing.T) {
 	})
 
 	t.Run("Invalid cases", func(t *testing.T) {
-		//Duplicated
+		// Duplicated
 		m := make(map[string]struct{})
 		mockServer.SetInjection(MCreateCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
 			req, ok := raw.(*milvuspb.CreateCollectionRequest)
@@ -103,51 +103,6 @@ func (s *InsertByRowsSuite) TestFails() {
 	s.Run("fail_empty_rows", func() {
 		defer s.resetMock()
 		_, err := c.InsertByRows(ctx, testCollectionName, partName, []entity.Row{})
-		s.Error(err)
-	})
-
-	s.Run("fail_collection_not_found", func() {
-		defer s.resetMock()
-		s.setupHasCollection()
-		_, err := c.InsertByRows(ctx, testCollectionName, partName, []entity.Row{entity.RowBase{}})
-		s.Error(err)
-	})
-
-	s.Run("fail_hascollection_errcode", func() {
-		defer s.resetMock()
-		s.setupHasCollectionError(commonpb.ErrorCode_UnexpectedError, nil)
-		_, err := c.InsertByRows(ctx, testCollectionName, partName, []entity.Row{entity.RowBase{}})
-		s.Error(err)
-	})
-
-	s.Run("fail_hascollection_error", func() {
-		defer s.resetMock()
-		s.setupHasCollectionError(commonpb.ErrorCode_Success, errors.New("mock error"))
-		_, err := c.InsertByRows(ctx, testCollectionName, partName, []entity.Row{entity.RowBase{}})
-		s.Error(err)
-	})
-
-	s.Run("fail_partition_not_found", func() {
-		defer s.resetMock()
-		s.setupHasCollection(testCollectionName)
-		s.setupHasPartition(testCollectionName)
-		_, err := c.InsertByRows(ctx, testCollectionName, partName, []entity.Row{entity.RowBase{}})
-		s.Error(err)
-	})
-
-	s.Run("fail_haspartition_error", func() {
-		defer s.resetMock()
-		s.setupHasCollection(testCollectionName)
-		s.setupHasPartitionError(commonpb.ErrorCode_Success, errors.New("mock error"))
-		_, err := c.InsertByRows(ctx, testCollectionName, partName, []entity.Row{entity.RowBase{}})
-		s.Error(err)
-	})
-
-	s.Run("fail_haspartition_errcode", func() {
-		defer s.resetMock()
-		s.setupHasCollection(testCollectionName)
-		s.setupHasPartitionError(commonpb.ErrorCode_UnexpectedError, nil)
-		_, err := c.InsertByRows(ctx, testCollectionName, partName, []entity.Row{entity.RowBase{}})
 		s.Error(err)
 	})
 
@@ -250,8 +205,6 @@ func (s *InsertByRowsSuite) TestSuccess() {
 
 	s.Run("non_dynamic", func() {
 		defer s.resetMock()
-		s.setupHasCollection(testCollectionName)
-		s.setupHasPartition(testCollectionName, partName)
 		s.setupDescribeCollection(testCollectionName, entity.NewSchema().WithName(testCollectionName).
 			WithField(entity.NewField().WithName("ID").WithDataType(entity.FieldTypeInt64).WithIsPrimaryKey(true)).
 			WithField(entity.NewField().WithName("Vector").WithDataType(entity.FieldTypeFloatVector).WithTypeParams(entity.TypeParamDim, "128")),
@@ -280,8 +233,6 @@ func (s *InsertByRowsSuite) TestSuccess() {
 
 	s.Run("dynamic", func() {
 		defer s.resetMock()
-		s.setupHasCollection(testCollectionName)
-		s.setupHasPartition(testCollectionName, partName)
 		s.setupDescribeCollection(testCollectionName, entity.NewSchema().
 			WithName(testCollectionName).WithDynamicFieldEnabled(true).
 			WithField(entity.NewField().WithName("ID").WithDataType(entity.FieldTypeInt64).WithIsPrimaryKey(true)).
@@ -494,7 +445,7 @@ func TestSetFieldValue(t *testing.T) {
 		f64 := reflect.ValueOf(item).Elem().FieldByName("Double")
 		str := reflect.ValueOf(item).Elem().FieldByName("String")
 		vf := reflect.ValueOf(item).Elem().FieldByName("Arr")
-		//vb := reflect.ValueOf(item).Elem().FieldByName("ArrBin")
+		// vb := reflect.ValueOf(item).Elem().FieldByName("ArrBin")
 
 		err = SetFieldValue(&entity.Field{
 			DataType: entity.FieldTypeNone,
@@ -587,6 +538,7 @@ func TestSetFieldValue(t *testing.T) {
 func emptyFieldData() *schemapb.FieldData {
 	return &schemapb.FieldData{}
 }
+
 func emptyScalarFieldData() *schemapb.FieldData {
 	return &schemapb.FieldData{
 		Field: &schemapb.FieldData_Scalars{

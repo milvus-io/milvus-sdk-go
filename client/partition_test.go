@@ -44,42 +44,6 @@ func hasPartitionInjection(t *testing.T, collName string, mustIn bool, partition
 	}
 }
 
-func TestGrpcClientCreatePartition(t *testing.T) {
-
-	ctx := context.Background()
-	c := testClient(ctx, t)
-
-	partitionName := fmt.Sprintf("_part_%d", rand.Int())
-
-	mockServer.SetInjection(MHasCollection, hasCollectionDefault)
-	mockServer.SetInjection(MHasPartition, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-		req, ok := raw.(*milvuspb.HasPartitionRequest)
-		resp := &milvuspb.BoolResponse{}
-		if !ok {
-			s, err := BadRequestStatus()
-			resp.Status = s
-			return resp, err
-		}
-		assert.Equal(t, testCollectionName, req.GetCollectionName())
-		assert.Equal(t, partitionName, req.GetPartitionName())
-		resp.Value = false
-		s, err := SuccessStatus()
-		resp.Status = s
-		return resp, err
-	})
-
-	assert.Nil(t, c.CreatePartition(ctx, testCollectionName, partitionName, WithCreatePartitionMsgBase(&commonpb.MsgBase{})))
-}
-
-func TestGrpcClientDropPartition(t *testing.T) {
-	partitionName := fmt.Sprintf("_part_%d", rand.Int())
-	ctx := context.Background()
-	c := testClient(ctx, t)
-	mockServer.SetInjection(MHasCollection, hasCollectionDefault)
-	mockServer.SetInjection(MHasPartition, hasPartitionInjection(t, testCollectionName, true, partitionName)) // injection has assertion of collName & parition name
-	assert.Nil(t, c.DropPartition(ctx, testCollectionName, partitionName, WithDropPartitionMsgBase(&commonpb.MsgBase{})))
-}
-
 func TestGrpcClientHasPartition(t *testing.T) {
 	partitionName := fmt.Sprintf("_part_%d", rand.Int())
 	ctx := context.Background()
@@ -121,7 +85,6 @@ func getPartitionsInterception(t *testing.T, collName string, partitions ...*ent
 }
 
 func TestGrpcClientShowPartitions(t *testing.T) {
-
 	ctx := context.Background()
 	c := testClient(ctx, t)
 
@@ -166,29 +129,6 @@ func TestGrpcClientShowPartitions(t *testing.T) {
 			assert.NotNil(t, err)
 		}
 	}
-}
-
-func TestGrpcClientReleasePartitions(t *testing.T) {
-	ctx := context.Background()
-
-	c := testClient(ctx, t)
-
-	parts := []string{"_part1", "_part2"}
-	mockServer.SetInjection(MHasCollection, hasCollectionDefault)
-	mockServer.SetInjection(MHasPartition, hasPartitionInjection(t, testCollectionName, true, "_part1", "_part2", "_part3", "_part4"))
-	mockServer.SetInjection(MReleasePartitions, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-		req, ok := raw.(*milvuspb.ReleasePartitionsRequest)
-		if !ok {
-			return BadRequestStatus()
-		}
-		assert.Equal(t, testCollectionName, req.GetCollectionName())
-		assert.ElementsMatch(t, parts, req.GetPartitionNames())
-
-		return SuccessStatus()
-	})
-	defer mockServer.SetInjection(MHasPartition, hasPartitionInjection(t, testCollectionName, false, "testPart"))
-
-	assert.Nil(t, c.ReleasePartitions(ctx, testCollectionName, parts, WithReleasePartitionsMsgBase(&commonpb.MsgBase{})))
 }
 
 func TestGrpcShowPartitions(t *testing.T) {
@@ -255,6 +195,89 @@ type PartitionSuite struct {
 	MockSuiteBase
 }
 
+func (s *PartitionSuite) TestCreatePartition() {
+	c := s.client
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	collectionName := fmt.Sprintf("coll_%s", randStr(6))
+	partitionName := fmt.Sprintf("part_%s", randStr(6))
+
+	s.Run("normal_case", func() {
+		defer s.resetMock()
+
+		s.mock.EXPECT().CreatePartition(mock.Anything, mock.AnythingOfType("*milvuspb.CreatePartitionRequest")).RunAndReturn(func(ctx context.Context, cpr *milvuspb.CreatePartitionRequest) (*commonpb.Status, error) {
+			s.Equal(collectionName, cpr.GetCollectionName())
+			s.Equal(partitionName, cpr.GetPartitionName())
+			return s.getSuccessStatus(), nil
+		}).Once()
+
+		err := c.CreatePartition(ctx, collectionName, partitionName)
+		s.NoError(err)
+	})
+
+	s.Run("server_error", func() {
+		defer s.resetMock()
+
+		s.mock.EXPECT().CreatePartition(mock.Anything, mock.AnythingOfType("*milvuspb.CreatePartitionRequest")).RunAndReturn(func(ctx context.Context, cpr *milvuspb.CreatePartitionRequest) (*commonpb.Status, error) {
+			s.Equal(collectionName, cpr.GetCollectionName())
+			s.Equal(partitionName, cpr.GetPartitionName())
+			return nil, errors.New("mocked")
+		}).Once()
+
+		err := c.CreatePartition(ctx, collectionName, partitionName)
+		s.Error(err)
+	})
+}
+
+func (s *PartitionSuite) TestDropPartition() {
+	c := s.client
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	collectionName := fmt.Sprintf("coll_%s", randStr(6))
+	partitionName := fmt.Sprintf("part_%s", randStr(6))
+
+	s.Run("normal_case", func() {
+		defer s.resetMock()
+
+		s.mock.EXPECT().DropPartition(mock.Anything, mock.AnythingOfType("*milvuspb.DropPartitionRequest")).RunAndReturn(func(ctx context.Context, dpr *milvuspb.DropPartitionRequest) (*commonpb.Status, error) {
+			s.Equal(collectionName, dpr.GetCollectionName())
+			s.Equal(partitionName, dpr.GetPartitionName())
+			return s.getSuccessStatus(), nil
+		}).Once()
+
+		err := c.DropPartition(ctx, collectionName, partitionName)
+		s.NoError(err)
+	})
+
+	s.Run("server_error", func() {
+		defer s.resetMock()
+
+		s.mock.EXPECT().DropPartition(mock.Anything, mock.AnythingOfType("*milvuspb.DropPartitionRequest")).RunAndReturn(func(ctx context.Context, dpr *milvuspb.DropPartitionRequest) (*commonpb.Status, error) {
+			s.Equal(collectionName, dpr.GetCollectionName())
+			s.Equal(partitionName, dpr.GetPartitionName())
+			return nil, errors.New("mocked")
+		}).Once()
+
+		err := c.DropPartition(ctx, collectionName, partitionName)
+		s.Error(err)
+	})
+
+	s.Run("server_error", func() {
+		defer s.resetMock()
+
+		s.mock.EXPECT().DropPartition(mock.Anything, mock.AnythingOfType("*milvuspb.DropPartitionRequest")).RunAndReturn(func(ctx context.Context, dpr *milvuspb.DropPartitionRequest) (*commonpb.Status, error) {
+			s.Equal(collectionName, dpr.GetCollectionName())
+			s.Equal(partitionName, dpr.GetPartitionName())
+			return s.getStatus(commonpb.ErrorCode_UnexpectedError, ""), nil
+		}).Once()
+
+		err := c.DropPartition(ctx, collectionName, partitionName)
+		s.Error(err)
+	})
+}
+
 func (s *PartitionSuite) TestLoadPartitions() {
 	c := s.client
 	ctx, cancel := context.WithCancel(context.Background())
@@ -299,50 +322,6 @@ func (s *PartitionSuite) TestLoadPartitions() {
 
 		err := c.LoadPartitions(ctx, testCollectionName, partNames, false)
 		s.NoError(err)
-	})
-
-	s.Run("has_collection_failure", func() {
-		s.Run("return_false", func() {
-			defer s.resetMock()
-			s.mock.EXPECT().HasCollection(mock.Anything, &milvuspb.HasCollectionRequest{CollectionName: testCollectionName}).
-				Return(&milvuspb.BoolResponse{Status: &commonpb.Status{}, Value: false}, nil)
-
-			err := c.LoadPartitions(ctx, testCollectionName, partNames, false)
-			s.Error(err)
-		})
-
-		s.Run("return_error", func() {
-			defer s.resetMock()
-			s.mock.EXPECT().HasCollection(mock.Anything, &milvuspb.HasCollectionRequest{CollectionName: testCollectionName}).
-				Return(nil, errors.New("mock error"))
-
-			err := c.LoadPartitions(ctx, testCollectionName, partNames, false)
-			s.Error(err)
-		})
-	})
-
-	s.Run("has_partition_failure", func() {
-		s.Run("return_false", func() {
-			defer s.resetMock()
-			s.mock.EXPECT().HasCollection(mock.Anything, &milvuspb.HasCollectionRequest{CollectionName: testCollectionName}).
-				Return(&milvuspb.BoolResponse{Status: &commonpb.Status{}, Value: true}, nil)
-			s.mock.EXPECT().HasPartition(mock.Anything, mock.Anything).
-				Return(&milvuspb.BoolResponse{Status: &commonpb.Status{}, Value: false}, nil)
-
-			err := c.LoadPartitions(ctx, testCollectionName, partNames, false)
-			s.Error(err)
-		})
-
-		s.Run("return_error", func() {
-			defer s.resetMock()
-			s.mock.EXPECT().HasCollection(mock.Anything, &milvuspb.HasCollectionRequest{CollectionName: testCollectionName}).
-				Return(&milvuspb.BoolResponse{Status: &commonpb.Status{}, Value: true}, nil)
-			s.mock.EXPECT().HasPartition(mock.Anything, mock.Anything).
-				Return(nil, errors.New("mock"))
-
-			err := c.LoadPartitions(ctx, testCollectionName, partNames, false)
-			s.Error(err)
-		})
 	})
 
 	s.Run("load_partitions_failure", func() {
@@ -407,6 +386,41 @@ func (s *PartitionSuite) TestLoadPartitions() {
 		c := &GrpcClient{}
 		err := c.LoadPartitions(ctx, testCollectionName, partNames, false)
 		s.ErrorIs(err, ErrClientNotReady)
+	})
+}
+
+func (s *PartitionSuite) TestReleasePartitions() {
+	c := s.client
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	collectionName := fmt.Sprintf("coll_%d", rand.Int31n(100))
+	partNames := []string{"part_1", "part_2"}
+
+	s.Run("normal_case", func() {
+		defer s.resetMock()
+
+		s.mock.EXPECT().ReleasePartitions(mock.Anything, mock.AnythingOfType("")).RunAndReturn(func(ctx context.Context, rpr *milvuspb.ReleasePartitionsRequest) (*commonpb.Status, error) {
+			s.Equal(collectionName, rpr.GetCollectionName())
+			s.Equal(partNames, rpr.GetPartitionNames())
+			return s.getSuccessStatus(), nil
+		}).Once()
+
+		err := c.ReleasePartitions(ctx, collectionName, partNames)
+		s.NoError(err)
+	})
+
+	s.Run("server_error", func() {
+		defer s.resetMock()
+
+		s.mock.EXPECT().ReleasePartitions(mock.Anything, mock.AnythingOfType("")).RunAndReturn(func(ctx context.Context, rpr *milvuspb.ReleasePartitionsRequest) (*commonpb.Status, error) {
+			s.Equal(collectionName, rpr.GetCollectionName())
+			s.Equal(partNames, rpr.GetPartitionNames())
+			return nil, errors.New("mocked")
+		}).Once()
+
+		err := c.ReleasePartitions(ctx, collectionName, partNames)
+		s.Error(err)
 	})
 }
 
