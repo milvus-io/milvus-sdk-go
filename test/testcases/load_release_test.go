@@ -183,11 +183,11 @@ func TestLoadPartitionsNotExist(t *testing.T) {
 
 	// load with not exist partition names
 	errLoadNotExist := mc.LoadPartitions(ctx, collName, []string{"xxx"}, false)
-	common.CheckErr(t, errLoadNotExist, false, fmt.Sprintf("partition not found", collName))
+	common.CheckErr(t, errLoadNotExist, false, "partition not found")
 
 	// load partition with part exist partition names
 	errLoadPartExist := mc.LoadPartitions(ctx, collName, []string{"xxx", partitionName}, false)
-	common.CheckErr(t, errLoadPartExist, false, fmt.Sprintf("partition not found", collName))
+	common.CheckErr(t, errLoadPartExist, false, "partition not found")
 }
 
 // test load partition

@@ -105,7 +105,7 @@ func TestDeleteNotExistPartition(t *testing.T) {
 	// delete
 	deleteIds := ids.Slice(0, 10)
 	errDelete := mc.DeleteByPks(ctx, collName, "p1", deleteIds)
-	common.CheckErr(t, errDelete, false, fmt.Sprintf("partition not found", collName))
+	common.CheckErr(t, errDelete, false, "partition not found")
 }
 
 // test delete empty partition names
