@@ -154,8 +154,10 @@ type Client interface {
 	Query(ctx context.Context, collectionName string, partitionNames []string, expr string, outputFields []string, opts ...SearchQueryOptionFunc) (ResultSet, error)
 	// Get grabs the inserted entities using the primary key from the Collection.
 	Get(ctx context.Context, collectionName string, ids entity.Column, opts ...GetOption) (ResultSet, error)
+	// TODO @silverxia current imlementation is buggy and cannot be released
+	// hide interface until fixed
 	// SearchIterator returns knn result in iterator mode.
-	SearchIterator(ctx context.Context, opt *SearchIteratorOption) (*SearchIterator, error)
+	// SearchIterator(ctx context.Context, opt *SearchIteratorOption) (*SearchIterator, error)
 	// QueryIterator returns data matches provided criterion in iterator mode.
 	QueryIterator(ctx context.Context, opt *QueryIteratorOption) (*QueryIterator, error)
 
