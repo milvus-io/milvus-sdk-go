@@ -18,14 +18,18 @@ func TestCompact(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create collection with 1 shard
-	cp := CollectionParams{CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: true,
-		ShardsNum: 1, Dim: common.DefaultDim}
+	cp := CollectionParams{
+		CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: true,
+		ShardsNum: 1, Dim: common.DefaultDim,
+	}
 	collName := createCollection(ctx, t, mc, cp)
 
 	// insert
 	for i := 0; i < 4; i++ {
-		dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: AllFields,
-			start: i * common.DefaultNb, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
+		dp := DataParams{
+			CollectionName: collName, PartitionName: "", CollectionFieldsType: AllFields,
+			start: i * common.DefaultNb, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false,
+		}
 		_, _ = insertData(ctx, t, mc, dp)
 		mc.Flush(ctx, collName, false)
 	}
@@ -87,7 +91,7 @@ func TestCompactCollectionNotExist(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	_, err := mc.Compact(ctx, "coll", 0)
-	common.CheckErr(t, err, false, "collection coll does not exist")
+	common.CheckErr(t, err, false, "can't find collection")
 }
 
 // test compact empty collection

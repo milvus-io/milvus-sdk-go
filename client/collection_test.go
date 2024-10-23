@@ -417,22 +417,10 @@ func (s *CollectionSuite) TestRenameCollection() {
 
 		newCollName := fmt.Sprintf("new_%s", randStr(6))
 
-		s.mock.EXPECT().HasCollection(mock.Anything, &milvuspb.HasCollectionRequest{CollectionName: testCollectionName}).Return(&milvuspb.BoolResponse{Status: &commonpb.Status{}, Value: true}, nil)
 		s.mock.EXPECT().RenameCollection(mock.Anything, &milvuspb.RenameCollectionRequest{OldName: testCollectionName, NewName: newCollName}).Return(&commonpb.Status{}, nil)
 
 		err := c.RenameCollection(ctx, testCollectionName, newCollName)
 		s.NoError(err)
-	})
-
-	s.Run("coll_not_exist", func() {
-		defer s.resetMock()
-
-		newCollName := fmt.Sprintf("new_%s", randStr(6))
-
-		s.mock.EXPECT().HasCollection(mock.Anything, &milvuspb.HasCollectionRequest{CollectionName: testCollectionName}).Return(&milvuspb.BoolResponse{Status: &commonpb.Status{}, Value: false}, nil)
-
-		err := c.RenameCollection(ctx, testCollectionName, newCollName)
-		s.Error(err)
 	})
 
 	s.Run("rename_failed", func() {
@@ -440,7 +428,6 @@ func (s *CollectionSuite) TestRenameCollection() {
 
 		newCollName := fmt.Sprintf("new_%s", randStr(6))
 
-		s.mock.EXPECT().HasCollection(mock.Anything, &milvuspb.HasCollectionRequest{CollectionName: testCollectionName}).Return(&milvuspb.BoolResponse{Status: &commonpb.Status{}, Value: true}, nil)
 		s.mock.EXPECT().RenameCollection(mock.Anything, &milvuspb.RenameCollectionRequest{OldName: testCollectionName, NewName: newCollName}).Return(&commonpb.Status{ErrorCode: commonpb.ErrorCode_UnexpectedError, Reason: "mocked failure"}, nil)
 
 		err := c.RenameCollection(ctx, testCollectionName, newCollName)
@@ -452,7 +439,6 @@ func (s *CollectionSuite) TestRenameCollection() {
 
 		newCollName := fmt.Sprintf("new_%s", randStr(6))
 
-		s.mock.EXPECT().HasCollection(mock.Anything, &milvuspb.HasCollectionRequest{CollectionName: testCollectionName}).Return(&milvuspb.BoolResponse{Status: &commonpb.Status{}, Value: true}, nil)
 		s.mock.EXPECT().RenameCollection(mock.Anything, &milvuspb.RenameCollectionRequest{OldName: testCollectionName, NewName: newCollName}).Return(nil, errors.New("mocked error"))
 
 		err := c.RenameCollection(ctx, testCollectionName, newCollName)
@@ -468,7 +454,6 @@ func (s *CollectionSuite) TestAlterCollection() {
 	s.Run("normal_run", func() {
 		defer s.resetMock()
 
-		s.setupHasCollection(testCollectionName)
 		s.mock.EXPECT().AlterCollection(mock.Anything, mock.AnythingOfType("*milvuspb.AlterCollectionRequest")).
 			Return(&commonpb.Status{}, nil)
 
@@ -479,31 +464,15 @@ func (s *CollectionSuite) TestAlterCollection() {
 		s.NoError(err)
 	})
 
-	s.Run("collection_not_exist", func() {
-		defer s.resetMock()
-
-		s.mock.EXPECT().HasCollection(mock.Anything, mock.AnythingOfType("*milvuspb.HasCollectionRequest")).
-			Return(&milvuspb.BoolResponse{
-				Status: &commonpb.Status{},
-				Value:  false,
-			}, nil)
-
-		err := c.AlterCollection(ctx, testCollectionName, entity.CollectionTTL(100000))
-		s.Error(err)
-	})
-
 	s.Run("no_attributes", func() {
 		defer s.resetMock()
 
-		s.setupHasCollection(testCollectionName)
 		err := c.AlterCollection(ctx, testCollectionName)
 		s.Error(err)
 	})
 
 	s.Run("request_fails", func() {
 		defer s.resetMock()
-
-		s.setupHasCollection(testCollectionName)
 		s.mock.EXPECT().AlterCollection(mock.Anything, mock.AnythingOfType("*milvuspb.AlterCollectionRequest")).
 			Return(nil, errors.New("mocked"))
 
@@ -514,7 +483,6 @@ func (s *CollectionSuite) TestAlterCollection() {
 	s.Run("server_return_error", func() {
 		defer s.resetMock()
 
-		s.setupHasCollection(testCollectionName)
 		s.mock.EXPECT().AlterCollection(mock.Anything, mock.AnythingOfType("*milvuspb.AlterCollectionRequest")).
 			Return(&commonpb.Status{ErrorCode: commonpb.ErrorCode_UnexpectedError}, nil)
 
@@ -537,8 +505,6 @@ func (s *CollectionSuite) TestLoadCollection() {
 
 	s.Run("normal_run_async", func() {
 		defer s.resetMock()
-		s.mock.EXPECT().HasCollection(mock.Anything, &milvuspb.HasCollectionRequest{CollectionName: testCollectionName}).
-			Return(&milvuspb.BoolResponse{Status: &commonpb.Status{}, Value: true}, nil)
 
 		s.mock.EXPECT().LoadCollection(mock.Anything, mock.Anything).Return(&commonpb.Status{ErrorCode: commonpb.ErrorCode_Success}, nil)
 
@@ -548,8 +514,6 @@ func (s *CollectionSuite) TestLoadCollection() {
 
 	s.Run("normal_run_sync", func() {
 		defer s.resetMock()
-		s.mock.EXPECT().HasCollection(mock.Anything, &milvuspb.HasCollectionRequest{CollectionName: testCollectionName}).
-			Return(&milvuspb.BoolResponse{Status: &commonpb.Status{}, Value: true}, nil)
 
 		s.mock.EXPECT().LoadCollection(mock.Anything, mock.Anything).Return(&commonpb.Status{ErrorCode: commonpb.ErrorCode_Success}, nil)
 		s.mock.EXPECT().GetLoadingProgress(mock.Anything, mock.Anything).
@@ -564,8 +528,6 @@ func (s *CollectionSuite) TestLoadCollection() {
 
 	s.Run("load_default_replica", func() {
 		defer s.resetMock()
-		s.mock.EXPECT().HasCollection(mock.Anything, &milvuspb.HasCollectionRequest{CollectionName: testCollectionName}).
-			Return(&milvuspb.BoolResponse{Status: &commonpb.Status{}, Value: true}, nil)
 
 		s.mock.EXPECT().LoadCollection(mock.Anything, mock.Anything).Run(func(_ context.Context, req *milvuspb.LoadCollectionRequest) {
 			s.Equal(int32(0), req.GetReplicaNumber())
@@ -578,8 +540,6 @@ func (s *CollectionSuite) TestLoadCollection() {
 
 	s.Run("load_multiple_replica", func() {
 		defer s.resetMock()
-		s.mock.EXPECT().HasCollection(mock.Anything, &milvuspb.HasCollectionRequest{CollectionName: testCollectionName}).
-			Return(&milvuspb.BoolResponse{Status: &commonpb.Status{}, Value: true}, nil)
 
 		s.mock.EXPECT().LoadCollection(mock.Anything, mock.Anything).Run(func(_ context.Context, req *milvuspb.LoadCollectionRequest) {
 			s.Equal(testMultiReplicaNumber, req.GetReplicaNumber())
@@ -590,31 +550,9 @@ func (s *CollectionSuite) TestLoadCollection() {
 		s.NoError(err)
 	})
 
-	s.Run("has_collection_failure", func() {
-		s.Run("return_false", func() {
-			defer s.resetMock()
-			s.mock.EXPECT().HasCollection(mock.Anything, &milvuspb.HasCollectionRequest{CollectionName: testCollectionName}).
-				Return(&milvuspb.BoolResponse{Status: &commonpb.Status{}, Value: false}, nil)
-
-			err := c.LoadCollection(ctx, testCollectionName, true)
-			s.Error(err)
-		})
-
-		s.Run("return_error", func() {
-			defer s.resetMock()
-			s.mock.EXPECT().HasCollection(mock.Anything, &milvuspb.HasCollectionRequest{CollectionName: testCollectionName}).
-				Return(nil, errors.New("mock error"))
-
-			err := c.LoadCollection(ctx, testCollectionName, true)
-			s.Error(err)
-		})
-	})
-
 	s.Run("load_collection_failure", func() {
 		s.Run("failure_status", func() {
 			defer s.resetMock()
-			s.mock.EXPECT().HasCollection(mock.Anything, &milvuspb.HasCollectionRequest{CollectionName: testCollectionName}).
-				Return(&milvuspb.BoolResponse{Status: &commonpb.Status{}, Value: true}, nil)
 
 			s.mock.EXPECT().LoadCollection(mock.Anything, mock.Anything).
 				Return(&commonpb.Status{ErrorCode: commonpb.ErrorCode_UnexpectedError}, nil)
@@ -624,9 +562,6 @@ func (s *CollectionSuite) TestLoadCollection() {
 		})
 
 		s.Run("return_error", func() {
-			s.mock.EXPECT().HasCollection(mock.Anything, &milvuspb.HasCollectionRequest{CollectionName: testCollectionName}).
-				Return(&milvuspb.BoolResponse{Status: &commonpb.Status{}, Value: true}, nil)
-
 			s.mock.EXPECT().LoadCollection(mock.Anything, mock.Anything).
 				Return(nil, errors.New("mock error"))
 
@@ -637,8 +572,6 @@ func (s *CollectionSuite) TestLoadCollection() {
 
 	s.Run("get_loading_progress_failure", func() {
 		defer s.resetMock()
-		s.mock.EXPECT().HasCollection(mock.Anything, &milvuspb.HasCollectionRequest{CollectionName: testCollectionName}).
-			Return(&milvuspb.BoolResponse{Status: &commonpb.Status{}, Value: true}, nil)
 
 		s.mock.EXPECT().LoadCollection(mock.Anything, mock.Anything).Return(&commonpb.Status{ErrorCode: commonpb.ErrorCode_Success}, nil)
 		s.mock.EXPECT().GetLoadingProgress(mock.Anything, mock.Anything).
@@ -652,6 +585,188 @@ func (s *CollectionSuite) TestLoadCollection() {
 		c := &GrpcClient{}
 		err := c.LoadCollection(ctx, testCollectionName, false)
 		s.ErrorIs(err, ErrClientNotReady)
+	})
+}
+
+func (s *CollectionSuite) TestDropCollection() {
+	c := s.client
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	collectionName := fmt.Sprintf("coll_%s", randStr(6))
+
+	s.Run("normal_run", func() {
+		defer s.resetMock()
+
+		s.mock.EXPECT().DropCollection(mock.Anything, mock.AnythingOfType("*milvuspb.DropCollectionRequest")).RunAndReturn(func(ctx context.Context, dcr *milvuspb.DropCollectionRequest) (*commonpb.Status, error) {
+			s.Equal(collectionName, dcr.GetCollectionName())
+			return s.getSuccessStatus(), nil
+		}).Once()
+
+		err := c.DropCollection(ctx, collectionName)
+		s.NoError(err)
+	})
+
+	s.Run("return_error", func() {
+		defer s.resetMock()
+
+		s.mock.EXPECT().DropCollection(mock.Anything, mock.AnythingOfType("*milvuspb.DropCollectionRequest")).RunAndReturn(func(ctx context.Context, dcr *milvuspb.DropCollectionRequest) (*commonpb.Status, error) {
+			s.Equal(collectionName, dcr.GetCollectionName())
+			return nil, errors.New("mock")
+		}).Once()
+
+		err := c.DropCollection(ctx, collectionName)
+		s.Error(err)
+	})
+}
+
+func (s *CollectionSuite) TestGetCollectionStatistics() {
+	c := s.client
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	collectionName := fmt.Sprintf("coll_%s", randStr(6))
+	stat := make(map[string]string)
+	stat["row_count"] = fmt.Sprintf("%d", rand.Int31n(10000))
+
+	s.Run("normal_case", func() {
+		defer s.resetMock()
+
+		s.mock.EXPECT().GetCollectionStatistics(mock.Anything, mock.AnythingOfType("*milvuspb.GetCollectionStatisticsRequest")).RunAndReturn(func(ctx context.Context, dcr *milvuspb.GetCollectionStatisticsRequest) (*milvuspb.GetCollectionStatisticsResponse, error) {
+			s.Equal(collectionName, dcr.GetCollectionName())
+			return &milvuspb.GetCollectionStatisticsResponse{
+				Status: s.getSuccessStatus(),
+				Stats:  entity.MapKvPairs(stat),
+			}, nil
+		}).Once()
+
+		result, err := c.GetCollectionStatistics(ctx, collectionName)
+		s.NoError(err)
+		s.Len(result, len(stat))
+		for k, v := range result {
+			s.Equal(v, stat[k])
+		}
+	})
+
+	s.Run("server_error", func() {
+		defer s.resetMock()
+
+		s.mock.EXPECT().GetCollectionStatistics(mock.Anything, mock.AnythingOfType("*milvuspb.GetCollectionStatisticsRequest")).RunAndReturn(func(ctx context.Context, dcr *milvuspb.GetCollectionStatisticsRequest) (*milvuspb.GetCollectionStatisticsResponse, error) {
+			s.Equal(collectionName, dcr.GetCollectionName())
+			return nil, errors.New("mock")
+		}).Once()
+
+		_, err := c.GetCollectionStatistics(ctx, collectionName)
+		s.Error(err)
+	})
+}
+
+func (s *CollectionSuite) TestReleaseCollection() {
+	c := s.client
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	collectionName := fmt.Sprintf("coll_%s", randStr(6))
+
+	s.Run("normal_run", func() {
+		defer s.resetMock()
+
+		s.mock.EXPECT().ReleaseCollection(mock.Anything, mock.AnythingOfType("*milvuspb.ReleaseCollectionRequest")).RunAndReturn(func(ctx context.Context, dcr *milvuspb.ReleaseCollectionRequest) (*commonpb.Status, error) {
+			s.Equal(collectionName, dcr.GetCollectionName())
+			return s.getSuccessStatus(), nil
+		}).Once()
+
+		err := c.ReleaseCollection(ctx, collectionName)
+		s.NoError(err)
+	})
+
+	s.Run("return_error", func() {
+		defer s.resetMock()
+
+		s.mock.EXPECT().ReleaseCollection(mock.Anything, mock.AnythingOfType("*milvuspb.ReleaseCollectionRequest")).RunAndReturn(func(ctx context.Context, dcr *milvuspb.ReleaseCollectionRequest) (*commonpb.Status, error) {
+			s.Equal(collectionName, dcr.GetCollectionName())
+			return nil, errors.New("mock")
+		}).Once()
+
+		err := c.ReleaseCollection(ctx, collectionName)
+		s.Error(err)
+	})
+}
+
+func (s *CollectionSuite) TestGetLoadingProgress() {
+	c := s.client
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	collectionName := fmt.Sprintf("coll_%s", randStr(6))
+	partName := fmt.Sprintf("part_%s", randStr(6))
+	loadProgress := rand.Int63n(100)
+
+	s.Run("normal_run", func() {
+		defer s.resetMock()
+
+		s.mock.EXPECT().GetLoadingProgress(mock.Anything, mock.AnythingOfType("*milvuspb.GetLoadingProgressRequest")).RunAndReturn(func(ctx context.Context, glpr *milvuspb.GetLoadingProgressRequest) (*milvuspb.GetLoadingProgressResponse, error) {
+			s.Equal(collectionName, glpr.GetCollectionName())
+			return &milvuspb.GetLoadingProgressResponse{
+				Status:   s.getSuccessStatus(),
+				Progress: loadProgress,
+			}, nil
+		}).Once()
+
+		percent, err := c.GetLoadingProgress(ctx, collectionName, []string{partName})
+		s.NoError(err)
+		s.Equal(loadProgress, percent)
+	})
+
+	s.Run("return_error", func() {
+		defer s.resetMock()
+
+		s.mock.EXPECT().GetLoadingProgress(mock.Anything, mock.AnythingOfType("*milvuspb.GetLoadingProgressRequest")).RunAndReturn(func(ctx context.Context, glpr *milvuspb.GetLoadingProgressRequest) (*milvuspb.GetLoadingProgressResponse, error) {
+			s.Equal(collectionName, glpr.GetCollectionName())
+			return nil, errors.New("mock")
+		}).Once()
+
+		_, err := c.GetLoadingProgress(ctx, collectionName, nil)
+		s.Error(err)
+	})
+}
+
+func (s *CollectionSuite) TestGetLoadState() {
+	c := s.client
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	collectionName := fmt.Sprintf("coll_%s", randStr(6))
+	partName := fmt.Sprintf("part_%s", randStr(6))
+	loadState := commonpb.LoadState(rand.Int31n(4))
+
+	s.Run("normal_run", func() {
+		defer s.resetMock()
+
+		s.mock.EXPECT().GetLoadState(mock.Anything, mock.AnythingOfType("*milvuspb.GetLoadStateRequest")).RunAndReturn(func(ctx context.Context, glsr *milvuspb.GetLoadStateRequest) (*milvuspb.GetLoadStateResponse, error) {
+			s.Equal(collectionName, glsr.GetCollectionName())
+			s.ElementsMatch([]string{partName}, glsr.GetPartitionNames())
+			return &milvuspb.GetLoadStateResponse{
+				Status: s.getSuccessStatus(),
+				State:  loadState,
+			}, nil
+		}).Once()
+
+		state, err := c.GetLoadState(ctx, collectionName, []string{partName})
+		s.NoError(err)
+		s.EqualValues(loadState, state)
+	})
+
+	s.Run("return_error", func() {
+		defer s.resetMock()
+
+		s.mock.EXPECT().GetLoadState(mock.Anything, mock.AnythingOfType("*milvuspb.GetLoadStateRequest")).RunAndReturn(func(ctx context.Context, glsr *milvuspb.GetLoadStateRequest) (*milvuspb.GetLoadStateResponse, error) {
+			s.Equal(collectionName, glsr.GetCollectionName())
+			return nil, errors.New("mock")
+		}).Once()
+
+		_, err := c.GetLoadState(ctx, collectionName, nil)
+		s.Error(err)
 	})
 }
 
@@ -672,48 +787,6 @@ var hasCollectionDefault = func(_ context.Context, raw proto.Message) (proto.Mes
 	s, err := SuccessStatus()
 	resp.Status = s
 	return resp, err
-}
-
-func TestGrpcClientDropCollection(t *testing.T) {
-	ctx := context.Background()
-	c := testClient(ctx, t)
-
-	mockServer.SetInjection(MHasCollection, hasCollectionDefault)
-	mockServer.SetInjection(MDropCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-		req, ok := (raw).(*milvuspb.DropCollectionRequest)
-		if !ok {
-			return BadRequestStatus()
-		}
-		if req.GetCollectionName() != testCollectionName { // in mockServer.server, assume testCollection exists only
-			return BadRequestStatus()
-		}
-		return SuccessStatus()
-	})
-
-	t.Run("Test Normal drop", func(t *testing.T) {
-		assert.Nil(t, c.DropCollection(ctx, testCollectionName, WithDropCollectionMsgBase(&commonpb.MsgBase{})))
-	})
-
-	t.Run("Test drop non-existing collection", func(t *testing.T) {
-		assert.NotNil(t, c.DropCollection(ctx, "AAAAAAAAAANonExists"))
-	})
-}
-
-func TestReleaseCollection(t *testing.T) {
-	ctx := context.Background()
-
-	c := testClient(ctx, t)
-
-	mockServer.SetInjection(MReleaseCollection, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-		req, ok := raw.(*milvuspb.ReleaseCollectionRequest)
-		if !ok {
-			return BadRequestStatus()
-		}
-		assert.Equal(t, testCollectionName, req.GetCollectionName())
-		return SuccessStatus()
-	})
-
-	c.ReleaseCollection(ctx, testCollectionName, WithReleaseCollectionMsgBase(&commonpb.MsgBase{}))
 }
 
 func TestGrpcClientHasCollection(t *testing.T) {
@@ -740,32 +813,6 @@ func TestGrpcClientHasCollection(t *testing.T) {
 	has, err := c.HasCollection(ctx, testCollectionName)
 	assert.Nil(t, err)
 	assert.True(t, has)
-}
-
-// return injection asserts collection name matchs
-// partition name request in partitionNames if flag is true
-func hasCollectionInjection(t *testing.T, mustIn bool, collNames ...string) func(context.Context, proto.Message) (proto.Message, error) {
-	return func(_ context.Context, raw proto.Message) (proto.Message, error) {
-		req, ok := raw.(*milvuspb.HasCollectionRequest)
-		resp := &milvuspb.BoolResponse{}
-		if !ok {
-			s, err := BadRequestStatus()
-			resp.Status = s
-			return resp, err
-		}
-		if mustIn {
-			resp.Value = assert.Contains(t, collNames, req.GetCollectionName())
-		} else {
-			for _, pn := range collNames {
-				if pn == req.GetCollectionName() {
-					resp.Value = true
-				}
-			}
-		}
-		s, err := SuccessStatus()
-		resp.Status = s
-		return resp, err
-	}
 }
 
 func describeCollectionInjection(t *testing.T, collID int64, collName string, sch *entity.Schema) func(_ context.Context, raw proto.Message) (proto.Message, error) {
@@ -804,39 +851,6 @@ func TestGrpcClientDescribeCollection(t *testing.T) {
 	assert.Nil(t, err)
 	if assert.NotNil(t, collection) {
 		assert.Equal(t, collectionID, collection.ID)
-	}
-}
-
-func TestGrpcClientGetCollectionStatistics(t *testing.T) {
-	ctx := context.Background()
-
-	c := testClient(ctx, t)
-
-	stat := make(map[string]string)
-	stat["row_count"] = "0"
-
-	mockServer.SetInjection(MGetCollectionStatistics, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-		req, ok := raw.(*milvuspb.GetCollectionStatisticsRequest)
-		resp := &milvuspb.GetCollectionStatisticsResponse{}
-		if !ok {
-			s, err := BadRequestStatus()
-			resp.Status = s
-			return resp, err
-		}
-		assert.Equal(t, testCollectionName, req.GetCollectionName())
-		s, err := SuccessStatus()
-		resp.Status, resp.Stats = s, entity.MapKvPairs(stat)
-		return resp, err
-	})
-
-	rStat, err := c.GetCollectionStatistics(ctx, testCollectionName)
-	assert.Nil(t, err)
-	if assert.NotNil(t, rStat) {
-		for k, v := range stat {
-			rv, has := rStat[k]
-			assert.True(t, has)
-			assert.Equal(t, v, rv)
-		}
 	}
 }
 
@@ -902,11 +916,6 @@ func TestGrpcClientGetReplicas(t *testing.T) {
 		assert.Equal(t, 2, len(groups[0].ShardReplicas))
 	})
 
-	t.Run("get replicas invalid name", func(t *testing.T) {
-		_, err := c.GetReplicas(ctx, "invalid name")
-		assert.Error(t, err)
-	})
-
 	t.Run("get replicas grpc error", func(t *testing.T) {
 		mockServer.SetInjection(MGetReplicas, func(ctx context.Context, raw proto.Message) (proto.Message, error) {
 			return &milvuspb.GetReplicasResponse{}, errors.New("mockServer.d grpc error")
@@ -930,60 +939,4 @@ func TestGrpcClientGetReplicas(t *testing.T) {
 	})
 
 	mockServer.DelInjection(MGetReplicas)
-}
-
-func TestGrpcClientGetLoadingProgress(t *testing.T) {
-	ctx := context.Background()
-	c := testClient(ctx, t)
-
-	mockServer.SetInjection(MHasCollection, hasCollectionDefault)
-
-	mockServer.SetInjection(MGetLoadingProgress, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-		req, ok := raw.(*milvuspb.GetLoadingProgressRequest)
-		if !ok {
-			return BadRequestStatus()
-		}
-		resp := &milvuspb.GetLoadingProgressResponse{}
-		if !ok {
-			s, err := BadRequestStatus()
-			resp.Status = s
-			return resp, err
-		}
-		assert.Equal(t, testCollectionName, req.GetCollectionName())
-		s, err := SuccessStatus()
-		resp.Status, resp.Progress = s, 100
-		return resp, err
-	})
-
-	progress, err := c.GetLoadingProgress(ctx, testCollectionName, []string{})
-	assert.NoError(t, err)
-	assert.Equal(t, int64(100), progress)
-}
-
-func TestGrpcClientGetLoadState(t *testing.T) {
-	ctx := context.Background()
-	c := testClient(ctx, t)
-
-	mockServer.SetInjection(MHasCollection, hasCollectionDefault)
-
-	mockServer.SetInjection(MGetLoadState, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-		req, ok := raw.(*milvuspb.GetLoadStateRequest)
-		if !ok {
-			return BadRequestStatus()
-		}
-		resp := &milvuspb.GetLoadStateResponse{}
-		if !ok {
-			s, err := BadRequestStatus()
-			resp.Status = s
-			return resp, err
-		}
-		assert.Equal(t, testCollectionName, req.GetCollectionName())
-		s, err := SuccessStatus()
-		resp.Status, resp.State = s, commonpb.LoadState_LoadStateLoaded
-		return resp, err
-	})
-
-	state, err := c.GetLoadState(ctx, testCollectionName, []string{})
-	assert.NoError(t, err)
-	assert.Equal(t, entity.LoadStateLoaded, state)
 }
