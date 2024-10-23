@@ -130,7 +130,6 @@ func TestLoadCollectionMultiPartitions(t *testing.T) {
 
 // test load with empty partition name ""
 func TestLoadEmptyPartitionName(t *testing.T) {
-	// t.Skip("Issue: https://github.com/milvus-io/milvus-sdk-go/issues/373")
 	ctx := createContext(t, time.Second*common.DefaultTimeout*3)
 	// connect
 	mc := createMilvusClient(ctx, t)
@@ -145,7 +144,7 @@ func TestLoadEmptyPartitionName(t *testing.T) {
 
 	// load partition with empty partition names
 	errLoadEmpty := mc.LoadPartitions(ctx, collName, []string{""}, false)
-	common.CheckErr(t, errLoadEmpty, false, "request failed")
+	common.CheckErr(t, errLoadEmpty, false, "partition not found[partition=]")
 }
 
 // test load partitions with empty slice []string{}
@@ -410,7 +409,7 @@ func TestReleaseCollectionNotExist(t *testing.T) {
 
 	// release collection
 	errRelease := mc.ReleaseCollection(ctx, "collName")
-	common.CheckErr(t, errRelease, false, "not exist")
+	common.CheckErr(t, errRelease, false, "collection not found")
 }
 
 // test release partitions
@@ -471,11 +470,11 @@ func TestReleasePartitionsNotExist(t *testing.T) {
 
 	// release partition
 	errRelease := mc.ReleasePartitions(ctx, collName, []string{"partitionName"})
-	common.CheckErr(t, errRelease, false, "not exist")
+	common.CheckErr(t, errRelease, false, "partition not found")
 
 	// release partition
 	errRelease2 := mc.ReleasePartitions(ctx, collName, []string{"partitionName", partitionName})
-	common.CheckErr(t, errRelease2, false, "not exist")
+	common.CheckErr(t, errRelease2, false, "partition not found")
 
 	// check release success
 	partitions, _ := mc.ShowPartitions(ctx, collName)

@@ -57,7 +57,7 @@ func TestFlushNotExistedCollection(t *testing.T) {
 
 	// flush and check row count
 	errFlush := mc.Flush(ctx, "collName", false)
-	common.CheckErr(t, errFlush, false, "can't find collection")
+	common.CheckErr(t, errFlush, false, "collection not found")
 }
 
 // test flush async
