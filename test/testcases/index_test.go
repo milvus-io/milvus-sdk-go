@@ -60,13 +60,17 @@ func TestCreateIndexMultiVectors(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create collection
-	cp := CollectionParams{CollectionFieldsType: AllVectors, AutoID: false, EnableDynamicField: true, ShardsNum: 1,
-		Dim: common.DefaultDim}
+	cp := CollectionParams{
+		CollectionFieldsType: AllVectors, AutoID: false, EnableDynamicField: true, ShardsNum: 1,
+		Dim: common.DefaultDim,
+	}
 	collName := createCollection(ctx, t, mc, cp)
 
 	// insert
-	dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: AllVectors, start: 0,
-		nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true}
+	dp := DataParams{
+		CollectionName: collName, PartitionName: "", CollectionFieldsType: AllVectors, start: 0,
+		nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true,
+	}
 	_, _ = insertData(ctx, t, mc, dp)
 	_ = mc.Flush(ctx, collName, false)
 
@@ -106,11 +110,15 @@ func TestDescribeIndexMultiVectors(t *testing.T) {
 	// connect
 	mc := createMilvusClient(ctx, t)
 	// create -> insert [0, 3000) -> flush -> index -> load
-	cp := CollectionParams{CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: true,
-		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+	cp := CollectionParams{
+		CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: true,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim,
+	}
 
-	dp := DataParams{DoInsert: true, CollectionFieldsType: AllFields, start: 0, nb: common.DefaultNb * 2,
-		dim: common.DefaultDim, EnableDynamicField: true}
+	dp := DataParams{
+		DoInsert: true, CollectionFieldsType: AllFields, start: 0, nb: common.DefaultNb * 2,
+		dim: common.DefaultDim, EnableDynamicField: true,
+	}
 
 	// create index for all vector fields
 	ips := GenDefaultIndexParamsForAllVectors()
@@ -154,17 +162,21 @@ func TestCreateIndexDup(t *testing.T) {
 // test create scalar index on all scalar field
 func TestCreateScalarIndex(t *testing.T) {
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
-	//connect
+	// connect
 	mc := createMilvusClient(ctx, t)
 
 	// create collection with all datatype
-	cp := CollectionParams{CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: true,
-		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+	cp := CollectionParams{
+		CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: true,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim,
+	}
 	collName := createCollection(ctx, t, mc, cp)
 
 	// insert
-	dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: AllFields,
-		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
+	dp := DataParams{
+		CollectionName: collName, PartitionName: "", CollectionFieldsType: AllFields,
+		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false,
+	}
 	_, _ = insertData(ctx, t, mc, dp)
 	mc.Flush(ctx, collName, false)
 
@@ -213,17 +225,21 @@ func TestCreateScalarIndex(t *testing.T) {
 // test create scalar index on loaded collection
 func TestCreateIndexOnLoadedCollection(t *testing.T) {
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
-	//connect
+	// connect
 	mc := createMilvusClient(ctx, t)
 
 	// create collection with all datatype
-	cp := CollectionParams{CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: true,
-		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+	cp := CollectionParams{
+		CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: true,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim,
+	}
 	collName := createCollection(ctx, t, mc, cp)
 
 	// insert
-	dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: AllFields,
-		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
+	dp := DataParams{
+		CollectionName: collName, PartitionName: "", CollectionFieldsType: AllFields,
+		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false,
+	}
 	_, _ = insertData(ctx, t, mc, dp)
 	mc.Flush(ctx, collName, false)
 
@@ -276,11 +292,15 @@ func TestCreateTrieScalarIndexUnsupportedDataType(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create -> insert [0, 3000) -> flush -> index -> load
-	cp := CollectionParams{CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: false,
-		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+	cp := CollectionParams{
+		CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: false,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim,
+	}
 
-	dp := DataParams{DoInsert: true, CollectionFieldsType: AllFields, start: 0, nb: common.DefaultNb,
-		dim: common.DefaultDim, EnableDynamicField: false}
+	dp := DataParams{
+		DoInsert: true, CollectionFieldsType: AllFields, start: 0, nb: common.DefaultNb,
+		dim: common.DefaultDim, EnableDynamicField: false,
+	}
 
 	// index params
 	ips := []IndexParams{{BuildIndex: false}}
@@ -316,11 +336,15 @@ func TestCreateSortScalarIndexUnsupportedDataType(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create -> insert [0, 3000) -> flush -> index -> load
-	cp := CollectionParams{CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: false,
-		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+	cp := CollectionParams{
+		CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: false,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim,
+	}
 
-	dp := DataParams{DoInsert: true, CollectionFieldsType: AllFields, start: 0, nb: common.DefaultNb,
-		dim: common.DefaultDim, EnableDynamicField: false}
+	dp := DataParams{
+		DoInsert: true, CollectionFieldsType: AllFields, start: 0, nb: common.DefaultNb,
+		dim: common.DefaultDim, EnableDynamicField: false,
+	}
 
 	// index params
 	ips := []IndexParams{{BuildIndex: false}}
@@ -357,11 +381,15 @@ func TestCreateInvertedScalarIndex(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create -> insert [0, 3000) -> flush -> index -> load
-	cp := CollectionParams{CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: false,
-		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+	cp := CollectionParams{
+		CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: false,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim,
+	}
 
-	dp := DataParams{DoInsert: true, CollectionFieldsType: AllFields, start: 0, nb: common.DefaultNb,
-		dim: common.DefaultDim, EnableDynamicField: false}
+	dp := DataParams{
+		DoInsert: true, CollectionFieldsType: AllFields, start: 0, nb: common.DefaultNb,
+		dim: common.DefaultDim, EnableDynamicField: false,
+	}
 
 	// index params
 	ips := GenDefaultIndexParamsForAllVectors()
@@ -404,11 +432,15 @@ func TestCreateBitmapScalarIndex(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create -> insert [0, 3000) -> flush -> index -> load
-	cp := CollectionParams{CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: false,
-		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+	cp := CollectionParams{
+		CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: false,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim,
+	}
 
-	dp := DataParams{DoInsert: true, CollectionFieldsType: AllFields, start: 0, nb: common.DefaultNb,
-		dim: common.DefaultDim, EnableDynamicField: false}
+	dp := DataParams{
+		DoInsert: true, CollectionFieldsType: AllFields, start: 0, nb: common.DefaultNb,
+		dim: common.DefaultDim, EnableDynamicField: false,
+	}
 
 	// build vector's indexes
 	ips := GenDefaultIndexParamsForAllVectors()
@@ -463,11 +495,15 @@ func TestCreateScalarIndexVectorField(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create -> insert [0, 3000) -> flush -> index -> load
-	cp := CollectionParams{CollectionFieldsType: AllVectors, AutoID: false, EnableDynamicField: false,
-		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+	cp := CollectionParams{
+		CollectionFieldsType: AllVectors, AutoID: false, EnableDynamicField: false,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim,
+	}
 
-	dp := DataParams{DoInsert: true, CollectionFieldsType: AllVectors, start: 0, nb: common.DefaultNb,
-		dim: common.DefaultDim, EnableDynamicField: false}
+	dp := DataParams{
+		DoInsert: true, CollectionFieldsType: AllVectors, start: 0, nb: common.DefaultNb,
+		dim: common.DefaultDim, EnableDynamicField: false,
+	}
 
 	// no index
 	ips := []IndexParams{{BuildIndex: false}}
@@ -494,7 +530,7 @@ func TestCreateScalarIndexVectorField(t *testing.T) {
 // test create scalar index with vector field name
 func TestCreateIndexWithOtherFieldName(t *testing.T) {
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
-	//connect
+	// connect
 	mc := createMilvusClient(ctx, t)
 
 	collName, _ := createVarcharCollectionWithDataIndex(ctx, t, mc, false)
@@ -521,13 +557,17 @@ func TestCreateIndexJsonField(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create collection
-	cp := CollectionParams{CollectionFieldsType: Int64FloatVecJSON, AutoID: false, EnableDynamicField: false,
-		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+	cp := CollectionParams{
+		CollectionFieldsType: Int64FloatVecJSON, AutoID: false, EnableDynamicField: false,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim,
+	}
 	collName := createCollection(ctx, t, mc, cp)
 
 	// insert
-	dp := DataParams{CollectionName: collName, CollectionFieldsType: Int64FloatVecJSON, start: 0, nb: common.DefaultNb,
-		dim: common.DefaultDim, EnableDynamicField: false}
+	dp := DataParams{
+		CollectionName: collName, CollectionFieldsType: Int64FloatVecJSON, start: 0, nb: common.DefaultNb,
+		dim: common.DefaultDim, EnableDynamicField: false,
+	}
 	_, _ = insertData(ctx, t, mc, dp)
 
 	// create vector index on json field
@@ -535,7 +575,7 @@ func TestCreateIndexJsonField(t *testing.T) {
 	err := mc.CreateIndex(ctx, collName, common.DefaultJSONFieldName, idx, false, client.WithIndexName("json_index"))
 	common.CheckErr(t, err, false, "data type should be FloatVector, Float16Vector or BFloat16Vector")
 
-	//create scalar index on json field
+	// create scalar index on json field
 	type scalarIndexError struct {
 		indexType entity.IndexType
 		errMsg    string
@@ -563,13 +603,17 @@ func TestCreateIndexArrayField(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create collection
-	cp := CollectionParams{CollectionFieldsType: Int64FloatVecArray, AutoID: false, EnableDynamicField: true,
-		ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxCapacity: common.TestCapacity}
+	cp := CollectionParams{
+		CollectionFieldsType: Int64FloatVecArray, AutoID: false, EnableDynamicField: true,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxCapacity: common.TestCapacity,
+	}
 	collName := createCollection(ctx, t, mc, cp)
 
 	// prepare and insert data
-	dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVecArray,
-		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
+	dp := DataParams{
+		CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVecArray,
+		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false,
+	}
 	_, _ = insertData(ctx, t, mc, dp, common.WithArrayCapacity(common.TestCapacity))
 
 	// flush and check row count
@@ -610,13 +654,17 @@ func TestCreateInvertedIndexArrayField(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create collection
-	cp := CollectionParams{CollectionFieldsType: Int64FloatVecArray, AutoID: false, EnableDynamicField: false,
-		ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxCapacity: common.TestCapacity}
+	cp := CollectionParams{
+		CollectionFieldsType: Int64FloatVecArray, AutoID: false, EnableDynamicField: false,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxCapacity: common.TestCapacity,
+	}
 	collName := createCollection(ctx, t, mc, cp)
 
 	// prepare and insert data
-	dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVecArray,
-		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: false, WithRows: false}
+	dp := DataParams{
+		CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVecArray,
+		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: false, WithRows: false,
+	}
 	_, _ = insertData(ctx, t, mc, dp, common.WithArrayCapacity(common.TestCapacity))
 
 	// flush and check row count
@@ -654,13 +702,17 @@ func TestCreateBitmapIndexOnArrayField(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create collection
-	cp := CollectionParams{CollectionFieldsType: Int64FloatVecArray, AutoID: false, EnableDynamicField: true,
-		ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxCapacity: common.TestCapacity}
+	cp := CollectionParams{
+		CollectionFieldsType: Int64FloatVecArray, AutoID: false, EnableDynamicField: true,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxCapacity: common.TestCapacity,
+	}
 	collName := createCollection(ctx, t, mc, cp)
 
 	// prepare and insert data
-	dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVecArray,
-		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
+	dp := DataParams{
+		CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVecArray,
+		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false,
+	}
 	_, _ = insertData(ctx, t, mc, dp, common.WithArrayCapacity(common.TestCapacity))
 
 	// flush and check row count
@@ -783,7 +835,6 @@ func TestCreateBinaryIndexNotSupportedMetricsType(t *testing.T) {
 		common.CheckErr(t, errIvf, false, fmt.Sprintf("metric type %s not found or not supported, supported: [HAMMING JACCARD]", metricType),
 			"binary vector index does not support metric type")
 	}
-
 }
 
 // test create index without specify index name
@@ -809,17 +860,21 @@ func TestCreateIndexWithoutName(t *testing.T) {
 // test create auto index
 func TestCreateIndexWithoutIndexTypeParams(t *testing.T) {
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
-	//connect
+	// connect
 	mc := createMilvusClient(ctx, t)
 
 	// create collection with all datatype
-	cp := CollectionParams{CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: true,
-		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+	cp := CollectionParams{
+		CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: true,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim,
+	}
 	collName := createCollection(ctx, t, mc, cp)
 
 	// insert
-	dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: AllFields,
-		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
+	dp := DataParams{
+		CollectionName: collName, PartitionName: "", CollectionFieldsType: AllFields,
+		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false,
+	}
 	_, _ = insertData(ctx, t, mc, dp)
 	err := mc.Flush(ctx, collName, false)
 	common.CheckErr(t, err, true)
@@ -865,17 +920,21 @@ func TestCreateIndexWithoutIndexTypeParams(t *testing.T) {
 // test create default auto index on scalar fields, array and json -> error
 func TestCreateAutoIndexScalarFields(t *testing.T) {
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
-	//connect
+	// connect
 	mc := createMilvusClient(ctx, t)
 
 	// create collection with all datatype
-	cp := CollectionParams{CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: true,
-		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+	cp := CollectionParams{
+		CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: true,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim,
+	}
 	collName := createCollection(ctx, t, mc, cp)
 
 	// insert
-	dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: AllFields,
-		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
+	dp := DataParams{
+		CollectionName: collName, PartitionName: "", CollectionFieldsType: AllFields,
+		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false,
+	}
 	_, _ = insertData(ctx, t, mc, dp)
 	mc.Flush(ctx, collName, false)
 
@@ -923,23 +982,29 @@ func TestCreateAutoIndexScalarFields(t *testing.T) {
 
 func TestCreateIndexDynamicFields(t *testing.T) {
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
-	//connect
+	// connect
 	mc := createMilvusClient(ctx, t)
 
 	// create collection with all datatype
-	cp := CollectionParams{CollectionFieldsType: Int64FloatVec, AutoID: false, EnableDynamicField: true,
-		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+	cp := CollectionParams{
+		CollectionFieldsType: Int64FloatVec, AutoID: false, EnableDynamicField: true,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim,
+	}
 	collName := createCollection(ctx, t, mc, cp)
 
 	// insert
-	dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: AllFields,
-		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
+	dp := DataParams{
+		CollectionName: collName, PartitionName: "", CollectionFieldsType: AllFields,
+		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false,
+	}
 	_, _ = insertData(ctx, t, mc, dp)
 
 	// create scalar and auto index for all vector fields
 	indexAuto, _ := entity.NewIndexAUTOINDEX(entity.L2)
-	for _, idx := range []entity.Index{indexAuto, entity.NewScalarIndex(), entity.NewScalarIndexWithType(entity.Inverted),
-		entity.NewScalarIndexWithType(entity.Sorted), entity.NewScalarIndexWithType(entity.Trie), entity.NewScalarIndexWithType(entity.Bitmap)} {
+	for _, idx := range []entity.Index{
+		indexAuto, entity.NewScalarIndex(), entity.NewScalarIndexWithType(entity.Inverted),
+		entity.NewScalarIndexWithType(entity.Sorted), entity.NewScalarIndexWithType(entity.Trie), entity.NewScalarIndexWithType(entity.Bitmap),
+	} {
 		err := mc.CreateIndex(ctx, collName, common.DefaultDynamicFieldName, idx, false, client.WithIndexName("dynamic"))
 		common.CheckErr(t, err, false, fmt.Sprintf("field %s of collection %s does not exist", common.DefaultDynamicFieldName, collName))
 	}
@@ -953,17 +1018,21 @@ func TestCreateIndexSparseVector(t *testing.T) {
 
 	for _, idx := range []entity.Index{idxInverted, idxWand} {
 		ctx := createContext(t, time.Second*common.DefaultTimeout)
-		//connect
+		// connect
 		mc := createMilvusClient(ctx, t)
 
 		// create collection with all datatype
-		cp := CollectionParams{CollectionFieldsType: Int64VarcharSparseVec, AutoID: false, EnableDynamicField: true,
-			ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxLength: 300}
+		cp := CollectionParams{
+			CollectionFieldsType: Int64VarcharSparseVec, AutoID: false, EnableDynamicField: true,
+			ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxLength: 300,
+		}
 		collName := createCollection(ctx, t, mc, cp)
 
 		// insert
-		dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64VarcharSparseVec,
-			start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
+		dp := DataParams{
+			CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64VarcharSparseVec,
+			start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false,
+		}
 		_, _ = insertData(ctx, t, mc, dp, common.WithSparseVectorLen(100))
 		mc.Flush(ctx, collName, false)
 
@@ -985,17 +1054,21 @@ func TestCreateIndexSparseVector2(t *testing.T) {
 	idxWand1, _ := entity.NewIndexSparseWAND(entity.IP, 0.3)
 	for _, idx := range []entity.Index{idxInverted1, idxWand1} {
 		ctx := createContext(t, time.Second*common.DefaultTimeout)
-		//connect
+		// connect
 		mc := createMilvusClient(ctx, t)
 
 		// create collection with all datatype
-		cp := CollectionParams{CollectionFieldsType: Int64VarcharSparseVec, AutoID: false, EnableDynamicField: true,
-			ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxLength: 300}
+		cp := CollectionParams{
+			CollectionFieldsType: Int64VarcharSparseVec, AutoID: false, EnableDynamicField: true,
+			ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxLength: 300,
+		}
 		collName := createCollection(ctx, t, mc, cp)
 
 		// insert
-		dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64VarcharSparseVec,
-			start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
+		dp := DataParams{
+			CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64VarcharSparseVec,
+			start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false,
+		}
 		_, _ = insertData(ctx, t, mc, dp, common.WithSparseVectorLen(100))
 		mc.Flush(ctx, collName, false)
 
@@ -1016,17 +1089,21 @@ func TestCreateIndexSparseVector2(t *testing.T) {
 func TestCreateSparseIndexInvalidParams(t *testing.T) {
 	for _, indexType := range []entity.IndexType{"SPARSE_INVERTED_INDEX", "SPARSE_WAND"} {
 		ctx := createContext(t, time.Second*common.DefaultTimeout)
-		//connect
+		// connect
 		mc := createMilvusClient(ctx, t)
 
 		// create collection with all datatype
-		cp := CollectionParams{CollectionFieldsType: Int64VarcharSparseVec, AutoID: false, EnableDynamicField: true,
-			ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxLength: 300}
+		cp := CollectionParams{
+			CollectionFieldsType: Int64VarcharSparseVec, AutoID: false, EnableDynamicField: true,
+			ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxLength: 300,
+		}
 		collName := createCollection(ctx, t, mc, cp)
 
 		// insert
-		dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64VarcharSparseVec,
-			start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
+		dp := DataParams{
+			CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64VarcharSparseVec,
+			start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false,
+		}
 		_, _ = insertData(ctx, t, mc, dp, common.WithSparseVectorLen(100))
 		mc.Flush(ctx, collName, false)
 
@@ -1056,17 +1133,21 @@ func TestCreateSparseIndexInvalidParams(t *testing.T) {
 
 func TestCreateSparseIndexInvalidParams2(t *testing.T) {
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
-	//connect
+	// connect
 	mc := createMilvusClient(ctx, t)
 
 	// create collection with all datatype
-	cp := CollectionParams{CollectionFieldsType: Int64VarcharSparseVec, AutoID: false, EnableDynamicField: true,
-		ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxLength: 300}
+	cp := CollectionParams{
+		CollectionFieldsType: Int64VarcharSparseVec, AutoID: false, EnableDynamicField: true,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxLength: 300,
+	}
 	collName := createCollection(ctx, t, mc, cp)
 
 	// insert
-	dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64VarcharSparseVec,
-		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
+	dp := DataParams{
+		CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64VarcharSparseVec,
+		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false,
+	}
 	_, _ = insertData(ctx, t, mc, dp, common.WithSparseVectorLen(100))
 	mc.Flush(ctx, collName, false)
 
@@ -1103,17 +1184,21 @@ func TestCreateSparseIndexInvalidParams2(t *testing.T) {
 // create sparse unsupported index: other vector index and scalar index and auto index
 func TestCreateSparseUnsupportedIndex(t *testing.T) {
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
-	//connect
+	// connect
 	mc := createMilvusClient(ctx, t)
 
 	// create collection with all datatype
-	cp := CollectionParams{CollectionFieldsType: Int64VarcharSparseVec, AutoID: false, EnableDynamicField: true,
-		ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxLength: 300}
+	cp := CollectionParams{
+		CollectionFieldsType: Int64VarcharSparseVec, AutoID: false, EnableDynamicField: true,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxLength: 300,
+	}
 	collName := createCollection(ctx, t, mc, cp)
 
 	// insert
-	dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64VarcharSparseVec,
-		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
+	dp := DataParams{
+		CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64VarcharSparseVec,
+		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false,
+	}
 	_, _ = insertData(ctx, t, mc, dp, common.WithSparseVectorLen(100))
 	mc.Flush(ctx, collName, false)
 
@@ -1139,17 +1224,21 @@ func TestCreateSparseUnsupportedIndex(t *testing.T) {
 // create sparse auto / scalar index
 func TestCreateSparseAutoIndex(t *testing.T) {
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
-	//connect
+	// connect
 	mc := createMilvusClient(ctx, t)
 
 	// create collection with all datatype
-	cp := CollectionParams{CollectionFieldsType: Int64VarcharSparseVec, AutoID: false, EnableDynamicField: true,
-		ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxLength: 300}
+	cp := CollectionParams{
+		CollectionFieldsType: Int64VarcharSparseVec, AutoID: false, EnableDynamicField: true,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxLength: 300,
+	}
 	collName := createCollection(ctx, t, mc, cp)
 
 	// insert
-	dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64VarcharSparseVec,
-		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
+	dp := DataParams{
+		CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64VarcharSparseVec,
+		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false,
+	}
 	_, _ = insertData(ctx, t, mc, dp, common.WithSparseVectorLen(100))
 	mc.Flush(ctx, collName, false)
 
@@ -1200,7 +1289,7 @@ func TestCreateIndexNotExistCollName(t *testing.T) {
 	// create index
 	idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
 	err := mc.CreateIndex(ctx, "haha", common.DefaultFloatVecFieldName, idx, false)
-	common.CheckErr(t, err, false, "collection haha does not exist")
+	common.CheckErr(t, err, false, "collection not found")
 }
 
 func TestCreateIndexNotExistField(t *testing.T) {
@@ -1347,13 +1436,17 @@ func TestIndexMultiVectorDupName(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create collection with all datatype
-	cp := CollectionParams{CollectionFieldsType: AllVectors, AutoID: false, EnableDynamicField: true,
-		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+	cp := CollectionParams{
+		CollectionFieldsType: AllVectors, AutoID: false, EnableDynamicField: true,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim,
+	}
 	collName := createCollection(ctx, t, mc, cp, client.WithConsistencyLevel(entity.ClStrong))
 
 	// insert
-	dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: AllVectors,
-		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
+	dp := DataParams{
+		CollectionName: collName, PartitionName: "", CollectionFieldsType: AllVectors,
+		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false,
+	}
 	_, err := insertData(ctx, t, mc, dp)
 	common.CheckErr(t, err, true)
 

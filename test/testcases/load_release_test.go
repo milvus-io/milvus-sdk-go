@@ -20,7 +20,7 @@ import (
 
 // test load collection
 func TestLoadCollection(t *testing.T) {
-	//t.Skip("Issue: https://github.com/milvus-io/milvus-sdk-go/issues/374")
+	// t.Skip("Issue: https://github.com/milvus-io/milvus-sdk-go/issues/374")
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect
 	mc := createMilvusClient(ctx, t)
@@ -39,7 +39,7 @@ func TestLoadCollection(t *testing.T) {
 	// check collection loaded
 	collection, _ := mc.DescribeCollection(ctx, collName)
 	log.Println(collection.Loaded)
-	//require.True(t, collection.Loaded)
+	// require.True(t, collection.Loaded)
 }
 
 // test load not existed collection
@@ -98,7 +98,7 @@ func TestLoadCollectionWithoutIndex(t *testing.T) {
 
 // load collection with multi partitions
 func TestLoadCollectionMultiPartitions(t *testing.T) {
-	//t.Skip("Issue: https://github.com/milvus-io/milvus-sdk-go/issues/374")
+	// t.Skip("Issue: https://github.com/milvus-io/milvus-sdk-go/issues/374")
 	ctx := createContext(t, time.Second*common.DefaultTimeout*3)
 	// connect
 	mc := createMilvusClient(ctx, t)
@@ -119,18 +119,18 @@ func TestLoadCollectionMultiPartitions(t *testing.T) {
 	partitions, _ := mc.ShowPartitions(ctx, collName)
 	for _, partition := range partitions {
 		log.Println(partition.Loaded)
-		//require.True(t, partition.Loaded)
+		// require.True(t, partition.Loaded)
 	}
 
 	// check collection loaded
 	collection, _ := mc.DescribeCollection(ctx, collName)
 	log.Println(collection.Loaded)
-	//require.True(t, collection.Loaded)
+	// require.True(t, collection.Loaded)
 }
 
 // test load with empty partition name ""
 func TestLoadEmptyPartitionName(t *testing.T) {
-	//t.Skip("Issue: https://github.com/milvus-io/milvus-sdk-go/issues/373")
+	// t.Skip("Issue: https://github.com/milvus-io/milvus-sdk-go/issues/373")
 	ctx := createContext(t, time.Second*common.DefaultTimeout*3)
 	// connect
 	mc := createMilvusClient(ctx, t)
@@ -183,11 +183,11 @@ func TestLoadPartitionsNotExist(t *testing.T) {
 
 	// load with not exist partition names
 	errLoadNotExist := mc.LoadPartitions(ctx, collName, []string{"xxx"}, false)
-	common.CheckErr(t, errLoadNotExist, false, fmt.Sprintf("partition xxx of collection %s does not exist", collName))
+	common.CheckErr(t, errLoadNotExist, false, fmt.Sprintf("partition not found", collName))
 
 	// load partition with part exist partition names
 	errLoadPartExist := mc.LoadPartitions(ctx, collName, []string{"xxx", partitionName}, false)
-	common.CheckErr(t, errLoadPartExist, false, fmt.Sprintf("partition xxx of collection %s does not exist", collName))
+	common.CheckErr(t, errLoadPartExist, false, fmt.Sprintf("partition not found", collName))
 }
 
 // test load partition
@@ -216,16 +216,16 @@ func TestLoadPartitions(t *testing.T) {
 	partitions, _ := mc.ShowPartitions(ctx, collName)
 	for _, p := range partitions {
 		if p.Name == partitionName {
-			//require.True(t, p.Loaded)
+			// require.True(t, p.Loaded)
 			log.Println(p.Loaded)
 		} else {
 			log.Println(p.Loaded)
-			//require.True(t, p.Loaded)
+			// require.True(t, p.Loaded)
 		}
 		log.Printf("id: %d, name: %s, loaded %t", p.ID, p.Name, p.Loaded)
 	}
 
-	//query from nb from partition
+	// query from nb from partition
 	queryIds := entity.NewColumnInt64(common.DefaultIntFieldName, []int64{0, int64(nb)})
 	queryResultPartition, _ := mc.QueryByPks(ctx, collName, []string{}, queryIds, []string{common.DefaultIntFieldName})
 	common.CheckQueryResult(t, queryResultPartition, []entity.Column{
@@ -251,7 +251,7 @@ func TestLoadMultiPartitions(t *testing.T) {
 	errLoad := mc.LoadPartitions(ctx, collName, []string{common.DefaultPartition}, false)
 	common.CheckErr(t, errLoad, true)
 
-	//query nb from default partition
+	// query nb from default partition
 	resDef, _ := mc.Query(ctx, collName, []string{common.DefaultPartition}, "", []string{common.QueryCountFieldName})
 	require.EqualValues(t, common.DefaultNb, resDef.GetColumn(common.QueryCountFieldName).(*entity.ColumnInt64).Data()[0])
 
@@ -283,7 +283,7 @@ func TestLoadPartitionsRepeatedly(t *testing.T) {
 	errLoadRepeat := mc.LoadPartitions(ctx, collName, []string{partitionName, partitionName}, false)
 	common.CheckErr(t, errLoadRepeat, true)
 
-	//query from nb from partition
+	// query from nb from partition
 	queryIds := entity.NewColumnInt64(common.DefaultIntFieldName, []int64{common.DefaultNb})
 	queryResultPartition, _ := mc.QueryByPks(ctx, collName, []string{}, queryIds, []string{common.DefaultIntFieldName})
 	common.CheckQueryResult(t, queryResultPartition, []entity.Column{queryIds})
@@ -333,13 +333,17 @@ func TestLoadCollectionMultiVectors(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create collection
-	cp := CollectionParams{CollectionFieldsType: AllVectors, AutoID: false, EnableDynamicField: true,
-		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+	cp := CollectionParams{
+		CollectionFieldsType: AllVectors, AutoID: false, EnableDynamicField: true,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim,
+	}
 	collName := createCollection(ctx, t, mc, cp)
 
 	// insert
-	dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: AllVectors,
-		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
+	dp := DataParams{
+		CollectionName: collName, PartitionName: "", CollectionFieldsType: AllVectors,
+		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false,
+	}
 	_, _ = insertData(ctx, t, mc, dp)
 	mc.Flush(ctx, collName, false)
 
@@ -372,7 +376,7 @@ func TestReleasePartition(t *testing.T) {
 	// create collection -> insert data -> create index
 	collName, _ := createCollectionWithDataIndex(ctx, t, mc, true, true)
 
-	//load collection
+	// load collection
 	errLoad := mc.LoadCollection(ctx, collName, true)
 	common.CheckErr(t, errLoad, true)
 
@@ -400,7 +404,7 @@ func TestReleaseCollectionNotExist(t *testing.T) {
 	// create collection -> insert data -> create index
 	collName, _ := createCollectionWithDataIndex(ctx, t, mc, true, true)
 
-	//load collection
+	// load collection
 	errLoad := mc.LoadCollection(ctx, collName, true)
 	common.CheckErr(t, errLoad, true)
 
@@ -530,12 +534,16 @@ func TestMmapCollectionIndexDefault(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create -> insert [0, 3000) -> flush
-	cp := CollectionParams{CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: true,
-		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+	cp := CollectionParams{
+		CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: true,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim,
+	}
 	collName := createCollection(ctx, t, mc, cp)
 
-	dp := DataParams{DoInsert: true, CollectionName: collName, CollectionFieldsType: AllFields, start: 0,
-		nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true}
+	dp := DataParams{
+		DoInsert: true, CollectionName: collName, CollectionFieldsType: AllFields, start: 0,
+		nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true,
+	}
 	insertData(ctx, t, mc, dp)
 	_ = mc.Flush(ctx, collName, false)
 
@@ -575,7 +583,7 @@ func TestMmapCollectionIndexDefault(t *testing.T) {
 	err := mc.AlterCollection(ctx, collName, entity.Mmap(true))
 	common.CheckErr(t, err, true)
 
-	//describe collection
+	// describe collection
 	mc.LoadCollection(ctx, collName, false)
 	coll, _ = mc.DescribeCollection(ctx, collName)
 	require.Equal(t, "true", coll.Properties["mmap.enabled"])
@@ -612,11 +620,15 @@ func TestMmapAlterCollectionIndexDefault(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create -> insert [0, 3000) -> flush
-	cp := CollectionParams{CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: true,
-		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+	cp := CollectionParams{
+		CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: true,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim,
+	}
 
-	dp := DataParams{DoInsert: true, CollectionFieldsType: AllFields, start: 0,
-		nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true}
+	dp := DataParams{
+		DoInsert: true, CollectionFieldsType: AllFields, start: 0,
+		nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true,
+	}
 
 	ips := GenDefaultIndexParamsForAllVectors()
 	collName := prepareCollection(ctx, t, mc, cp, WithDataParams(dp), WithIndexParams(ips), WithCreateOption(client.WithConsistencyLevel(entity.ClStrong)))
@@ -628,7 +640,7 @@ func TestMmapAlterCollectionIndexDefault(t *testing.T) {
 		require.Equal(t, "", indexes[0].Params()["mmap.enabled"])
 	}
 
-	//describe collection
+	// describe collection
 	mc.LoadCollection(ctx, collName, false)
 	coll, _ := mc.DescribeCollection(ctx, collName)
 	require.Equal(t, "", coll.Properties["mmap.enabled"])
@@ -643,7 +655,7 @@ func TestMmapAlterCollectionIndexDefault(t *testing.T) {
 	}
 
 	// load collection -> describe collection and check mmap false
-	//describe collection
+	// describe collection
 	mc.LoadCollection(ctx, collName, false)
 	coll, _ = mc.DescribeCollection(ctx, collName)
 	require.Equal(t, "true", coll.Properties["mmap.enabled"])
@@ -683,11 +695,15 @@ func TestMmapCollectionLoaded(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create -> insert -> flush -> index -> load
-	cp := CollectionParams{CollectionFieldsType: Int64FloatVec, AutoID: false, EnableDynamicField: false,
-		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+	cp := CollectionParams{
+		CollectionFieldsType: Int64FloatVec, AutoID: false, EnableDynamicField: false,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim,
+	}
 
-	dp := DataParams{DoInsert: true, CollectionFieldsType: Int64FloatVec, start: 0, nb: common.DefaultNb,
-		dim: common.DefaultDim, EnableDynamicField: false}
+	dp := DataParams{
+		DoInsert: true, CollectionFieldsType: Int64FloatVec, start: 0, nb: common.DefaultNb,
+		dim: common.DefaultDim, EnableDynamicField: false,
+	}
 
 	collName := prepareCollection(ctx, t, mc, cp, WithDataParams(dp), WithCreateOption(client.WithConsistencyLevel(entity.ClStrong)))
 
@@ -707,11 +723,15 @@ func TestMmapCollectionScalarIndexed(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create -> insert -> flush -> index -> load
-	cp := CollectionParams{CollectionFieldsType: Int64FloatVec, AutoID: false, EnableDynamicField: false,
-		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+	cp := CollectionParams{
+		CollectionFieldsType: Int64FloatVec, AutoID: false, EnableDynamicField: false,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim,
+	}
 
-	dp := DataParams{DoInsert: true, CollectionFieldsType: Int64FloatVec, start: 0, nb: common.DefaultNb,
-		dim: common.DefaultDim, EnableDynamicField: false}
+	dp := DataParams{
+		DoInsert: true, CollectionFieldsType: Int64FloatVec, start: 0, nb: common.DefaultNb,
+		dim: common.DefaultDim, EnableDynamicField: false,
+	}
 	collName := prepareCollection(ctx, t, mc, cp, WithDataParams(dp), WithCreateOption(client.WithConsistencyLevel(entity.ClStrong)))
 
 	// create scalar index
@@ -744,11 +764,15 @@ func TestMmapScalarInvertedIndex(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create -> insert [0, 3000) -> flush -> index -> load
-	cp := CollectionParams{CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: true,
-		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+	cp := CollectionParams{
+		CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: true,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim,
+	}
 
-	dp := DataParams{DoInsert: true, CollectionFieldsType: AllFields, start: 0, nb: common.DefaultNb,
-		dim: common.DefaultDim, EnableDynamicField: true}
+	dp := DataParams{
+		DoInsert: true, CollectionFieldsType: AllFields, start: 0, nb: common.DefaultNb,
+		dim: common.DefaultDim, EnableDynamicField: true,
+	}
 
 	// build vector's indexes
 	ips := GenDefaultIndexParamsForAllVectors()
@@ -756,7 +780,7 @@ func TestMmapScalarInvertedIndex(t *testing.T) {
 	collName := prepareCollection(ctx, t, mc, cp, WithDataParams(dp), WithIndexParams(ips), WithLoadParams(lp),
 		WithCreateOption(client.WithConsistencyLevel(entity.ClStrong)))
 
-	//create scalar index with mmap
+	// create scalar index with mmap
 	collection, _ := mc.DescribeCollection(ctx, collName)
 	for _, field := range collection.Schema.Fields {
 		if SupportScalarIndexFieldType(field.DataType) {
@@ -800,11 +824,15 @@ func TestMmapScalarBitmapIndex(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create -> insert [0, 3000) -> flush -> index -> load
-	cp := CollectionParams{CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: true,
-		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+	cp := CollectionParams{
+		CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: true,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim,
+	}
 
-	dp := DataParams{DoInsert: true, CollectionFieldsType: AllFields, start: 0, nb: common.DefaultNb,
-		dim: common.DefaultDim, EnableDynamicField: true}
+	dp := DataParams{
+		DoInsert: true, CollectionFieldsType: AllFields, start: 0, nb: common.DefaultNb,
+		dim: common.DefaultDim, EnableDynamicField: true,
+	}
 
 	// build vector's indexes
 	ips := GenDefaultIndexParamsForAllVectors()
@@ -812,7 +840,7 @@ func TestMmapScalarBitmapIndex(t *testing.T) {
 	collName := prepareCollection(ctx, t, mc, cp, WithDataParams(dp), WithIndexParams(ips), WithLoadParams(lp),
 		WithCreateOption(client.WithConsistencyLevel(entity.ClStrong)))
 
-	//create scalar index with mmap
+	// create scalar index with mmap
 	collection, _ := mc.DescribeCollection(ctx, collName)
 	BitmapNotSupport := []interface{}{entity.FieldTypeJSON, entity.FieldTypeDouble, entity.FieldTypeFloat}
 	for _, field := range collection.Schema.Fields {
@@ -856,11 +884,15 @@ func TestMmapScalarHybirdIndex(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create -> insert [0, 3000) -> flush -> index -> load
-	cp := CollectionParams{CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: true,
-		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+	cp := CollectionParams{
+		CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: true,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim,
+	}
 
-	dp := DataParams{DoInsert: true, CollectionFieldsType: AllFields, start: 0, nb: common.DefaultNb,
-		dim: common.DefaultDim, EnableDynamicField: true}
+	dp := DataParams{
+		DoInsert: true, CollectionFieldsType: AllFields, start: 0, nb: common.DefaultNb,
+		dim: common.DefaultDim, EnableDynamicField: true,
+	}
 
 	// build vector's indexes
 	ips := GenDefaultIndexParamsForAllVectors()
@@ -868,7 +900,7 @@ func TestMmapScalarHybirdIndex(t *testing.T) {
 	collName := prepareCollection(ctx, t, mc, cp, WithDataParams(dp), WithIndexParams(ips), WithLoadParams(lp),
 		WithCreateOption(client.WithConsistencyLevel(entity.ClStrong)))
 
-	//create scalar index with mmap
+	// create scalar index with mmap
 	collection, _ := mc.DescribeCollection(ctx, collName)
 	for _, field := range collection.Schema.Fields {
 		if SupportScalarIndexFieldType(field.DataType) {
@@ -910,11 +942,13 @@ func TestMmapIndexUnsupported(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create -> insert -> flush -> index -> load
-	cp := CollectionParams{CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: false,
-		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+	cp := CollectionParams{
+		CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: false,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim,
+	}
 	collName := createCollection(ctx, t, mc, cp)
 
-	//create index with mmap
+	// create index with mmap
 	idx, _ := entity.NewIndexDISKANN(entity.COSINE)
 	err := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false, client.WithMmap(true))
 	common.CheckErr(t, err, false, "index type DISKANN does not support mmap")
@@ -934,12 +968,16 @@ func TestMmapScalarAutoIndex(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create -> insert -> flush -> index -> load
-	cp := CollectionParams{CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: false,
-		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+	cp := CollectionParams{
+		CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: false,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim,
+	}
 	collName := createCollection(ctx, t, mc, cp)
 
-	dp := DataParams{DoInsert: true, CollectionName: collName, CollectionFieldsType: AllFields, start: 0,
-		nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: false}
+	dp := DataParams{
+		DoInsert: true, CollectionName: collName, CollectionFieldsType: AllFields, start: 0,
+		nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: false,
+	}
 	insertData(ctx, t, mc, dp)
 	mc.Flush(ctx, collName, false)
 
@@ -959,8 +997,10 @@ func TestAlterIndexMmapUnsupportedIndex(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create -> insert -> flush -> index -> load
-	cp := CollectionParams{CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: false,
-		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+	cp := CollectionParams{
+		CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: false,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim,
+	}
 	collName := createCollection(ctx, t, mc, cp)
 
 	// diskAnn
@@ -1001,12 +1041,16 @@ func TestMmapAlterIndex(t *testing.T) {
 		mc := createMilvusClient(ctx, t)
 
 		// create -> insert -> flush -> index -> load
-		cp := CollectionParams{CollectionFieldsType: Int64FloatVec, AutoID: false, EnableDynamicField: false,
-			ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+		cp := CollectionParams{
+			CollectionFieldsType: Int64FloatVec, AutoID: false, EnableDynamicField: false,
+			ShardsNum: common.DefaultShards, Dim: common.DefaultDim,
+		}
 		collName := createCollection(ctx, t, mc, cp)
 
-		dp := DataParams{DoInsert: true, CollectionName: collName, CollectionFieldsType: Int64FloatVec, start: 0,
-			nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: false}
+		dp := DataParams{
+			DoInsert: true, CollectionName: collName, CollectionFieldsType: Int64FloatVec, start: 0,
+			nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: false,
+		}
 		insertData(ctx, t, mc, dp)
 		mc.Flush(ctx, collName, false)
 
@@ -1046,11 +1090,15 @@ func TestMmapSparseCollection(t *testing.T) {
 		mc := createMilvusClient(ctx, t)
 
 		// create -> insert [0, 3000) -> flush -> index -> load
-		cp := CollectionParams{CollectionFieldsType: Int64VarcharSparseVec, AutoID: false, EnableDynamicField: true,
-			ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxLength: common.TestMaxLen}
+		cp := CollectionParams{
+			CollectionFieldsType: Int64VarcharSparseVec, AutoID: false, EnableDynamicField: true,
+			ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxLength: common.TestMaxLen,
+		}
 
-		dp := DataParams{DoInsert: true, CollectionFieldsType: Int64VarcharSparseVec, start: 0, nb: common.DefaultNb * 5,
-			dim: common.DefaultDim, EnableDynamicField: true}
+		dp := DataParams{
+			DoInsert: true, CollectionFieldsType: Int64VarcharSparseVec, start: 0, nb: common.DefaultNb * 5,
+			dim: common.DefaultDim, EnableDynamicField: true,
+		}
 
 		// index params
 		idxHnsw, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
@@ -1073,8 +1121,10 @@ func TestMmapSparseCollection(t *testing.T) {
 		common.CheckErr(t, err, true)
 
 		// search with floatVec field
-		outputFields := []string{common.DefaultIntFieldName, common.DefaultVarcharFieldName, common.DefaultFloatVecFieldName,
-			common.DefaultSparseVecFieldName, common.DefaultDynamicFieldName}
+		outputFields := []string{
+			common.DefaultIntFieldName, common.DefaultVarcharFieldName, common.DefaultFloatVecFieldName,
+			common.DefaultSparseVecFieldName, common.DefaultDynamicFieldName,
+		}
 		queryVecFloat := common.GenSearchVectors(1, common.DefaultDim, entity.FieldTypeFloatVector)
 		sp, _ := entity.NewIndexSparseInvertedSearchParam(0)
 		resSearch, errSearch := mc.Search(ctx, collName, []string{}, "", []string{"*"}, queryVecFloat, common.DefaultFloatVecFieldName,

@@ -86,7 +86,7 @@ func TestDeleteNotExistCollection(t *testing.T) {
 	// flush and check row count
 	deleteIds := entity.NewColumnInt64(common.DefaultIntFieldName, []int64{0, 1})
 	errDelete := mc.DeleteByPks(ctx, "collName", common.DefaultPartition, deleteIds)
-	common.CheckErr(t, errDelete, false, "collection collName does not exist")
+	common.CheckErr(t, errDelete, false, "collection not found")
 }
 
 // test delete from an not exist partition
@@ -105,7 +105,7 @@ func TestDeleteNotExistPartition(t *testing.T) {
 	// delete
 	deleteIds := ids.Slice(0, 10)
 	errDelete := mc.DeleteByPks(ctx, collName, "p1", deleteIds)
-	common.CheckErr(t, errDelete, false, fmt.Sprintf("partition p1 of collection %s does not exist", collName))
+	common.CheckErr(t, errDelete, false, fmt.Sprintf("partition not found", collName))
 }
 
 // test delete empty partition names
@@ -411,13 +411,17 @@ func TestDeleteComplexExprWithoutLoading(t *testing.T) {
 	// connect
 	mc := createMilvusClient(ctx, t)
 
-	cp := CollectionParams{CollectionFieldsType: Int64FloatVecJSON, AutoID: false, EnableDynamicField: true,
-		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+	cp := CollectionParams{
+		CollectionFieldsType: Int64FloatVecJSON, AutoID: false, EnableDynamicField: true,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim,
+	}
 	collName := createCollection(ctx, t, mc, cp, client.WithConsistencyLevel(entity.ClStrong))
 
 	// prepare and insert data
-	dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVecJSON,
-		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
+	dp := DataParams{
+		CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVecJSON,
+		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false,
+	}
 	_, _ = insertData(ctx, t, mc, dp)
 	mc.Flush(ctx, collName, false)
 
