@@ -60,7 +60,8 @@ func (c *GrpcClient) CreateCollectionByRow(ctx context.Context, row entity.Row, 
 
 // InsertByRows insert by rows
 func (c *GrpcClient) InsertByRows(ctx context.Context, collName string, partitionName string,
-	rows []entity.Row) (entity.Column, error) {
+	rows []entity.Row,
+) (entity.Column, error) {
 	anys := make([]interface{}, 0, len(rows))
 	for _, row := range rows {
 		anys = append(anys, row)
@@ -72,7 +73,8 @@ func (c *GrpcClient) InsertByRows(ctx context.Context, collName string, partitio
 // InsertRows allows insert with row based data
 // rows could be struct or map.
 func (c *GrpcClient) InsertRows(ctx context.Context, collName string, partitionName string,
-	rows []interface{}) (entity.Column, error) {
+	rows []interface{},
+) (entity.Column, error) {
 	if c.Service == nil {
 		return nil, ErrClientNotReady
 	}
@@ -80,14 +82,6 @@ func (c *GrpcClient) InsertRows(ctx context.Context, collName string, partitionN
 		return nil, errors.New("empty rows provided")
 	}
 
-	if err := c.checkCollectionExists(ctx, collName); err != nil {
-		return nil, err
-	}
-	if partitionName != "" {
-		if err := c.checkPartitionExists(ctx, collName, partitionName); err != nil {
-			return nil, err
-		}
-	}
 	coll, err := c.DescribeCollection(ctx, collName)
 	if err != nil {
 		return nil, err
@@ -97,7 +91,7 @@ func (c *GrpcClient) InsertRows(ctx context.Context, collName string, partitionN
 	if err != nil {
 		return nil, err
 	}
-	//fieldData
+	// fieldData
 	// 2. do insert request
 	req := &milvuspb.InsertRequest{
 		DbName:         "", // reserved
@@ -211,10 +205,8 @@ func SearchResultToRows(sch *entity.Schema, results *schemapb.SearchResultData, 
 	return sr, nil
 }
 
-var (
-	// ErrFieldTypeNotMatch error for field type not match
-	ErrFieldTypeNotMatch = errors.New("field type not matched")
-)
+// ErrFieldTypeNotMatch error for field type not match
+var ErrFieldTypeNotMatch = errors.New("field type not matched")
 
 // SetFieldValue set row field value with reflection
 func SetFieldValue(field *entity.Field, f reflect.Value, fieldData *schemapb.FieldData, idx int) error {
@@ -329,7 +321,6 @@ func SetFieldValue(field *entity.Field, f reflect.Value, fieldData *schemapb.Fie
 		}
 		data := vectors.GetFloatVector()
 		if data == nil {
-
 			return ErrFieldTypeNotMatch
 		}
 		vector := data.Data[idx*int(vectors.Dim) : (idx+1)*int(vectors.Dim)]

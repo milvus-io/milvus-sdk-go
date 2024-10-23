@@ -13,6 +13,8 @@ package client
 
 import (
 	"context"
+	"fmt"
+	"math/rand"
 	"testing"
 
 	"github.com/cockroachdb/errors"
@@ -803,4 +805,121 @@ func (s *UpsertSuite) TestUpsertSuccess() {
 func TestWrite(t *testing.T) {
 	suite.Run(t, new(InsertSuite))
 	suite.Run(t, new(UpsertSuite))
+}
+
+type DeleteSuite struct {
+	MockSuiteBase
+}
+
+func (s *DeleteSuite) TestDeleteByPks() {
+	c := s.client
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	collectionName := fmt.Sprintf("coll_%s", randStr(6))
+	partitionName := fmt.Sprintf("part_%s", randStr(6))
+
+	s.Run("normal_case", func() {
+		defer s.resetMock()
+
+		s.setupDescribeCollection(collectionName, entity.NewSchema().
+			WithField(entity.NewField().WithIsPrimaryKey(true).WithIsAutoID(true).WithName("ID").WithDataType(entity.FieldTypeInt64)).
+			WithField(entity.NewField().WithName("vector").WithDataType(entity.FieldTypeFloatVector).WithTypeParams(entity.TypeParamDim, "128")),
+		)
+		s.mock.EXPECT().Delete(mock.Anything, mock.AnythingOfType("*milvuspb.DeleteRequest")).RunAndReturn(func(ctx context.Context, dr *milvuspb.DeleteRequest) (*milvuspb.MutationResult, error) {
+			s.Equal(collectionName, dr.GetCollectionName())
+			s.Equal(partitionName, dr.GetPartitionName())
+			return &milvuspb.MutationResult{
+				Status: s.getSuccessStatus(),
+			}, nil
+		}).Once()
+		err := c.DeleteByPks(ctx, collectionName, partitionName, entity.NewColumnInt64("ID", []int64{1, 2, 3}))
+		s.NoError(err)
+	})
+
+	s.Run("bad_requests", func() {
+		defer s.resetMock()
+
+		s.setupDescribeCollection(collectionName, entity.NewSchema().
+			WithField(entity.NewField().WithIsPrimaryKey(true).WithIsAutoID(true).WithName("ID").WithDataType(entity.FieldTypeInt64)).
+			WithField(entity.NewField().WithName("vector").WithDataType(entity.FieldTypeFloatVector).WithTypeParams(entity.TypeParamDim, "128")),
+		)
+
+		s.Run("zero_length_pks", func() {
+			err := c.DeleteByPks(ctx, collectionName, "", entity.NewColumnInt64("ID", []int64{}))
+			s.Error(err)
+		})
+
+		s.Run("pk_type_not_valid", func() {
+			err := c.DeleteByPks(ctx, collectionName, "", entity.NewColumnBool("ID", []bool{true, false}))
+			s.Error(err)
+		})
+
+		s.Run("pk_name_not_match", func() {
+			err := c.DeleteByPks(ctx, collectionName, "", entity.NewColumnInt64("pk_", []int64{100, 200}))
+			s.Error(err)
+		})
+	})
+
+	s.Run("server_error", func() {
+		defer s.resetMock()
+
+		s.setupDescribeCollection(collectionName, entity.NewSchema().
+			WithField(entity.NewField().WithIsPrimaryKey(true).WithIsAutoID(true).WithName("ID").WithDataType(entity.FieldTypeInt64)).
+			WithField(entity.NewField().WithName("vector").WithDataType(entity.FieldTypeFloatVector).WithTypeParams(entity.TypeParamDim, "128")),
+		)
+		s.mock.EXPECT().Delete(mock.Anything, mock.AnythingOfType("")).RunAndReturn(func(ctx context.Context, dr *milvuspb.DeleteRequest) (*milvuspb.MutationResult, error) {
+			s.Equal(collectionName, dr.GetCollectionName())
+			s.Equal(partitionName, dr.GetPartitionName())
+			return nil, errors.New("mocked")
+		}).Once()
+		err := c.DeleteByPks(ctx, collectionName, partitionName, entity.NewColumnInt64("ID", []int64{1, 2, 3}))
+		s.Error(err)
+	})
+}
+
+func (s *DeleteSuite) TestDelete() {
+	c := s.client
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	collectionName := fmt.Sprintf("coll_%s", randStr(6))
+	partitionName := fmt.Sprintf("part_%s", randStr(6))
+
+	s.Run("normal_case", func() {
+		defer s.resetMock()
+		expr := fmt.Sprintf("tag in [%d, %d, %d]", rand.Int31n(10), rand.Int31n(20), rand.Int31n(30))
+
+		s.mock.EXPECT().Delete(mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, dr *milvuspb.DeleteRequest) (*milvuspb.MutationResult, error) {
+			s.Equal(collectionName, dr.GetCollectionName())
+			s.Equal(partitionName, dr.GetPartitionName())
+			s.Equal(expr, dr.GetExpr())
+			return &milvuspb.MutationResult{
+				Status: s.getSuccessStatus(),
+			}, nil
+		}).Once()
+
+		err := c.Delete(ctx, collectionName, partitionName, expr)
+		s.NoError(err)
+	})
+
+	s.Run("server_error", func() {
+		expr := "tag > 50"
+		defer s.resetMock()
+		s.mock.EXPECT().Delete(mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, dr *milvuspb.DeleteRequest) (*milvuspb.MutationResult, error) {
+			s.Equal(collectionName, dr.GetCollectionName())
+			s.Equal(partitionName, dr.GetPartitionName())
+			s.Equal(expr, dr.GetExpr())
+			return &milvuspb.MutationResult{
+				Status: s.getStatus(commonpb.ErrorCode_UnexpectedError, "mocked"),
+			}, nil
+		}).Once()
+
+		err := c.Delete(ctx, collectionName, partitionName, expr)
+		s.Error(err)
+	})
+}
+
+func TestDelete(t *testing.T) {
+	suite.Run(t, new(DeleteSuite))
 }

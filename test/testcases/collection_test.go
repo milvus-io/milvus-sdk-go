@@ -159,12 +159,16 @@ func TestCreateCollectionInvalidFields(t *testing.T) {
 	}
 	invalidFields := []invalidFieldsStruct{
 		// create collection without pk field
-		{fields: []*entity.Field{common.GenField(common.DefaultFloatVecFieldName, entity.FieldTypeFloatVector, common.WithDim(common.DefaultDim))},
-			errMsg: "primary key is not specified"},
+		{
+			fields: []*entity.Field{common.GenField(common.DefaultFloatVecFieldName, entity.FieldTypeFloatVector, common.WithDim(common.DefaultDim))},
+			errMsg: "primary key is not specified",
+		},
 
 		// create collection without vector field
-		{fields: []*entity.Field{common.GenField(common.DefaultIntFieldName, entity.FieldTypeInt64, common.WithIsPrimaryKey(true))},
-			errMsg: "vector field not set"},
+		{
+			fields: []*entity.Field{common.GenField(common.DefaultIntFieldName, entity.FieldTypeInt64, common.WithIsPrimaryKey(true))},
+			errMsg: "vector field not set",
+		},
 
 		// create collection with multi pk fields
 		{fields: []*entity.Field{
@@ -354,7 +358,7 @@ func TestCreateCollectionDescription(t *testing.T) {
 	pkField := common.GenField(common.DefaultIntFieldName, entity.FieldTypeInt64, common.WithIsPrimaryKey(true),
 		common.WithFieldDescription("pk field"))
 	vecField := common.GenField("", entity.FieldTypeFloatVector, common.WithDim(common.DefaultDim))
-	var fields = []*entity.Field{
+	fields := []*entity.Field{
 		pkField, vecField,
 	}
 	schema := &entity.Schema{
@@ -491,8 +495,10 @@ func TestCreateCollectionDynamicSchema(t *testing.T) {
 	common.CheckContainsCollection(t, collections, collName)
 
 	// insert data
-	dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVec,
-		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
+	dp := DataParams{
+		CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVec,
+		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false,
+	}
 	_, err = insertData(ctx, t, mc, dp)
 	common.CheckErr(t, err, true)
 }
@@ -519,8 +525,10 @@ func TestCreateCollectionDynamic(t *testing.T) {
 	common.CheckContainsCollection(t, collections, collName)
 
 	// insert data
-	dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVec,
-		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
+	dp := DataParams{
+		CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVec,
+		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false,
+	}
 	_, err = insertData(ctx, t, mc, dp)
 	common.CheckErr(t, err, true)
 }
@@ -693,5 +701,5 @@ func TestGetStaticsCollectionNotExisted(t *testing.T) {
 
 	// flush and check row count
 	_, errStatist := mc.GetCollectionStatistics(ctx, "collName")
-	common.CheckErr(t, errStatist, false, "collection collName does not exist")
+	common.CheckErr(t, errStatist, false, "collection not found")
 }

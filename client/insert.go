@@ -227,9 +227,6 @@ func (c *GrpcClient) FlushV2(ctx context.Context, collName string, async bool, o
 	if c.Service == nil {
 		return nil, nil, 0, nil, ErrClientNotReady
 	}
-	if err := c.checkCollectionExists(ctx, collName); err != nil {
-		return nil, nil, 0, nil, err
-	}
 	req := &milvuspb.FlushRequest{
 		DbName:          "", // reserved,
 		CollectionNames: []string{collName},
@@ -290,27 +287,17 @@ func (c *GrpcClient) DeleteByPks(ctx context.Context, collName string, partition
 		return ErrClientNotReady
 	}
 
-	// check collection name
-	if err := c.checkCollectionExists(ctx, collName); err != nil {
-		return err
-	}
-	coll, err := c.DescribeCollection(ctx, collName)
-	if err != nil {
-		return err
-	}
-	// check partition name
-	if partitionName != "" {
-		err := c.checkPartitionExists(ctx, collName, partitionName)
-		if err != nil {
-			return err
-		}
-	}
 	// check primary keys
 	if ids.Len() == 0 {
 		return errors.New("ids len must not be zero")
 	}
 	if ids.Type() != entity.FieldTypeInt64 && ids.Type() != entity.FieldTypeVarChar { // string key not supported yet
 		return errors.New("only int64 and varchar column can be primary key for now")
+	}
+
+	coll, err := c.DescribeCollection(ctx, collName)
+	if err != nil {
+		return err
 	}
 
 	pkf := getPKField(coll.Schema)
@@ -344,19 +331,6 @@ func (c *GrpcClient) DeleteByPks(ctx context.Context, collName string, partition
 func (c *GrpcClient) Delete(ctx context.Context, collName string, partitionName string, expr string) error {
 	if c.Service == nil {
 		return ErrClientNotReady
-	}
-
-	// check collection name
-	if err := c.checkCollectionExists(ctx, collName); err != nil {
-		return err
-	}
-
-	// check partition name
-	if partitionName != "" {
-		err := c.checkPartitionExists(ctx, collName, partitionName)
-		if err != nil {
-			return err
-		}
 	}
 
 	req := &milvuspb.DeleteRequest{

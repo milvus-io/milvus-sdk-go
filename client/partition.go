@@ -13,7 +13,6 @@ package client
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -28,19 +27,9 @@ func (c *GrpcClient) CreatePartition(ctx context.Context, collName string, parti
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
-	if err := c.checkCollectionExists(ctx, collName); err != nil {
-		return err
-	}
-	has, err := c.HasPartition(ctx, collName, partitionName)
-	if err != nil {
-		return err
-	}
-	if has {
-		return fmt.Errorf("partition %s of collection %s already exists", partitionName, collName)
-	}
 
 	req := &milvuspb.CreatePartitionRequest{
-		DbName:         "", //reserved
+		DbName:         "", // reserved
 		CollectionName: collName,
 		PartitionName:  partitionName,
 	}
@@ -54,28 +43,12 @@ func (c *GrpcClient) CreatePartition(ctx context.Context, collName string, parti
 	return handleRespStatus(resp)
 }
 
-func (c *GrpcClient) checkPartitionExists(ctx context.Context, collName string, partitionName string) error {
-	has, err := c.HasPartition(ctx, collName, partitionName)
-	if err != nil {
-		return err
-	}
-	if !has {
-		return partNotExistsErr(collName, partitionName)
-	}
-	return nil
-}
-
 // DropPartition drop partition from collection
 func (c *GrpcClient) DropPartition(ctx context.Context, collName string, partitionName string, opts ...DropPartitionOption) error {
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
-	if err := c.checkCollectionExists(ctx, collName); err != nil {
-		return err
-	}
-	if err := c.checkPartitionExists(ctx, collName, partitionName); err != nil {
-		return err
-	}
+
 	req := &milvuspb.DropPartitionRequest{
 		DbName:         "",
 		CollectionName: collName,
@@ -147,14 +120,6 @@ func (c *GrpcClient) LoadPartitions(ctx context.Context, collName string, partit
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
-	if err := c.checkCollectionExists(ctx, collName); err != nil {
-		return err
-	}
-	for _, partitionName := range partitionNames {
-		if err := c.checkPartitionExists(ctx, collName, partitionName); err != nil {
-			return err
-		}
-	}
 
 	req := &milvuspb.LoadPartitionsRequest{
 		DbName:         "", // reserved
@@ -199,14 +164,6 @@ func (c *GrpcClient) LoadPartitions(ctx context.Context, collName string, partit
 func (c *GrpcClient) ReleasePartitions(ctx context.Context, collName string, partitionNames []string, opts ...ReleasePartitionsOption) error {
 	if c.Service == nil {
 		return ErrClientNotReady
-	}
-	if err := c.checkCollectionExists(ctx, collName); err != nil {
-		return err
-	}
-	for _, partitionName := range partitionNames {
-		if err := c.checkPartitionExists(ctx, collName, partitionName); err != nil {
-			return err
-		}
 	}
 	req := &milvuspb.ReleasePartitionsRequest{
 		DbName:         "", // reserved
