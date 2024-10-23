@@ -91,7 +91,7 @@ func TestCompactCollectionNotExist(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	_, err := mc.Compact(ctx, "coll", 0)
-	common.CheckErr(t, err, false, "collection not found")
+	common.CheckErr(t, err, false, "can't find collection")
 }
 
 // test compact empty collection

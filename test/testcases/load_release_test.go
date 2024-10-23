@@ -50,7 +50,7 @@ func TestLoadCollectionNotExist(t *testing.T) {
 
 	// Load collection
 	errLoad := mc.LoadCollection(ctx, "collName", false)
-	common.CheckErr(t, errLoad, false, "exist")
+	common.CheckErr(t, errLoad, false, "collection not found")
 }
 
 // test load collection async

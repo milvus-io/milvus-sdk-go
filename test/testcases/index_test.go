@@ -1289,7 +1289,7 @@ func TestCreateIndexNotExistCollName(t *testing.T) {
 	// create index
 	idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
 	err := mc.CreateIndex(ctx, "haha", common.DefaultFloatVecFieldName, idx, false)
-	common.CheckErr(t, err, false, "collection not found")
+	common.CheckErr(t, err, false, "can't find collection")
 }
 
 func TestCreateIndexNotExistField(t *testing.T) {
