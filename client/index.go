@@ -17,6 +17,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
 	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
@@ -104,7 +105,8 @@ func getIndexDef(opts ...IndexOption) indexDef {
 // CreateIndex create index for collection
 // Deprecated please use CreateIndexV2 instead.
 func (c *GrpcClient) CreateIndex(ctx context.Context, collName string, fieldName string,
-	idx entity.Index, async bool, opts ...IndexOption) error {
+	idx entity.Index, async bool, opts ...IndexOption,
+) error {
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
@@ -219,7 +221,7 @@ func (c *GrpcClient) DropIndex(ctx context.Context, collName string, fieldName s
 	idxDef := getIndexDef(opts...)
 	req := &milvuspb.DropIndexRequest{
 		Base:           idxDef.MsgBase,
-		DbName:         "", //reserved,
+		DbName:         "", // reserved,
 		CollectionName: collName,
 		FieldName:      fieldName,
 		IndexName:      idxDef.name,
@@ -267,25 +269,20 @@ func (c *GrpcClient) GetIndexBuildProgress(ctx context.Context, collName string,
 	if c.Service == nil {
 		return 0, 0, ErrClientNotReady
 	}
-	if err := c.checkCollField(ctx, collName, fieldName); err != nil {
-		return 0, 0, err
-	}
 
-	idxDef := getIndexDef(opts...)
-	req := &milvuspb.GetIndexBuildProgressRequest{
-		DbName:         "",
-		CollectionName: collName,
-		FieldName:      fieldName,
-		IndexName:      idxDef.name,
-	}
-	resp, err := c.Service.GetIndexBuildProgress(ctx, req)
+	results, err := c.describeIndex(ctx, collName, fieldName, opts...)
 	if err != nil {
 		return 0, 0, err
 	}
-	if err = handleRespStatus(resp.GetStatus()); err != nil {
-		return 0, 0, err
+	if len(results) == 0 {
+		return 0, 0, errors.New("index not found")
 	}
-	return resp.GetTotalRows(), resp.GetIndexedRows(), nil
+
+	idxDesc := results[0]
+	if idxDesc.GetState() == commonpb.IndexState_Failed {
+		return 0, 0, errors.Newf("index build failed: %s", idxDesc.IndexStateFailReason)
+	}
+	return idxDesc.GetTotalRows(), idxDesc.GetIndexedRows(), nil
 }
 
 func (c *GrpcClient) describeIndex(ctx context.Context, collName string, fieldName string, opts ...IndexOption) ([]*milvuspb.IndexDescription, error) {
