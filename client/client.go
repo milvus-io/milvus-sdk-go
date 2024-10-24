@@ -129,6 +129,8 @@ type Client interface {
 	GetIndexState(ctx context.Context, collName string, fieldName string, opts ...IndexOption) (entity.IndexState, error)
 	// AlterIndex modifies the index params.
 	AlterIndex(ctx context.Context, collName, indexName string, opts ...IndexOption) error
+	// GetIndexBuildProgress get index building progress
+	GetIndexBuildProgress(ctx context.Context, collName string, fieldName string, opts ...IndexOption) (total, indexed int64, err error)
 
 	// -- basic operation --
 
