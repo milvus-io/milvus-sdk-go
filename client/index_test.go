@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"fmt"
 	"math/rand"
 	"testing"
 	"time"
@@ -13,6 +14,8 @@ import (
 	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/suite"
 )
 
 func TestGrpcClientCreateIndex(t *testing.T) {
@@ -151,67 +154,102 @@ func TestGrpcClientDescribeIndex(t *testing.T) {
 	})
 }
 
-func TestGrpcGetIndexBuildProgress(t *testing.T) {
-	ctx := context.Background()
-	mockServer.SetInjection(MHasCollection, hasCollectionDefault)
-	mockServer.SetInjection(MDescribeCollection, describeCollectionInjection(t, 0, testCollectionName, defaultSchema()))
+type IndexSuite struct {
+	MockSuiteBase
+}
 
-	tc := testClient(ctx, t)
-	c := tc.(*GrpcClient) // since GetIndexBuildProgress is not exposed
+func (s *IndexSuite) TestGetIndexBuildProgress() {
+	c := s.client
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	t.Run("normal get index build progress", func(t *testing.T) {
-		var total, built int64
+	collectionName := fmt.Sprintf("coll_%s", randStr(6))
+	fieldName := fmt.Sprintf("field_%d", rand.Int31n(10))
+	indexName := fmt.Sprintf("index_%s", randStr(4))
 
-		mockServer.SetInjection(MGetIndexBuildProgress, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			req, ok := raw.(*milvuspb.GetIndexBuildProgressRequest)
-			if !ok {
-				t.FailNow()
-			}
-			assert.Equal(t, testCollectionName, req.GetCollectionName())
-			resp := &milvuspb.GetIndexBuildProgressResponse{
-				TotalRows:   total,
-				IndexedRows: built,
-			}
-			s, err := SuccessStatus()
-			resp.Status = s
-			return resp, err
-		})
+	s.Run("normal_case", func() {
+		totalRows := rand.Int63n(10000)
+		indexedRows := rand.Int63n(totalRows)
 
-		total = rand.Int63n(1000)
-		built = rand.Int63n(total)
-		rt, rb, err := c.GetIndexBuildProgress(ctx, testCollectionName, testVectorField)
-		assert.NoError(t, err)
-		assert.Equal(t, total, rt)
-		assert.Equal(t, built, rb)
+		defer s.resetMock()
+
+		s.mock.EXPECT().DescribeIndex(mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, dir *milvuspb.DescribeIndexRequest) (*milvuspb.DescribeIndexResponse, error) {
+			s.Equal(collectionName, dir.GetCollectionName())
+			s.Equal(fieldName, dir.GetFieldName())
+			s.Equal(indexName, dir.GetIndexName())
+			return &milvuspb.DescribeIndexResponse{
+				Status: s.getSuccessStatus(),
+				IndexDescriptions: []*milvuspb.IndexDescription{
+					{
+						IndexName:   indexName,
+						TotalRows:   totalRows,
+						IndexedRows: indexedRows,
+						State:       commonpb.IndexState_InProgress,
+					},
+				},
+			}, nil
+		}).Once()
+
+		totalResult, indexedResult, err := c.GetIndexBuildProgress(ctx, collectionName, fieldName, WithIndexName(indexName))
+		s.NoError(err)
+		s.Equal(totalRows, totalResult)
+		s.Equal(indexedRows, indexedResult)
 	})
 
-	t.Run("Service return errors", func(t *testing.T) {
-		defer mockServer.DelInjection(MGetIndexBuildProgress)
-		mockServer.SetInjection(MGetIndexBuildProgress, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			_, ok := raw.(*milvuspb.GetIndexBuildProgressRequest)
-			if !ok {
-				t.FailNow()
-			}
-			resp := &milvuspb.GetIndexBuildProgressResponse{}
-			return resp, errors.New("mockServer.d error")
-		})
+	s.Run("index_not_found", func() {
+		defer s.resetMock()
 
-		_, _, err := c.GetIndexBuildProgress(ctx, testCollectionName, testVectorField)
-		assert.Error(t, err)
+		s.mock.EXPECT().DescribeIndex(mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, dir *milvuspb.DescribeIndexRequest) (*milvuspb.DescribeIndexResponse, error) {
+			s.Equal(collectionName, dir.GetCollectionName())
+			s.Equal(fieldName, dir.GetFieldName())
+			s.Equal(indexName, dir.GetIndexName())
+			return &milvuspb.DescribeIndexResponse{
+				Status:            s.getSuccessStatus(),
+				IndexDescriptions: []*milvuspb.IndexDescription{},
+			}, nil
+		}).Once()
 
-		mockServer.SetInjection(MGetIndexBuildProgress, func(_ context.Context, raw proto.Message) (proto.Message, error) {
-			_, ok := raw.(*milvuspb.GetIndexBuildProgressRequest)
-			if !ok {
-				t.FailNow()
-			}
-			resp := &milvuspb.GetIndexBuildProgressResponse{}
-			resp.Status = &commonpb.Status{
-				ErrorCode: commonpb.ErrorCode_UnexpectedError,
-			}
-			return resp, nil
-		})
-		_, _, err = c.GetIndexBuildProgress(ctx, testCollectionName, testVectorField)
-		assert.Error(t, err)
+		_, _, err := c.GetIndexBuildProgress(ctx, collectionName, fieldName, WithIndexName(indexName))
+		s.Error(err)
 	})
 
+	s.Run("build_failed", func() {
+		defer s.resetMock()
+
+		s.mock.EXPECT().DescribeIndex(mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, dir *milvuspb.DescribeIndexRequest) (*milvuspb.DescribeIndexResponse, error) {
+			s.Equal(collectionName, dir.GetCollectionName())
+			s.Equal(fieldName, dir.GetFieldName())
+			s.Equal(indexName, dir.GetIndexName())
+			return &milvuspb.DescribeIndexResponse{
+				Status: s.getSuccessStatus(),
+				IndexDescriptions: []*milvuspb.IndexDescription{
+					{
+						IndexName: indexName,
+						State:     commonpb.IndexState_Failed,
+					},
+				},
+			}, nil
+		}).Once()
+
+		_, _, err := c.GetIndexBuildProgress(ctx, collectionName, fieldName, WithIndexName(indexName))
+		s.Error(err)
+	})
+
+	s.Run("server_error", func() {
+		defer s.resetMock()
+
+		s.mock.EXPECT().DescribeIndex(mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, dir *milvuspb.DescribeIndexRequest) (*milvuspb.DescribeIndexResponse, error) {
+			s.Equal(collectionName, dir.GetCollectionName())
+			s.Equal(fieldName, dir.GetFieldName())
+			s.Equal(indexName, dir.GetIndexName())
+			return nil, errors.New("mocked")
+		}).Once()
+
+		_, _, err := c.GetIndexBuildProgress(ctx, collectionName, fieldName, WithIndexName(indexName))
+		s.Error(err)
+	})
+}
+
+func TestIndex(t *testing.T) {
+	suite.Run(t, new(IndexSuite))
 }
