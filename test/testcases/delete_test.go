@@ -86,7 +86,7 @@ func TestDeleteNotExistCollection(t *testing.T) {
 	// flush and check row count
 	deleteIds := entity.NewColumnInt64(common.DefaultIntFieldName, []int64{0, 1})
 	errDelete := mc.DeleteByPks(ctx, "collName", common.DefaultPartition, deleteIds)
-	common.CheckErr(t, errDelete, false, "collection collName does not exist")
+	common.CheckErr(t, errDelete, false, "can't find collection")
 }
 
 // test delete from an not exist partition
@@ -105,7 +105,7 @@ func TestDeleteNotExistPartition(t *testing.T) {
 	// delete
 	deleteIds := ids.Slice(0, 10)
 	errDelete := mc.DeleteByPks(ctx, collName, "p1", deleteIds)
-	common.CheckErr(t, errDelete, false, fmt.Sprintf("partition p1 of collection %s does not exist", collName))
+	common.CheckErr(t, errDelete, false, "partition not found")
 }
 
 // test delete empty partition names
