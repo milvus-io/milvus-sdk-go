@@ -921,7 +921,7 @@ func TestSearchInvalidSearchParams(t *testing.T) {
 
 // search with index hnsw search param ef < topK -> error
 func TestSearchEfHnsw(t *testing.T) {
-	t.Skip("error message update unexpected")
+	// t.Skip("error message update unexpected")
 	ctx := createContext(t, time.Second*common.DefaultTimeout*2)
 	// connect
 	mc := createMilvusClient(ctx, t)
@@ -1075,7 +1075,7 @@ func TestSearchInvalidExpr(t *testing.T) {
 			common.DefaultTopK,
 			sp,
 		)
-		common.CheckErr(t, errSearchEmpty, exprStruct.ErrNil, exprStruct.ErrMsg)
+		common.CheckErr(t, errSearchEmpty, exprStruct.ErrNil, exprStruct.ErrMsg, "invalid parameter")
 	}
 }
 

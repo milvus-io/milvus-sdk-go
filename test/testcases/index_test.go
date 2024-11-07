@@ -1205,7 +1205,7 @@ func TestCreateSparseUnsupportedIndex(t *testing.T) {
 	vectorIndex := append(common.GenAllFloatIndex(entity.IP))
 	for _, idx := range vectorIndex {
 		err := mc.CreateIndex(ctx, collName, common.DefaultSparseVecFieldName, idx, false)
-		common.CheckErr(t, err, false, "data type 104 can't build with this index")
+		common.CheckErr(t, err, false, "data type SparseFloatVector can't build with this index", "invalid parameter")
 	}
 
 	// create scalar index on sparse vector
@@ -1317,12 +1317,12 @@ func TestCreateIndexNotSupportedField(t *testing.T) {
 	// create index
 	idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
 	err := mc.CreateIndex(ctx, collName, common.DefaultFloatFieldName, idx, false)
-	common.CheckErr(t, err, false, "can't build hnsw in not vector type")
+	common.CheckErr(t, err, false, "index HNSW only supports vector data type", "invalid parameter")
 
 	// create scann index
 	indexScann, _ := entity.NewIndexSCANN(entity.L2, 8, true)
 	err = mc.CreateIndex(ctx, collName, common.DefaultFloatFieldName, indexScann, false)
-	common.CheckErr(t, err, false, "data type should be FloatVector, Float16Vector or BFloat16Vector")
+	common.CheckErr(t, err, false, "index SCANN only supports vector data type", "invalid parameter")
 }
 
 // test create index with invalid params
