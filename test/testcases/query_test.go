@@ -32,9 +32,9 @@ func TestQueryDefaultPartition(t *testing.T) {
 	errLoad := mc.LoadCollection(ctx, collName, false)
 	common.CheckErr(t, errLoad, true)
 
-	//query
+	// query
 	pks := ids.Slice(0, 10)
-	var queryResult, _ = mc.QueryByPks(
+	queryResult, _ := mc.QueryByPks(
 		ctx,
 		collName,
 		[]string{common.DefaultPartition},
@@ -57,7 +57,7 @@ func TestQueryVarcharField(t *testing.T) {
 	errLoad := mc.LoadCollection(ctx, collName, false)
 	common.CheckErr(t, errLoad, true)
 
-	//query
+	// query
 	pks := ids.Slice(0, 10)
 	queryResult, _ := mc.QueryByPks(
 		ctx,
@@ -82,7 +82,7 @@ func TestQueryNotExistCollection(t *testing.T) {
 	errLoad := mc.LoadCollection(ctx, collName, false)
 	common.CheckErr(t, errLoad, true)
 
-	//query
+	// query
 	pks := ids.Slice(0, 10)
 	_, errQuery := mc.QueryByPks(
 		ctx,
@@ -107,7 +107,7 @@ func TestQueryNotExistPartition(t *testing.T) {
 	errLoad := mc.LoadCollection(ctx, collName, false)
 	common.CheckErr(t, errLoad, true)
 
-	//query
+	// query
 	pks := ids.Slice(0, 10)
 	_, errQuery := mc.QueryByPks(
 		ctx,
@@ -144,7 +144,7 @@ func TestQueryEmptyPartitionName(t *testing.T) {
 	errLoad := mc.LoadCollection(ctx, collName, false)
 	common.CheckErr(t, errLoad, true)
 
-	//query from "" partitions, expect to query from default partition
+	// query from "" partitions, expect to query from default partition
 	_, errQuery := mc.QueryByPks(
 		ctx,
 		collName,
@@ -173,13 +173,13 @@ func TestQueryMultiPartitions(t *testing.T) {
 	errLoad := mc.LoadCollection(ctx, collName, false)
 	common.CheckErr(t, errLoad, true)
 
-	//query from multi partition names
+	// query from multi partition names
 	queryIds := entity.NewColumnInt64(common.DefaultIntFieldName, []int64{0, common.DefaultNb, common.DefaultNb*2 - 1})
 	queryResultMultiPartition, _ := mc.QueryByPks(ctx, collName, []string{common.DefaultPartition, partitionName}, queryIds,
 		[]string{common.DefaultIntFieldName})
 	common.CheckQueryResult(t, queryResultMultiPartition, []entity.Column{queryIds})
 
-	//query from empty partition names, expect to query from all partitions
+	// query from empty partition names, expect to query from all partitions
 	queryResultEmptyPartition, _ := mc.QueryByPks(ctx, collName, []string{}, queryIds, []string{common.DefaultIntFieldName})
 	common.CheckQueryResult(t, queryResultEmptyPartition, []entity.Column{queryIds})
 
@@ -210,7 +210,7 @@ func TestQueryEmptyIds(t *testing.T) {
 	errLoad := mc.LoadCollection(ctx, collName, false)
 	common.CheckErr(t, errLoad, true)
 
-	//query
+	// query
 	queryIds := entity.NewColumnInt64(common.DefaultIntFieldName, []int64{})
 	_, errQuery := mc.QueryByPks(
 		ctx,
@@ -264,7 +264,7 @@ func TestQueryNonPrimaryFields(t *testing.T) {
 
 		// TODO only int64 and varchar column can be primary key for now
 		common.CheckErr(t, errQuery, false, "only int64 and varchar column can be primary key for now")
-		//common.CheckQueryResult(t, queryResultMultiPartition, []entity.Column{entity.NewColumnInt64(common.DefaultIntFieldName, []int64{0})})
+		// common.CheckQueryResult(t, queryResultMultiPartition, []entity.Column{entity.NewColumnInt64(common.DefaultIntFieldName, []int64{0})})
 	}
 }
 
@@ -282,7 +282,7 @@ func TestQueryEmptyOutputFields(t *testing.T) {
 		errLoad := mc.LoadCollection(ctx, collName, false)
 		common.CheckErr(t, errLoad, true)
 
-		//query with empty output fields []string{}-> output "int64"
+		// query with empty output fields []string{}-> output "int64"
 		queryEmptyOutputs, _ := mc.QueryByPks(
 			ctx, collName, []string{common.DefaultPartition},
 			ids.Slice(0, 10),
@@ -290,7 +290,7 @@ func TestQueryEmptyOutputFields(t *testing.T) {
 		)
 		common.CheckOutputFields(t, queryEmptyOutputs, []string{common.DefaultIntFieldName})
 
-		//query with empty output fields []string{""}-> output "int64" and dynamic field
+		// query with empty output fields []string{""}-> output "int64" and dynamic field
 		queryEmptyOutputs, err := mc.QueryByPks(
 			ctx, collName, []string{common.DefaultPartition},
 			ids.Slice(0, 10),
@@ -325,7 +325,7 @@ func TestQueryOutputNotExistField(t *testing.T) {
 	errLoad := mc.LoadCollection(ctx, collName, false)
 	common.CheckErr(t, errLoad, true)
 
-	//query
+	// query
 	_, errQuery := mc.QueryByPks(
 		ctx,
 		collName,
@@ -348,13 +348,17 @@ func TestQueryEmptyOutputFields2(t *testing.T) {
 
 	for _, enableDynamic := range []bool{true, false} {
 		// create collection
-		cp := CollectionParams{CollectionFieldsType: Int64FloatVec, AutoID: false, EnableDynamicField: enableDynamic,
-			ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+		cp := CollectionParams{
+			CollectionFieldsType: Int64FloatVec, AutoID: false, EnableDynamicField: enableDynamic,
+			ShardsNum: common.DefaultShards, Dim: common.DefaultDim,
+		}
 		collName := createCollection(ctx, t, mc, cp)
 
 		// insert
-		dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVec,
-			start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: enableDynamic}
+		dp := DataParams{
+			CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVec,
+			start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: enableDynamic,
+		}
 		_, _ = insertData(ctx, t, mc, dp)
 
 		idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
@@ -364,13 +368,13 @@ func TestQueryEmptyOutputFields2(t *testing.T) {
 		errLoad := mc.LoadCollection(ctx, collName, false)
 		common.CheckErr(t, errLoad, true)
 
-		//query with empty output fields []string{}-> output "int64"
+		// query with empty output fields []string{}-> output "int64"
 		expr := fmt.Sprintf("%s < 10", common.DefaultIntFieldName)
 		queryNilOutputs, err := mc.Query(ctx, collName, []string{}, expr, []string{}, client.WithSearchQueryConsistencyLevel(entity.ClStrong))
 		common.CheckErr(t, err, true)
 		common.CheckOutputFields(t, queryNilOutputs, []string{common.DefaultIntFieldName})
 
-		//query with not existed field -> output field as dynamic or error
+		// query with not existed field -> output field as dynamic or error
 		fakeName := "aaa"
 		res2, err2 := mc.Query(ctx, collName, []string{}, expr, []string{fakeName}, client.WithSearchQueryConsistencyLevel(entity.ClStrong))
 		if enableDynamic {
@@ -428,7 +432,7 @@ func TestQueryOutputFields(t *testing.T) {
 	errLoad := mc.LoadCollection(ctx, collName, false)
 	common.CheckErr(t, errLoad, true)
 
-	//query
+	// query
 	pos := 10
 	queryResult, _ := mc.QueryByPks(
 		ctx, collName,
@@ -439,7 +443,8 @@ func TestQueryOutputFields(t *testing.T) {
 	common.CheckQueryResult(t, queryResult, []entity.Column{
 		intColumn.Slice(0, pos),
 		floatColumn.Slice(0, pos),
-		vecColumn.Slice(0, pos)})
+		vecColumn.Slice(0, pos),
+	})
 	common.CheckOutputFields(t, queryResult, []string{common.DefaultIntFieldName, common.DefaultFloatFieldName, common.DefaultFloatVecFieldName})
 }
 
@@ -467,7 +472,7 @@ func TestQueryOutputBinaryAndVarchar(t *testing.T) {
 	errLoad := mc.LoadCollection(ctx, collName, false)
 	common.CheckErr(t, errLoad, true)
 
-	//query
+	// query
 	pos := 10
 	queryResult, _ := mc.QueryByPks(
 		ctx,
@@ -478,7 +483,8 @@ func TestQueryOutputBinaryAndVarchar(t *testing.T) {
 	)
 	common.CheckQueryResult(t, queryResult, []entity.Column{
 		varcharColumn.Slice(0, pos),
-		vecColumn.Slice(0, pos)})
+		vecColumn.Slice(0, pos),
+	})
 	common.CheckOutputFields(t, queryResult, []string{common.DefaultBinaryVecFieldName, common.DefaultVarcharFieldName})
 }
 
@@ -490,13 +496,17 @@ func TestOutputAllFieldsRows(t *testing.T) {
 
 	// create collection
 	var capacity int64 = common.TestCapacity
-	cp := CollectionParams{CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: true,
-		ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxCapacity: capacity}
+	cp := CollectionParams{
+		CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: true,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxCapacity: capacity,
+	}
 	collName := createCollection(ctx, t, mc, cp)
 
 	// prepare and insert data
-	dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: AllFields,
-		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: true}
+	dp := DataParams{
+		CollectionName: collName, PartitionName: "", CollectionFieldsType: AllFields,
+		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: true,
+	}
 	_, _ = insertData(ctx, t, mc, dp, common.WithArrayCapacity(capacity))
 
 	// flush and check row count
@@ -532,8 +542,10 @@ func TestOutputAllFieldsColumn(t *testing.T) {
 	// create collection
 	var capacity int64 = common.TestCapacity
 	for _, isDynamic := range [2]bool{true, false} {
-		cp := CollectionParams{CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: isDynamic,
-			ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxCapacity: capacity}
+		cp := CollectionParams{
+			CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: isDynamic,
+			ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxCapacity: capacity,
+		}
 		collName := createCollection(ctx, t, mc, cp)
 
 		// prepare and insert data
@@ -592,13 +604,17 @@ func TestQueryJsonDynamicField(t *testing.T) {
 
 	for _, dynamicField := range []bool{true, false} {
 		// create collection
-		cp := CollectionParams{CollectionFieldsType: Int64FloatVecJSON, AutoID: false, EnableDynamicField: dynamicField,
-			ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+		cp := CollectionParams{
+			CollectionFieldsType: Int64FloatVecJSON, AutoID: false, EnableDynamicField: dynamicField,
+			ShardsNum: common.DefaultShards, Dim: common.DefaultDim,
+		}
 		collName := createCollection(ctx, t, mc, cp)
 
 		// insert
-		dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVecJSON,
-			start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: dynamicField}
+		dp := DataParams{
+			CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVecJSON,
+			start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: dynamicField,
+		}
 		_, _ = insertData(ctx, t, mc, dp)
 
 		idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
@@ -776,13 +792,17 @@ func TestQueryArrayFieldExpr(t *testing.T) {
 	for _, withRows := range []bool{true, false} {
 		// create collection
 		var capacity int64 = common.TestCapacity
-		cp := CollectionParams{CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: true,
-			ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxCapacity: capacity}
+		cp := CollectionParams{
+			CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: true,
+			ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxCapacity: capacity,
+		}
 		collName := createCollection(ctx, t, mc, cp, client.WithConsistencyLevel(entity.ClStrong))
 
 		// prepare and insert data
-		dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: AllFields,
-			start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: withRows}
+		dp := DataParams{
+			CollectionName: collName, PartitionName: "", CollectionFieldsType: AllFields,
+			start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: withRows,
+		}
 		_, _ = insertData(ctx, t, mc, dp, common.WithArrayCapacity(capacity))
 
 		// flush and check row count
@@ -854,7 +874,7 @@ func TestQueryArrayFieldExpr(t *testing.T) {
 			}
 		}
 
-		//load collection
+		// load collection
 		errLoad = mc.LoadCollection(ctx, collName, true)
 		common.CheckErr(t, errLoad, true)
 
@@ -977,7 +997,6 @@ func TestQueryJsonDynamicExpr(t *testing.T) {
 	queryRes, err := mc.Query(ctx, collName,
 		[]string{common.DefaultPartition},
 		expr, []string{common.DefaultJSONFieldName, common.DefaultDynamicNumberField})
-
 	if err != nil {
 		log.Println(err)
 	}
@@ -1003,13 +1022,17 @@ func TestQueryJsonDynamicFieldRows(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create collection
-	cp := CollectionParams{CollectionFieldsType: Int64FloatVecJSON, AutoID: false, EnableDynamicField: true,
-		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+	cp := CollectionParams{
+		CollectionFieldsType: Int64FloatVecJSON, AutoID: false, EnableDynamicField: true,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim,
+	}
 	collName := createCollection(ctx, t, mc, cp)
 
 	// insert
-	dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVecJSON,
-		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: true}
+	dp := DataParams{
+		CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVecJSON,
+		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: true,
+	}
 	_, _ = insertData(ctx, t, mc, dp)
 
 	idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
@@ -1109,7 +1132,7 @@ func TestQueryInvalidExpr(t *testing.T) {
 		_, err := mc.Query(ctx, collName,
 			[]string{common.DefaultPartition},
 			_invalidExprs.Expr, []string{common.DefaultJSONFieldName, common.DefaultDynamicNumberField})
-		common.CheckErr(t, err, _invalidExprs.ErrNil, _invalidExprs.ErrMsg)
+		common.CheckErr(t, err, _invalidExprs.ErrNil, _invalidExprs.ErrMsg, "invalid parameter")
 	}
 }
 
@@ -1143,7 +1166,7 @@ func TestQueryOutputInvalidOutputFieldCount(t *testing.T) {
 	for _, invalidCount := range invalidOutputFieldCount {
 		queryExpr := fmt.Sprintf("%s >= 0", common.DefaultIntFieldName)
 
-		//query with empty output fields []string{}-> output "int64"
+		// query with empty output fields []string{}-> output "int64"
 		_, err := mc.Query(
 			ctx, collName, []string{common.DefaultPartition},
 			queryExpr, []string{invalidCount.countField})
@@ -1190,10 +1213,12 @@ func TestQueryCountAfterDml(t *testing.T) {
 	countQuery, _ := mc.Query(ctx, collName, []string{common.DefaultPartition}, "", []string{common.QueryCountFieldName})
 	require.Equal(t, int64(common.DefaultNb), countQuery.GetColumn(common.QueryCountFieldName).(*entity.ColumnInt64).Data()[0])
 
-	//inert 1000 entities -> count*
+	// inert 1000 entities -> count*
 	insertNb := 1000
-	dpInsert := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVecJSON,
-		start: common.DefaultNb, nb: insertNb, dim: common.DefaultDim, EnableDynamicField: true}
+	dpInsert := DataParams{
+		CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVecJSON,
+		start: common.DefaultNb, nb: insertNb, dim: common.DefaultDim, EnableDynamicField: true,
+	}
 	insertData(ctx, t, mc, dpInsert)
 	countAfterInsert, _ := mc.Query(ctx, collName, []string{common.DefaultPartition}, "", []string{common.QueryCountFieldName})
 	require.Equal(t, int64(common.DefaultNb+insertNb), countAfterInsert.GetColumn(common.QueryCountFieldName).(*entity.ColumnInt64).Data()[0])
@@ -1235,8 +1260,10 @@ func TestQuerySparseVector(t *testing.T) {
 		mc := createMilvusClient(ctx, t)
 
 		// create -> insert [0, 3000) -> flush -> index -> load
-		cp := CollectionParams{CollectionFieldsType: Int64VarcharSparseVec, AutoID: false, EnableDynamicField: false,
-			ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxLength: common.TestMaxLen}
+		cp := CollectionParams{
+			CollectionFieldsType: Int64VarcharSparseVec, AutoID: false, EnableDynamicField: false,
+			ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxLength: common.TestMaxLen,
+		}
 		collName := createCollection(ctx, t, mc, cp)
 
 		// index
@@ -1261,7 +1288,7 @@ func TestQuerySparseVector(t *testing.T) {
 		common.CheckErr(t, err, true)
 		common.CheckOutputFields(t, queryResult, []string{common.DefaultIntFieldName, common.DefaultVarcharFieldName, common.DefaultFloatVecFieldName, common.DefaultSparseVecFieldName})
 		t.Log("https://github.com/milvus-io/milvus-sdk-go/issues/769")
-		//common.CheckQueryResult(t, queryResult, []entity.Column{intColumn.Slice(0, 2), varColumn.Slice(0, 2), floatColumn.Slice(0, 2), sparseColumn.Slice(0, 2)})
+		// common.CheckQueryResult(t, queryResult, []entity.Column{intColumn.Slice(0, 2), varColumn.Slice(0, 2), floatColumn.Slice(0, 2), sparseColumn.Slice(0, 2)})
 	}
 }
 
@@ -1272,17 +1299,23 @@ func TestQueryIteratorDefault(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create collection
-	cp := CollectionParams{CollectionFieldsType: Int64FloatVec, AutoID: false, EnableDynamicField: true,
-		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+	cp := CollectionParams{
+		CollectionFieldsType: Int64FloatVec, AutoID: false, EnableDynamicField: true,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim,
+	}
 	collName := createCollection(ctx, t, mc, cp)
 
 	// insert
-	dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVec,
-		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
+	dp := DataParams{
+		CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVec,
+		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false,
+	}
 	_, _ = insertData(ctx, t, mc, dp)
 
-	dp2 := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVec,
-		start: common.DefaultNb, nb: common.DefaultNb * 2, dim: common.DefaultDim, EnableDynamicField: true, WithRows: true}
+	dp2 := DataParams{
+		CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVec,
+		start: common.DefaultNb, nb: common.DefaultNb * 2, dim: common.DefaultDim, EnableDynamicField: true, WithRows: true,
+	}
 	_, _ = insertData(ctx, t, mc, dp2)
 
 	idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
@@ -1305,8 +1338,10 @@ func TestQueryIteratorHitEmpty(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create collection
-	cp := CollectionParams{CollectionFieldsType: Int64FloatVec, AutoID: false, EnableDynamicField: true,
-		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+	cp := CollectionParams{
+		CollectionFieldsType: Int64FloatVec, AutoID: false, EnableDynamicField: true,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim,
+	}
 	collName := createCollection(ctx, t, mc, cp)
 
 	idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
@@ -1330,14 +1365,18 @@ func TestQueryIteratorBatchSize(t *testing.T) {
 	// connect
 	mc := createMilvusClient(ctx, t)
 	// create collection
-	cp := CollectionParams{CollectionFieldsType: Int64FloatVec, AutoID: false, EnableDynamicField: true,
-		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+	cp := CollectionParams{
+		CollectionFieldsType: Int64FloatVec, AutoID: false, EnableDynamicField: true,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim,
+	}
 	collName := createCollection(ctx, t, mc, cp)
 
 	// insert
 	nb := 201
-	dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVec,
-		start: 0, nb: nb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
+	dp := DataParams{
+		CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVec,
+		start: 0, nb: nb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false,
+	}
 	_, _ = insertData(ctx, t, mc, dp)
 
 	idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
@@ -1372,14 +1411,18 @@ func TestQueryIteratorOutputAllFields(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 	for _, dynamic := range [2]bool{false, true} {
 		// create collection
-		cp := CollectionParams{CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: dynamic,
-			ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+		cp := CollectionParams{
+			CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: dynamic,
+			ShardsNum: common.DefaultShards, Dim: common.DefaultDim,
+		}
 		collName := createCollection(ctx, t, mc, cp, client.WithConsistencyLevel(entity.ClStrong))
 
 		// insert
 		nb := 2501
-		dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: AllFields,
-			start: 0, nb: nb, dim: common.DefaultDim, EnableDynamicField: dynamic, WithRows: false}
+		dp := DataParams{
+			CollectionName: collName, PartitionName: "", CollectionFieldsType: AllFields,
+			start: 0, nb: nb, dim: common.DefaultDim, EnableDynamicField: dynamic, WithRows: false,
+		}
 		insertData(ctx, t, mc, dp)
 
 		indexHnsw, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
@@ -1415,14 +1458,18 @@ func TestQueryIteratorOutputSparseFieldsRows(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 	for _, withRows := range [2]bool{true, false} {
 		// create collection
-		cp := CollectionParams{CollectionFieldsType: Int64VarcharSparseVec, AutoID: false, EnableDynamicField: true,
-			ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxLength: common.TestMaxLen}
+		cp := CollectionParams{
+			CollectionFieldsType: Int64VarcharSparseVec, AutoID: false, EnableDynamicField: true,
+			ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxLength: common.TestMaxLen,
+		}
 		collName := createCollection(ctx, t, mc, cp)
 
 		// insert
 		nb := 2501
-		dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64VarcharSparseVec,
-			start: 0, nb: nb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: withRows, maxLenSparse: 1000}
+		dp := DataParams{
+			CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64VarcharSparseVec,
+			start: 0, nb: nb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: withRows, maxLenSparse: 1000,
+		}
 		_, _ = insertData(ctx, t, mc, dp)
 
 		indexHnsw, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
@@ -1448,14 +1495,18 @@ func TestQueryIteratorInvalid(t *testing.T) {
 	// connect
 	mc := createMilvusClient(ctx, t)
 	// create collection
-	cp := CollectionParams{CollectionFieldsType: Int64FloatVec, AutoID: false, EnableDynamicField: false,
-		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+	cp := CollectionParams{
+		CollectionFieldsType: Int64FloatVec, AutoID: false, EnableDynamicField: false,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim,
+	}
 	collName := createCollection(ctx, t, mc, cp)
 
 	// insert
 	nb := 201
-	dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVec,
-		start: 0, nb: nb, dim: common.DefaultDim, EnableDynamicField: false, WithRows: false}
+	dp := DataParams{
+		CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVec,
+		start: 0, nb: nb, dim: common.DefaultDim, EnableDynamicField: false, WithRows: false,
+	}
 	_, _ = insertData(ctx, t, mc, dp)
 
 	idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
@@ -1495,13 +1546,15 @@ func TestQueryIteratorInvalidExpr(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create collection
-	cp := CollectionParams{CollectionFieldsType: Int64FloatVecJSON, AutoID: false, EnableDynamicField: true,
+	cp := CollectionParams{
+		CollectionFieldsType: Int64FloatVecJSON, AutoID: false, EnableDynamicField: true,
 		ShardsNum: common.DefaultShards, Dim: common.DefaultDim,
 	}
 	collName := createCollection(ctx, t, mc, cp)
 
 	// insert
-	dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVecJSON,
+	dp := DataParams{
+		CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVecJSON,
 		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true,
 	}
 	_, _ = insertData(ctx, t, mc, dp)
@@ -1514,8 +1567,9 @@ func TestQueryIteratorInvalidExpr(t *testing.T) {
 	common.CheckErr(t, errLoad, true)
 
 	for _, _invalidExprs := range common.InvalidExpressions {
+		t.Log(_invalidExprs)
 		_, err := mc.QueryIterator(ctx, client.NewQueryIteratorOption(collName).WithExpr(_invalidExprs.Expr))
-		common.CheckErr(t, err, _invalidExprs.ErrNil, _invalidExprs.ErrMsg)
+		common.CheckErr(t, err, _invalidExprs.ErrNil, "invalid parameter", _invalidExprs.ErrMsg)
 	}
 }
 
@@ -1526,13 +1580,17 @@ func TestQueryIteratorOutputFieldDynamic(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 	for _, dynamic := range [2]bool{true, false} {
 		// create collection
-		cp := CollectionParams{CollectionFieldsType: Int64FloatVec, AutoID: false, EnableDynamicField: dynamic,
-			ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+		cp := CollectionParams{
+			CollectionFieldsType: Int64FloatVec, AutoID: false, EnableDynamicField: dynamic,
+			ShardsNum: common.DefaultShards, Dim: common.DefaultDim,
+		}
 		collName := createCollection(ctx, t, mc, cp)
 		// insert
 		nb := 201
-		dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVec,
-			start: 0, nb: nb, dim: common.DefaultDim, EnableDynamicField: dynamic, WithRows: false}
+		dp := DataParams{
+			CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVec,
+			start: 0, nb: nb, dim: common.DefaultDim, EnableDynamicField: dynamic, WithRows: false,
+		}
 		_, _ = insertData(ctx, t, mc, dp)
 
 		idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
@@ -1555,7 +1613,7 @@ func TestQueryIteratorOutputFieldDynamic(t *testing.T) {
 }
 
 func TestQueryIteratorExpr(t *testing.T) {
-	//t.Log("https://github.com/milvus-io/milvus-sdk-go/issues/756")
+	// t.Log("https://github.com/milvus-io/milvus-sdk-go/issues/756")
 	type exprCount struct {
 		expr  string
 		count int
@@ -1566,7 +1624,7 @@ func TestQueryIteratorExpr(t *testing.T) {
 		{expr: fmt.Sprintf("%s >= 1000 || %s > 2000", common.DefaultIntFieldName, common.DefaultIntFieldName), count: 2000},
 		{expr: fmt.Sprintf("%s >= 1000 and %s < 2000", common.DefaultIntFieldName, common.DefaultIntFieldName), count: 1000},
 
-		//json and dynamic field filter expr: == < in bool/ list/ int
+		// json and dynamic field filter expr: == < in bool/ list/ int
 		{expr: fmt.Sprintf("%s['number'] == 0", common.DefaultJSONFieldName), count: 1500 / 2},
 		{expr: fmt.Sprintf("%s['number'] < 100 and %s['number'] != 0", common.DefaultJSONFieldName, common.DefaultJSONFieldName), count: 50},
 		{expr: fmt.Sprintf("%s < 100", common.DefaultDynamicNumberField), count: 100},
@@ -1617,13 +1675,17 @@ func TestQueryIteratorExpr(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 
 	// create collection
-	cp := CollectionParams{CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: true,
-		ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxCapacity: common.TestCapacity}
+	cp := CollectionParams{
+		CollectionFieldsType: AllFields, AutoID: false, EnableDynamicField: true,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim, MaxCapacity: common.TestCapacity,
+	}
 	collName := createCollection(ctx, t, mc, cp, client.WithConsistencyLevel(entity.ClStrong))
 
 	// insert
-	dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: AllFields,
-		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
+	dp := DataParams{
+		CollectionName: collName, PartitionName: "", CollectionFieldsType: AllFields,
+		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false,
+	}
 	_, err := insertData(ctx, t, mc, dp, common.WithArrayCapacity(common.TestCapacity))
 	common.CheckErr(t, err, true)
 	mc.Flush(ctx, collName, false)
@@ -1657,8 +1719,10 @@ func TestQueryIteratorPartitions(t *testing.T) {
 	// connect
 	mc := createMilvusClient(ctx, t)
 	// create collection
-	cp := CollectionParams{CollectionFieldsType: Int64FloatVec, AutoID: false, EnableDynamicField: false,
-		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+	cp := CollectionParams{
+		CollectionFieldsType: Int64FloatVec, AutoID: false, EnableDynamicField: false,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim,
+	}
 	collName := createCollection(ctx, t, mc, cp)
 	pName := "p1"
 	err := mc.CreatePartition(ctx, collName, pName)
@@ -1666,12 +1730,16 @@ func TestQueryIteratorPartitions(t *testing.T) {
 
 	// insert [0, nb) into partition: _default
 	nb := 1500
-	dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVec,
-		start: 0, nb: nb, dim: common.DefaultDim, EnableDynamicField: false, WithRows: false}
+	dp := DataParams{
+		CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVec,
+		start: 0, nb: nb, dim: common.DefaultDim, EnableDynamicField: false, WithRows: false,
+	}
 	_, _ = insertData(ctx, t, mc, dp)
 	// insert [nb, nb*2) into partition: p1
-	dp1 := DataParams{CollectionName: collName, PartitionName: pName, CollectionFieldsType: Int64FloatVec,
-		start: nb, nb: nb, dim: common.DefaultDim, EnableDynamicField: false, WithRows: false}
+	dp1 := DataParams{
+		CollectionName: collName, PartitionName: pName, CollectionFieldsType: Int64FloatVec,
+		start: nb, nb: nb, dim: common.DefaultDim, EnableDynamicField: false, WithRows: false,
+	}
 	_, _ = insertData(ctx, t, mc, dp1)
 
 	idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)

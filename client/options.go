@@ -137,8 +137,9 @@ func WithSkipDynamicFields(skip bool) LoadCollectionOption {
 // SearchQueryOption is an option of search/query request
 type SearchQueryOption struct {
 	// Consistency Level
-	ConsistencyLevel   entity.ConsistencyLevel
-	GuaranteeTimestamp uint64
+	ConsistencyLevel           entity.ConsistencyLevel
+	GuaranteeTimestamp         uint64
+	UseDefaultConsistencyLevel bool
 	// Pagination
 	Limit  int64
 	Offset int64
@@ -202,6 +203,7 @@ func WithGroupByField(groupByField string) SearchQueryOptionFunc {
 // WithSearchQueryConsistencyLevel specifies consistency level
 func WithSearchQueryConsistencyLevel(cl entity.ConsistencyLevel) SearchQueryOptionFunc {
 	return func(option *SearchQueryOption) {
+		option.UseDefaultConsistencyLevel = false
 		option.ConsistencyLevel = cl
 	}
 }
@@ -220,7 +222,8 @@ func WithTravelTimestamp(_ uint64) SearchQueryOptionFunc {
 
 func (c *GrpcClient) makeSearchQueryOption(collName string, opts ...SearchQueryOptionFunc) (*SearchQueryOption, error) {
 	opt := &SearchQueryOption{
-		ConsistencyLevel: entity.ClBounded, // default
+		ConsistencyLevel:           entity.ClBounded, // default
+		UseDefaultConsistencyLevel: true,
 	}
 	info, ok := c.cache.getCollectionInfo(collName)
 	if ok {
