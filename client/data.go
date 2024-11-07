@@ -92,7 +92,8 @@ func (c *GrpcClient) HybridSearch(ctx context.Context, collName string, partitio
 
 // Search with bool expression
 func (c *GrpcClient) Search(ctx context.Context, collName string, partitions []string,
-	expr string, outputFields []string, vectors []entity.Vector, vectorField string, metricType entity.MetricType, topK int, sp entity.SearchParam, opts ...SearchQueryOptionFunc) ([]SearchResult, error) {
+	expr string, outputFields []string, vectors []entity.Vector, vectorField string, metricType entity.MetricType, topK int, sp entity.SearchParam, opts ...SearchQueryOptionFunc,
+) ([]SearchResult, error) {
 	if c.Service == nil {
 		return []SearchResult{}, ErrClientNotReady
 	}
@@ -243,7 +244,7 @@ func expandWildcard(schema *entity.Schema, outputFields []string) ([]string, boo
 
 func PKs2Expr(backName string, ids entity.Column) string {
 	var expr string
-	var pkName = ids.Name()
+	pkName := ids.Name()
 	if ids.Name() == "" {
 		pkName = backName
 	}
@@ -320,12 +321,13 @@ func (c *GrpcClient) Query(ctx context.Context, collectionName string, partition
 	}
 
 	req := &milvuspb.QueryRequest{
-		DbName:             "", // reserved field
-		CollectionName:     collectionName,
-		Expr:               expr,
-		OutputFields:       outputFields,
-		PartitionNames:     partitionNames,
-		GuaranteeTimestamp: option.GuaranteeTimestamp,
+		DbName:                "", // reserved field
+		CollectionName:        collectionName,
+		Expr:                  expr,
+		OutputFields:          outputFields,
+		PartitionNames:        partitionNames,
+		UseDefaultConsistency: option.UseDefaultConsistencyLevel,
+		ConsistencyLevel:      option.ConsistencyLevel.CommonConsistencyLevel(),
 	}
 	if option.Offset > 0 {
 		req.QueryParams = append(req.QueryParams, &commonpb.KeyValuePair{Key: offsetKey, Value: strconv.FormatInt(option.Offset, 10)})
@@ -354,7 +356,7 @@ func (c *GrpcClient) Query(ctx context.Context, collectionName string, partition
 
 	fieldsData := resp.GetFieldsData()
 
-	columns, err := c.parseSearchResult(sch, outputFields, fieldsData, 0, 0, -1) //entity.FieldDataColumn(fieldData, 0, -1)
+	columns, err := c.parseSearchResult(sch, outputFields, fieldsData, 0, 0, -1) // entity.FieldDataColumn(fieldData, 0, -1)
 	if err != nil {
 		return nil, err
 	}
@@ -382,7 +384,8 @@ func getVectorField(schema *entity.Schema) *entity.Field {
 
 func prepareSearchRequest(collName string, partitions []string,
 	expr string, outputFields []string, vectors []entity.Vector, vectorField string,
-	metricType entity.MetricType, topK int, sp entity.SearchParam, opt *SearchQueryOption) (*milvuspb.SearchRequest, error) {
+	metricType entity.MetricType, topK int, sp entity.SearchParam, opt *SearchQueryOption,
+) (*milvuspb.SearchRequest, error) {
 	params := sp.Params()
 	params[forTuningKey] = opt.ForTuning
 	bs, err := json.Marshal(params)
@@ -406,16 +409,17 @@ func prepareSearchRequest(collName string, partitions []string,
 	searchParams := entity.MapKvPairs(spMap)
 
 	req := &milvuspb.SearchRequest{
-		DbName:             "",
-		CollectionName:     collName,
-		PartitionNames:     partitions,
-		Dsl:                expr,
-		PlaceholderGroup:   vector2PlaceholderGroupBytes(vectors),
-		DslType:            commonpb.DslType_BoolExprV1,
-		OutputFields:       outputFields,
-		SearchParams:       searchParams,
-		GuaranteeTimestamp: opt.GuaranteeTimestamp,
-		Nq:                 int64(len(vectors)),
+		DbName:                "",
+		CollectionName:        collName,
+		PartitionNames:        partitions,
+		Dsl:                   expr,
+		PlaceholderGroup:      vector2PlaceholderGroupBytes(vectors),
+		DslType:               commonpb.DslType_BoolExprV1,
+		OutputFields:          outputFields,
+		SearchParams:          searchParams,
+		UseDefaultConsistency: opt.UseDefaultConsistencyLevel,
+		ConsistencyLevel:      opt.ConsistencyLevel.CommonConsistencyLevel(),
+		Nq:                    int64(len(vectors)),
 	}
 	return req, nil
 }
@@ -482,7 +486,8 @@ func (c *GrpcClient) GetQuerySegmentInfo(ctx context.Context, collName string) (
 }
 
 func (c *GrpcClient) CalcDistance(ctx context.Context, collName string, partitions []string,
-	metricType entity.MetricType, opLeft, opRight entity.Column) (entity.Column, error) {
+	metricType entity.MetricType, opLeft, opRight entity.Column,
+) (entity.Column, error) {
 	if c.Service == nil {
 		return nil, ErrClientNotReady
 	}

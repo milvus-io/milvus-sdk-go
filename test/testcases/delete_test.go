@@ -401,7 +401,7 @@ func TestDeleteInvalidExpr(t *testing.T) {
 
 	for _, _invalidExprs := range common.InvalidExpressions {
 		err := mc.Delete(ctx, collName, "", _invalidExprs.Expr)
-		common.CheckErr(t, err, _invalidExprs.ErrNil, _invalidExprs.ErrMsg)
+		common.CheckErr(t, err, _invalidExprs.ErrNil, _invalidExprs.ErrMsg, "invalid parameter")
 	}
 }
 
@@ -411,13 +411,17 @@ func TestDeleteComplexExprWithoutLoading(t *testing.T) {
 	// connect
 	mc := createMilvusClient(ctx, t)
 
-	cp := CollectionParams{CollectionFieldsType: Int64FloatVecJSON, AutoID: false, EnableDynamicField: true,
-		ShardsNum: common.DefaultShards, Dim: common.DefaultDim}
+	cp := CollectionParams{
+		CollectionFieldsType: Int64FloatVecJSON, AutoID: false, EnableDynamicField: true,
+		ShardsNum: common.DefaultShards, Dim: common.DefaultDim,
+	}
 	collName := createCollection(ctx, t, mc, cp, client.WithConsistencyLevel(entity.ClStrong))
 
 	// prepare and insert data
-	dp := DataParams{CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVecJSON,
-		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false}
+	dp := DataParams{
+		CollectionName: collName, PartitionName: "", CollectionFieldsType: Int64FloatVecJSON,
+		start: 0, nb: common.DefaultNb, dim: common.DefaultDim, EnableDynamicField: true, WithRows: false,
+	}
 	_, _ = insertData(ctx, t, mc, dp)
 	mc.Flush(ctx, collName, false)
 

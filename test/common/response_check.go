@@ -62,7 +62,7 @@ func EqualFields(t *testing.T, fieldA *entity.Field, fieldB *entity.Field) {
 	}
 	require.Empty(t, fieldA.IndexParams)
 	require.Empty(t, fieldB.IndexParams)
-	//require.Equal(t, fieldA.IndexParams, fieldB.IndexParams)
+	// require.Equal(t, fieldA.IndexParams, fieldB.IndexParams)
 }
 
 // EqualSchema equal two schemas
@@ -79,7 +79,8 @@ func EqualSchema(t *testing.T, schemaA entity.Schema, schemaB entity.Schema) {
 
 // CheckCollection check collection
 func CheckCollection(t *testing.T, actualCollection *entity.Collection, expCollName string, expShardNum int32,
-	expSchema *entity.Schema, expConsistencyLevel entity.ConsistencyLevel) {
+	expSchema *entity.Schema, expConsistencyLevel entity.ConsistencyLevel,
+) {
 	require.Equalf(t, expCollName, actualCollection.Name, fmt.Sprintf("Expected collection name: %s, actual: %v", expCollName, actualCollection.Name))
 	require.Equalf(t, expShardNum, actualCollection.ShardNum, fmt.Sprintf("Expected ShardNum: %d, actual: %d", expShardNum, actualCollection.ShardNum))
 	require.Equal(t, expConsistencyLevel, actualCollection.ConsistencyLevel, fmt.Sprintf("Expected ConsistencyLevel: %v, actual: %v", expConsistencyLevel, actualCollection.ConsistencyLevel))
@@ -242,8 +243,7 @@ func CheckSearchResult(t *testing.T, actualSearchResults []client.SearchResult, 
 	for _, actualSearchResult := range actualSearchResults {
 		require.Equal(t, actualSearchResult.ResultCount, expTopK)
 	}
-	//expContainedIds entity.Column
-
+	// expContainedIds entity.Column
 }
 
 func EqualIntSlice(a []int, b []int) bool {
@@ -293,8 +293,6 @@ func CheckQueryIteratorResult(ctx context.Context, t *testing.T, itr *client.Que
 			}
 			log.Fatalf("QueryIterator next gets error: %v", err)
 		}
-		//log.Printf("QueryIterator result len: %d", rs.Len())
-		//log.Printf("QueryIterator result data: %d", rs.GetColumn("int64"))
 
 		if opt.expBatchSize != nil {
 			actualBatchSize = append(actualBatchSize, rs.Len())

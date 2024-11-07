@@ -77,10 +77,11 @@ func TestMakeSearchQueryOption(t *testing.T) {
 		assert.Nil(t, err)
 		assert.NotNil(t, opt)
 		expected := &SearchQueryOption{
-			ConsistencyLevel:   entity.ClStrong,
-			GuaranteeTimestamp: StrongTimestamp,
-			IgnoreGrowing:      false,
-			ForTuning:          false,
+			ConsistencyLevel:           entity.ClStrong,
+			GuaranteeTimestamp:         StrongTimestamp,
+			IgnoreGrowing:              false,
+			ForTuning:                  false,
+			UseDefaultConsistencyLevel: true,
 		}
 		assert.Equal(t, expected, opt)
 	})
@@ -90,10 +91,11 @@ func TestMakeSearchQueryOption(t *testing.T) {
 		assert.Nil(t, err)
 		assert.NotNil(t, opt)
 		expected := &SearchQueryOption{
-			ConsistencyLevel:   entity.ClStrong,
-			GuaranteeTimestamp: StrongTimestamp,
-			IgnoreGrowing:      true,
-			ForTuning:          false,
+			ConsistencyLevel:           entity.ClStrong,
+			GuaranteeTimestamp:         StrongTimestamp,
+			IgnoreGrowing:              true,
+			ForTuning:                  false,
+			UseDefaultConsistencyLevel: true,
 		}
 		assert.Equal(t, expected, opt)
 	})
@@ -103,10 +105,11 @@ func TestMakeSearchQueryOption(t *testing.T) {
 		assert.Nil(t, err)
 		assert.NotNil(t, opt)
 		expected := &SearchQueryOption{
-			ConsistencyLevel:   entity.ClStrong,
-			GuaranteeTimestamp: StrongTimestamp,
-			IgnoreGrowing:      false,
-			ForTuning:          true,
+			ConsistencyLevel:           entity.ClStrong,
+			GuaranteeTimestamp:         StrongTimestamp,
+			IgnoreGrowing:              false,
+			ForTuning:                  true,
+			UseDefaultConsistencyLevel: true,
 		}
 		assert.Equal(t, expected, opt)
 	})
@@ -116,10 +119,11 @@ func TestMakeSearchQueryOption(t *testing.T) {
 		assert.Nil(t, err)
 		assert.NotNil(t, opt)
 		expected := &SearchQueryOption{
-			ConsistencyLevel:   entity.ClSession,
-			GuaranteeTimestamp: EventuallyTimestamp,
-			IgnoreGrowing:      false,
-			ForTuning:          false,
+			ConsistencyLevel:           entity.ClSession,
+			GuaranteeTimestamp:         EventuallyTimestamp,
+			IgnoreGrowing:              false,
+			ForTuning:                  false,
+			UseDefaultConsistencyLevel: false,
 		}
 		assert.Equal(t, expected, opt)
 
@@ -128,10 +132,11 @@ func TestMakeSearchQueryOption(t *testing.T) {
 		assert.Nil(t, err)
 		assert.NotNil(t, opt)
 		expected = &SearchQueryOption{
-			ConsistencyLevel:   entity.ClSession,
-			GuaranteeTimestamp: 99,
-			IgnoreGrowing:      false,
-			ForTuning:          false,
+			ConsistencyLevel:           entity.ClSession,
+			GuaranteeTimestamp:         99,
+			IgnoreGrowing:              false,
+			ForTuning:                  false,
+			UseDefaultConsistencyLevel: false,
 		}
 		assert.Equal(t, expected, opt)
 	})
@@ -141,10 +146,11 @@ func TestMakeSearchQueryOption(t *testing.T) {
 		assert.Nil(t, err)
 		assert.NotNil(t, opt)
 		expected := &SearchQueryOption{
-			ConsistencyLevel:   entity.ClBounded,
-			GuaranteeTimestamp: BoundedTimestamp,
-			IgnoreGrowing:      false,
-			ForTuning:          false,
+			ConsistencyLevel:           entity.ClBounded,
+			GuaranteeTimestamp:         BoundedTimestamp,
+			IgnoreGrowing:              false,
+			ForTuning:                  false,
+			UseDefaultConsistencyLevel: false,
 		}
 		assert.Equal(t, expected, opt)
 	})
@@ -154,10 +160,11 @@ func TestMakeSearchQueryOption(t *testing.T) {
 		assert.Nil(t, err)
 		assert.NotNil(t, opt)
 		expected := &SearchQueryOption{
-			ConsistencyLevel:   entity.ClEventually,
-			GuaranteeTimestamp: EventuallyTimestamp,
-			IgnoreGrowing:      false,
-			ForTuning:          false,
+			ConsistencyLevel:           entity.ClEventually,
+			GuaranteeTimestamp:         EventuallyTimestamp,
+			IgnoreGrowing:              false,
+			ForTuning:                  false,
+			UseDefaultConsistencyLevel: false,
 		}
 		assert.Equal(t, expected, opt)
 	})
@@ -167,10 +174,11 @@ func TestMakeSearchQueryOption(t *testing.T) {
 		assert.Nil(t, err)
 		assert.NotNil(t, opt)
 		expected := &SearchQueryOption{
-			ConsistencyLevel:   entity.ClCustomized,
-			GuaranteeTimestamp: 100,
-			IgnoreGrowing:      false,
-			ForTuning:          false,
+			ConsistencyLevel:           entity.ClCustomized,
+			GuaranteeTimestamp:         100,
+			IgnoreGrowing:              false,
+			ForTuning:                  false,
+			UseDefaultConsistencyLevel: false,
 		}
 		assert.Equal(t, expected, opt)
 	})

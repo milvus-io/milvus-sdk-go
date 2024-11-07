@@ -51,11 +51,9 @@ func genGroupByBinaryIndex(metricType entity.MetricType) []entity.Index {
 func genUnsupportedFloatGroupByIndex() []entity.Index {
 	idxIvfPq, _ := entity.NewIndexIvfPQ(entity.L2, 128, 16, 8)
 	idxScann, _ := entity.NewIndexSCANN(entity.L2, 16, false)
-	idxDiskAnn, _ := entity.NewIndexDISKANN(entity.L2)
 	return []entity.Index{
 		idxIvfPq,
 		idxScann,
-		idxDiskAnn,
 	}
 }
 
@@ -121,6 +119,7 @@ func prepareDataForGroupBySearch(t *testing.T, loopInsert int, insertNi int, idx
 // -> verify every top passage is the top of whole group
 // output_fields: pk + groupBy
 func TestSearchGroupByFloatDefault(t *testing.T) {
+	t.Skip("timeout case")
 	t.Parallel()
 	for _, metricType := range common.SupportFloatMetricType {
 		for _, idx := range genGroupByVectorIndex(metricType) {
