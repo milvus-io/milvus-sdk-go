@@ -465,9 +465,9 @@ func (c *GrpcClient) RestoreRBAC(ctx context.Context, meta *entity.RBACMeta) err
 	users := make([]*milvuspb.UserInfo, 0, len(meta.Users))
 	for _, user := range meta.Users {
 		roles := make([]*milvuspb.RoleEntity, 0, len(user.Roles))
-		for _, role := range meta.Roles {
+		for _, role := range user.Roles {
 			roles = append(roles, &milvuspb.RoleEntity{
-				Name: role.Name,
+				Name: role,
 			})
 		}
 		users = append(users, &milvuspb.UserInfo{
