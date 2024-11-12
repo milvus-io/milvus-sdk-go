@@ -293,20 +293,15 @@ var _ SearchParam = &IndexAUTOINDEXSearchParam{}
 type IndexAUTOINDEXSearchParam struct { //auto generated fields
 	baseSearchParams
 	
-	level int
+	level interface{}
 }
 
 // NewIndexAUTOINDEXSearchParam create index search param
 func NewIndexAUTOINDEXSearchParam(
-	level int,
+	level interface{},
 ) (*IndexAUTOINDEXSearchParam, error) {
 	// auto generate parameters validation code, if any
-	if level < 1 {
-		return nil, errors.New("level has to be in range [1, 9223372036854775807]")
-	}
-	if level > 9223372036854775807 {
-		return nil, errors.New("level has to be in range [1, 9223372036854775807]")
-	}
+	
 	
 	sp := &IndexAUTOINDEXSearchParam{
 		baseSearchParams: newBaseSearchParams(),

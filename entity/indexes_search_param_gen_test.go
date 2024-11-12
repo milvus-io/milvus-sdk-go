@@ -336,7 +336,7 @@ func TestIndexDISKANNSearchParam(t *testing.T) {
 
 func TestIndexAUTOINDEXSearchParam(t *testing.T) {
 	
-	var level int
+	var level interface{}
 
 	t.Run("valid usage case", func(t *testing.T){
 		
@@ -347,24 +347,6 @@ func TestIndexAUTOINDEXSearchParam(t *testing.T) {
 		assert.Nil(t, err)
 		assert.NotNil(t, idx0)
 		assert.NotNil(t, idx0.Params())
-		
-	})
-	
-	t.Run("invalid usage case", func(t *testing.T){
-		
-		level = 0
-		idx0, err := NewIndexAUTOINDEXSearchParam(
-			level,
-		)
-		assert.NotNil(t, err)
-		assert.Nil(t, idx0)
-		
-		level = -1
-		idx1, err := NewIndexAUTOINDEXSearchParam(
-			level,
-		)
-		assert.NotNil(t, err)
-		assert.Nil(t, idx1)
 		
 	})
 	
