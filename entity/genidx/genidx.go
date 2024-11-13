@@ -621,8 +621,8 @@ func main() {
 				ConstructParams: []idxParam{},
 				SearchParams: []idxParam{
 					{
-						Name:           "level",
-						ValidationRule: "[1, 9223372036854775807]",
+						Name: "level",
+						Type: "interface{}",
 					},
 				},
 				ValidExamples: []string{
@@ -631,10 +631,6 @@ func main() {
 				InvalidExamples: []string{},
 				ValidSearchParams: []string{
 					"level = 1",
-				},
-				InvalidSearchParams: []string{
-					"level = 0",
-					"level = -1",
 				},
 			},
 			{
