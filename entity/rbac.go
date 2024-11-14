@@ -72,3 +72,8 @@ type RBACMeta struct {
 	Roles      []*Role
 	RoleGrants []*RoleGrants
 }
+
+type PrivilegeGroup struct {
+	GroupName  string
+	Privileges []string
+}
