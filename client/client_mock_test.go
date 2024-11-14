@@ -256,6 +256,7 @@ const (
 	MAlterCollection         ServiceMethod = 109
 	MGetLoadingProgress      ServiceMethod = 110
 	MGetLoadState            ServiceMethod = 111
+	MAlterCollectionField    ServiceMethod = 112
 
 	MCreatePartition   ServiceMethod = 201
 	MDropPartition     ServiceMethod = 202
@@ -312,6 +313,11 @@ const (
 	MReplicateMessage ServiceMethod = 1100
 	MBackupRBAC       ServiceMethod = 1101
 	MRestoreRBAC      ServiceMethod = 1102
+
+	MCreatePrivilegeGroup  ServiceMethod = 1200
+	MDropPrivilegeGroup    ServiceMethod = 1201
+	MListPrivilegeGroups   ServiceMethod = 1202
+	MOperatePrivilegeGroup ServiceMethod = 1203
 )
 
 // injection function definition
@@ -1073,6 +1079,43 @@ func (m *MockServer) BackupRBAC(ctx context.Context, req *milvuspb.BackupRBACMet
 
 func (m *MockServer) RestoreRBAC(ctx context.Context, req *milvuspb.RestoreRBACMetaRequest) (*commonpb.Status, error) {
 	f := m.GetInjection(MRestoreRBAC)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*commonpb.Status), err
+	}
+	return SuccessStatus()
+}
+
+func (m *MockServer) CreatePrivilegeGroup(ctx context.Context, req *milvuspb.CreatePrivilegeGroupRequest) (*commonpb.Status, error) {
+	f := m.GetInjection(MCreatePrivilegeGroup)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*commonpb.Status), err
+	}
+	return SuccessStatus()
+}
+
+func (m *MockServer) DropPrivilegeGroup(ctx context.Context, req *milvuspb.DropPrivilegeGroupRequest) (*commonpb.Status, error) {
+	f := m.GetInjection(MDropPrivilegeGroup)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*commonpb.Status), err
+	}
+	return SuccessStatus()
+}
+
+func (m *MockServer) ListPrivilegeGroups(ctx context.Context, req *milvuspb.ListPrivilegeGroupsRequest) (*milvuspb.ListPrivilegeGroupsResponse, error) {
+	f := m.GetInjection(MListPrivilegeGroups)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*milvuspb.ListPrivilegeGroupsResponse), err
+	}
+	s, err := SuccessStatus()
+	return &milvuspb.ListPrivilegeGroupsResponse{Status: s}, err
+}
+
+func (m *MockServer) OperatePrivilegeGroup(ctx context.Context, req *milvuspb.OperatePrivilegeGroupRequest) (*commonpb.Status, error) {
+	f := m.GetInjection(MOperatePrivilegeGroup)
 	if f != nil {
 		r, err := f(ctx, req)
 		return r.(*commonpb.Status), err

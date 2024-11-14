@@ -86,6 +86,17 @@ type Client interface {
 	BackupRBAC(ctx context.Context) (*entity.RBACMeta, error)
 	RestoreRBAC(ctx context.Context, meta *entity.RBACMeta) error
 
+	// CreatePrivilegeGroup creates a privilege group
+	CreatePrivilegeGroup(ctx context.Context, groupName string) error
+	// DropPrivilegeGroup drops the specified privilege group
+	DropPrivilegeGroup(ctx context.Context, groupName string) error
+	// ListPrivilegeGroups lists all privilege groups
+	ListPrivilegeGroups(ctx context.Context) ([]*entity.PrivilegeGroup, error)
+	// AddPrivilegeToGroup adds privileges to a privilege group
+	AddPrivilegesToGroup(ctx context.Context, groupName string, privileges []string) error
+	// RemovePrivilegesFromGroup removes privileges from a privilege group
+	RemovePrivilegesFromGroup(ctx context.Context, groupName string, privileges []string) error
+
 	// -- authentication --
 
 	// CreateCredential create new user and password
