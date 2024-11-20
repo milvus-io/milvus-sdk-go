@@ -257,6 +257,7 @@ const (
 	MGetLoadingProgress      ServiceMethod = 110
 	MGetLoadState            ServiceMethod = 111
 	MAlterCollectionField    ServiceMethod = 112
+	MOperatePrivilegeV2      ServiceMethod = 113
 
 	MCreatePartition   ServiceMethod = 201
 	MDropPartition     ServiceMethod = 202
@@ -494,6 +495,15 @@ func (m *MockServer) ShowCollections(ctx context.Context, req *milvuspb.ShowColl
 
 func (m *MockServer) AlterCollection(ctx context.Context, req *milvuspb.AlterCollectionRequest) (*commonpb.Status, error) {
 	f := m.GetInjection(MAlterCollection)
+	if f != nil {
+		r, err := f(ctx, req)
+		return r.(*commonpb.Status), err
+	}
+	return SuccessStatus()
+}
+
+func (m *MockServer) OperatePrivilegeV2(ctx context.Context, req *milvuspb.OperatePrivilegeV2Request) (*commonpb.Status, error) {
+	f := m.GetInjection(MOperatePrivilegeV2)
 	if f != nil {
 		r, err := f(ctx, req)
 		return r.(*commonpb.Status), err
