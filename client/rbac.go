@@ -393,6 +393,62 @@ func (c *GrpcClient) Revoke(ctx context.Context, role string, objectType entity.
 	return handleRespStatus(resp)
 }
 
+// GrantV2 adds object privilege for role without object type
+func (c *GrpcClient) GrantV2(ctx context.Context, role string, privilege string, dbName string, colName string) error {
+	if c.Service == nil {
+		return ErrClientNotReady
+	}
+
+	req := &milvuspb.OperatePrivilegeV2Request{
+		Role: &milvuspb.RoleEntity{
+			Name: role,
+		},
+		Grantor: &milvuspb.GrantorEntity{
+			Privilege: &milvuspb.PrivilegeEntity{
+				Name: privilege,
+			},
+		},
+		Type:           milvuspb.OperatePrivilegeType_Grant,
+		DbName:         dbName,
+		CollectionName: colName,
+	}
+
+	resp, err := c.Service.OperatePrivilegeV2(ctx, req)
+	if err != nil {
+		return err
+	}
+
+	return handleRespStatus(resp)
+}
+
+// Revoke removes privilege from role without object type
+func (c *GrpcClient) RevokeV2(ctx context.Context, role string, privilege string, dbName string, colName string) error {
+	if c.Service == nil {
+		return ErrClientNotReady
+	}
+
+	req := &milvuspb.OperatePrivilegeV2Request{
+		Role: &milvuspb.RoleEntity{
+			Name: role,
+		},
+		Grantor: &milvuspb.GrantorEntity{
+			Privilege: &milvuspb.PrivilegeEntity{
+				Name: privilege,
+			},
+		},
+		Type:           milvuspb.OperatePrivilegeType_Revoke,
+		DbName:         dbName,
+		CollectionName: colName,
+	}
+
+	resp, err := c.Service.OperatePrivilegeV2(ctx, req)
+	if err != nil {
+		return err
+	}
+
+	return handleRespStatus(resp)
+}
+
 func (c *GrpcClient) BackupRBAC(ctx context.Context) (*entity.RBACMeta, error) {
 	if c.Service == nil {
 		return nil, ErrClientNotReady
