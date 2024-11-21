@@ -286,8 +286,8 @@ func TestSearchEmptyPartitions(t *testing.T) {
 		nq0IDs := searchResult[0].IDs.(*entity.ColumnInt64).Data()
 		nq1IDs := searchResult[1].IDs.(*entity.ColumnInt64).Data()
 		common.CheckSearchResult(t, searchResult, 2, common.DefaultTopK)
-		require.Contains(t, nq0IDs, vecColumnDefault.IdsColumn.(*entity.ColumnInt64).Data()[0])
-		require.Contains(t, nq1IDs, vecColumnPartition.IdsColumn.(*entity.ColumnInt64).Data()[0])
+		require.Contains(t, nq0IDs, vecColumnDefault.IDsColumn.(*entity.ColumnInt64).Data()[0])
+		require.Contains(t, nq1IDs, vecColumnPartition.IDsColumn.(*entity.ColumnInt64).Data()[0])
 	}
 }
 
@@ -361,7 +361,7 @@ func TestSearchPartitions(t *testing.T) {
 	)
 	// check search result contains search vector, which from all partitions
 	common.CheckSearchResult(t, searchSingleRes, 2, common.DefaultTopK)
-	require.Contains(t, searchSingleRes[0].IDs.(*entity.ColumnInt64).Data(), vecColumnDefault.IdsColumn.(*entity.ColumnInt64).Data()[0])
+	require.Contains(t, searchSingleRes[0].IDs.(*entity.ColumnInt64).Data(), vecColumnDefault.IDsColumn.(*entity.ColumnInt64).Data()[0])
 
 	// search multi partitions
 	searchMultiRes, _ := mc.Search(
@@ -379,8 +379,8 @@ func TestSearchPartitions(t *testing.T) {
 		sp,
 	)
 	common.CheckSearchResult(t, searchMultiRes, 2, common.DefaultTopK)
-	require.Contains(t, searchMultiRes[0].IDs.(*entity.ColumnInt64).Data(), vecColumnDefault.IdsColumn.(*entity.ColumnInt64).Data()[0])
-	require.Contains(t, searchMultiRes[1].IDs.(*entity.ColumnInt64).Data(), vecColumnPartition.IdsColumn.(*entity.ColumnInt64).Data()[0])
+	require.Contains(t, searchMultiRes[0].IDs.(*entity.ColumnInt64).Data(), vecColumnDefault.IDsColumn.(*entity.ColumnInt64).Data()[0])
+	require.Contains(t, searchMultiRes[1].IDs.(*entity.ColumnInt64).Data(), vecColumnPartition.IDsColumn.(*entity.ColumnInt64).Data()[0])
 }
 
 // test search empty output fields []string{} -> [], []string{""}

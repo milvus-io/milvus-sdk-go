@@ -435,13 +435,13 @@ func createInsertTwoPartitions(ctx context.Context, t *testing.T, mc *base.Milvu
 
 	defaultPartition = HelpPartitionColumns{
 		PartitionName: common.DefaultPartition,
-		IdsColumn:     idsDefault,
+		IDsColumn:     idsDefault,
 		VectorColumn:  vecColumn,
 	}
 
 	newPartition = HelpPartitionColumns{
 		PartitionName: partitionName,
-		IdsColumn:     idsPartition,
+		IDsColumn:     idsPartition,
 		VectorColumn:  vecColumnNew,
 	}
 

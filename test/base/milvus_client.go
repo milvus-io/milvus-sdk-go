@@ -601,9 +601,9 @@ func (mc *MilvusClient) ListResourceGroups(ctx context.Context) ([]string, error
 }
 
 // CreateResourceGroup
-func (mc *MilvusClient) CreateResourceGroup(ctx context.Context, rgName string) error {
+func (mc *MilvusClient) CreateResourceGroup(ctx context.Context, rgName string, opts ...client.CreateResourceGroupOption) error {
 	preRequest("CreateResourceGroup", ctx, rgName)
-	err := mc.mClient.CreateResourceGroup(ctx, rgName)
+	err := mc.mClient.CreateResourceGroup(ctx, rgName, opts...)
 	postResponse("CreateResourceGroup", err)
 	return err
 }
@@ -621,6 +621,14 @@ func (mc *MilvusClient) DropResourceGroup(ctx context.Context, rgName string) er
 	preRequest("DropResourceGroup", ctx, rgName)
 	err := mc.mClient.DropResourceGroup(ctx, rgName)
 	postResponse("DropResourceGroup", err)
+	return err
+}
+
+// UpdateResourceGroups drop resource group
+func (mc *MilvusClient) UpdateResourceGroups(ctx context.Context, opt ...client.UpdateResourceGroupsOption) error {
+	preRequest("UpdateResourceGroups", ctx, opt)
+	err := mc.mClient.UpdateResourceGroups(ctx, opt...)
+	postResponse("UpdateResourceGroups", err)
 	return err
 }
 
