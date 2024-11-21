@@ -393,6 +393,62 @@ func (c *GrpcClient) Revoke(ctx context.Context, role string, objectType entity.
 	return handleRespStatus(resp)
 }
 
+// GrantV2 adds object privilege for role without object type
+func (c *GrpcClient) GrantV2(ctx context.Context, role string, privilege string, dbName string, colName string) error {
+	if c.Service == nil {
+		return ErrClientNotReady
+	}
+
+	req := &milvuspb.OperatePrivilegeV2Request{
+		Role: &milvuspb.RoleEntity{
+			Name: role,
+		},
+		Grantor: &milvuspb.GrantorEntity{
+			Privilege: &milvuspb.PrivilegeEntity{
+				Name: privilege,
+			},
+		},
+		Type:           milvuspb.OperatePrivilegeType_Grant,
+		DbName:         dbName,
+		CollectionName: colName,
+	}
+
+	resp, err := c.Service.OperatePrivilegeV2(ctx, req)
+	if err != nil {
+		return err
+	}
+
+	return handleRespStatus(resp)
+}
+
+// Revoke removes privilege from role without object type
+func (c *GrpcClient) RevokeV2(ctx context.Context, role string, privilege string, dbName string, colName string) error {
+	if c.Service == nil {
+		return ErrClientNotReady
+	}
+
+	req := &milvuspb.OperatePrivilegeV2Request{
+		Role: &milvuspb.RoleEntity{
+			Name: role,
+		},
+		Grantor: &milvuspb.GrantorEntity{
+			Privilege: &milvuspb.PrivilegeEntity{
+				Name: privilege,
+			},
+		},
+		Type:           milvuspb.OperatePrivilegeType_Revoke,
+		DbName:         dbName,
+		CollectionName: colName,
+	}
+
+	resp, err := c.Service.OperatePrivilegeV2(ctx, req)
+	if err != nil {
+		return err
+	}
+
+	return handleRespStatus(resp)
+}
+
 func (c *GrpcClient) BackupRBAC(ctx context.Context) (*entity.RBACMeta, error) {
 	if c.Service == nil {
 		return nil, ErrClientNotReady
@@ -515,6 +571,130 @@ func (c *GrpcClient) RestoreRBAC(ctx context.Context, meta *entity.RBACMeta) err
 	}
 
 	resp, err := c.Service.RestoreRBAC(ctx, req)
+	if err != nil {
+		return err
+	}
+
+	return handleRespStatus(resp)
+}
+
+func (c *GrpcClient) CreatePrivilegeGroup(ctx context.Context, groupName string) error {
+	if c.Service == nil {
+		return ErrClientNotReady
+	}
+
+	req := &milvuspb.CreatePrivilegeGroupRequest{
+		GroupName: groupName,
+	}
+
+	resp, err := c.Service.CreatePrivilegeGroup(ctx, req)
+	if err != nil {
+		return err
+	}
+
+	return handleRespStatus(resp)
+}
+
+func (c *GrpcClient) DropPrivilegeGroup(ctx context.Context, groupName string) error {
+	if c.Service == nil {
+		return ErrClientNotReady
+	}
+
+	req := &milvuspb.DropPrivilegeGroupRequest{
+		GroupName: groupName,
+	}
+
+	resp, err := c.Service.DropPrivilegeGroup(ctx, req)
+	if err != nil {
+		return err
+	}
+
+	return handleRespStatus(resp)
+}
+
+func (c *GrpcClient) ListPrivilegeGroups(ctx context.Context) ([]*entity.PrivilegeGroup, error) {
+	PrivilegeGroupList := make([]*entity.PrivilegeGroup, 0)
+	if c.Service == nil {
+		return PrivilegeGroupList, ErrClientNotReady
+	}
+
+	req := &milvuspb.ListPrivilegeGroupsRequest{}
+
+	resp, err := c.Service.ListPrivilegeGroups(ctx, req)
+	if err != nil {
+		return PrivilegeGroupList, err
+	}
+
+	if err = handleRespStatus(resp.GetStatus()); err != nil {
+		return PrivilegeGroupList, err
+	}
+
+	results := resp.GetPrivilegeGroups()
+
+	if len(results) == 0 {
+		return PrivilegeGroupList, nil
+	}
+
+	for _, pg := range results {
+		privs := make([]string, 0, len(pg.Privileges))
+		for _, p := range pg.Privileges {
+			privs = append(privs, p.GetName())
+		}
+		PrivilegeGroup := &entity.PrivilegeGroup{
+			GroupName:  pg.GroupName,
+			Privileges: privs,
+		}
+		PrivilegeGroupList = append(PrivilegeGroupList, PrivilegeGroup)
+	}
+
+	return PrivilegeGroupList, nil
+}
+
+func (c *GrpcClient) AddPrivilegesToGroup(ctx context.Context, groupName string, privileges []string) error {
+	if c.Service == nil {
+		return ErrClientNotReady
+	}
+
+	privs := make([]*milvuspb.PrivilegeEntity, 0, len(privileges))
+	for _, p := range privileges {
+		privs = append(privs, &milvuspb.PrivilegeEntity{
+			Name: p,
+		})
+	}
+
+	req := &milvuspb.OperatePrivilegeGroupRequest{
+		GroupName:  groupName,
+		Privileges: privs,
+		Type:       milvuspb.OperatePrivilegeGroupType_AddPrivilegesToGroup,
+	}
+
+	resp, err := c.Service.OperatePrivilegeGroup(ctx, req)
+	if err != nil {
+		return err
+	}
+
+	return handleRespStatus(resp)
+}
+
+func (c *GrpcClient) RemovePrivilegesFromGroup(ctx context.Context, groupName string, privileges []string) error {
+	if c.Service == nil {
+		return ErrClientNotReady
+	}
+
+	privs := make([]*milvuspb.PrivilegeEntity, 0, len(privileges))
+	for _, p := range privileges {
+		privs = append(privs, &milvuspb.PrivilegeEntity{
+			Name: p,
+		})
+	}
+
+	req := &milvuspb.OperatePrivilegeGroupRequest{
+		GroupName:  groupName,
+		Privileges: privs,
+		Type:       milvuspb.OperatePrivilegeGroupType_RemovePrivilegesFromGroup,
+	}
+
+	resp, err := c.Service.OperatePrivilegeGroup(ctx, req)
 	if err != nil {
 		return err
 	}
