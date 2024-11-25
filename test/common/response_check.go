@@ -106,14 +106,14 @@ func CheckNotContainsCollection(t *testing.T, collections []*entity.Collection, 
 }
 
 // CheckInsertResult check insert result, ids len (insert count), ids data (pks, but no auto ids)
-func CheckInsertResult(t *testing.T, actualIds entity.Column, expIds entity.Column) {
-	require.Equal(t, actualIds.Len(), expIds.Len())
-	switch expIds.Type() {
+func CheckInsertResult(t *testing.T, actualIDs entity.Column, expIDs entity.Column) {
+	require.Equal(t, actualIDs.Len(), expIDs.Len())
+	switch expIDs.Type() {
 	// pk field support int64 and varchar type
 	case entity.FieldTypeInt64:
-		require.ElementsMatch(t, actualIds.(*entity.ColumnInt64).Data(), expIds.(*entity.ColumnInt64).Data())
+		require.ElementsMatch(t, actualIDs.(*entity.ColumnInt64).Data(), expIDs.(*entity.ColumnInt64).Data())
 	case entity.FieldTypeVarChar:
-		require.ElementsMatch(t, actualIds.(*entity.ColumnVarChar).Data(), expIds.(*entity.ColumnVarChar).Data())
+		require.ElementsMatch(t, actualIDs.(*entity.ColumnVarChar).Data(), expIDs.(*entity.ColumnVarChar).Data())
 	default:
 		log.Printf("The primary field only support type: [%v, %v]", entity.FieldTypeInt64, entity.FieldTypeVarChar)
 	}
@@ -322,8 +322,55 @@ func CheckPersistentSegments(t *testing.T, actualSegments []*entity.Segment, exp
 	require.Equal(t, actualNb, expNb)
 }
 
+func CheckTransfer(t *testing.T, actualRgs []*entity.ResourceGroupTransfer, expRgs []*entity.ResourceGroupTransfer) {
+	if len(expRgs) == 0 {
+		require.Len(t, actualRgs, 0)
+	} else {
+		_expRgs := make([]string, 0, len(expRgs))
+		_actualRgs := make([]string, 0, len(actualRgs))
+		for _, rg := range expRgs {
+			_expRgs = append(_expRgs, rg.ResourceGroup)
+		}
+		for _, rg := range actualRgs {
+			_actualRgs = append(_actualRgs, rg.ResourceGroup)
+		}
+		require.ElementsMatch(t, _expRgs, _actualRgs)
+	}
+
+}
+
+func checkResourceGroupConfig(t *testing.T, actualConfig *entity.ResourceGroupConfig, expConfig *entity.ResourceGroupConfig) {
+	if expConfig.Requests != nil {
+		require.EqualValuesf(t, expConfig.Requests.NodeNum, actualConfig.Requests.NodeNum, "Requests.NodeNum mismatch")
+	}
+
+	if expConfig.Limits != nil {
+		require.EqualValuesf(t, expConfig.Limits.NodeNum, actualConfig.Limits.NodeNum, "Limits.NodeNum mismatch")
+	}
+
+	if expConfig.TransferFrom != nil {
+		CheckTransfer(t, expConfig.TransferFrom, actualConfig.TransferFrom)
+	}
+
+	if expConfig.TransferTo != nil {
+		CheckTransfer(t, expConfig.TransferTo, actualConfig.TransferTo)
+	}
+}
+
 func CheckResourceGroup(t *testing.T, actualRg *entity.ResourceGroup, expRg *entity.ResourceGroup) {
-	require.EqualValues(t, expRg, actualRg)
+	require.EqualValues(t, expRg.Name, actualRg.Name, "ResourceGroup name mismatch")
+	require.EqualValues(t, expRg.Capacity, actualRg.Capacity, "ResourceGroup capacity mismatch")
+	if expRg.AvailableNodesNumber >= 0 {
+		require.EqualValues(t, expRg.AvailableNodesNumber, len(actualRg.Nodes), "AvailableNodesNumber mismatch")
+	}
+
+	if expRg.Config != nil {
+		checkResourceGroupConfig(t, actualRg.Config, expRg.Config)
+	}
+
+	if expRg.Nodes != nil {
+		require.EqualValues(t, len(expRg.Nodes), len(actualRg.Nodes), "Nodes count mismatch")
+	}
 }
 
 func getDbNames(dbs []entity.Database) []string {

@@ -7,7 +7,7 @@ import (
 
 type HelpPartitionColumns struct {
 	PartitionName string
-	IdsColumn     entity.Column
+	IDsColumn     entity.Column
 	VectorColumn  entity.Column
 }
 

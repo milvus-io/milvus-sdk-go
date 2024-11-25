@@ -4,7 +4,9 @@ package testcases
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"math/rand"
 	"testing"
 	"time"
 
@@ -24,6 +26,7 @@ const (
 )
 
 func resetRgs(t *testing.T, ctx context.Context, mc *base.MilvusClient) {
+	t.Helper()
 	// release and drop all collections
 	collections, _ := mc.ListCollections(ctx)
 	for _, coll := range collections {
@@ -36,18 +39,19 @@ func resetRgs(t *testing.T, ctx context.Context, mc *base.MilvusClient) {
 	rgs, errList := mc.ListResourceGroups(ctx)
 	common.CheckErr(t, errList, true)
 	for _, rg := range rgs {
+		//if rg != common.DefaultRgName {
+		// describe rg and get available node
+		err := mc.UpdateResourceGroups(ctx, client.WithUpdateResourceGroupConfig(rg, &entity.ResourceGroupConfig{
+			Requests:     &entity.ResourceGroupLimit{NodeNum: 0},
+			Limits:       &entity.ResourceGroupLimit{NodeNum: 0},
+			TransferFrom: []*entity.ResourceGroupTransfer{},
+			TransferTo:   []*entity.ResourceGroupTransfer{},
+		}))
+		common.CheckErr(t, err, true)
+		//}
+	}
+	for _, rg := range rgs {
 		if rg != common.DefaultRgName {
-			// describe rg and get available node
-			rgInfo, errDescribe := mc.DescribeResourceGroup(ctx, rg)
-			common.CheckErr(t, errDescribe, true)
-
-			// transfer available nodes into default rg
-			if rgInfo.AvailableNodesNumber > 0 {
-				errTransfer := mc.TransferNode(ctx, rg, common.DefaultRgName, rgInfo.AvailableNodesNumber)
-				common.CheckErr(t, errTransfer, true)
-			}
-
-			// drop rg
 			errDrop := mc.DropResourceGroup(ctx, rg)
 			common.CheckErr(t, errDrop, true)
 		}
@@ -58,6 +62,28 @@ func resetRgs(t *testing.T, ctx context.Context, mc *base.MilvusClient) {
 	require.Len(t, rgs2, 1)
 }
 
+// No need for now
+func onCheckRgAvailable(t *testing.T, ctx context.Context, mc *base.MilvusClient, rgName string, expAvailable int32) {
+	for {
+		select {
+		case <-ctx.Done():
+			require.FailNowf(t, "Available nodes cannot reach within timeout", "expAvailableNodeNum: %d", expAvailable)
+		default:
+			rg, _ := mc.DescribeResourceGroup(ctx, rgName)
+			if int32(len(rg.Nodes)) == expAvailable {
+				return
+			}
+			time.Sleep(time.Second * 2)
+		}
+	}
+}
+
+func checkResourceGroup(t *testing.T, ctx context.Context, mc *base.MilvusClient, expRg *entity.ResourceGroup) {
+	actualRg, err := mc.DescribeResourceGroup(ctx, expRg.Name)
+	common.CheckErr(t, err, true)
+	common.CheckResourceGroup(t, actualRg, expRg)
+}
+
 // test rg default: list rg, create rg, describe rg, transfer node
 func TestRgDefault(t *testing.T) {
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
@@ -65,19 +91,23 @@ func TestRgDefault(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 	resetRgs(t, ctx, mc)
 
-	// describe default rg and check default rg info
-	defaultRg, errDescribe := mc.DescribeResourceGroup(ctx, common.DefaultRgName)
-	common.CheckErr(t, errDescribe, true)
+	// describe default rg and check default rg info: Limits: 1000000, Nodes: all
 	expDefaultRg := &entity.ResourceGroup{
 		Name:                 common.DefaultRgName,
 		Capacity:             common.DefaultRgCapacity,
 		AvailableNodesNumber: configQnNodes,
+		Config: &entity.ResourceGroupConfig{
+			Limits: &entity.ResourceGroupLimit{NodeNum: 0},
+		},
 	}
-	common.CheckResourceGroup(t, defaultRg, expDefaultRg)
+	checkResourceGroup(t, ctx, mc, expDefaultRg)
 
 	// create new rg
 	rgName := common.GenRandomString(6)
-	errCreate := mc.CreateResourceGroup(ctx, rgName)
+	errCreate := mc.CreateResourceGroup(ctx, rgName, client.WithCreateResourceGroupConfig(&entity.ResourceGroupConfig{
+		Requests: &entity.ResourceGroupLimit{NodeNum: newRgNode},
+		Limits:   &entity.ResourceGroupLimit{NodeNum: newRgNode},
+	}))
 	common.CheckErr(t, errCreate, true)
 
 	// list rgs
@@ -86,40 +116,107 @@ func TestRgDefault(t *testing.T) {
 	require.ElementsMatch(t, rgs, []string{common.DefaultRgName, rgName})
 
 	// describe new rg and check new rg info
-	myRg, errDescribe2 := mc.DescribeResourceGroup(ctx, rgName)
-	common.CheckErr(t, errDescribe2, true)
 	expRg := &entity.ResourceGroup{
-		Name:                 rgName,
-		Capacity:             0,
-		AvailableNodesNumber: 0,
-	}
-	common.CheckResourceGroup(t, myRg, expRg)
-
-	// transfer node from default rg into new rg
-	errTransfer := mc.TransferNode(ctx, common.DefaultRgName, rgName, newRgNode)
-	common.CheckErr(t, errTransfer, true)
-
-	// check rg info after transfer nodes
-	myRg2, _ := mc.DescribeResourceGroup(ctx, rgName)
-	transferRg := &entity.ResourceGroup{
 		Name:                 rgName,
 		Capacity:             newRgNode,
 		AvailableNodesNumber: newRgNode,
+		Config: &entity.ResourceGroupConfig{
+			Requests: &entity.ResourceGroupLimit{NodeNum: newRgNode},
+			Limits:   &entity.ResourceGroupLimit{NodeNum: newRgNode},
+		},
 	}
-	common.CheckResourceGroup(t, myRg2, transferRg)
+	checkResourceGroup(t, ctx, mc, expRg)
 
-	// check default rg info
-	defaultRg2, _ := mc.DescribeResourceGroup(ctx, common.DefaultRgName)
+	// update resource group
+	errUpdate := mc.UpdateResourceGroups(ctx, client.WithUpdateResourceGroupConfig(rgName, &entity.ResourceGroupConfig{
+		Requests: &entity.ResourceGroupLimit{NodeNum: configQnNodes},
+		Limits:   &entity.ResourceGroupLimit{NodeNum: configQnNodes},
+	}))
+	common.CheckErr(t, errUpdate, true)
+
+	// check rg info after transfer nodes
+	transferRg := &entity.ResourceGroup{
+		Name:                 rgName,
+		Capacity:             configQnNodes,
+		AvailableNodesNumber: configQnNodes,
+		Config: &entity.ResourceGroupConfig{
+			Requests: &entity.ResourceGroupLimit{NodeNum: configQnNodes},
+		},
+	}
+	checkResourceGroup(t, ctx, mc, transferRg)
+
+	// check default rg info: 0 Nodes
 	expDefaultRg2 := &entity.ResourceGroup{
 		Name:                 common.DefaultRgName,
 		Capacity:             common.DefaultRgCapacity,
-		AvailableNodesNumber: configQnNodes - newRgNode,
+		AvailableNodesNumber: 0,
+		Config: &entity.ResourceGroupConfig{
+			Limits: &entity.ResourceGroupLimit{NodeNum: 0},
+		},
 	}
-	common.CheckResourceGroup(t, defaultRg2, expDefaultRg2)
+	checkResourceGroup(t, ctx, mc, expDefaultRg2)
 
 	// try to drop default rg
 	errDropDefault := mc.DropResourceGroup(ctx, common.DefaultRgName)
 	common.CheckErr(t, errDropDefault, false, "default resource group is not deletable")
+}
+
+func TestCreateRgWithTransfer(t *testing.T) {
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	// connect
+	mc := createMilvusClient(ctx, t)
+	resetRgs(t, ctx, mc)
+
+	// create rg0 with requests=2, limits=3, total 4 nodes
+	rg0 := common.GenRandomString(6)
+	rg0Limits := newRgNode + 1
+	errCreate := mc.CreateResourceGroup(ctx, rg0, client.WithCreateResourceGroupConfig(&entity.ResourceGroupConfig{
+		Requests: &entity.ResourceGroupLimit{NodeNum: newRgNode},
+		Limits:   &entity.ResourceGroupLimit{NodeNum: rg0Limits},
+	}))
+	common.CheckErr(t, errCreate, true)
+
+	// check rg0 available node: 3, default available node: 1
+	actualRg0, _ := mc.DescribeResourceGroup(ctx, rg0)
+	require.Lenf(t, actualRg0.Nodes, int(rg0Limits), fmt.Sprintf("expected %s has %d available nodes", rg0, rg0Limits))
+	actualRgDef, _ := mc.DescribeResourceGroup(ctx, common.DefaultRgName)
+	require.Lenf(t, actualRgDef.Nodes, int(configQnNodes-rg0Limits), fmt.Sprintf("expected %s has %d available nodes", common.DefaultRgName, int(configQnNodes-rg0Limits)))
+
+	// create rg1 with TransferFrom & TransferTo & requests=3, limits=4
+	rg1 := common.GenRandomString(6)
+	rg1Requests := newRgNode + 1
+	errCreate = mc.CreateResourceGroup(ctx, rg1, client.WithCreateResourceGroupConfig(&entity.ResourceGroupConfig{
+		Requests: &entity.ResourceGroupLimit{NodeNum: rg1Requests},
+		Limits:   &entity.ResourceGroupLimit{NodeNum: configQnNodes},
+		TransferFrom: []*entity.ResourceGroupTransfer{
+			{ResourceGroup: rg0},
+		},
+		TransferTo: []*entity.ResourceGroupTransfer{
+			{ResourceGroup: common.DefaultRgName},
+		},
+	}))
+
+	// verify available nodes: rg0 + rg1 = configQnNodes = 4
+	time.Sleep(time.Duration(rand.Intn(6)) * time.Second)
+	actualRg0, _ = mc.DescribeResourceGroup(ctx, rg0)
+	actualRg1, _ := mc.DescribeResourceGroup(ctx, rg1)
+	require.EqualValuesf(t, configQnNodes, len(actualRg0.Nodes)+len(actualRg1.Nodes), fmt.Sprintf("Expected the total available nodes of %s and %s is %d ", rg0, rg1, configQnNodes))
+	expDefaultRg1 := &entity.ResourceGroup{
+		Name:                 rg1,
+		Capacity:             rg1Requests,
+		AvailableNodesNumber: -1, // not check
+		Config: &entity.ResourceGroupConfig{
+			Requests: &entity.ResourceGroupLimit{NodeNum: rg1Requests},
+			Limits:   &entity.ResourceGroupLimit{NodeNum: configQnNodes},
+			TransferFrom: []*entity.ResourceGroupTransfer{
+				{ResourceGroup: rg0},
+			},
+			TransferTo: []*entity.ResourceGroupTransfer{
+				{ResourceGroup: common.DefaultRgName},
+			},
+		},
+	}
+	checkResourceGroup(t, ctx, mc, expDefaultRg1)
 }
 
 // test create rg with invalid name
@@ -146,6 +243,159 @@ func TestCreateRgInvalidNames(t *testing.T) {
 	for _, invalidName := range invalidNames {
 		errCreate := mc.CreateResourceGroup(ctx, invalidName.name)
 		common.CheckErr(t, errCreate, false, invalidName.errMsg)
+	}
+}
+
+func TestCreateUpdateRgWithNotExistTransfer(t *testing.T) {
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	// connect
+	mc := createMilvusClient(ctx, t)
+	resetRgs(t, ctx, mc)
+
+	// create/update rg with not existed TransferFrom rg
+	rgName := common.GenRandomString(6)
+	errCreate := mc.CreateResourceGroup(ctx, rgName, client.WithCreateResourceGroupConfig(&entity.ResourceGroupConfig{
+		Requests: &entity.ResourceGroupLimit{NodeNum: newRgNode},
+		Limits:   &entity.ResourceGroupLimit{NodeNum: newRgNode},
+		TransferFrom: []*entity.ResourceGroupTransfer{
+			{ResourceGroup: "aaa"},
+		},
+	}))
+	common.CheckErr(t, errCreate, false, "resource group in `TransferFrom` aaa not exist")
+	errUpdate := mc.UpdateResourceGroups(ctx, client.WithUpdateResourceGroupConfig(rgName, &entity.ResourceGroupConfig{
+		Requests: &entity.ResourceGroupLimit{NodeNum: newRgNode},
+		Limits:   &entity.ResourceGroupLimit{NodeNum: newRgNode},
+		TransferFrom: []*entity.ResourceGroupTransfer{
+			{ResourceGroup: "aaa"},
+		},
+	}))
+	common.CheckErr(t, errUpdate, false, "resource group not found")
+
+	// create/update rg with not existed TransferTo rg
+	errCreate = mc.CreateResourceGroup(ctx, rgName, client.WithCreateResourceGroupConfig(&entity.ResourceGroupConfig{
+		Requests: &entity.ResourceGroupLimit{NodeNum: newRgNode},
+		Limits:   &entity.ResourceGroupLimit{NodeNum: newRgNode},
+		TransferTo: []*entity.ResourceGroupTransfer{
+			{ResourceGroup: "aaa"},
+		},
+	}))
+	common.CheckErr(t, errCreate, false, "resource group in `TransferTo` aaa not exist")
+	errUpdate = mc.UpdateResourceGroups(ctx, client.WithUpdateResourceGroupConfig(rgName, &entity.ResourceGroupConfig{
+		Requests: &entity.ResourceGroupLimit{NodeNum: newRgNode},
+		Limits:   &entity.ResourceGroupLimit{NodeNum: newRgNode},
+		TransferTo: []*entity.ResourceGroupTransfer{
+			{ResourceGroup: "aaa"},
+		},
+	}))
+	common.CheckErr(t, errUpdate, false, "resource group not found")
+}
+
+func TestCreateRgWithRequestsLimits(t *testing.T) {
+	type requestsLimits struct {
+		requests  int32
+		limits    int32
+		available int32
+		errMsg    string
+	}
+	reqAndLimits := []requestsLimits{
+		{requests: 0, limits: 0, available: 0},
+		{requests: -1, limits: 0, errMsg: "node num in `requests` or `limits` should not less than 0"},
+		{requests: 0, limits: -2, errMsg: "node num in `requests` or `limits` should not less than 0"},
+		{requests: 10, limits: 1, errMsg: "limits node num should not less than requests node num"},
+		{requests: 2, limits: 3, available: 3},
+		{requests: configQnNodes * 2, limits: configQnNodes * 3, available: configQnNodes},
+		{requests: configQnNodes, limits: configQnNodes, available: configQnNodes},
+	}
+	// connect
+	ctx := createContext(t, time.Second*20)
+	mc := createMilvusClient(ctx, t)
+
+	rgName := common.GenRandomString(6)
+	err := mc.CreateResourceGroup(ctx, rgName, client.WithCreateResourceGroupConfig(&entity.ResourceGroupConfig{
+		Limits: &entity.ResourceGroupLimit{NodeNum: newRgNode},
+	}))
+	common.CheckErr(t, err, false, "requests or limits is required")
+
+	for _, rl := range reqAndLimits {
+		log.Println(rl)
+		rgName := common.GenRandomString(6)
+		resetRgs(t, ctx, mc)
+		errCreate := mc.CreateResourceGroup(ctx, rgName, client.WithCreateResourceGroupConfig(&entity.ResourceGroupConfig{
+			Requests: &entity.ResourceGroupLimit{NodeNum: rl.requests},
+			Limits:   &entity.ResourceGroupLimit{NodeNum: rl.limits},
+		}))
+		if rl.errMsg != "" {
+			common.CheckErr(t, errCreate, false, rl.errMsg)
+		} else {
+			expDefaultRg := &entity.ResourceGroup{
+				Name:                 rgName,
+				Capacity:             rl.requests,
+				AvailableNodesNumber: rl.available,
+				Config: &entity.ResourceGroupConfig{
+					Requests: &entity.ResourceGroupLimit{NodeNum: rl.requests},
+					Limits:   &entity.ResourceGroupLimit{NodeNum: rl.limits},
+				},
+			}
+			checkResourceGroup(t, ctx, mc, expDefaultRg)
+			// check available node
+			//onDescribeRg(t, ctx, mc, rgName, rl.available)
+		}
+	}
+}
+
+func TestUpdateRgWithRequestsLimits(t *testing.T) {
+	type requestsLimits struct {
+		requests  int32
+		limits    int32
+		available int32
+		errMsg    string
+	}
+	reqAndLimits := []requestsLimits{
+		{requests: 0, limits: 0, available: 0},
+		{requests: -1, limits: 0, errMsg: "node num in `requests` or `limits` should not less than 0"},
+		{requests: 0, limits: -2, errMsg: "node num in `requests` or `limits` should not less than 0"},
+		{requests: 10, limits: 1, errMsg: "limits node num should not less than requests node num"},
+		{requests: 2, limits: 3, available: 3},
+		{requests: configQnNodes * 2, limits: configQnNodes * 3, available: configQnNodes},
+		{requests: configQnNodes, limits: configQnNodes, available: configQnNodes},
+	}
+	// connect
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	mc := createMilvusClient(ctx, t)
+	resetRgs(t, ctx, mc)
+
+	rgName := common.GenRandomString(6)
+	err := mc.CreateResourceGroup(ctx, rgName, client.WithCreateResourceGroupConfig(&entity.ResourceGroupConfig{
+		Requests: &entity.ResourceGroupLimit{NodeNum: newRgNode},
+		Limits:   &entity.ResourceGroupLimit{NodeNum: newRgNode},
+	}))
+	err = mc.UpdateResourceGroups(ctx, client.WithUpdateResourceGroupConfig(rgName, &entity.ResourceGroupConfig{
+		Requests: &entity.ResourceGroupLimit{NodeNum: newRgNode},
+	}))
+	common.CheckErr(t, err, false, "requests or limits is required")
+
+	for _, rl := range reqAndLimits {
+		log.Println(rl)
+		errCreate := mc.UpdateResourceGroups(ctx, client.WithUpdateResourceGroupConfig(rgName, &entity.ResourceGroupConfig{
+			Requests: &entity.ResourceGroupLimit{NodeNum: rl.requests},
+			Limits:   &entity.ResourceGroupLimit{NodeNum: rl.limits},
+		}))
+		if rl.errMsg != "" {
+			common.CheckErr(t, errCreate, false, rl.errMsg)
+		} else {
+			expDefaultRg := &entity.ResourceGroup{
+				Name:                 rgName,
+				Capacity:             rl.requests,
+				AvailableNodesNumber: rl.available,
+				Config: &entity.ResourceGroupConfig{
+					Requests: &entity.ResourceGroupLimit{NodeNum: rl.requests},
+					Limits:   &entity.ResourceGroupLimit{NodeNum: rl.limits},
+				},
+			}
+			checkResourceGroup(t, ctx, mc, expDefaultRg)
+			// check available node
+			//onDescribeRg(t, ctx, mc, rgName, rl.available)
+		}
 	}
 }
 
@@ -178,12 +428,11 @@ func TestDropRgNonEmpty(t *testing.T) {
 
 	// create new rg
 	rgName := common.GenRandomString(6)
-	errCreate := mc.CreateResourceGroup(ctx, rgName)
+	errCreate := mc.CreateResourceGroup(ctx, rgName, client.WithCreateResourceGroupConfig(&entity.ResourceGroupConfig{
+		Requests: &entity.ResourceGroupLimit{NodeNum: newRgNode},
+		Limits:   &entity.ResourceGroupLimit{NodeNum: newRgNode},
+	}))
 	common.CheckErr(t, errCreate, true)
-
-	// transfer node
-	errTransfer := mc.TransferNode(ctx, common.DefaultRgName, rgName, 1)
-	common.CheckErr(t, errTransfer, true)
 
 	// drop rg and rg available node is not 0
 	errDrop := mc.DropResourceGroup(ctx, rgName)
@@ -199,22 +448,19 @@ func TestDropEmptyRg(t *testing.T) {
 
 	// create new rg
 	rgName := common.GenRandomString(6)
-	errCreate := mc.CreateResourceGroup(ctx, rgName)
+	errCreate := mc.CreateResourceGroup(ctx, rgName, client.WithCreateResourceGroupConfig(&entity.ResourceGroupConfig{
+		Requests: &entity.ResourceGroupLimit{NodeNum: configQnNodes},
+		Limits:   &entity.ResourceGroupLimit{NodeNum: configQnNodes},
+	}))
 	common.CheckErr(t, errCreate, true)
 
-	// transfer node
-	errTransfer := mc.TransferNode(ctx, common.DefaultRgName, rgName, configQnNodes)
-	common.CheckErr(t, errTransfer, true)
-
 	// describe default rg
-	defaultRg, errDescribe := mc.DescribeResourceGroup(ctx, common.DefaultRgName)
-	common.CheckErr(t, errDescribe, true)
 	transferRg := &entity.ResourceGroup{
 		Name:                 common.DefaultRgName,
 		Capacity:             common.DefaultRgCapacity,
 		AvailableNodesNumber: 0,
 	}
-	common.CheckResourceGroup(t, defaultRg, transferRg)
+	checkResourceGroup(t, ctx, mc, transferRg)
 
 	// drop empty default rg
 	errDrop := mc.DropResourceGroup(ctx, common.DefaultRgName)
@@ -303,14 +549,13 @@ func TestTransferReplicas(t *testing.T) {
 	mc := createMilvusClient(ctx, t)
 	resetRgs(t, ctx, mc)
 
-	// create new rg
+	// create new rg with requests 2
 	rgName := common.GenRandomString(6)
-	errCreate := mc.CreateResourceGroup(ctx, rgName)
+	errCreate := mc.CreateResourceGroup(ctx, rgName, client.WithCreateResourceGroupConfig(&entity.ResourceGroupConfig{
+		Requests: &entity.ResourceGroupLimit{NodeNum: newRgNode},
+		Limits:   &entity.ResourceGroupLimit{NodeNum: newRgNode},
+	}))
 	common.CheckErr(t, errCreate, true)
-
-	// transfer nodes into new rg
-	errTransfer := mc.TransferNode(ctx, common.DefaultRgName, rgName, newRgNode)
-	common.CheckErr(t, errTransfer, true)
 
 	// load two replicas
 	collName, _ := createCollectionWithDataIndex(ctx, t, mc, true, true)
@@ -318,40 +563,45 @@ func TestTransferReplicas(t *testing.T) {
 	// load two replicas into default rg
 	errLoad := mc.LoadCollection(ctx, collName, false, client.WithReplicaNumber(2), client.WithResourceGroups([]string{common.DefaultRgName}))
 	common.CheckErr(t, errLoad, true)
-	defaultRg, errDescribe := mc.DescribeResourceGroup(ctx, common.DefaultRgName)
-	common.CheckErr(t, errDescribe, true)
 	transferRg := &entity.ResourceGroup{
 		Name:                 common.DefaultRgName,
 		Capacity:             common.DefaultRgCapacity,
 		AvailableNodesNumber: configQnNodes - newRgNode,
 		LoadedReplica:        map[string]int32{collName: 2},
+		Config: &entity.ResourceGroupConfig{
+			Limits: &entity.ResourceGroupLimit{NodeNum: 0},
+		},
 	}
-	common.CheckResourceGroup(t, defaultRg, transferRg)
+	checkResourceGroup(t, ctx, mc, transferRg)
 
 	// transfer replica into new rg
 	errReplica := mc.TransferReplica(ctx, common.DefaultRgName, rgName, collName, 2)
 	common.CheckErr(t, errReplica, true)
 
 	// check default rg
-	defaultRg2, _ := mc.DescribeResourceGroup(ctx, common.DefaultRgName)
 	transferRg2 := &entity.ResourceGroup{
 		Name:                 common.DefaultRgName,
 		Capacity:             common.DefaultRgCapacity,
 		AvailableNodesNumber: configQnNodes - newRgNode,
 		IncomingNodeNum:      map[string]int32{collName: 2},
+		Config: &entity.ResourceGroupConfig{
+			Limits: &entity.ResourceGroupLimit{NodeNum: 0},
+		},
 	}
-	common.CheckResourceGroup(t, defaultRg2, transferRg2)
+	checkResourceGroup(t, ctx, mc, transferRg2)
 
 	// check new rg after transfer replica
-	newRg, _ := mc.DescribeResourceGroup(ctx, rgName)
 	expRg := &entity.ResourceGroup{
 		Name:                 rgName,
 		Capacity:             newRgNode,
 		AvailableNodesNumber: newRgNode,
 		LoadedReplica:        map[string]int32{collName: 2},
 		OutgoingNodeNum:      map[string]int32{collName: 2},
+		Config: &entity.ResourceGroupConfig{
+			Limits: &entity.ResourceGroupLimit{NodeNum: newRgNode},
+		},
 	}
-	common.CheckResourceGroup(t, newRg, expRg)
+	checkResourceGroup(t, ctx, mc, expRg)
 
 	// drop new rg that loaded collection
 	err := mc.DropResourceGroup(ctx, rgName)
@@ -389,7 +639,7 @@ func TestTransferReplicaNotExistedCollection(t *testing.T) {
 
 	// transfer replica
 	errTransfer := mc.TransferReplica(ctx, common.DefaultRgName, rgName, common.GenRandomString(3), 1)
-	common.CheckErr(t, errTransfer, false, "can't find collection")
+	common.CheckErr(t, errTransfer, false, "collection not found")
 }
 
 // test transfer replicas with invalid replica number
@@ -465,5 +715,5 @@ func TestTransferReplicaRgNotExisted(t *testing.T) {
 		AvailableNodesNumber: newRgNode,
 		IncomingNodeNum:      map[string]int32{collName: newRgNode},
 	}
-	common.CheckResourceGroup(t, newRg, expRg)
+	checkResourceGroup(t, ctx, mc, expRg)
 }

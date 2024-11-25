@@ -65,13 +65,13 @@ func TestCompactAfterDelete(t *testing.T) {
 	errFlush := mc.Flush(ctx, collName, false)
 	common.CheckErr(t, errFlush, true)
 
-	segments, _ := mc.GetPersistentSegmentInfo(ctx, collName)
-	require.Len(t, segments, 1)
-
 	// index
 	indexHnsw, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
 	err := mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, indexHnsw, false)
 	common.CheckErr(t, err, true)
+
+	segments, _ := mc.GetPersistentSegmentInfo(ctx, collName)
+	require.Len(t, segments, 1)
 
 	// delete half ids
 	deleteIds := ids.Slice(0, common.DefaultNb/2)

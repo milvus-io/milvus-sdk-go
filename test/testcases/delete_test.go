@@ -186,7 +186,7 @@ func TestDeletePartitionIdsNotMatch(t *testing.T) {
 	partitionName, vecColumnDefault, _ := createInsertTwoPartitions(ctx, t, mc, collName, common.DefaultNb)
 
 	// delete [0:10) from new partition -> delete nothing
-	deleteIds := vecColumnDefault.IdsColumn.Slice(0, 10)
+	deleteIds := vecColumnDefault.IDsColumn.Slice(0, 10)
 	errDelete := mc.DeleteByPks(ctx, collName, partitionName, deleteIds)
 	common.CheckErr(t, errDelete, true)
 

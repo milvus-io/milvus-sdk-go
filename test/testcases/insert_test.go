@@ -439,9 +439,9 @@ func TestInsertRepeatedDynamicField(t *testing.T) {
 	}
 
 	type dataRows struct {
-		Int64    int64       `json:"int64" milvus:"name:int64"`
-		Float    float32     `json:"float" milvus:"name:float"`
-		FloatVec []float32   `json:"floatVec" milvus:"name:floatVec"`
+		Int64    int64     `json:"int64" milvus:"name:int64"`
+		Float    float32   `json:"float" milvus:"name:float"`
+		FloatVec []float32 `json:"floatVec" milvus:"name:floatVec"`
 		DynamicRows
 	}
 	rows := make([]interface{}, 0, 100)
@@ -450,7 +450,7 @@ func TestInsertRepeatedDynamicField(t *testing.T) {
 			Int64:    int64(i),
 			Float:    float32(i),
 			FloatVec: common.GenFloatVector(common.DefaultDim),
-			DynamicRows:  DynamicRows{
+			DynamicRows: DynamicRows{
 				Float: 0.0,
 			},
 		}
