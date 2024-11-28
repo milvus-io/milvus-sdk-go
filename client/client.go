@@ -223,9 +223,9 @@ type Client interface {
 	// Revoke removes privilege from role.
 	Revoke(ctx context.Context, role string, objectType entity.PriviledgeObjectType, object string, privilege string, options ...entity.OperatePrivilegeOption) error
 	// GrantV2 adds privilege for role.
-	GrantV2(ctx context.Context, role string, privilege string, dbName string, colName string) error
+	GrantV2(ctx context.Context, role string, privilege string, options ...entity.OperatePrivilegeOption) error
 	// RevokeV2 removes privilege from role.
-	RevokeV2(ctx context.Context, role string, privilege string, dbName string, colName string) error
+	RevokeV2(ctx context.Context, role string, privilege string, options ...entity.OperatePrivilegeOption) error
 
 	// GetLoadingProgress get the collection or partitions loading progress
 	GetLoadingProgress(ctx context.Context, collectionName string, partitionNames []string) (int64, error)

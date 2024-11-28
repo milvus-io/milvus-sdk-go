@@ -44,8 +44,9 @@ const (
 )
 
 type OperatePrivilegeOpt struct {
-	Base     *common.MsgBase
-	Database string
+	Base       *common.MsgBase
+	Database   string
+	Collection string
 }
 
 type OperatePrivilegeOption func(o *OperatePrivilegeOpt)
