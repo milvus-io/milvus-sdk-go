@@ -70,6 +70,14 @@ func (c *ColumnBinaryVector) Get(idx int) (interface{}, error) {
 	return c.values[idx], nil
 }
 
+// Get returns values at index as interface{}.
+func (c *ColumnBinaryVector) GetAsBinaryVector(idx int) (BinaryVector, error) {
+	if idx < 0 || idx >= c.Len() {
+		return nil, errors.New("index out of range")
+	}
+	return c.values[idx], nil
+}
+
 // AppendValue append value into column
 func(c *ColumnBinaryVector) AppendValue(i interface{}) error {
 	v, ok := i.([]byte)
@@ -155,6 +163,14 @@ func (c *ColumnFloatVector) Dim() int {
 
 // Get returns values at index as interface{}.
 func (c *ColumnFloatVector) Get(idx int) (interface{}, error) {
+	if idx < 0 || idx >= c.Len() {
+		return nil, errors.New("index out of range")
+	}
+	return c.values[idx], nil
+}
+
+// Get returns values at index as FloatVector.
+func (c *ColumnFloatVector) GetAsFloatVector(idx int) (FloatVector, error) {
 	if idx < 0 || idx >= c.Len() {
 		return nil, errors.New("index out of range")
 	}
@@ -292,6 +308,15 @@ func (c *ColumnFloat16Vector) Get(idx int) (interface{}, error) {
 	return c.values[idx], nil
 }
 
+// Get returns values at index as Float16Vector.
+func (c *ColumnFloat16Vector) GetAsFloat16Vector(idx int) (Float16Vector, error) {
+	if idx < 0 || idx >= c.Len() {
+		return nil, errors.New("index out of range")
+	}
+	return c.values[idx], nil
+}
+
+
 // AppendValue append value into column
 func(c *ColumnFloat16Vector) AppendValue(i interface{}) error {
 	v, ok := i.([]byte)
@@ -396,6 +421,14 @@ func (c *ColumnBFloat16Vector) Dim() int {
 
 // Get returns values at index as interface{}.
 func (c *ColumnBFloat16Vector) Get(idx int) (interface{}, error) {
+	if idx < 0 || idx >= c.Len() {
+		return nil, errors.New("index out of range")
+	}
+	return c.values[idx], nil
+}
+
+// Get returns values at index as interface{}.
+func (c *ColumnBFloat16Vector) GetAsBinaryVector(idx int) (BinaryVector, error) {
 	if idx < 0 || idx >= c.Len() {
 		return nil, errors.New("index out of range")
 	}
