@@ -394,11 +394,15 @@ func (c *GrpcClient) Revoke(ctx context.Context, role string, objectType entity.
 }
 
 // GrantV2 adds object privilege for role without object type
-func (c *GrpcClient) GrantV2(ctx context.Context, role string, privilege string, dbName string, colName string) error {
+func (c *GrpcClient) GrantV2(ctx context.Context, role string, colName string, privilege string, options ...entity.OperatePrivilegeOption) error {
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
 
+	grantOpt := &entity.OperatePrivilegeOpt{}
+	for _, opt := range options {
+		opt(grantOpt)
+	}
 	req := &milvuspb.OperatePrivilegeV2Request{
 		Role: &milvuspb.RoleEntity{
 			Name: role,
@@ -409,7 +413,7 @@ func (c *GrpcClient) GrantV2(ctx context.Context, role string, privilege string,
 			},
 		},
 		Type:           milvuspb.OperatePrivilegeType_Grant,
-		DbName:         dbName,
+		DbName:         grantOpt.Database,
 		CollectionName: colName,
 	}
 
@@ -422,11 +426,15 @@ func (c *GrpcClient) GrantV2(ctx context.Context, role string, privilege string,
 }
 
 // Revoke removes privilege from role without object type
-func (c *GrpcClient) RevokeV2(ctx context.Context, role string, privilege string, dbName string, colName string) error {
+func (c *GrpcClient) RevokeV2(ctx context.Context, role string, colName string, privilege string, options ...entity.OperatePrivilegeOption) error {
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
 
+	revokeOpt := &entity.OperatePrivilegeOpt{}
+	for _, opt := range options {
+		opt(revokeOpt)
+	}
 	req := &milvuspb.OperatePrivilegeV2Request{
 		Role: &milvuspb.RoleEntity{
 			Name: role,
@@ -437,7 +445,7 @@ func (c *GrpcClient) RevokeV2(ctx context.Context, role string, privilege string
 			},
 		},
 		Type:           milvuspb.OperatePrivilegeType_Revoke,
-		DbName:         dbName,
+		DbName:         revokeOpt.Database,
 		CollectionName: colName,
 	}
 
