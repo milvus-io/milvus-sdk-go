@@ -426,7 +426,6 @@ func TestCreateInvertedScalarIndex(t *testing.T) {
 
 // create Bitmap index for all scalar fields
 func TestCreateBitmapScalarIndex(t *testing.T) {
-	t.Skip("waiting for bitmap pr cherry-pick")
 	ctx := createContext(t, time.Second*common.DefaultTimeout*2)
 	// connect
 	mc := createMilvusClient(ctx, t)
@@ -460,20 +459,15 @@ func TestCreateBitmapScalarIndex(t *testing.T) {
 				err := mc.CreateIndex(ctx, collName, field.Name, idx, false, client.WithIndexName(field.Name))
 				common.CheckErr(t, err, false, "bitmap index are only supported")
 			} else {
-				if field.PrimaryKey {
-					err := mc.CreateIndex(ctx, collName, field.Name, idx, false, client.WithIndexName(field.Name))
-					common.CheckErr(t, err, false, "create bitmap index on primary key not supported")
-				} else {
-					err := mc.CreateIndex(ctx, collName, field.Name, idx, false, client.WithIndexName(field.Name))
-					common.CheckErr(t, err, true)
+				err := mc.CreateIndex(ctx, collName, field.Name, idx, false, client.WithIndexName(field.Name))
+				common.CheckErr(t, err, true)
 
-					// describe index
-					indexes, _ := mc.DescribeIndex(ctx, collName, field.Name)
-					require.Len(t, indexes, 1)
-					log.Println(indexes[0].Name(), indexes[0].IndexType(), indexes[0].Params())
-					expIndex := entity.NewGenericIndex(field.Name, entity.Bitmap, idx.Params())
-					common.CheckIndexResult(t, indexes, expIndex)
-				}
+				// describe index
+				indexes, _ := mc.DescribeIndex(ctx, collName, field.Name)
+				require.Len(t, indexes, 1)
+				log.Println(indexes[0].Name(), indexes[0].IndexType(), indexes[0].Params())
+				expIndex := entity.NewGenericIndex(field.Name, entity.Bitmap, idx.Params())
+				common.CheckIndexResult(t, indexes, expIndex)
 			}
 		}
 	}

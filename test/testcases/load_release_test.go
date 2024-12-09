@@ -816,7 +816,6 @@ func TestMmapScalarInvertedIndex(t *testing.T) {
 
 // test mmap scalar index: bitmap
 func TestMmapScalarBitmapIndex(t *testing.T) {
-	t.Skip("waiting for bitmap pr cherry-pick")
 	// vector index
 	ctx := createContext(t, time.Second*common.DefaultTimeout*2)
 	// connect
@@ -844,8 +843,9 @@ func TestMmapScalarBitmapIndex(t *testing.T) {
 	BitmapNotSupport := []interface{}{entity.FieldTypeJSON, entity.FieldTypeDouble, entity.FieldTypeFloat}
 	for _, field := range collection.Schema.Fields {
 		if SupportScalarIndexFieldType(field.DataType) && !field.PrimaryKey && !(common.CheckContainsValue(BitmapNotSupport, field.DataType) || (field.DataType == entity.FieldTypeArray && common.CheckContainsValue(BitmapNotSupport, field.ElementType))) {
+			log.Println(field.Name, field.DataType)
 			err := mc.CreateIndex(ctx, collName, field.Name, entity.NewScalarIndexWithType(entity.Bitmap), false, client.WithMmap(true))
-			common.CheckErr(t, err, true)
+			common.CheckErr(t, err, false, "index type BITMAP does not support mmap")
 		}
 	}
 
@@ -961,7 +961,6 @@ func TestMmapIndexUnsupported(t *testing.T) {
 
 // test mmap unsupported index: DiskANN, GPU-class
 func TestMmapScalarAutoIndex(t *testing.T) {
-	t.Skip("waiting for bitmap pr cherry-pick")
 	ctx := createContext(t, time.Second*common.DefaultTimeout*2)
 	// connect
 	mc := createMilvusClient(ctx, t)
@@ -986,11 +985,10 @@ func TestMmapScalarAutoIndex(t *testing.T) {
 
 	// mmap not supported HYBRID index
 	err1 = mc.CreateIndex(ctx, collName, common.DefaultBoolFieldName, entity.NewScalarIndexWithType(entity.Bitmap), false, client.WithMmap(true))
-	common.CheckErr(t, err1, true)
+	common.CheckErr(t, err1, false, "index type BITMAP does not support mmap")
 }
 
 func TestAlterIndexMmapUnsupportedIndex(t *testing.T) {
-	t.Skip("waiting for bitmap pr cherry-pick")
 	ctx := createContext(t, time.Second*common.DefaultTimeout*2)
 	// connect
 	mc := createMilvusClient(ctx, t)
@@ -1011,7 +1009,7 @@ func TestAlterIndexMmapUnsupportedIndex(t *testing.T) {
 
 	// bitmap index with mmap, create bitmap index on primary key not supported
 	err = mc.CreateIndex(ctx, collName, common.DefaultIntFieldName, entity.NewScalarIndexWithType(entity.Bitmap), false)
-	common.CheckErr(t, err, false, "create bitmap index on primary key not supported")
+	common.CheckErr(t, err, true)
 
 	// HYBRID index
 	err = mc.CreateIndex(ctx, collName, common.DefaultInt32FieldName, entity.NewScalarIndex(), false)
