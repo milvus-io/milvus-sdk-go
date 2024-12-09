@@ -128,23 +128,30 @@ func TestLoadCollectionMultiPartitions(t *testing.T) {
 	// require.True(t, collection.Loaded)
 }
 
-// test load with empty partition name ""
+// test load with empty partition name "" -> default partition
 func TestLoadEmptyPartitionName(t *testing.T) {
 	ctx := createContext(t, time.Second*common.DefaultTimeout*3)
 	// connect
 	mc := createMilvusClient(ctx, t)
 
 	// create collection and insert [0, nb) into default partition, [nb, nb*2) into new partition
+	nb := 500
 	collName := createDefaultCollection(ctx, t, mc, false, common.DefaultShards)
-	createInsertTwoPartitions(ctx, t, mc, collName, 500)
+	parName, _, _ := createInsertTwoPartitions(ctx, t, mc, collName, nb)
 
 	// create index
 	idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
 	mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false)
 
-	// load partition with empty partition names
+	// load partition with empty partition names -> actually default
 	errLoadEmpty := mc.LoadPartitions(ctx, collName, []string{""}, false)
-	common.CheckErr(t, errLoadEmpty, false, "partition not found[partition=]")
+	common.CheckErr(t, errLoadEmpty, true)
+
+	countDef, _ := mc.Query(ctx, collName, []string{common.DefaultPartition}, "", []string{common.QueryCountFieldName})
+	require.Equal(t, int64(nb), countDef.GetColumn(common.QueryCountFieldName).(*entity.ColumnInt64).Data()[0])
+
+	_, errPar := mc.Query(ctx, collName, []string{parName}, "", []string{common.QueryCountFieldName})
+	common.CheckErr(t, errPar, false, "partition not loaded")
 }
 
 // test load partitions with empty slice []string{}
