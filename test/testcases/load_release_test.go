@@ -297,7 +297,6 @@ func TestLoadPartitionsRepeatedly(t *testing.T) {
 
 // test load partitions async
 func TestLoadPartitionsAsync(t *testing.T) {
-	t.Skipf("Issue: https://github.com/milvus-io/milvus-sdk-go/issues/374")
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect
 	mc := createMilvusClient(ctx, t)
@@ -324,7 +323,7 @@ func TestLoadPartitionsAsync(t *testing.T) {
 			for _, p := range partitions {
 				log.Printf("id: %d, name: %s, loaded %t", p.ID, p.Name, p.Loaded)
 				if p.Name == partitionName && p.Loaded {
-					break
+					return
 				}
 			}
 		} else {
