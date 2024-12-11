@@ -92,7 +92,6 @@ func (c *GrpcClient) ShowPartitions(ctx context.Context, collName string) ([]*en
 	req := &milvuspb.ShowPartitionsRequest{
 		DbName:         "", // reserved
 		CollectionName: collName,
-		Type:           milvuspb.ShowType_InMemory,
 	}
 	resp, err := c.Service.ShowPartitions(ctx, req)
 	if err != nil {
