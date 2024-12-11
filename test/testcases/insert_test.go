@@ -280,6 +280,88 @@ func TestInsertRows(t *testing.T) {
 	}
 }
 
+func TestInsertDisableAutoIDRow(t *testing.T) {
+	/*
+		autoID: false
+		- pass pk value -> insert success
+		- no pk value -> error
+	*/
+	t.Parallel()
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	mc := createMilvusClient(ctx, t)
+	schema := common.GenSchema(common.GenRandomString(6), false, common.GenDefaultFields(false))
+	createCustomerCollection(ctx, t, mc, schema, common.DefaultShards)
+
+	// pass pk value
+	start := 0
+	rowsWithPk := common.GenDefaultRows(start, 10, common.DefaultDim, false)
+	idsWithPk, err := mc.InsertRows(ctx, schema.CollectionName, "", rowsWithPk)
+	common.CheckErr(t, err, true)
+	require.Contains(t, idsWithPk.(*entity.ColumnInt64).Data(), int64(start))
+
+	// no pk value -> now error
+	type tmpRow struct {
+		Float    float32   `json:"float" milvus:"name:float"`
+		FloatVec []float32 `json:"floatVec,omitempty" milvus:"name:floatVec"`
+	}
+	rowsWithoutPk := make([]interface{}, 0, 10)
+
+	// BaseRow generate insert rows
+	for i := 0; i < 10; i++ {
+		baseRow := tmpRow{
+			Float:    float32(i),
+			FloatVec: common.GenFloatVector(common.DefaultDim),
+		}
+		rowsWithoutPk = append(rowsWithoutPk, &baseRow)
+	}
+	_, err1 := mc.InsertRows(ctx, schema.CollectionName, "", rowsWithoutPk)
+	common.CheckErr(t, err1, false, "row 0 does not has field int64")
+}
+
+func TestInsertEnableAutoIDRow(t *testing.T) {
+	/*
+		autoID: true
+		- pass pk value -> ignore passed value and auto-gen pk
+		- no pk value -> insert success
+	*/
+	ctx := createContext(t, time.Second*common.DefaultTimeout)
+	mc := createMilvusClient(ctx, t)
+	schema := common.GenSchema(common.GenRandomString(6), true, common.GenDefaultFields(true))
+	createCustomerCollection(ctx, t, mc, schema, common.DefaultShards)
+
+	coll, _ := mc.DescribeCollection(ctx, schema.CollectionName)
+	log.Println(coll.Schema.AutoID)
+
+	// pass pk value -> ignore passed pks
+	start := 0
+	rowsWithPk := common.GenDefaultRows(start, 10, common.DefaultDim, false)
+	idsWithPk, err := mc.InsertRows(ctx, schema.CollectionName, "", rowsWithPk)
+	common.CheckErr(t, err, true)
+	log.Printf("origin first rowsWithPk: %v", rowsWithPk[0])
+	log.Println(idsWithPk.FieldData())
+	require.NotContains(t, idsWithPk.(*entity.ColumnInt64).Data(), int64(start))
+
+	// no pk value
+	rowsWithoutPk := make([]interface{}, 0, 10)
+	type tmpRow struct {
+		Float    float32   `json:"float" milvus:"name:float"`
+		FloatVec []float32 `json:"floatVec" milvus:"name:floatVec"`
+	}
+
+	// BaseRow generate insert rows
+	for i := 0; i < 10; i++ {
+		baseRow := tmpRow{
+			Float:    float32(i),
+			FloatVec: common.GenFloatVector(common.DefaultDim),
+		}
+		rowsWithoutPk = append(rowsWithoutPk, &baseRow)
+	}
+
+	idsWithoutPk, err1 := mc.InsertRows(ctx, schema.CollectionName, "", rowsWithoutPk)
+	common.CheckErr(t, err1, true)
+	require.Equal(t, 10, int(idsWithoutPk.Len()))
+}
+
 // test insert json rows field name not match
 func TestInsertJsonCollectionFieldNotMatch(t *testing.T) {
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
