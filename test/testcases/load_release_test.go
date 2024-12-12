@@ -297,7 +297,6 @@ func TestLoadPartitionsRepeatedly(t *testing.T) {
 
 // test load partitions async
 func TestLoadPartitionsAsync(t *testing.T) {
-	t.Skipf("Issue: https://github.com/milvus-io/milvus-sdk-go/issues/374")
 	ctx := createContext(t, time.Second*common.DefaultTimeout)
 	// connect
 	mc := createMilvusClient(ctx, t)
@@ -319,13 +318,11 @@ func TestLoadPartitionsAsync(t *testing.T) {
 		time.Sleep(time.Second * 5)
 
 		// check partition loaded
-		partitions, errShow := mc.ShowPartitions(ctx, collName)
-		if errShow == nil {
-			for _, p := range partitions {
-				log.Printf("id: %d, name: %s, loaded %t", p.ID, p.Name, p.Loaded)
-				if p.Name == partitionName && p.Loaded {
-					break
-				}
+		state, err := mc.GetLoadState(ctx, collName, []string{partitionName})
+		// partitions, errShow := mc.ShowPartitions(ctx, collName)
+		if err == nil {
+			if state == entity.LoadStateLoaded {
+				return
 			}
 		} else {
 			t.FailNow()
