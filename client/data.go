@@ -36,6 +36,7 @@ const (
 	groupByKey       = `group_by_field`
 	iteratorKey      = `iterator`
 	reduceForBestKey = `reduce_stop_for_best`
+	hintsKey         = `hints`
 )
 
 func (c *GrpcClient) HybridSearch(ctx context.Context, collName string, partitions []string, limit int, outputFields []string, reranker Reranker, subRequests []*ANNSearchRequest, opts ...SearchQueryOptionFunc) ([]SearchResult, error) {
