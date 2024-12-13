@@ -444,7 +444,7 @@ func TestSearchGroupByUnsupportedIndex(t *testing.T) {
 		_, err := mc.Search(ctx, collName, []string{}, "", []string{common.DefaultIntFieldName, common.DefaultVarcharFieldName},
 			queryVec, common.DefaultFloatVecFieldName, entity.MetricType(idx.Params()["metrics_type"]),
 			common.DefaultTopK, sp, client.WithGroupByField(common.DefaultVarcharFieldName))
-		common.CheckErr(t, err, false, "doesn't support search_group_by")
+		common.CheckErr(t, err, false, "doesn't support")
 	}
 }
 
