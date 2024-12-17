@@ -61,6 +61,7 @@ func (r *ANNSearchRequest) getMilvusSearchRequest(collectionInfo *collInfo, opts
 		"round_decimal":  "-1",
 		ignoreGrowingKey: strconv.FormatBool(opt.IgnoreGrowing),
 		offsetKey:        fmt.Sprintf("%d", opt.Offset),
+		hintsKey:         opt.hints,
 	}
 	if opt.GroupByField != "" {
 		sp[groupByKey] = opt.GroupByField

@@ -151,6 +151,7 @@ type SearchQueryOption struct {
 
 	isIterator    bool
 	reduceForBest bool
+	hints         string
 }
 
 // SearchQueryOptionFunc is a function which modifies SearchOption
@@ -177,6 +178,12 @@ func WithForTuning() SearchQueryOptionFunc {
 func WithIgnoreGrowing() SearchQueryOptionFunc {
 	return func(option *SearchQueryOption) {
 		option.IgnoreGrowing = true
+	}
+}
+
+func WithHints(hints string) SearchQueryOptionFunc {
+	return func(option *SearchQueryOption) {
+		option.hints = hints
 	}
 }
 
