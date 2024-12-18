@@ -11,7 +11,9 @@
 
 package entity
 
-import common "github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
+import (
+	common "github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
+)
 
 //go:generate go run genidx/genidx.go
 
@@ -81,6 +83,7 @@ type Index interface {
 	Name() string
 	IndexType() IndexType
 	Params() map[string]string
+	Progress() map[string]string
 }
 
 // SearchParam interface for index related search param
@@ -141,7 +144,16 @@ func (b baseIndex) IndexType() IndexType {
 // no constraint for index is applied
 type GenericIndex struct {
 	baseIndex
-	params map[string]string
+	params   map[string]string
+	progress map[string]string
+}
+
+type OptionFunc func(*GenericIndex)
+
+func WithProgress(progress map[string]string) OptionFunc {
+	return func(index *GenericIndex) {
+		index.progress = progress
+	}
 }
 
 // Params implements Index
@@ -156,13 +168,21 @@ func (gi GenericIndex) Params() map[string]string {
 	return m
 }
 
+func (gi GenericIndex) Progress() map[string]string {
+	return gi.progress
+}
+
 // NewGenericIndex create generic index instance
-func NewGenericIndex(name string, it IndexType, params map[string]string) Index {
-	return GenericIndex{
+func NewGenericIndex(name string, it IndexType, params map[string]string, opts ...OptionFunc) Index {
+	index := GenericIndex{
 		baseIndex: baseIndex{
 			it:   it,
 			name: name,
 		},
 		params: params,
 	}
+	for _, opt := range opts {
+		opt(&index)
+	}
+	return index
 }
