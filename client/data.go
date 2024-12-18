@@ -141,6 +141,10 @@ func (c *GrpcClient) handleSearchResult(schema *entity.Schema, outputFields []st
 			Scores:      results.GetScores()[offset : offset+rc],
 		}
 
+		if len(results.GetRecalls()) > 0 {
+			entry.Recall = results.GetRecalls()[i]
+		}
+
 		entry.IDs, entry.Err = entity.IDColumns(schema, results.GetIds(), offset, offset+rc)
 		if entry.Err != nil {
 			continue
