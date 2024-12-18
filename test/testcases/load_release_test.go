@@ -144,7 +144,7 @@ func TestLoadEmptyPartitionName(t *testing.T) {
 
 	// load partition with empty partition names
 	errLoadEmpty := mc.LoadPartitions(ctx, collName, []string{""}, false)
-	common.CheckErr(t, errLoadEmpty, false, "partition not found[partition=]")
+	common.CheckErr(t, errLoadEmpty, true)
 }
 
 // test load partitions with empty slice []string{}

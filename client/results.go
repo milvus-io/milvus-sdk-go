@@ -21,6 +21,7 @@ type SearchResult struct {
 	IDs          entity.Column // auto generated id, can be mapped to the columns from `Insert` API
 	Fields       ResultSet     //[]entity.Column // output field data
 	Scores       []float32     // distance to the target vector
+	Recall       float32       // recall of one query vector's search result (estimated by zilliz cloud)
 	Err          error         // search error if any
 }
 
