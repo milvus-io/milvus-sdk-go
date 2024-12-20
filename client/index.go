@@ -14,8 +14,11 @@ package client
 import (
 	"context"
 	"fmt"
+	"log"
 	"strconv"
 	"time"
+
+	"go.opentelemetry.io/otel"
 
 	"github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
 	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
@@ -105,6 +108,10 @@ func getIndexDef(opts ...IndexOption) indexDef {
 // Deprecated please use CreateIndexV2 instead.
 func (c *GrpcClient) CreateIndex(ctx context.Context, collName string, fieldName string,
 	idx entity.Index, async bool, opts ...IndexOption) error {
+	method := "CreateIndex"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
@@ -127,9 +134,11 @@ func (c *GrpcClient) CreateIndex(ctx context.Context, collName string, fieldName
 
 	resp, err := c.Service.CreateIndex(ctx, req)
 	if err != nil {
+		log.Fatalf("create index failed, collName:%s, fieldName:%s, traceID:%s err: %v", collName, fieldName, traceID, err)
 		return err
 	}
 	if err = handleRespStatus(resp); err != nil {
+		log.Fatalf("create index failed, collName:%s, fieldName:%s, traceID:%s err: %v", collName, fieldName, traceID, err)
 		return err
 	}
 	if !async { // sync mode, wait index building result
@@ -157,6 +166,10 @@ func (c *GrpcClient) CreateIndex(ctx context.Context, collName string, fieldName
 
 // AlterIndex modifies the index params
 func (c *GrpcClient) AlterIndex(ctx context.Context, collName string, indexName string, opts ...IndexOption) error {
+	method := "AlterIndex"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
@@ -173,6 +186,7 @@ func (c *GrpcClient) AlterIndex(ctx context.Context, collName string, indexName 
 
 	resp, err := c.Service.AlterIndex(ctx, req)
 	if err != nil {
+		log.Fatalf("alter index failed, collName:%s, indexName:%s, traceID:%s err: %v", collName, indexName, traceID, err)
 		return err
 	}
 	return handleRespStatus(resp)
@@ -180,6 +194,10 @@ func (c *GrpcClient) AlterIndex(ctx context.Context, collName string, indexName 
 
 // DescribeIndex describe index
 func (c *GrpcClient) DescribeIndex(ctx context.Context, collName string, fieldName string, opts ...IndexOption) ([]entity.Index, error) {
+	method := "DescribeIndex"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return []entity.Index{}, ErrClientNotReady
 	}
@@ -189,6 +207,7 @@ func (c *GrpcClient) DescribeIndex(ctx context.Context, collName string, fieldNa
 
 	idxDesc, err := c.describeIndex(ctx, collName, fieldName, opts...)
 	if err != nil {
+		log.Fatalf("describe index failed, collName:%s, fieldName:%s, traceID:%s err: %v", collName, fieldName, traceID, err)
 		return nil, err
 	}
 
@@ -212,6 +231,10 @@ func (c *GrpcClient) DescribeIndex(ctx context.Context, collName string, fieldNa
 // DropIndex drop index from collection
 // Deprecate please use DropIndexV2 instead.
 func (c *GrpcClient) DropIndex(ctx context.Context, collName string, fieldName string, opts ...IndexOption) error {
+	method := "DropIndex"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
@@ -230,6 +253,7 @@ func (c *GrpcClient) DropIndex(ctx context.Context, collName string, fieldName s
 
 	resp, err := c.Service.DropIndex(ctx, req)
 	if err != nil {
+		log.Fatalf("drop index failed, collName:%s, fieldName:%s, traceID:%s err: %v", collName, fieldName, traceID, err)
 		return err
 	}
 	return handleRespStatus(resp)
@@ -237,6 +261,10 @@ func (c *GrpcClient) DropIndex(ctx context.Context, collName string, fieldName s
 
 // GetIndexState get index state
 func (c *GrpcClient) GetIndexState(ctx context.Context, collName string, fieldName string, opts ...IndexOption) (entity.IndexState, error) {
+	method := "GetIndexState"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return entity.IndexState(commonpb.IndexState_Failed), ErrClientNotReady
 	}
@@ -253,9 +281,11 @@ func (c *GrpcClient) GetIndexState(ctx context.Context, collName string, fieldNa
 	}
 	resp, err := c.Service.GetIndexState(ctx, req)
 	if err != nil {
+		log.Fatalf("get index state failed, collName:%s, fieldName:%s, traceID:%s err: %v", collName, fieldName, traceID, err)
 		return entity.IndexState(commonpb.IndexState_IndexStateNone), err
 	}
 	if err := handleRespStatus(resp.GetStatus()); err != nil {
+		log.Fatalf("get index state failed, collName:%s, fieldName:%s, traceID:%s err: %v", collName, fieldName, traceID, err)
 		return entity.IndexState(commonpb.IndexState_IndexStateNone), err
 	}
 
@@ -264,6 +294,10 @@ func (c *GrpcClient) GetIndexState(ctx context.Context, collName string, fieldNa
 
 // GetIndexBuildProgress get index building progress
 func (c *GrpcClient) GetIndexBuildProgress(ctx context.Context, collName string, fieldName string, opts ...IndexOption) (total, indexed int64, err error) {
+	method := "GetIndexBuildProgress"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return 0, 0, ErrClientNotReady
 	}
@@ -280,9 +314,11 @@ func (c *GrpcClient) GetIndexBuildProgress(ctx context.Context, collName string,
 	}
 	resp, err := c.Service.GetIndexBuildProgress(ctx, req)
 	if err != nil {
+		log.Fatalf("get index build progress failed, collName:%s, fieldName:%s, traceID:%s err: %v", collName, fieldName, traceID, err)
 		return 0, 0, err
 	}
 	if err = handleRespStatus(resp.GetStatus()); err != nil {
+		log.Fatalf("get index build progress failed, collName:%s, fieldName:%s, traceID:%s err: %v", collName, fieldName, traceID, err)
 		return 0, 0, err
 	}
 	return resp.GetTotalRows(), resp.GetIndexedRows(), nil

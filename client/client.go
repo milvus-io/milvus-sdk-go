@@ -19,7 +19,6 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/milvus-io/milvus-proto/go-api/v2/msgpb"
-
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )
 
@@ -277,6 +276,8 @@ func NewClient(ctx context.Context, config Config) (Client, error) {
 
 	// Parse grpc options
 	options := c.config.getDialOption()
+	traceOpt := grpc.WithStatsHandler(getDynamicClientStatsHandler())
+	options = append(options, traceOpt)
 
 	// Connect the grpc server.
 	if err := c.connect(ctx, addr, options...); err != nil {

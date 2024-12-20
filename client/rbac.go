@@ -19,6 +19,9 @@ package client
 import (
 	"context"
 	"errors"
+	"log"
+
+	"go.opentelemetry.io/otel"
 
 	"github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
 	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
@@ -27,6 +30,10 @@ import (
 
 // CreateRole creates a role entity in Milvus.
 func (c *GrpcClient) CreateRole(ctx context.Context, name string) error {
+	method := "CreateRole"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
@@ -38,6 +45,7 @@ func (c *GrpcClient) CreateRole(ctx context.Context, name string) error {
 	}
 	resp, err := c.Service.CreateRole(ctx, req)
 	if err != nil {
+		log.Fatalf("create role failed, traceID:%s err: %v", traceID, err)
 		return err
 	}
 
@@ -46,6 +54,10 @@ func (c *GrpcClient) CreateRole(ctx context.Context, name string) error {
 
 // DropRole drops a role entity in Milvus.
 func (c *GrpcClient) DropRole(ctx context.Context, name string) error {
+	method := "DropRole"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
@@ -56,6 +68,7 @@ func (c *GrpcClient) DropRole(ctx context.Context, name string) error {
 
 	resp, err := c.Service.DropRole(ctx, req)
 	if err != nil {
+		log.Fatalf("drop role failed, traceID:%s err: %v", traceID, err)
 		return err
 	}
 
@@ -64,6 +77,10 @@ func (c *GrpcClient) DropRole(ctx context.Context, name string) error {
 
 // AddUserRole adds one role for user.
 func (c *GrpcClient) AddUserRole(ctx context.Context, username string, role string) error {
+	method := "AddUserRole"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
@@ -76,6 +93,7 @@ func (c *GrpcClient) AddUserRole(ctx context.Context, username string, role stri
 
 	resp, err := c.Service.OperateUserRole(ctx, req)
 	if err != nil {
+		log.Fatalf("add user role failed, traceID:%s err: %v", traceID, err)
 		return err
 	}
 
@@ -84,6 +102,10 @@ func (c *GrpcClient) AddUserRole(ctx context.Context, username string, role stri
 
 // RemoveUserRole removes one role from user.
 func (c *GrpcClient) RemoveUserRole(ctx context.Context, username string, role string) error {
+	method := "RemoveUserRole"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
@@ -96,6 +118,7 @@ func (c *GrpcClient) RemoveUserRole(ctx context.Context, username string, role s
 
 	resp, err := c.Service.OperateUserRole(ctx, req)
 	if err != nil {
+		log.Fatalf("remove user role failed, traceID:%s err: %v", traceID, err)
 		return err
 	}
 
@@ -104,6 +127,10 @@ func (c *GrpcClient) RemoveUserRole(ctx context.Context, username string, role s
 
 // ListRoles lists the role objects in system.
 func (c *GrpcClient) ListRoles(ctx context.Context) ([]entity.Role, error) {
+	method := "ListRoles"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return nil, ErrClientNotReady
 	}
@@ -112,9 +139,11 @@ func (c *GrpcClient) ListRoles(ctx context.Context) ([]entity.Role, error) {
 
 	resp, err := c.Service.SelectRole(ctx, req)
 	if err != nil {
+		log.Fatalf("list roles failed, traceID:%s err: %v", traceID, err)
 		return nil, err
 	}
 	if err = handleRespStatus(resp.GetStatus()); err != nil {
+		log.Fatalf("list roles failed, traceID:%s err: %v", traceID, err)
 		return nil, err
 	}
 
@@ -128,6 +157,10 @@ func (c *GrpcClient) ListRoles(ctx context.Context) ([]entity.Role, error) {
 
 // ListUsers lists the user objects in system.
 func (c *GrpcClient) ListUsers(ctx context.Context) ([]entity.User, error) {
+	method := "ListUsers"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return nil, ErrClientNotReady
 	}
@@ -136,9 +169,11 @@ func (c *GrpcClient) ListUsers(ctx context.Context) ([]entity.User, error) {
 
 	resp, err := c.Service.SelectUser(ctx, req)
 	if err != nil {
+		log.Fatalf("list users failed, traceID:%s err: %v", traceID, err)
 		return nil, err
 	}
 	if err = handleRespStatus(resp.GetStatus()); err != nil {
+		log.Fatalf("list users failed, traceID:%s err: %v", traceID, err)
 		return nil, err
 	}
 
@@ -152,6 +187,10 @@ func (c *GrpcClient) ListUsers(ctx context.Context) ([]entity.User, error) {
 
 // DescribeUser lists the user descriptions in the system (name, roles)
 func (c *GrpcClient) DescribeUser(ctx context.Context, username string) (entity.UserDescription, error) {
+	method := "DescribeUser"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return entity.UserDescription{}, ErrClientNotReady
 	}
@@ -165,9 +204,11 @@ func (c *GrpcClient) DescribeUser(ctx context.Context, username string) (entity.
 
 	resp, err := c.Service.SelectUser(ctx, req)
 	if err != nil {
+		log.Fatalf("describe user failed, traceID:%s err: %v", traceID, err)
 		return entity.UserDescription{}, err
 	}
 	if err = handleRespStatus(resp.GetStatus()); err != nil {
+		log.Fatalf("describe user failed, traceID:%s err: %v", traceID, err)
 		return entity.UserDescription{}, err
 	}
 	results := resp.GetResults()
@@ -189,6 +230,10 @@ func (c *GrpcClient) DescribeUser(ctx context.Context, username string) (entity.
 
 // DescribeUsers lists all users with descriptions (names, roles)
 func (c *GrpcClient) DescribeUsers(ctx context.Context) ([]entity.UserDescription, error) {
+	method := "DescribeUsers"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return nil, ErrClientNotReady
 	}
@@ -199,9 +244,11 @@ func (c *GrpcClient) DescribeUsers(ctx context.Context) ([]entity.UserDescriptio
 
 	resp, err := c.Service.SelectUser(ctx, req)
 	if err != nil {
+		log.Fatalf("describe users failed, traceID:%s err: %v", traceID, err)
 		return nil, err
 	}
 	if err = handleRespStatus(resp.GetStatus()); err != nil {
+		log.Fatalf("describe users failed, traceID:%s err: %v", traceID, err)
 		return nil, err
 	}
 	results := resp.GetResults()
@@ -224,6 +271,10 @@ func (c *GrpcClient) DescribeUsers(ctx context.Context) ([]entity.UserDescriptio
 
 // ListGrants lists the role grants in the system
 func (c *GrpcClient) ListGrants(ctx context.Context, role string, dbName string) ([]entity.RoleGrants, error) {
+	method := "ListGrants"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	RoleGrantsList := make([]entity.RoleGrants, 0)
 	if c.Service == nil {
 		return RoleGrantsList, ErrClientNotReady
@@ -240,9 +291,11 @@ func (c *GrpcClient) ListGrants(ctx context.Context, role string, dbName string)
 
 	resp, err := c.Service.SelectGrant(ctx, req)
 	if err != nil {
+		log.Fatalf("list grants failed, traceID:%s err: %v", traceID, err)
 		return RoleGrantsList, err
 	}
 	if err = handleRespStatus(resp.GetStatus()); err != nil {
+		log.Fatalf("list grants failed, traceID:%s err: %v", traceID, err)
 		return RoleGrantsList, err
 	}
 
@@ -269,6 +322,10 @@ func (c *GrpcClient) ListGrants(ctx context.Context, role string, dbName string)
 
 // ListGrant lists a grant info for the role and the specific object
 func (c *GrpcClient) ListGrant(ctx context.Context, role string, object string, objectName string, dbName string) ([]entity.RoleGrants, error) {
+	method := "ListGrant"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	RoleGrantsList := make([]entity.RoleGrants, 0)
 	if c.Service == nil {
 		return RoleGrantsList, ErrClientNotReady
@@ -289,9 +346,11 @@ func (c *GrpcClient) ListGrant(ctx context.Context, role string, object string, 
 
 	resp, err := c.Service.SelectGrant(ctx, req)
 	if err != nil {
+		log.Fatalf("list grant failed, traceID:%s err: %v", traceID, err)
 		return RoleGrantsList, err
 	}
 	if err = handleRespStatus(resp.GetStatus()); err != nil {
+		log.Fatalf("list grant failed, traceID:%s err: %v", traceID, err)
 		return RoleGrantsList, err
 	}
 
@@ -318,6 +377,10 @@ func (c *GrpcClient) ListGrant(ctx context.Context, role string, object string, 
 
 // Grant adds object privileged for role.
 func (c *GrpcClient) Grant(ctx context.Context, role string, objectType entity.PriviledgeObjectType, object string, privilege string, options ...entity.OperatePrivilegeOption) error {
+	method := "Grant"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
@@ -349,6 +412,7 @@ func (c *GrpcClient) Grant(ctx context.Context, role string, objectType entity.P
 
 	resp, err := c.Service.OperatePrivilege(ctx, req)
 	if err != nil {
+		log.Fatalf("grant failed, traceID:%s err: %v", traceID, err)
 		return err
 	}
 
@@ -357,6 +421,10 @@ func (c *GrpcClient) Grant(ctx context.Context, role string, objectType entity.P
 
 // Revoke removes privilege from role.
 func (c *GrpcClient) Revoke(ctx context.Context, role string, objectType entity.PriviledgeObjectType, object string, privilege string, options ...entity.OperatePrivilegeOption) error {
+	method := "Revoke"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
@@ -387,6 +455,7 @@ func (c *GrpcClient) Revoke(ctx context.Context, role string, objectType entity.
 
 	resp, err := c.Service.OperatePrivilege(ctx, req)
 	if err != nil {
+		log.Fatalf("revoke failed, role:%s, traceID:%s err: %v", role, traceID, err)
 		return err
 	}
 
@@ -395,6 +464,10 @@ func (c *GrpcClient) Revoke(ctx context.Context, role string, objectType entity.
 
 // GrantV2 adds object privilege for role without object type
 func (c *GrpcClient) GrantV2(ctx context.Context, role string, colName string, privilege string, options ...entity.OperatePrivilegeOption) error {
+	method := "GrantV2"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
@@ -419,6 +492,7 @@ func (c *GrpcClient) GrantV2(ctx context.Context, role string, colName string, p
 
 	resp, err := c.Service.OperatePrivilegeV2(ctx, req)
 	if err != nil {
+		log.Fatalf("grant failed, traceID:%s err: %v", traceID, err)
 		return err
 	}
 
@@ -427,6 +501,10 @@ func (c *GrpcClient) GrantV2(ctx context.Context, role string, colName string, p
 
 // Revoke removes privilege from role without object type
 func (c *GrpcClient) RevokeV2(ctx context.Context, role string, colName string, privilege string, options ...entity.OperatePrivilegeOption) error {
+	method := "RevokeV2"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
@@ -451,6 +529,7 @@ func (c *GrpcClient) RevokeV2(ctx context.Context, role string, colName string, 
 
 	resp, err := c.Service.OperatePrivilegeV2(ctx, req)
 	if err != nil {
+		log.Fatalf("revoke failed, traceID:%s err: %v", traceID, err)
 		return err
 	}
 
@@ -458,6 +537,10 @@ func (c *GrpcClient) RevokeV2(ctx context.Context, role string, colName string, 
 }
 
 func (c *GrpcClient) BackupRBAC(ctx context.Context) (*entity.RBACMeta, error) {
+	method := "BackupRBAC"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return nil, ErrClientNotReady
 	}
@@ -466,9 +549,11 @@ func (c *GrpcClient) BackupRBAC(ctx context.Context) (*entity.RBACMeta, error) {
 
 	resp, err := c.Service.BackupRBAC(ctx, req)
 	if err != nil {
+		log.Fatalf("backup rbac failed, traceID:%s err: %v", traceID, err)
 		return nil, err
 	}
 	if err = handleRespStatus(resp.GetStatus()); err != nil {
+		log.Fatalf("backup rbac failed, traceID:%s err: %v", traceID, err)
 		return nil, err
 	}
 
@@ -518,6 +603,10 @@ func (c *GrpcClient) BackupRBAC(ctx context.Context) (*entity.RBACMeta, error) {
 }
 
 func (c *GrpcClient) RestoreRBAC(ctx context.Context, meta *entity.RBACMeta) error {
+	method := "RestoreRBAC"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
@@ -580,6 +669,7 @@ func (c *GrpcClient) RestoreRBAC(ctx context.Context, meta *entity.RBACMeta) err
 
 	resp, err := c.Service.RestoreRBAC(ctx, req)
 	if err != nil {
+		log.Fatalf("restore rbac failed, traceID:%s err: %v", traceID, err)
 		return err
 	}
 
@@ -587,6 +677,10 @@ func (c *GrpcClient) RestoreRBAC(ctx context.Context, meta *entity.RBACMeta) err
 }
 
 func (c *GrpcClient) CreatePrivilegeGroup(ctx context.Context, groupName string) error {
+	method := "CreatePrivilegeGroup"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
@@ -597,6 +691,7 @@ func (c *GrpcClient) CreatePrivilegeGroup(ctx context.Context, groupName string)
 
 	resp, err := c.Service.CreatePrivilegeGroup(ctx, req)
 	if err != nil {
+		log.Fatalf("create privilege group failed, traceID:%s err: %v", traceID, err)
 		return err
 	}
 
@@ -604,6 +699,10 @@ func (c *GrpcClient) CreatePrivilegeGroup(ctx context.Context, groupName string)
 }
 
 func (c *GrpcClient) DropPrivilegeGroup(ctx context.Context, groupName string) error {
+	method := "DropPrivilegeGroup"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
@@ -614,6 +713,7 @@ func (c *GrpcClient) DropPrivilegeGroup(ctx context.Context, groupName string) e
 
 	resp, err := c.Service.DropPrivilegeGroup(ctx, req)
 	if err != nil {
+		log.Fatalf("drop privilege group failed, traceID:%s err: %v", traceID, err)
 		return err
 	}
 
@@ -621,6 +721,10 @@ func (c *GrpcClient) DropPrivilegeGroup(ctx context.Context, groupName string) e
 }
 
 func (c *GrpcClient) ListPrivilegeGroups(ctx context.Context) ([]*entity.PrivilegeGroup, error) {
+	method := "ListPrivilegeGroups"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	PrivilegeGroupList := make([]*entity.PrivilegeGroup, 0)
 	if c.Service == nil {
 		return PrivilegeGroupList, ErrClientNotReady
@@ -630,10 +734,12 @@ func (c *GrpcClient) ListPrivilegeGroups(ctx context.Context) ([]*entity.Privile
 
 	resp, err := c.Service.ListPrivilegeGroups(ctx, req)
 	if err != nil {
+		log.Fatalf("list privilege groups failed, traceID:%s err: %v", traceID, err)
 		return PrivilegeGroupList, err
 	}
 
 	if err = handleRespStatus(resp.GetStatus()); err != nil {
+		log.Fatalf("list privilege groups failed, traceID:%s err: %v", traceID, err)
 		return PrivilegeGroupList, err
 	}
 
@@ -659,6 +765,10 @@ func (c *GrpcClient) ListPrivilegeGroups(ctx context.Context) ([]*entity.Privile
 }
 
 func (c *GrpcClient) AddPrivilegesToGroup(ctx context.Context, groupName string, privileges []string) error {
+	method := "AddPrivilegesToGroup"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
@@ -678,6 +788,7 @@ func (c *GrpcClient) AddPrivilegesToGroup(ctx context.Context, groupName string,
 
 	resp, err := c.Service.OperatePrivilegeGroup(ctx, req)
 	if err != nil {
+		log.Fatalf("add privilege to group failed, traceID:%s err: %v", traceID, err)
 		return err
 	}
 
@@ -685,6 +796,10 @@ func (c *GrpcClient) AddPrivilegesToGroup(ctx context.Context, groupName string,
 }
 
 func (c *GrpcClient) RemovePrivilegesFromGroup(ctx context.Context, groupName string, privileges []string) error {
+	method := "RemovePrivilegesFromGroup"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
@@ -704,6 +819,7 @@ func (c *GrpcClient) RemovePrivilegesFromGroup(ctx context.Context, groupName st
 
 	resp, err := c.Service.OperatePrivilegeGroup(ctx, req)
 	if err != nil {
+		log.Fatalf("remove privilege from group failed, traceID:%s err: %v", traceID, err)
 		return err
 	}
 

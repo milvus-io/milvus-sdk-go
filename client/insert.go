@@ -15,15 +15,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/golang/protobuf/proto"
+	"go.opentelemetry.io/otel"
+
 	"github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
 	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
 	"github.com/milvus-io/milvus-proto/go-api/v2/msgpb"
 	"github.com/milvus-io/milvus-proto/go-api/v2/schemapb"
-
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )
 
@@ -32,11 +34,16 @@ import (
 // partitionName is the partition to insert, if not specified(empty), default partition will be used
 // columns are slice of the column-based data
 func (c *GrpcClient) Insert(ctx context.Context, collName string, partitionName string, columns ...entity.Column) (entity.Column, error) {
+	method := "Insert"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return nil, ErrClientNotReady
 	}
 	collInfo, err := c.getCollectionInfo(ctx, collName)
 	if err != nil {
+		log.Fatalf("insert failed, traceID:%s err: %v", traceID, err)
 		return nil, err
 	}
 	schema := collInfo.Schema
@@ -44,6 +51,7 @@ func (c *GrpcClient) Insert(ctx context.Context, collName string, partitionName 
 	// convert columns to field data
 	fieldsData, rowSize, err := c.processInsertColumns(schema, columns...)
 	if err != nil {
+		log.Fatalf("insert failed, traceID:%s err: %v", traceID, err)
 		return nil, err
 	}
 
@@ -59,9 +67,11 @@ func (c *GrpcClient) Insert(ctx context.Context, collName string, partitionName 
 
 	resp, err := c.Service.Insert(ctx, req)
 	if err != nil {
+		log.Fatalf("insert failed, traceID:%s err: %v", traceID, err)
 		return nil, err
 	}
 	if err := handleRespStatus(resp.GetStatus()); err != nil {
+		log.Fatalf("insert failed, traceID:%s err: %v", traceID, err)
 		return nil, err
 	}
 	c.cache.setSessionTs(collName, resp.Timestamp)
@@ -224,6 +234,10 @@ func (c *GrpcClient) Flush(ctx context.Context, collName string, async bool, opt
 // Flush force collection to flush memory records into storage
 // in sync mode, flush will wait all segments to be flushed
 func (c *GrpcClient) FlushV2(ctx context.Context, collName string, async bool, opts ...FlushOption) ([]int64, []int64, int64, map[string]msgpb.MsgPosition, error) {
+	method := "Flush"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return nil, nil, 0, nil, ErrClientNotReady
 	}
@@ -236,9 +250,11 @@ func (c *GrpcClient) FlushV2(ctx context.Context, collName string, async bool, o
 	}
 	resp, err := c.Service.Flush(ctx, req)
 	if err != nil {
+		log.Fatalf("flush %s failed, traceID:%s err: %v", collName, traceID, err)
 		return nil, nil, 0, nil, err
 	}
 	if err := handleRespStatus(resp.GetStatus()); err != nil {
+		log.Fatalf("flush %s failed, traceID:%s err: %v", collName, traceID, err)
 		return nil, nil, 0, nil, err
 	}
 	channelCPs := resp.GetChannelCps()
@@ -262,6 +278,7 @@ func (c *GrpcClient) FlushV2(ctx context.Context, collName string, async bool, o
 				// respect context deadline/cancel
 				select {
 				case <-ctx.Done():
+					log.Fatalf("flush %s failed, traceID:%s err: %v", collName, traceID, err)
 					return nil, nil, 0, nil, errors.New("deadline exceeded")
 				default:
 				}
@@ -283,6 +300,10 @@ func (c *GrpcClient) FlushV2(ctx context.Context, collName string, async bool, o
 
 // DeleteByPks deletes entries related to provided primary keys
 func (c *GrpcClient) DeleteByPks(ctx context.Context, collName string, partitionName string, ids entity.Column) error {
+	method := "DeleteByPks"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
@@ -297,6 +318,7 @@ func (c *GrpcClient) DeleteByPks(ctx context.Context, collName string, partition
 
 	coll, err := c.DescribeCollection(ctx, collName)
 	if err != nil {
+		log.Fatalf("delete by Pks failed, collName:%s, traceID:%s err: %v", collName, traceID, err)
 		return err
 	}
 
@@ -317,10 +339,12 @@ func (c *GrpcClient) DeleteByPks(ctx context.Context, collName string, partition
 
 	resp, err := c.Service.Delete(ctx, req)
 	if err != nil {
+		log.Fatalf("delete by Pks failed, collName:%s, traceID:%s err: %v", collName, traceID, err)
 		return err
 	}
 	err = handleRespStatus(resp.GetStatus())
 	if err != nil {
+		log.Fatalf("delete by Pks failed, collName:%s, traceID:%s err: %v", collName, traceID, err)
 		return err
 	}
 	c.cache.setSessionTs(collName, resp.Timestamp)
@@ -329,6 +353,10 @@ func (c *GrpcClient) DeleteByPks(ctx context.Context, collName string, partition
 
 // Delete deletes entries match expression
 func (c *GrpcClient) Delete(ctx context.Context, collName string, partitionName string, expr string) error {
+	method := "Delete"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
@@ -342,10 +370,12 @@ func (c *GrpcClient) Delete(ctx context.Context, collName string, partitionName 
 
 	resp, err := c.Service.Delete(ctx, req)
 	if err != nil {
+		log.Fatalf("delete failed, collName:%s, partitionName:%s, expr:%s, traceID:%s err: %v", collName, partitionName, expr, traceID, err)
 		return err
 	}
 	err = handleRespStatus(resp.GetStatus())
 	if err != nil {
+		log.Fatalf("delete failed, collName:%s, partitionName:%s, expr:%s, traceID:%s err: %v", collName, partitionName, expr, traceID, err)
 		return err
 	}
 	c.cache.setSessionTs(collName, resp.Timestamp)
@@ -357,6 +387,10 @@ func (c *GrpcClient) Delete(ctx context.Context, collName string, partitionName 
 // partitionName is the partition to upsert, if not specified(empty), default partition will be used
 // columns are slice of the column-based data
 func (c *GrpcClient) Upsert(ctx context.Context, collName string, partitionName string, columns ...entity.Column) (entity.Column, error) {
+	method := "Upsert"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return nil, ErrClientNotReady
 	}
@@ -368,6 +402,7 @@ func (c *GrpcClient) Upsert(ctx context.Context, collName string, partitionName 
 
 	fieldsData, rowSize, err := c.processInsertColumns(schema, columns...)
 	if err != nil {
+		log.Fatalf("upsert failed, collName:%s, partitionName:%s, traceID:%s err: %v", collName, partitionName, traceID, err)
 		return nil, err
 	}
 
@@ -383,9 +418,11 @@ func (c *GrpcClient) Upsert(ctx context.Context, collName string, partitionName 
 
 	resp, err := c.Service.Upsert(ctx, req)
 	if err != nil {
+		log.Fatalf("upsert failed, collName:%s, partitionName:%s, traceID:%s err: %v", collName, partitionName, traceID, err)
 		return nil, err
 	}
 	if err := handleRespStatus(resp.GetStatus()); err != nil {
+		log.Fatalf("upsert failed, collName:%s, partitionName:%s, traceID:%s err: %v", collName, partitionName, traceID, err)
 		return nil, err
 	}
 	c.cache.setSessionTs(collName, resp.Timestamp)
@@ -395,6 +432,10 @@ func (c *GrpcClient) Upsert(ctx context.Context, collName string, partitionName 
 
 // BulkInsert data files(json, numpy, etc.) on MinIO/S3 storage, read and parse them into sealed segments
 func (c *GrpcClient) BulkInsert(ctx context.Context, collName string, partitionName string, files []string, opts ...BulkInsertOption) (int64, error) {
+	method := "BulkInsert"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return 0, ErrClientNotReady
 	}
@@ -410,6 +451,7 @@ func (c *GrpcClient) BulkInsert(ctx context.Context, collName string, partitionN
 
 	resp, err := c.Service.Import(ctx, req)
 	if err != nil {
+		log.Fatalf("bulk insert failed, collName:%s, partitionName:%s, traceID:%s err: %v", collName, partitionName, traceID, err)
 		return 0, err
 	}
 	if err := handleRespStatus(resp.GetStatus()); err != nil {
@@ -421,6 +463,10 @@ func (c *GrpcClient) BulkInsert(ctx context.Context, collName string, partitionN
 
 // GetBulkInsertState checks import task state
 func (c *GrpcClient) GetBulkInsertState(ctx context.Context, taskID int64) (*entity.BulkInsertTaskState, error) {
+	method := "GetBulkInsertState"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return nil, ErrClientNotReady
 	}
@@ -429,9 +475,11 @@ func (c *GrpcClient) GetBulkInsertState(ctx context.Context, taskID int64) (*ent
 	}
 	resp, err := c.Service.GetImportState(ctx, req)
 	if err != nil {
+		log.Fatalf("get bulk insert state failed, taskID:%d, traceID:%s err: %v", taskID, traceID, err)
 		return nil, err
 	}
 	if err := handleRespStatus(resp.GetStatus()); err != nil {
+		log.Fatalf("get bulk insert state failed, taskID:%d, traceID:%s err: %v", taskID, traceID, err)
 		return nil, err
 	}
 
@@ -449,6 +497,10 @@ func (c *GrpcClient) GetBulkInsertState(ctx context.Context, taskID int64) (*ent
 
 // ListBulkInsertTasks list state of all import tasks
 func (c *GrpcClient) ListBulkInsertTasks(ctx context.Context, collName string, limit int64) ([]*entity.BulkInsertTaskState, error) {
+	method := "ListBulkInsertTasks"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return nil, ErrClientNotReady
 	}
@@ -458,9 +510,11 @@ func (c *GrpcClient) ListBulkInsertTasks(ctx context.Context, collName string, l
 	}
 	resp, err := c.Service.ListImportTasks(ctx, req)
 	if err != nil {
+		log.Fatalf("list bulk insert tasks failed, collName:%s, traceID:%s err: %v", collName, traceID, err)
 		return nil, err
 	}
 	if err := handleRespStatus(resp.GetStatus()); err != nil {
+		log.Fatalf("list bulk insert tasks failed, collName:%s, traceID:%s err: %v", collName, traceID, err)
 		return nil, err
 	}
 
