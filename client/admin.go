@@ -14,12 +14,17 @@ package client
 import (
 	"context"
 
+	"go.opentelemetry.io/otel"
+
 	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )
 
 // GetVersion returns milvus server version information.
 func (c *GrpcClient) GetVersion(ctx context.Context) (string, error) {
+	method := "GetVersion"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
 	if c.Service == nil {
 		return "", ErrClientNotReady
 	}
@@ -32,6 +37,9 @@ func (c *GrpcClient) GetVersion(ctx context.Context) (string, error) {
 
 // CheckHealth returns milvus state
 func (c *GrpcClient) CheckHealth(ctx context.Context) (*entity.MilvusState, error) {
+	method := "CheckHealth"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
 	if c.Service == nil {
 		return nil, ErrClientNotReady
 	}

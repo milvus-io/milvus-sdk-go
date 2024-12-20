@@ -4,16 +4,24 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"strings"
 
 	"github.com/cockroachdb/errors"
+	"go.opentelemetry.io/otel"
+
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )
 
 func (c *GrpcClient) SearchIterator(ctx context.Context, opt *SearchIteratorOption) (*SearchIterator, error) {
+	method := "SearchIterator"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	collectionName := opt.collectionName
 	collInfo, err := c.getCollectionInfo(ctx, collectionName)
 	if err != nil {
+		log.Fatalf("search iterator failed, traceID:%s err: %v", traceID, err)
 		return nil, err
 	}
 	sch := collInfo.Schema
@@ -195,9 +203,14 @@ func (itr *SearchIterator) Next(ctx context.Context) (*SearchResult, error) {
 }
 
 func (c *GrpcClient) QueryIterator(ctx context.Context, opt *QueryIteratorOption) (*QueryIterator, error) {
+	method := "QueryIterator"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	collectionName := opt.collectionName
 	collInfo, err := c.getCollectionInfo(ctx, collectionName)
 	if err != nil {
+		log.Fatalf("query iterator failed, traceID:%s err: %v", traceID, err)
 		return nil, err
 	}
 	sch := collInfo.Schema

@@ -13,16 +13,16 @@ package client
 
 import (
 	"context"
+	"log"
 	"time"
 
 	"github.com/cockroachdb/errors"
-
 	"github.com/golang/protobuf/proto"
-
-	"github.com/milvus-io/milvus-sdk-go/v2/entity"
+	"go.opentelemetry.io/otel"
 
 	"github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
 	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
+	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )
 
 // handles response status
@@ -46,6 +46,10 @@ func handleRespStatus(status *commonpb.Status) error {
 // ListCollections list collections from connection
 // Note that schema info are not provided in collection list
 func (c *GrpcClient) ListCollections(ctx context.Context, opts ...ListCollectionOption) ([]*entity.Collection, error) {
+	method := "ListCollections"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return []*entity.Collection{}, ErrClientNotReady
 	}
@@ -66,10 +70,12 @@ func (c *GrpcClient) ListCollections(ctx context.Context, opts ...ListCollection
 
 	resp, err := c.Service.ShowCollections(ctx, req)
 	if err != nil {
+		log.Fatalf("list collections failed, traceID:%s err: %v", traceID, err)
 		return []*entity.Collection{}, err
 	}
 	err = handleRespStatus(resp.GetStatus())
 	if err != nil {
+		log.Fatalf("list collections failed, traceID:%s err: %v", traceID, err)
 		return []*entity.Collection{}, err
 	}
 	collections := make([]*entity.Collection, 0, len(resp.GetCollectionIds()))
@@ -137,10 +143,15 @@ func (c *GrpcClient) NewCollection(ctx context.Context, collName string, dimensi
 
 // CreateCollection create collection with specified schema
 func (c *GrpcClient) CreateCollection(ctx context.Context, collSchema *entity.Schema, shardNum int32, opts ...CreateCollectionOption) error {
+	method := "CreateCollection"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
 	if err := c.validateSchema(collSchema); err != nil {
+		log.Fatalf("create collection failed, traceID:%s err: %v", traceID, err)
 		return err
 	}
 
@@ -157,6 +168,10 @@ func (c *GrpcClient) CreateCollection(ctx context.Context, collSchema *entity.Sc
 }
 
 func (c *GrpcClient) requestCreateCollection(ctx context.Context, sch *entity.Schema, opt *createCollOpt, shardNum int32) error {
+	method := "requestCreateCollection"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if opt.EnableDynamicSchema {
 		sch.EnableDynamicField = true
 	}
@@ -178,6 +193,7 @@ func (c *GrpcClient) requestCreateCollection(ctx context.Context, sch *entity.Sc
 
 	resp, err := c.Service.CreateCollection(ctx, req)
 	if err != nil {
+		log.Fatalf("request create collection failed, traceID:%s err: %v", traceID, err)
 		return err
 	}
 	err = handleRespStatus(resp)
@@ -261,6 +277,10 @@ func (c *GrpcClient) checkCollectionExists(ctx context.Context, collName string)
 
 // DescribeCollection describe the collection by name
 func (c *GrpcClient) DescribeCollection(ctx context.Context, collName string) (*entity.Collection, error) {
+	method := "DescribeCollection"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return nil, ErrClientNotReady
 	}
@@ -269,10 +289,12 @@ func (c *GrpcClient) DescribeCollection(ctx context.Context, collName string) (*
 	}
 	resp, err := c.Service.DescribeCollection(ctx, req)
 	if err != nil {
+		log.Fatalf("describe collection failed, collName:%s, traceID:%s err: %v", collName, traceID, err)
 		return nil, err
 	}
 	err = handleRespStatus(resp.GetStatus())
 	if err != nil {
+		log.Fatalf("describe collection failed, collName:%s, traceID:%s err: %v", collName, traceID, err)
 		return nil, err
 	}
 	collection := &entity.Collection{
@@ -298,6 +320,10 @@ func (c *GrpcClient) DescribeCollection(ctx context.Context, collName string) (*
 
 // DropCollection drop collection by name
 func (c *GrpcClient) DropCollection(ctx context.Context, collName string, opts ...DropCollectionOption) error {
+	method := "DropCollection"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
@@ -310,6 +336,7 @@ func (c *GrpcClient) DropCollection(ctx context.Context, collName string, opts .
 	}
 	resp, err := c.Service.DropCollection(ctx, req)
 	if err != nil {
+		log.Fatalf("drop collection failed, collName:%s, traceID:%s err: %v", collName, traceID, err)
 		return err
 	}
 	err = handleRespStatus(resp)
@@ -321,6 +348,10 @@ func (c *GrpcClient) DropCollection(ctx context.Context, collName string, opts .
 
 // HasCollection check whether collection name exists
 func (c *GrpcClient) HasCollection(ctx context.Context, collName string) (bool, error) {
+	method := "HasCollection"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return false, ErrClientNotReady
 	}
@@ -333,6 +364,7 @@ func (c *GrpcClient) HasCollection(ctx context.Context, collName string) (bool, 
 
 	resp, err := c.Service.HasCollection(ctx, req)
 	if err != nil {
+		log.Fatalf("has collection failed, collName:%s, traceID:%s err: %v", collName, traceID, err)
 		return false, err
 	}
 	if err := handleRespStatus(resp.GetStatus()); err != nil {
@@ -343,6 +375,10 @@ func (c *GrpcClient) HasCollection(ctx context.Context, collName string) (bool, 
 
 // GetCollectionStatistcis show collection statistics
 func (c *GrpcClient) GetCollectionStatistics(ctx context.Context, collName string) (map[string]string, error) {
+	method := "GetCollectionStatistics"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return nil, ErrClientNotReady
 	}
@@ -352,9 +388,11 @@ func (c *GrpcClient) GetCollectionStatistics(ctx context.Context, collName strin
 	}
 	resp, err := c.Service.GetCollectionStatistics(ctx, req)
 	if err != nil {
+		log.Fatalf("get collection statistics failed, collName:%s, traceID:%s err: %v", collName, traceID, err)
 		return nil, err
 	}
 	if err := handleRespStatus(resp.GetStatus()); err != nil {
+		log.Fatalf("get collection statistics failed, collName:%s, traceID:%s err: %v", collName, traceID, err)
 		return nil, err
 	}
 	return entity.KvPairsMap(resp.GetStats()), nil
@@ -362,6 +400,10 @@ func (c *GrpcClient) GetCollectionStatistics(ctx context.Context, collName strin
 
 // ShowCollection show collection status, used to check whether it is loaded or not
 func (c *GrpcClient) ShowCollection(ctx context.Context, collName string) (*entity.Collection, error) {
+	method := "ShowCollection"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return nil, ErrClientNotReady
 	}
@@ -373,9 +415,11 @@ func (c *GrpcClient) ShowCollection(ctx context.Context, collName string) (*enti
 
 	resp, err := c.Service.ShowCollections(ctx, req)
 	if err != nil {
+		log.Fatalf("show collection failed, collName:%s, traceID:%s err: %v", collName, traceID, err)
 		return nil, err
 	}
 	if err := handleRespStatus(resp.GetStatus()); err != nil {
+		log.Fatalf("show collection failed, collName:%s, traceID:%s err: %v", collName, traceID, err)
 		return nil, err
 	}
 
@@ -390,6 +434,10 @@ func (c *GrpcClient) ShowCollection(ctx context.Context, collName string) (*enti
 
 // RenameCollection performs renaming for provided collection.
 func (c *GrpcClient) RenameCollection(ctx context.Context, collName, newName string) error {
+	method := "RenameCollection"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
@@ -400,6 +448,7 @@ func (c *GrpcClient) RenameCollection(ctx context.Context, collName, newName str
 	}
 	resp, err := c.Service.RenameCollection(ctx, req)
 	if err != nil {
+		log.Fatalf("rename collection failed, collName:%s, traceID:%s, err: %v", collName, traceID, err)
 		return err
 	}
 	return handleRespStatus(resp)
@@ -407,6 +456,10 @@ func (c *GrpcClient) RenameCollection(ctx context.Context, collName, newName str
 
 // LoadCollection load collection into memory
 func (c *GrpcClient) LoadCollection(ctx context.Context, collName string, async bool, opts ...LoadCollectionOption) error {
+	method := "LoadCollection"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
@@ -421,9 +474,11 @@ func (c *GrpcClient) LoadCollection(ctx context.Context, collName string, async 
 
 	resp, err := c.Service.LoadCollection(ctx, req)
 	if err != nil {
+		log.Fatalf("load collection failed, collName:%s, traceID:%s err: %v", collName, traceID, err)
 		return err
 	}
 	if err := handleRespStatus(resp); err != nil {
+		log.Fatalf("load collection failed, collName:%s, traceID:%s err: %v", collName, traceID, err)
 		return err
 	}
 
@@ -450,6 +505,10 @@ func (c *GrpcClient) LoadCollection(ctx context.Context, collName string, async 
 
 // ReleaseCollection release loaded collection
 func (c *GrpcClient) ReleaseCollection(ctx context.Context, collName string, opts ...ReleaseCollectionOption) error {
+	method := "ReleaseCollection"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
@@ -463,6 +522,7 @@ func (c *GrpcClient) ReleaseCollection(ctx context.Context, collName string, opt
 	}
 	resp, err := c.Service.ReleaseCollection(ctx, req)
 	if err != nil {
+		log.Fatalf("release collection failed, collName:%s, traceID:%s err: %v", collName, traceID, err)
 		return err
 	}
 	return handleRespStatus(resp)
@@ -470,6 +530,10 @@ func (c *GrpcClient) ReleaseCollection(ctx context.Context, collName string, opt
 
 // GetReplicas gets the replica groups as well as their querynodes and shards information
 func (c *GrpcClient) GetReplicas(ctx context.Context, collName string) ([]*entity.ReplicaGroup, error) {
+	method := "GetReplicas"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return nil, ErrClientNotReady
 	}
@@ -485,9 +549,11 @@ func (c *GrpcClient) GetReplicas(ctx context.Context, collName string) ([]*entit
 
 	resp, err := c.Service.GetReplicas(ctx, req)
 	if err != nil {
+		log.Fatalf("get replicas failed, collName:%s, traceID:%s err: %v", collName, traceID, err)
 		return nil, err
 	}
 	if err = handleRespStatus(resp.GetStatus()); err != nil {
+		log.Fatalf("get replicas failed, collName:%s, traceID:%s err: %v", collName, traceID, err)
 		return nil, err
 	}
 
@@ -513,6 +579,10 @@ func (c *GrpcClient) GetReplicas(ctx context.Context, collName string) ([]*entit
 
 // GetLoadingProgress get the collection or partitions loading progress
 func (c *GrpcClient) GetLoadingProgress(ctx context.Context, collName string, partitionNames []string) (int64, error) {
+	method := "GetLoadingProgress"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return 0, ErrClientNotReady
 	}
@@ -523,6 +593,7 @@ func (c *GrpcClient) GetLoadingProgress(ctx context.Context, collName string, pa
 	}
 	resp, err := c.Service.GetLoadingProgress(ctx, req)
 	if err != nil {
+		log.Fatalf("get loading progress failed, collName:%s, traceID:%s err: %v", collName, traceID, err)
 		return 0, err
 	}
 
@@ -531,6 +602,10 @@ func (c *GrpcClient) GetLoadingProgress(ctx context.Context, collName string, pa
 
 // GetLoadState get the collection or partitions load state
 func (c *GrpcClient) GetLoadState(ctx context.Context, collName string, partitionNames []string) (entity.LoadState, error) {
+	method := "GetLoadState"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return 0, ErrClientNotReady
 	}
@@ -541,6 +616,7 @@ func (c *GrpcClient) GetLoadState(ctx context.Context, collName string, partitio
 	}
 	resp, err := c.Service.GetLoadState(ctx, req)
 	if err != nil {
+		log.Fatalf("get load state failed, collName:%s, traceID:%s err: %v", collName, traceID, err)
 		return 0, err
 	}
 
@@ -549,6 +625,10 @@ func (c *GrpcClient) GetLoadState(ctx context.Context, collName string, partitio
 
 // AlterCollection changes the collection attribute.
 func (c *GrpcClient) AlterCollection(ctx context.Context, collName string, attrs ...entity.CollectionAttribute) error {
+	method := "AlterCollection"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
@@ -579,6 +659,7 @@ func (c *GrpcClient) AlterCollection(ctx context.Context, collName string, attrs
 
 	resp, err := c.Service.AlterCollection(ctx, req)
 	if err != nil {
+		log.Fatalf("alter collection failed, collName:%s, traceID:%s err: %v", collName, traceID, err)
 		return err
 	}
 	return handleRespStatus(resp)

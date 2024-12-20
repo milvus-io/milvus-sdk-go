@@ -3,11 +3,13 @@ package client
 import (
 	"context"
 	"fmt"
+	"log"
 	"reflect"
 
 	"github.com/cockroachdb/errors"
-
 	"github.com/golang/protobuf/proto"
+	"go.opentelemetry.io/otel"
+
 	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
 	"github.com/milvus-io/milvus-proto/go-api/v2/schemapb"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
@@ -15,6 +17,10 @@ import (
 
 // CreateCollectionByRow create collection by row
 func (c *GrpcClient) CreateCollectionByRow(ctx context.Context, row entity.Row, shardNum int32) error {
+	method := "CreateCollectionByRow"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
@@ -31,7 +37,7 @@ func (c *GrpcClient) CreateCollectionByRow(ctx context.Context, row entity.Row, 
 	}
 	// already exists collection with same name, return error
 	if has {
-		return fmt.Errorf("collection %s already exist", sch.CollectionName)
+		return fmt.Errorf("collection %s already exist, traceID:%s", sch.CollectionName, traceID)
 	}
 	// marshal schema to bytes for message transfer
 	p := sch.ProtoMessage()
@@ -49,6 +55,7 @@ func (c *GrpcClient) CreateCollectionByRow(ctx context.Context, row entity.Row, 
 	resp, err := c.Service.CreateCollection(ctx, req)
 	// handles response
 	if err != nil {
+		log.Fatalf("create collection failed, collName:%s, traceID:%s, err: %v", sch.CollectionName, traceID, err)
 		return err
 	}
 	err = handleRespStatus(resp)
@@ -62,6 +69,8 @@ func (c *GrpcClient) CreateCollectionByRow(ctx context.Context, row entity.Row, 
 func (c *GrpcClient) InsertByRows(ctx context.Context, collName string, partitionName string,
 	rows []entity.Row,
 ) (entity.Column, error) {
+	ctx, span := otel.Tracer("client").Start(ctx, "InsertByRows")
+	defer span.End()
 	anys := make([]interface{}, 0, len(rows))
 	for _, row := range rows {
 		anys = append(anys, row)
@@ -75,6 +84,9 @@ func (c *GrpcClient) InsertByRows(ctx context.Context, collName string, partitio
 func (c *GrpcClient) InsertRows(ctx context.Context, collName string, partitionName string,
 	rows []interface{},
 ) (entity.Column, error) {
+	ctx, span := otel.Tracer("client").Start(ctx, "InsertRows")
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return nil, ErrClientNotReady
 	}
@@ -84,11 +96,13 @@ func (c *GrpcClient) InsertRows(ctx context.Context, collName string, partitionN
 
 	coll, err := c.DescribeCollection(ctx, collName)
 	if err != nil {
+		log.Fatalf("collection %s not exist, traceID:%s, err: %v", collName, traceID, err)
 		return nil, err
 	}
 	// 1. convert rows to columns
 	columns, err := entity.AnyToColumns(rows, coll.Schema)
 	if err != nil {
+		log.Fatalf("convert row to columns failed, traceID:%s, err: %v", traceID, err)
 		return nil, err
 	}
 	// fieldData
@@ -105,9 +119,11 @@ func (c *GrpcClient) InsertRows(ctx context.Context, collName string, partitionN
 	}
 	resp, err := c.Service.Insert(ctx, req)
 	if err != nil {
+		log.Fatalf("insert failed, traceID:%s, err: %v", traceID, err)
 		return nil, err
 	}
 	if err := handleRespStatus(resp.GetStatus()); err != nil {
+		log.Fatalf("handle response status failed, traceID:%s, err: %v", traceID, err)
 		return nil, err
 	}
 	c.cache.setSessionTs(collName, resp.Timestamp)

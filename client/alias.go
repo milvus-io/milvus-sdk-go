@@ -18,12 +18,19 @@ package client
 
 import (
 	"context"
+	"log"
+
+	"go.opentelemetry.io/otel"
 
 	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
 )
 
 // CreateAlias creates an alias for collection
 func (c *GrpcClient) CreateAlias(ctx context.Context, collName string, alias string) error {
+	method := "CreateAlias"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
@@ -36,10 +43,12 @@ func (c *GrpcClient) CreateAlias(ctx context.Context, collName string, alias str
 
 	resp, err := c.Service.CreateAlias(ctx, req)
 	if err != nil {
+		log.Fatalf("create alias failed, collName:%s, alias:%s, traceID:%s err: %v", collName, alias, traceID, err)
 		return err
 	}
 	err = handleRespStatus(resp)
 	if err != nil {
+		log.Fatalf("create alias failed, collName:%s, alias:%s, traceID:%s err: %v", collName, alias, traceID, err)
 		return err
 	}
 	return nil
@@ -47,6 +56,10 @@ func (c *GrpcClient) CreateAlias(ctx context.Context, collName string, alias str
 
 // DropAlias drops the specified Alias
 func (c *GrpcClient) DropAlias(ctx context.Context, alias string) error {
+	method := "DropAlias"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
@@ -58,10 +71,12 @@ func (c *GrpcClient) DropAlias(ctx context.Context, alias string) error {
 
 	resp, err := c.Service.DropAlias(ctx, req)
 	if err != nil {
+		log.Fatalf("drop alias failed, alias:%s, traceID:%s err: %v", alias, traceID, err)
 		return err
 	}
 	err = handleRespStatus(resp)
 	if err != nil {
+		log.Fatalf("drop alias failed, alias:%s, traceID:%s err: %v", alias, traceID, err)
 		return err
 	}
 	return nil
@@ -69,6 +84,10 @@ func (c *GrpcClient) DropAlias(ctx context.Context, alias string) error {
 
 // AlterAlias changes collection alias to provided alias
 func (c *GrpcClient) AlterAlias(ctx context.Context, collName string, alias string) error {
+	method := "AlterAlias"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
@@ -81,10 +100,12 @@ func (c *GrpcClient) AlterAlias(ctx context.Context, collName string, alias stri
 
 	resp, err := c.Service.AlterAlias(ctx, req)
 	if err != nil {
+		log.Fatalf("alter alias failed, collName:%s, alias:%s, traceID:%s err: %v", collName, alias, traceID, err)
 		return err
 	}
 	err = handleRespStatus(resp)
 	if err != nil {
+		log.Fatalf("alter alias failed, collName:%s, alias:%s, traceID:%s err: %v", collName, alias, traceID, err)
 		return err
 	}
 	return nil

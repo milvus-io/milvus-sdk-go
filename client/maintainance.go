@@ -18,7 +18,10 @@ package client
 
 import (
 	"context"
+	"log"
 	"time"
+
+	"go.opentelemetry.io/otel"
 
 	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
@@ -26,12 +29,17 @@ import (
 
 // ManualCompaction triggers a compaction on provided collection
 func (c *GrpcClient) ManualCompaction(ctx context.Context, collName string, _ time.Duration) (int64, error) {
+	method := "ManualCompaction"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return 0, ErrClientNotReady
 	}
 
 	coll, err := c.DescribeCollection(ctx, collName)
 	if err != nil {
+		log.Fatalf("manual compaction failed, collName:%s, traceID:%s err: %v", collName, traceID, err)
 		return 0, err
 	}
 
@@ -41,11 +49,13 @@ func (c *GrpcClient) ManualCompaction(ctx context.Context, collName string, _ ti
 
 	resp, err := c.Service.ManualCompaction(ctx, req)
 	if err != nil {
+		log.Fatalf("manual compaction failed, collName:%s, traceID:%s err: %v", collName, traceID, err)
 		return 0, err
 	}
 
 	err = handleRespStatus(resp.GetStatus())
 	if err != nil {
+		log.Fatalf("manual compaction failed, collName:%s, traceID:%s err: %v", collName, traceID, err)
 		return 0, err
 	}
 
@@ -54,6 +64,10 @@ func (c *GrpcClient) ManualCompaction(ctx context.Context, collName string, _ ti
 
 // GetCompactionState get compaction state of provided compaction id
 func (c *GrpcClient) GetCompactionState(ctx context.Context, id int64) (entity.CompactionState, error) {
+	method := "GetCompactionState"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return entity.CompcationStateUndefined, ErrClientNotReady
 	}
@@ -61,11 +75,13 @@ func (c *GrpcClient) GetCompactionState(ctx context.Context, id int64) (entity.C
 	req := &milvuspb.GetCompactionStateRequest{CompactionID: id}
 	resp, err := c.Service.GetCompactionState(ctx, req)
 	if err != nil {
+		log.Fatalf("get compaction state failed, id:%d, traceID:%s err: %v", id, traceID, err)
 		return entity.CompcationStateUndefined, err
 	}
 
 	err = handleRespStatus(resp.GetStatus())
 	if err != nil {
+		log.Fatalf("get compaction state failed, id:%d, traceID:%s err: %v", id, traceID, err)
 		return entity.CompcationStateUndefined, err
 	}
 
@@ -75,6 +91,10 @@ func (c *GrpcClient) GetCompactionState(ctx context.Context, id int64) (entity.C
 
 // GetCompactionStateWithPlans get compaction state with plans of provided compaction id
 func (c *GrpcClient) GetCompactionStateWithPlans(ctx context.Context, id int64) (entity.CompactionState, []entity.CompactionPlan, error) {
+	method := "GetCompactionStateWithPlans"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return entity.CompcationStateUndefined, nil, ErrClientNotReady
 	}
@@ -84,11 +104,13 @@ func (c *GrpcClient) GetCompactionStateWithPlans(ctx context.Context, id int64) 
 	}
 	resp, err := c.Service.GetCompactionStateWithPlans(ctx, req)
 	if err != nil {
+		log.Fatalf("get compaction state with plans failed, id:%d, traceID:%s err: %v", id, traceID, err)
 		return entity.CompcationStateUndefined, nil, err
 	}
 
 	err = handleRespStatus(resp.GetStatus())
 	if err != nil {
+		log.Fatalf("get compaction state with plans failed, id:%d, traceID:%s err: %v", id, traceID, err)
 		return entity.CompcationStateUndefined, nil, err
 	}
 

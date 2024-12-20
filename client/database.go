@@ -18,8 +18,11 @@ package client
 
 import (
 	"context"
+	"log"
 
 	"github.com/cockroachdb/errors"
+	"go.opentelemetry.io/otel"
+
 	"github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
 	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
@@ -31,9 +34,14 @@ import (
 // 2. goroutine B call UsingDatabase(ctx, "DB2").
 // 3. goroutine A access DB2 after 2.
 func (c *GrpcClient) UsingDatabase(ctx context.Context, dbName string) error {
+	method := "UsingDatabase"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	c.config.useDatabase(dbName)
 	err := c.connectInternal(ctx)
 	if err != nil {
+		log.Fatalf("using database failed, traceID:%s err: %v", traceID, err)
 		return err
 	}
 	c.cache.reset()
@@ -44,6 +52,10 @@ func (c *GrpcClient) UsingDatabase(ctx context.Context, dbName string) error {
 // CreateDatabase creates a new database for remote Milvus cluster.
 // TODO:New options can be added as expanding parameters.
 func (c *GrpcClient) CreateDatabase(ctx context.Context, dbName string, opts ...CreateDatabaseOption) error {
+	method := "CreateDatabase"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
@@ -63,6 +75,7 @@ func (c *GrpcClient) CreateDatabase(ctx context.Context, dbName string, opts ...
 
 	resp, err := c.Service.CreateDatabase(ctx, req)
 	if err != nil {
+		log.Fatalf("create database failed, traceID:%s err: %v", traceID, err)
 		return err
 	}
 	return handleRespStatus(resp)
@@ -70,6 +83,10 @@ func (c *GrpcClient) CreateDatabase(ctx context.Context, dbName string, opts ...
 
 // ListDatabases list all database in milvus cluster.
 func (c *GrpcClient) ListDatabases(ctx context.Context) ([]entity.Database, error) {
+	method := "ListDatabases"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return nil, ErrClientNotReady
 	}
@@ -80,9 +97,11 @@ func (c *GrpcClient) ListDatabases(ctx context.Context) ([]entity.Database, erro
 	req := &milvuspb.ListDatabasesRequest{}
 	resp, err := c.Service.ListDatabases(ctx, req)
 	if err != nil {
+		log.Fatalf("list databases failed, traceID:%s err: %v", traceID, err)
 		return nil, err
 	}
 	if err = handleRespStatus(resp.GetStatus()); err != nil {
+		log.Fatalf("list databases failed, traceID:%s err: %v", traceID, err)
 		return nil, err
 	}
 	databases := make([]entity.Database, len(resp.GetDbNames()))
@@ -96,6 +115,10 @@ func (c *GrpcClient) ListDatabases(ctx context.Context) ([]entity.Database, erro
 
 // DropDatabase drop all database in milvus cluster.
 func (c *GrpcClient) DropDatabase(ctx context.Context, dbName string, opts ...DropDatabaseOption) error {
+	method := "DropDatabase"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
@@ -111,6 +134,7 @@ func (c *GrpcClient) DropDatabase(ctx context.Context, dbName string, opts ...Dr
 	}
 	resp, err := c.Service.DropDatabase(ctx, req)
 	if err != nil {
+		log.Fatalf("DropDatabase failed, traceID:%s err: %v", traceID, err)
 		return err
 	}
 	return handleRespStatus(resp)
@@ -118,6 +142,10 @@ func (c *GrpcClient) DropDatabase(ctx context.Context, dbName string, opts ...Dr
 
 // AlterDatabase changes the database attribute.
 func (c *GrpcClient) AlterDatabase(ctx context.Context, dbName string, attrs ...entity.DatabaseAttribute) error {
+	method := "AlterDatabase"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return ErrClientNotReady
 	}
@@ -151,6 +179,7 @@ func (c *GrpcClient) AlterDatabase(ctx context.Context, dbName string, attrs ...
 
 	resp, err := c.Service.AlterDatabase(ctx, req)
 	if err != nil {
+		log.Fatalf("AlterDatabase failed, traceID:%s err: %v", traceID, err)
 		return err
 	}
 	return handleRespStatus(resp)
@@ -158,6 +187,10 @@ func (c *GrpcClient) AlterDatabase(ctx context.Context, dbName string, attrs ...
 
 // DropDatabase drop all database in milvus cluster.
 func (c *GrpcClient) DescribeDatabase(ctx context.Context, dbName string) (*entity.Database, error) {
+	method := "DescribeDatabase"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return nil, ErrClientNotReady
 	}
@@ -171,10 +204,12 @@ func (c *GrpcClient) DescribeDatabase(ctx context.Context, dbName string) (*enti
 
 	resp, err := c.Service.DescribeDatabase(ctx, req)
 	if err != nil {
+		log.Fatalf("DescribeDatabase failed, traceID:%s err: %v", traceID, err)
 		return nil, err
 	}
 	err = handleRespStatus(resp.GetStatus())
 	if err != nil {
+		log.Fatalf("DescribeDatabase failed, traceID:%s err: %v", traceID, err)
 		return nil, err
 	}
 	database := &entity.Database{

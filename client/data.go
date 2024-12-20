@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/errors"
+	"go.opentelemetry.io/otel"
 
 	"github.com/milvus-io/milvus-proto/go-api/v2/commonpb"
 	"github.com/milvus-io/milvus-proto/go-api/v2/milvuspb"
@@ -40,12 +41,17 @@ const (
 )
 
 func (c *GrpcClient) HybridSearch(ctx context.Context, collName string, partitions []string, limit int, outputFields []string, reranker Reranker, subRequests []*ANNSearchRequest, opts ...SearchQueryOptionFunc) ([]SearchResult, error) {
+	method := "HybridSearch"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return nil, ErrClientNotReady
 	}
 
 	collInfo, err := c.getCollectionInfo(ctx, collName)
 	if err != nil {
+		log.Fatalf("hybrid search failed, collName:%s, traceID:%s err: %v", collName, traceID, err)
 		return nil, err
 	}
 	schema := collInfo.Schema
@@ -85,6 +91,7 @@ func (c *GrpcClient) HybridSearch(ctx context.Context, collName string, partitio
 
 	err = merr.CheckRPCCall(result, err)
 	if err != nil {
+		log.Fatalf("hybrid search failed, collName:%s, traceID:%s err: %v", collName, traceID, err)
 		return nil, err
 	}
 
@@ -95,6 +102,10 @@ func (c *GrpcClient) HybridSearch(ctx context.Context, collName string, partitio
 func (c *GrpcClient) Search(ctx context.Context, collName string, partitions []string,
 	expr string, outputFields []string, vectors []entity.Vector, vectorField string, metricType entity.MetricType, topK int, sp entity.SearchParam, opts ...SearchQueryOptionFunc,
 ) ([]SearchResult, error) {
+	method := "Search"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return []SearchResult{}, ErrClientNotReady
 	}
@@ -116,6 +127,7 @@ func (c *GrpcClient) Search(ctx context.Context, collName string, partitions []s
 
 	resp, err := c.Service.Search(ctx, req)
 	if err != nil {
+		log.Fatalf("search failed, collName:%s, traceID:%s err: %v", collName, traceID, err)
 		return nil, err
 	}
 	if err := handleRespStatus(resp.GetStatus()); err != nil {
@@ -292,6 +304,9 @@ func (c *GrpcClient) Get(ctx context.Context, collectionName string, ids entity.
 
 // QueryByPks query record by specified primary key(s)
 func (c *GrpcClient) QueryByPks(ctx context.Context, collectionName string, partitionNames []string, ids entity.Column, outputFields []string, opts ...SearchQueryOptionFunc) (ResultSet, error) {
+	method := "QueryByPks"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
 	if c.Service == nil {
 		return nil, ErrClientNotReady
 	}
@@ -310,6 +325,10 @@ func (c *GrpcClient) QueryByPks(ctx context.Context, collectionName string, part
 
 // Query performs query by expression.
 func (c *GrpcClient) Query(ctx context.Context, collectionName string, partitionNames []string, expr string, outputFields []string, opts ...SearchQueryOptionFunc) (ResultSet, error) {
+	method := "Query"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return nil, ErrClientNotReady
 	}
@@ -352,10 +371,12 @@ func (c *GrpcClient) Query(ctx context.Context, collectionName string, partition
 
 	resp, err := c.Service.Query(ctx, req)
 	if err != nil {
+		log.Fatalf("query failed, collName:%s, traceID:%s err: %v", collectionName, traceID, err)
 		return nil, err
 	}
 	err = handleRespStatus(resp.GetStatus())
 	if err != nil {
+		log.Fatalf("query failed, collName:%s, traceID:%s err: %v", collectionName, traceID, err)
 		return nil, err
 	}
 
@@ -431,6 +452,10 @@ func prepareSearchRequest(collName string, partitions []string,
 
 // GetPersistentSegmentInfo get persistent segment info
 func (c *GrpcClient) GetPersistentSegmentInfo(ctx context.Context, collName string) ([]*entity.Segment, error) {
+	method := "GetPersistentSegmentInfo"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return []*entity.Segment{}, ErrClientNotReady
 	}
@@ -440,9 +465,11 @@ func (c *GrpcClient) GetPersistentSegmentInfo(ctx context.Context, collName stri
 	}
 	resp, err := c.Service.GetPersistentSegmentInfo(ctx, req)
 	if err != nil {
+		log.Fatalf("get persistent segment info failed, collName:%s, traceID:%s err: %v", collName, traceID, err)
 		return []*entity.Segment{}, err
 	}
 	if err := handleRespStatus(resp.GetStatus()); err != nil {
+		log.Fatalf("get persistent segment info failed, collName:%s, traceID:%s err: %v", collName, traceID, err)
 		return []*entity.Segment{}, err
 	}
 	segments := make([]*entity.Segment, 0, len(resp.GetInfos()))
@@ -461,6 +488,10 @@ func (c *GrpcClient) GetPersistentSegmentInfo(ctx context.Context, collName stri
 
 // GetQuerySegmentInfo get query query cluster segment loaded info
 func (c *GrpcClient) GetQuerySegmentInfo(ctx context.Context, collName string) ([]*entity.Segment, error) {
+	method := "GetQuerySegmentInfo"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return []*entity.Segment{}, ErrClientNotReady
 	}
@@ -470,6 +501,7 @@ func (c *GrpcClient) GetQuerySegmentInfo(ctx context.Context, collName string) (
 	}
 	resp, err := c.Service.GetQuerySegmentInfo(ctx, req)
 	if err != nil {
+		log.Fatalf("get query segment info failed, collName:%s traceID:%s, err: %v", collName, traceID, err)
 		return []*entity.Segment{}, err
 	}
 	if err := handleRespStatus(resp.GetStatus()); err != nil {
@@ -493,6 +525,10 @@ func (c *GrpcClient) GetQuerySegmentInfo(ctx context.Context, collName string) (
 func (c *GrpcClient) CalcDistance(ctx context.Context, collName string, partitions []string,
 	metricType entity.MetricType, opLeft, opRight entity.Column,
 ) (entity.Column, error) {
+	method := "CalcDistance"
+	ctx, span := otel.Tracer("client").Start(ctx, method)
+	defer span.End()
+	traceID := span.SpanContext().TraceID().String()
 	if c.Service == nil {
 		return nil, ErrClientNotReady
 	}
@@ -513,9 +549,11 @@ func (c *GrpcClient) CalcDistance(ctx context.Context, collName string, partitio
 
 	resp, err := c.Service.CalcDistance(ctx, req)
 	if err != nil {
+		log.Fatalf("calc distance failed, collName:%s traceID:%s err: %v", collName, traceID, err)
 		return nil, err
 	}
 	if err := handleRespStatus(resp.GetStatus()); err != nil {
+		log.Fatalf("calc distance failed, collName:%s traceID:%s err: %v", collName, traceID, err)
 		return nil, err
 	}
 
