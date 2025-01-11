@@ -584,7 +584,7 @@ func TestCreateVarcharArrayInvalidLength(t *testing.T) {
 			common.WithMaxCapacity(100), common.WithMaxLength(invalidLength))
 		schema := common.GenSchema(common.GenRandomString(6), false, append(fields, arrayField), common.WithEnableDynamicField(true))
 		err := mc.CreateCollection(ctx, schema, common.DefaultShards)
-		common.CheckErr(t, err, false, "the maximum length specified for a VarChar should be in (0, 65535]: invalid parameter")
+		common.CheckErr(t, err, false, "the maximum length specified for a VarChar should be in (0, 1048576]: invalid parameter")
 	}
 }
 

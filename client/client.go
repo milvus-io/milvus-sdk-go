@@ -14,12 +14,19 @@ package client
 
 import (
 	"context"
+	"sync"
 	"time"
 
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/sdk/resource"
+	sdk "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 
 	"github.com/milvus-io/milvus-proto/go-api/v2/msgpb"
-
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )
 
@@ -261,6 +268,46 @@ type Client interface {
 	HybridSearch(ctx context.Context, collName string, partitions []string, limit int, outputFields []string, reranker Reranker, subRequests []*ANNSearchRequest, opts ...SearchQueryOptionFunc) ([]SearchResult, error)
 }
 
+var (
+	initClientOnce sync.Once
+)
+
+func initTracerOnce() {
+	initClientOnce.Do(func() {
+		// init trace noop provider
+		tp := sdk.NewTracerProvider(
+			sdk.WithBatcher(nil),
+			sdk.WithResource(resource.NewWithAttributes(
+				semconv.SchemaURL,
+				semconv.ServiceNameKey.String("Client"),
+			)),
+			sdk.WithSampler(sdk.ParentBased(
+				sdk.TraceIDRatioBased(1),
+			)),
+		)
+		otel.SetTracerProvider(tp)
+		otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
+	})
+}
+
+func getUnaryClientInterceptor() grpc.UnaryClientInterceptor {
+	initTracerOnce()
+	return otelgrpc.UnaryClientInterceptor(otelgrpc.WithTracerProvider(otel.GetTracerProvider()))
+
+}
+
+func StartTrace(ctx context.Context, name string, spanName string) (context.Context, trace.Span, string) {
+	initTracerOnce()
+	ctx, span := otel.Tracer(name).Start(ctx, spanName)
+	return ctx, span, span.SpanContext().TraceID().String()
+}
+
+func StartNewTrace(name string, spanName string) (context.Context, trace.Span, string) {
+	initTracerOnce()
+	ctx, span := otel.Tracer(name).Start(context.Background(), spanName)
+	return ctx, span, span.SpanContext().TraceID().String()
+}
+
 // NewClient create a client connected to remote milvus cluster.
 // More connect option can be modified by Config.
 func NewClient(ctx context.Context, config Config) (Client, error) {
@@ -277,6 +324,7 @@ func NewClient(ctx context.Context, config Config) (Client, error) {
 
 	// Parse grpc options
 	options := c.config.getDialOption()
+	options = append(options, grpc.WithChainUnaryInterceptor(getUnaryClientInterceptor()))
 
 	// Connect the grpc server.
 	if err := c.connect(ctx, addr, options...); err != nil {
