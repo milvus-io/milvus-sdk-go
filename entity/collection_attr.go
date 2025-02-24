@@ -177,3 +177,27 @@ func (ca databaseResourceGroupsAttr) Valid() error {
 
 	return nil
 }
+
+type customAttr struct {
+	collAttrBase
+}
+
+// CustomAttribute returns a collection attribute with custom key and value
+func CustomAttribute(key, value string) customAttr {
+	ca := customAttr{}
+	ca.key = key
+	ca.value = value
+	return ca
+}
+
+// Valid implements CollectionAttribute
+// Custom attributes are considered valid as long as both key and value are non-empty
+func (ca customAttr) Valid() error {
+	if ca.key == "" {
+		return errors.New("custom attribute key cannot be empty")
+	}
+	if ca.value == "" {
+		return errors.New("custom attribute value cannot be empty")
+	}
+	return nil
+}
