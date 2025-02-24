@@ -179,3 +179,47 @@ func (s *CollectionPartitionKeyIsolationSuite) TestCollectionAutoCompactionEnabl
 func TestCollectionPartitionKeyIsolationAttr(t *testing.T) {
 	suite.Run(t, new(CollectionPartitionKeyIsolationSuite))
 }
+
+type CustomAttributeSuite struct {
+	suite.Suite
+}
+
+func (s *CustomAttributeSuite) TestValid() {
+	type testCase struct {
+		key       string
+		value     string
+		expectErr bool
+	}
+
+	cases := []testCase{
+		{key: "custom.key", value: "value", expectErr: false},
+		{key: "", value: "value", expectErr: true},
+		{key: "custom.key", value: "", expectErr: true},
+		{key: "", value: "", expectErr: true},
+	}
+
+	for _, tc := range cases {
+		s.Run(fmt.Sprintf("key=%s,value=%s", tc.key, tc.value), func() {
+			ca := CustomAttribute(tc.key, tc.value)
+			err := ca.Valid()
+			if tc.expectErr {
+				s.Error(err)
+			} else {
+				s.NoError(err)
+			}
+		})
+	}
+}
+
+func (s *CustomAttributeSuite) TestKeyValue() {
+	key := "custom.test.key"
+	value := "test.value"
+	ca := CustomAttribute(key, value)
+	gotKey, gotValue := ca.KeyValue()
+	s.Equal(key, gotKey)
+	s.Equal(value, gotValue)
+}
+
+func TestCustomAttribute(t *testing.T) {
+	suite.Run(t, new(CustomAttributeSuite))
+}
