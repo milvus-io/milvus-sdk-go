@@ -80,7 +80,7 @@ func TestCreateIndexMultiVectors(t *testing.T) {
 	common.CheckErr(t, err, true)
 	for _, idx := range common.GenAllFloatIndex() {
 		for _, fieldName := range []string{common.DefaultFloat16VecFieldName, common.DefaultBFloat16VecFieldName} {
-			log.Printf("index name=%s, index type=%v, index params=%v", idx.Name(), idx.IndexType(), idx.Params())
+			log.Printf("index name=%s, index type=%v, index params=%v \n", idx.Name(), idx.IndexType(), idx.Params())
 			err := mc.CreateIndex(ctx, collName, fieldName, idx, false, client.WithIndexName(fieldName))
 			common.CheckErr(t, err, true)
 
@@ -1529,7 +1529,7 @@ func TestDropIndexCreateIndex(t *testing.T) {
 	// describe collection
 	collection, _ := mc.DescribeCollection(ctx, collName)
 	for _, field := range collection.Schema.Fields {
-		log.Printf("field name: %v, field TypeParams: %v, field IndexParams: %v)", field.Name, field.TypeParams, field.IndexParams)
+		log.Printf("field name: %v, field TypeParams: %v, field IndexParams: %v \n)", field.Name, field.TypeParams, field.IndexParams)
 	}
 
 	// drop index
@@ -1552,6 +1552,6 @@ func TestDropIndexCreateIndex(t *testing.T) {
 	t.Log("Issue: https://github.com/milvus-io/milvus-sdk-go/issues/385")
 	collection2, _ := mc.DescribeCollection(ctx, collName)
 	for _, field := range collection2.Schema.Fields {
-		log.Printf("field name: %v, field TypeParams: %v, field IndexParams: %v)", field.Name, field.TypeParams, field.IndexParams)
+		log.Printf("field name: %v, field TypeParams: %v, field IndexParams: %v \n)", field.Name, field.TypeParams, field.IndexParams)
 	}
 }

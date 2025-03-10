@@ -142,9 +142,12 @@ func TestLoadEmptyPartitionName(t *testing.T) {
 	idx, _ := entity.NewIndexHNSW(entity.L2, 8, 96)
 	mc.CreateIndex(ctx, collName, common.DefaultFloatVecFieldName, idx, false)
 
-	// load partition with empty partition names
+	// load partition with empty partition names -> default
 	errLoadEmpty := mc.LoadPartitions(ctx, collName, []string{""}, false)
 	common.CheckErr(t, errLoadEmpty, true)
+
+	countQuery, _ := mc.Query(ctx, collName, []string{}, fmt.Sprintf("%s == 0", common.DefaultIntFieldName), []string{common.QueryCountFieldName})
+	require.Equal(t, int64(1), countQuery.GetColumn(common.QueryCountFieldName).(*entity.ColumnInt64).Data()[0])
 }
 
 // test load partitions with empty slice []string{}
@@ -221,7 +224,7 @@ func TestLoadPartitions(t *testing.T) {
 			log.Println(p.Loaded)
 			// require.True(t, p.Loaded)
 		}
-		log.Printf("id: %d, name: %s, loaded %t", p.ID, p.Name, p.Loaded)
+		log.Printf("id: %d, name: %s, loaded %t \n", p.ID, p.Name, p.Loaded)
 	}
 
 	// query from nb from partition
@@ -315,7 +318,7 @@ func TestLoadPartitionsAsync(t *testing.T) {
 		partitions, errShow := mc.ShowPartitions(ctx, collName)
 		if errShow == nil {
 			for _, p := range partitions {
-				log.Printf("id: %d, name: %s, loaded %t", p.ID, p.Name, p.Loaded)
+				log.Printf("id: %d, name: %s, loaded %t \n", p.ID, p.Name, p.Loaded)
 				if p.Name == partitionName && p.Loaded {
 					break
 				}

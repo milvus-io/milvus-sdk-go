@@ -33,7 +33,7 @@ func TestLoadCollectionReplicas(t *testing.T) {
 	for _, replica := range replicas {
 		require.Len(t, replica.ShardReplicas, int(common.DefaultShards))
 		for _, shard := range replica.ShardReplicas {
-			log.Printf("ReplicaID: %v, NodeIDs: %v, LeaderID: %v, NodesIDs: %v, DmChannelName: %v",
+			log.Printf("ReplicaID: %v, NodeIDs: %v, LeaderID: %v, NodesIDs: %v, DmChannelName: %v \n",
 				replica.ReplicaID, replica.NodeIDs, shard.LeaderID, shard.NodesIDs, shard.DmChannelName)
 		}
 	}
@@ -42,7 +42,7 @@ func TestLoadCollectionReplicas(t *testing.T) {
 	segments, _ := mc.GetPersistentSegmentInfo(ctx, collName)
 	common.CheckPersistentSegments(t, segments, int64(common.DefaultNb))
 	for _, segment := range segments {
-		log.Printf("segmentId: %d, NumRows: %d, CollectionID: %d, ParititionID %d, IndexId: %d, State %v",
+		log.Printf("segmentId: %d, NumRows: %d, CollectionID: %d, ParititionID %d, IndexId: %d, State %v \n",
 			segment.ID, segment.NumRows, segment.CollectionID, segment.ParititionID, segment.IndexID, segment.State)
 	}
 }

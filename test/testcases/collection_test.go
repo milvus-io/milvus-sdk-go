@@ -70,8 +70,8 @@ func TestCreateAutoIdCollection(t *testing.T) {
 
 		// check describe collection
 		collection, _ := mc.DescribeCollection(ctx, collName)
-		log.Printf("collection schema autoid: %v", collection.Schema.AutoID)
-		log.Printf("collection pk field autoid: %v", collection.Schema.Fields[0].AutoID)
+		log.Printf("collection schema autoid: %v \n", collection.Schema.AutoID)
+		log.Printf("collection pk field autoid: %v \n", collection.Schema.Fields[0].AutoID)
 		common.CheckCollection(t, collection, collName, common.DefaultShards, schema, common.DefaultConsistencyLevel)
 
 		// check collName in ListCollections
@@ -345,8 +345,8 @@ func TestCreateCollectionInconsistentAutoId(t *testing.T) {
 	errWithoutPk := mc.CreateCollection(ctx, schema, common.DefaultShards)
 	common.CheckErr(t, errWithoutPk, true, "only one auto id is available")
 	collection, _ := mc.DescribeCollection(ctx, collName)
-	log.Printf("collection schema AutoID is %v)", collection.Schema.AutoID)
-	log.Printf("collection pk field AutoID is %v)", collection.Schema.Fields[0].AutoID)
+	log.Printf("collection schema AutoID is %v \n)", collection.Schema.AutoID)
+	log.Printf("collection pk field AutoID is %v \n)", collection.Schema.Fields[0].AutoID)
 }
 
 // test create collection with field description and schema description

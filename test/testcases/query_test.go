@@ -1043,7 +1043,7 @@ func TestQueryJsonDynamicFieldRows(t *testing.T) {
 	// gen dynamic json column
 
 	for _, column := range queryResult {
-		log.Printf("name: %s, type: %s, fieldData: %v", column.Name(), column.Type(), column.FieldData())
+		log.Printf("name: %s, type: %s, fieldData: %v \n", column.Name(), column.Type(), column.FieldData())
 		if column.Type() == entity.FieldTypeJSON {
 			var jsonData []string
 			for i := 0; i < column.Len(); i++ {
@@ -1644,7 +1644,7 @@ func TestQueryIteratorExpr(t *testing.T) {
 	batch := 500
 
 	for _, exprLimit := range exprLimits {
-		log.Printf("case expr is: %s, limit=%d", exprLimit.expr, exprLimit.count)
+		log.Printf("case expr is: %s, limit=%d \n", exprLimit.expr, exprLimit.count)
 		itr, err := mc.QueryIterator(ctx, client.NewQueryIteratorOption(collName).WithBatchSize(batch).WithExpr(exprLimit.expr))
 		common.CheckErr(t, err, true)
 		common.CheckQueryIteratorResult(ctx, t, itr, exprLimit.count, common.WithExpBatchSize(common.GenBatchSizes(exprLimit.count, batch)))

@@ -1036,6 +1036,7 @@ func TestSearchInvalidExpr(t *testing.T) {
 	// search with invalid expr
 	sp, _ := entity.NewIndexHNSWSearchParam(74)
 	for _, exprStruct := range common.InvalidExpressions {
+		log.Println(exprStruct)
 		_, errSearchEmpty := mc.Search(
 			ctx, collName,
 			[]string{},
@@ -1148,7 +1149,7 @@ func TestSearchJsonFieldExpr(t *testing.T) {
 		// search with jsonField expr key datatype and json data type mismatch
 		sp, _ := entity.NewIndexHNSWSearchParam(74)
 		for _, expr := range exprs {
-			log.Printf("search expr: %s", expr)
+			log.Printf("search expr: %s \n", expr)
 			searchRes, errSearchEmpty := mc.Search(
 				ctx, collName,
 				[]string{},
@@ -1208,7 +1209,7 @@ func TestSearchDynamicFieldExpr(t *testing.T) {
 		// search with jsonField expr key datatype and json data type mismatch
 		sp, _ := entity.NewIndexHNSWSearchParam(74)
 		for _, expr := range exprs {
-			log.Print(expr)
+			log.Println(expr)
 			searchRes, errSearchEmpty := mc.Search(
 				ctx, collName,
 				[]string{},
@@ -1240,7 +1241,7 @@ func TestSearchDynamicFieldExpr(t *testing.T) {
 
 		// search
 		for _, expr := range exprs2 {
-			log.Print(expr)
+			log.Println(expr)
 			searchRes, errSearchEmpty := mc.Search(
 				ctx, collName,
 				[]string{},
@@ -1305,7 +1306,7 @@ func TestSearchArrayFieldExpr(t *testing.T) {
 		// search with jsonField expr key datatype and json data type mismatch
 		sp, _ := entity.NewIndexHNSWSearchParam(74)
 		for _, expr := range exprs {
-			log.Printf("search expr: %s", expr)
+			log.Printf("search expr: %s \n", expr)
 			searchRes, errSearchEmpty := mc.Search(
 				ctx, collName, []string{},
 				expr, common.AllArrayFieldsName,
