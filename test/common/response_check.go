@@ -114,7 +114,7 @@ func CheckInsertResult(t *testing.T, actualIds entity.Column, expIds entity.Colu
 	case entity.FieldTypeVarChar:
 		require.ElementsMatch(t, actualIds.(*entity.ColumnVarChar).Data(), expIds.(*entity.ColumnVarChar).Data())
 	default:
-		log.Printf("The primary field only support type: [%v, %v]", entity.FieldTypeInt64, entity.FieldTypeVarChar)
+		log.Printf("The primary field only support type: [%v, %v] \n", entity.FieldTypeInt64, entity.FieldTypeVarChar)
 	}
 }
 
@@ -156,8 +156,8 @@ func EqualColumn(t *testing.T, columnA entity.Column, columnB entity.Column) {
 	case entity.FieldTypeVarChar:
 		require.ElementsMatch(t, columnA.(*entity.ColumnVarChar).Data(), columnB.(*entity.ColumnVarChar).Data())
 	case entity.FieldTypeJSON:
-		log.Printf("columnA: %s", columnA.FieldData())
-		log.Printf("columnB: %s", columnB.FieldData())
+		log.Printf("columnA: %s \n", columnA.FieldData())
+		log.Printf("columnB: %s \n", columnB.FieldData())
 		require.Equal(t, reflect.TypeOf(columnA), reflect.TypeOf(columnB))
 		switch columnA.(type) {
 		case *entity.ColumnDynamic:
@@ -178,7 +178,7 @@ func EqualColumn(t *testing.T, columnA entity.Column, columnB entity.Column) {
 	case entity.FieldTypeArray:
 		EqualArrayColumn(t, columnA, columnB)
 	default:
-		log.Printf("The column type not in: [%v, %v, %v,  %v, %v,  %v, %v,  %v, %v,  %v, %v, %v]",
+		log.Printf("The column type not in: [%v, %v, %v,  %v, %v,  %v, %v,  %v, %v,  %v, %v, %v] \n",
 			entity.FieldTypeBool, entity.FieldTypeInt8, entity.FieldTypeInt16, entity.FieldTypeInt32,
 			entity.FieldTypeInt64, entity.FieldTypeFloat, entity.FieldTypeDouble, entity.FieldTypeString,
 			entity.FieldTypeVarChar, entity.FieldTypeArray, entity.FieldTypeFloatVector, entity.FieldTypeBinaryVector)
@@ -208,7 +208,7 @@ func EqualArrayColumn(t *testing.T, columnA entity.Column, columnB entity.Column
 	case *entity.ColumnVarCharArray:
 		require.ElementsMatch(t, columnA.(*entity.ColumnVarCharArray).Data(), columnB.(*entity.ColumnVarCharArray).Data())
 	default:
-		log.Printf("Now support array type: [%v, %v, %v,  %v, %v,  %v, %v,  %v]",
+		log.Printf("Now support array type: [%v, %v, %v,  %v, %v,  %v, %v,  %v] \n",
 			entity.FieldTypeBool, entity.FieldTypeInt8, entity.FieldTypeInt16, entity.FieldTypeInt32,
 			entity.FieldTypeInt64, entity.FieldTypeFloat, entity.FieldTypeDouble, entity.FieldTypeVarChar)
 	}
@@ -293,8 +293,8 @@ func CheckQueryIteratorResult(ctx context.Context, t *testing.T, itr *client.Que
 			}
 			log.Fatalf("QueryIterator next gets error: %v", err)
 		}
-		//log.Printf("QueryIterator result len: %d", rs.Len())
-		//log.Printf("QueryIterator result data: %d", rs.GetColumn("int64"))
+		//log.Printf("QueryIterator result len: %d \n", rs.Len())
+		//log.Printf("QueryIterator result data: %d \n", rs.GetColumn("int64"))
 
 		if opt.expBatchSize != nil {
 			actualBatchSize = append(actualBatchSize, rs.Len())
@@ -310,7 +310,7 @@ func CheckQueryIteratorResult(ctx context.Context, t *testing.T, itr *client.Que
 	}
 	require.Equal(t, expLimit, actualLimit)
 	if opt.expBatchSize != nil {
-		log.Printf("QueryIterator result len: %v", actualBatchSize)
+		log.Printf("QueryIterator result len: %v \n", actualBatchSize)
 		require.True(t, EqualIntSlice(opt.expBatchSize, actualBatchSize))
 	}
 }
