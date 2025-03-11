@@ -708,7 +708,7 @@ func TestTransferReplicaRgNotExisted(t *testing.T) {
 	errTransfer := mc.TransferReplica(ctx, rgName, common.DefaultRgName, collName, 1)
 	common.CheckErr(t, errTransfer, true)
 	newRg, _ := mc.DescribeResourceGroup(ctx, rgName)
-	log.Print(newRg)
+	log.Println(newRg)
 	expRg := &entity.ResourceGroup{
 		Name:                 rgName,
 		Capacity:             newRgNode,

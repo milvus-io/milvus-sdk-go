@@ -228,7 +228,7 @@ func TestLoadPartitions(t *testing.T) {
 			log.Println(p.Loaded)
 			// require.True(t, p.Loaded)
 		}
-		log.Printf("id: %d, name: %s, loaded %t", p.ID, p.Name, p.Loaded)
+		log.Printf("id: %d, name: %s, loaded %t \n", p.ID, p.Name, p.Loaded)
 	}
 
 	// query from nb from partition

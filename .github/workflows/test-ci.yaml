@@ -22,7 +22,7 @@ jobs:
         mode: [standalone, cluster]
     env:
       IMAGE_REPO: "milvusdb/milvus"
-      TAG_PREFIX: "master-"
+      TAG_PREFIX: "2.4-"
       RELEASE_NAME: "go-test"
       IMAGE_TAG: "master-latest"
       QA_NAMESPACE: "qa"
@@ -87,7 +87,7 @@ jobs:
 
       - name: Archive logs
         if: ${{ !success() }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: milvus-logs-${{ matrix.mode }}
           path: |
