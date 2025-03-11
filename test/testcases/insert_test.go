@@ -407,7 +407,7 @@ func TestInsertJsonCollection(t *testing.T) {
 	rows := common.GenDefaultJSONRows(0, nb, common.DefaultDim, true)
 	_, ok := rows[0].([]byte)
 	if !ok {
-		log.Printf("invalid type, expected []byte, got %T", rows)
+		log.Printf("invalid type, expected []byte, got %T \n", rows)
 	}
 	_, errInsert := mc.InsertRows(ctx, collName, "", rows)
 	common.CheckErr(t, errInsert, true)

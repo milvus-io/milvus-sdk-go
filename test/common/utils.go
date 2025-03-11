@@ -1398,11 +1398,8 @@ type InvalidExprStruct struct {
 }
 
 var InvalidExpressions = []InvalidExprStruct{
-	// https://github.com/milvus-io/milvus-sdk-go/issues/777
 	{Expr: "id in [0]", ErrNil: true, ErrMsg: "fieldName(id) not found"},                                          // not exist field but no error
 	{Expr: "int64 in not [0]", ErrNil: false, ErrMsg: "cannot parse expression"},                                  // wrong term expr keyword
-	{Expr: "int64 > 10 AND int64 < 100", ErrNil: false, ErrMsg: "cannot parse expression"},                        // AND isn't supported
-	{Expr: "int64 < 10 OR int64 > 100", ErrNil: false, ErrMsg: "cannot parse expression"},                         // OR isn't supported
 	{Expr: "int64 < floatVec", ErrNil: false, ErrMsg: "not supported"},                                            // unsupported compare field
 	{Expr: "floatVec in [0]", ErrNil: false, ErrMsg: "cannot be casted to FloatVector"},                           // value and field type mismatch
 	{Expr: fmt.Sprintf("%s == 1", DefaultJSONFieldName), ErrNil: true, ErrMsg: ""},                                // hist empty

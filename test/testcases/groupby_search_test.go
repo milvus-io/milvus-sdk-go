@@ -158,7 +158,7 @@ func TestSearchGroupByFloatDefault(t *testing.T) {
 							groupByField,
 						}, []entity.Vector{queryVec[i]}, common.DefaultFloatVecFieldName, metricType, 1, sp)
 						filterTop1Pk, _ := resFilter[0].IDs.GetAsInt64(0)
-						// log.Printf("Search top1 with %s: groupByValue: %v, pkValue: %d. The returned pk by filter search is: %d",
+						//log.Printf("Search top1 with %s: groupByValue: %v, pkValue: %d. The returned pk by filter search is: %d \n",
 						//	groupByField, groupByValue, pkValue, filterTop1Pk)
 						if filterTop1Pk == pkValue {
 							hitsNum += 1
@@ -235,7 +235,7 @@ func TestGroupBySearchSparseVector(t *testing.T) {
 						common.DefaultVarcharFieldName,
 					}, []entity.Vector{queryVec[i]}, common.DefaultSparseVecFieldName, entity.IP, 1, sp)
 					filterTop1Pk, _ := resFilter[0].IDs.GetAsInt64(0)
-					log.Printf("Search top1 with %s: groupByValue: %v, pkValue: %d. The returned pk by filter search is: %d",
+					log.Printf("Search top1 with %s: groupByValue: %v, pkValue: %d. The returned pk by filter search is: %d \n",
 						common.DefaultVarcharFieldName, groupByValue, pkValue, filterTop1Pk)
 					if filterTop1Pk == pkValue {
 						hitsNum += 1
@@ -386,8 +386,8 @@ func TestSearchGroupByFloatGrowing(t *testing.T) {
 
 					// search filter with groupByValue is the top1
 					filterTop1Pk, _ := resFilter[0].IDs.GetAsInt64(0)
-					// log.Printf("Search top1 with %s: groupByValue: %v, pkValue: %d. The returned pk by filter search is: %d",
-					//	groupByField, groupByValue, pkValue, filterTop1Pk)
+					log.Printf("Search top1 with %s: groupByValue: %v, pkValue: %d. The returned pk by filter search is: %d \n",
+						groupByField, groupByValue, pkValue, filterTop1Pk)
 					if filterTop1Pk == pkValue {
 						hitsNum += 1
 					}
