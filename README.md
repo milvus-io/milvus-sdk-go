@@ -1,5 +1,7 @@
 # Milvus Go SDK
 
+## Note this repo is deprecated. Go to https://github.com/milvus-io/milvus/tree/master/client for the newest Go SDK
+
 [![license](https://img.shields.io/hexpm/l/plug.svg?color=green)](https://github.com/milvus-io/milvus-sdk-go/blob/master/LICENSE)
 [![Mergify Status][mergify-status]][mergify]
 [![Go Reference](https://pkg.go.dev/badge/github.com/milvus-io/milvus-sdk-go/v2.svg)](https://pkg.go.dev/github.com/milvus-io/milvus-sdk-go/v2)
